@@ -1,0 +1,10 @@
+{
+  "id": "grimoire",
+  "name": "Grimoire",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "A grimoire Obsidian plugin",
+  "author": "Volodymyr Koval",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
