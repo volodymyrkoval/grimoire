@@ -13,6 +13,20 @@ const makeScope = () => {
 };
 
 describe('KeyboardController', () => {
+  it('resume() re-registers all bindings from stored specs', () => {
+    const scope = makeScope();
+    const kb = new KeyboardController(scope as any);
+
+    kb.bind([], 'ArrowDown', () => true);
+    kb.bind([], 'ArrowUp', () => true);
+    kb.suspend();
+    expect(scope.register).toHaveBeenCalledTimes(2);
+
+    kb.resume();
+
+    expect(scope.register).toHaveBeenCalledTimes(4); // 2 original + 2 re-registered
+  });
+
   it('suspend() unregisters all active handlers', () => {
     const scope = makeScope();
     const kb = new KeyboardController(scope as any);
