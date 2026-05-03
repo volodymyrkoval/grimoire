@@ -1,7 +1,7 @@
 export interface TabPanel {
   readonly id: string;
   mount(container: HTMLElement): void;
-  filter(query: string): void;
+  filter(query: string): number;
   confirm(index: number): void;
   move(delta: number, current: number): number;
   updateSelection(prev: number, next: number): void;

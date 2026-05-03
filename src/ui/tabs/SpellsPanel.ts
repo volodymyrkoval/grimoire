@@ -1,5 +1,5 @@
 import type { TabPanel } from "./TabPanel";
-import type { Spell } from "../../domain/spells/Spell";
+import type { Spell, Sentinel } from "../../domain/spells/Spell";
 import { spellPath } from "../../domain/spells/SpellPath";
 import { SpellList } from "../components/SpellList";
 import { TypedEmitter } from "../TypedEmitter";
@@ -18,6 +18,11 @@ const ALL_SPELLS: readonly Spell[] = [
   { name: "Warding Barrier", path: spellPath("/spells/warding") },
 ];
 
+const SENTINELS: readonly Sentinel[] = [
+  { kind: "forge", name: "Forge" },
+  { kind: "refine", name: "Refine" },
+];
+
 export class SpellsPanel implements TabPanel {
   readonly id = "spells";
   readonly events = new TypedEmitter<SpellEvents>();
@@ -25,20 +30,27 @@ export class SpellsPanel implements TabPanel {
   private spellList: SpellList | null = null;
 
   mount(container: HTMLElement): void {
-    this.spellList = new SpellList(container, this.events);
+    this.spellList = new SpellList(container, this.events, [...SENTINELS]);
     this.spellList.render(this.filteredSpells, 0);
   }
 
-  filter(query: string): void {
+  filter(query: string): number {
     this.filteredSpells = ALL_SPELLS.filter((s) =>
       s.name.toLowerCase().includes(query)
     );
-    this.spellList?.render(this.filteredSpells, 0);
+    const initialIndex = this.sentinelFocusIndex(query);
+    this.spellList?.render(this.filteredSpells, initialIndex);
+    return initialIndex;
   }
 
   confirm(index: number): void {
-    const spell = this.filteredSpells[index];
-    if (spell) this.events.emit("detail", spell);
+    if (index < this.filteredSpells.length) {
+      const spell = this.filteredSpells[index];
+      if (spell) this.events.emit("detail", spell);
+    } else {
+      const sentinel = SENTINELS[index - this.filteredSpells.length];
+      if (sentinel) this.events.emit("sentinel", sentinel);
+    }
   }
 
   move(delta: number, current: number): number {
@@ -56,5 +68,13 @@ export class SpellsPanel implements TabPanel {
 
   reset(): void {
     this.filteredSpells = [...ALL_SPELLS];
+  }
+
+  private sentinelFocusIndex(query: string): number {
+    if (!query || this.filteredSpells.length > 0) return 0;
+    const idx = SENTINELS.findIndex((s) =>
+      s.name.toLowerCase().includes(query)
+    );
+    return idx >= 0 ? this.filteredSpells.length + idx : 0;
   }
 }

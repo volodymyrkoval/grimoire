@@ -1,23 +1,34 @@
-import type { Spell } from "../../domain/spells/Spell";
+import type { Spell, Sentinel } from "../../domain/spells/Spell";
 import type { TypedEmitter } from "../TypedEmitter";
 import type { SpellEvents } from "../SpellEvents";
 import { SpellRow } from "./SpellRow";
+import { SentinelRow } from "./SentinelRow";
 
 export class SpellList {
   readonly el: HTMLElement;
-  private rows: SpellRow[] = [];
+  private rows: (SpellRow | SentinelRow)[] = [];
 
-  constructor(container: HTMLElement, private readonly emitter: TypedEmitter<SpellEvents>) {
+  constructor(
+    container: HTMLElement,
+    private readonly emitter: TypedEmitter<SpellEvents>,
+    private readonly sentinels: Sentinel[] = []
+  ) {
     this.el = container.createDiv({ cls: "spells-list" });
   }
 
   render(spells: Spell[], selectedIndex: number): void {
     this.el.empty();
-    this.rows = spells.map((spell, i) => {
+    const spellRows = spells.map((spell, i) => {
       const row = new SpellRow(this.el, spell, i === selectedIndex);
       row.el.onClickEvent(() => this.emitter.emit("detail", spell));
       return row;
     });
+    const sentinelRows = this.sentinels.map((sentinel, i) => {
+      const row = new SentinelRow(this.el, sentinel, spells.length + i === selectedIndex);
+      row.el.onClickEvent(() => this.emitter.emit("sentinel", sentinel));
+      return row;
+    });
+    this.rows = [...spellRows, ...sentinelRows];
   }
 
   updateSelection(prev: number, next: number): void {

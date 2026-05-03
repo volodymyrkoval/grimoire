@@ -1,6 +1,6 @@
 import { App, Modal } from "obsidian";
 import { KeyboardController } from "./KeyboardController";
-import type { Spell } from "../domain/spells/Spell";
+import type { Spell, Sentinel } from "../domain/spells/Spell";
 import { TabBar } from "./components/TabBar";
 import type { TabPanel } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
@@ -18,6 +18,7 @@ export class CommandPopup extends Modal {
     super(app);
     const spellsPanel = new SpellsPanel();
     spellsPanel.events.on("detail", (spell) => this.renderDetail(spell));
+    spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
     this.panels = [spellsPanel, new LogsPanel()];
     this.activePanel = this.panels[0];
   }
@@ -101,8 +102,7 @@ export class CommandPopup extends Modal {
     input.focus();
     this.activePanel.mount(this.contentEl);
     input.oninput = () => {
-      this.selectedIndex = 0;
-      this.activePanel.filter(input.value.toLowerCase());
+      this.selectedIndex = this.activePanel.filter(input.value.toLowerCase());
     };
   }
 
@@ -110,6 +110,15 @@ export class CommandPopup extends Modal {
     this.phase = "detail";
     this.reattachTabBar();
     this.contentEl.createEl("h2", { text: spell.name });
+    const back = this.contentEl.createEl("button", { text: "← Back" });
+    back.onClickEvent(() => this.renderSearch());
+  }
+
+  private renderSentinelDetail(sentinel: Sentinel): void {
+    this.phase = "detail";
+    this.reattachTabBar();
+    this.contentEl.createEl("h2", { text: sentinel.name });
+    this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
     const back = this.contentEl.createEl("button", { text: "← Back" });
     back.onClickEvent(() => this.renderSearch());
   }

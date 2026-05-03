@@ -12,11 +12,12 @@ export class LogsPanel implements TabPanel {
     this.logList.render(this.filteredLogs, 0);
   }
 
-  filter(query: string): void {
+  filter(query: string): number {
     this.filteredLogs = ALL_LOGS.filter((l) =>
       l.name.toLowerCase().includes(query)
     );
     this.logList?.render(this.filteredLogs, 0);
+    return 0;
   }
 
   confirm(index: number): void {
