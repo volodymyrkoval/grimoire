@@ -13,6 +13,20 @@ const makeScope = () => {
 };
 
 describe('KeyboardController', () => {
+  it('unbindAll() clears specs so resume() has nothing to re-register', () => {
+    const scope = makeScope();
+    const kb = new KeyboardController(scope as any);
+
+    kb.bind([], 'ArrowDown', () => true);
+    kb.unbindAll();
+    expect(scope.unregister).toHaveBeenCalledTimes(1);
+
+    kb.resume();
+
+    // register was called once (original bind); after unbindAll+resume it should not grow
+    expect(scope.register).toHaveBeenCalledTimes(1);
+  });
+
   it('resume() re-registers all bindings from stored specs', () => {
     const scope = makeScope();
     const kb = new KeyboardController(scope as any);
