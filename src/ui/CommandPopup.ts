@@ -28,7 +28,10 @@ export class CommandPopup extends Modal {
     this.activePanel = this.panels[0];
     this.phase = "search";
     this.render();
+    this.bindKeys();
+  }
 
+  private bindKeys(): void {
     this.#kb.bind([], "ArrowDown", () => { this.move(1); return true; });
     this.#kb.bind([], "ArrowUp", () => { this.move(-1); return true; });
     this.#kb.bind([], "Enter", () => { this.confirm(); return true; });
