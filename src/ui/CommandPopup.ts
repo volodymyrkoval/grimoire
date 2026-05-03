@@ -66,7 +66,12 @@ export class CommandPopup extends Modal {
 
   private render(): void {
     this.contentEl.empty();
-    this.tabBar = new TabBar(
+    this.tabBar = this.createTabBar();
+    this.renderSearch();
+  }
+
+  private createTabBar(): TabBar {
+    return new TabBar(
       this.contentEl,
       this.panels.map((p) => p.id),
       this.activePanel.id,
@@ -76,7 +81,6 @@ export class CommandPopup extends Modal {
         if (panel) this.switchTab(panel);
       }
     );
-    this.renderSearch();
   }
 
   private renderSearch(): void {
