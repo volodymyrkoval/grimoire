@@ -2,6 +2,7 @@ import { App, Modal } from "obsidian";
 import { KeyboardController } from "./KeyboardController";
 import type { Spell, Sentinel } from "../domain/spells/Spell";
 import { TabBar } from "./components/TabBar";
+import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
 import type { TabPanel } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
 import { LogsPanel } from "./tabs/LogsPanel";
@@ -117,10 +118,19 @@ export class CommandPopup extends Modal {
   private renderSentinelDetail(sentinel: Sentinel): void {
     this.phase = "detail";
     this.reattachTabBar();
-    this.contentEl.createEl("h2", { text: sentinel.name });
-    this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
-    const back = this.contentEl.createEl("button", { text: "← Back" });
-    back.onClickEvent(() => this.renderSearch());
+
+    if (sentinel.kind === "forge") {
+      new ForgeSentinelDetail(this.contentEl, {
+        onBack: () => this.renderSearch(),
+        onSubmit: () => this.renderSearch(),
+      });
+    } else {
+      // Generic sentinel detail for other kinds
+      this.contentEl.createEl("h2", { text: sentinel.name });
+      this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
+      const back = this.contentEl.createEl("button", { text: "← Back" });
+      back.onClickEvent(() => this.renderSearch());
+    }
   }
 
   private move(delta: number): void {
