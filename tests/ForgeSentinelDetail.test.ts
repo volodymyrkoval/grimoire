@@ -263,6 +263,12 @@ describe('ForgeSentinelDetail', () => {
       return { scope, select, callbacks };
     };
 
+    const getHandler = (scope: any, key: string) => {
+      const call = scope.register.mock.calls.find((c: any[]) => c[1] === key);
+      // The raw scope.register callback wraps the handler; invoke with a fake event
+      return () => call[2]({ preventDefault: vi.fn() });
+    };
+
     it('registers ArrowDown and ArrowUp handlers on the provided scope', () => {
       const scope = makeScope();
       buildDetail(scope);
@@ -270,6 +276,46 @@ describe('ForgeSentinelDetail', () => {
       const keys = scope.register.mock.calls.map((c: any[]) => c[1]);
       expect(keys).toContain('ArrowDown');
       expect(keys).toContain('ArrowUp');
+    });
+
+    it('ArrowDown moves model select to next option', () => {
+      const scope = makeScope();
+      const { select } = buildDetail(scope);
+      select.selectedIndex = 0;
+
+      getHandler(scope, 'ArrowDown')();
+
+      expect(select.selectedIndex).toBe(1);
+    });
+
+    it('ArrowDown wraps from last to first option', () => {
+      const scope = makeScope();
+      const { select } = buildDetail(scope);
+      select.selectedIndex = 2; // opus — last
+
+      getHandler(scope, 'ArrowDown')();
+
+      expect(select.selectedIndex).toBe(0);
+    });
+
+    it('ArrowUp moves model select to previous option', () => {
+      const scope = makeScope();
+      const { select } = buildDetail(scope);
+      select.selectedIndex = 2;
+
+      getHandler(scope, 'ArrowUp')();
+
+      expect(select.selectedIndex).toBe(1);
+    });
+
+    it('ArrowUp wraps from first to last option', () => {
+      const scope = makeScope();
+      const { select } = buildDetail(scope);
+      select.selectedIndex = 0;
+
+      getHandler(scope, 'ArrowUp')();
+
+      expect(select.selectedIndex).toBe(2);
     });
   });
 });
