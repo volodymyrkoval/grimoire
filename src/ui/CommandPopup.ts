@@ -86,17 +86,21 @@ export class CommandPopup extends Modal {
   private renderSearch(): void {
     this.phase = "search";
     this.selectedIndex = 0;
+    this.reattachTabBar();
+    this.mountSearchInput();
+  }
 
+  private reattachTabBar(): void {
     const barEl = this.tabBar?.el;
     this.contentEl.empty();
     if (barEl) this.contentEl.appendChild(barEl);
+  }
 
+  private mountSearchInput(): void {
     const input = this.contentEl.createEl("input", { type: "text" });
     input.placeholder = `Search ${this.activePanel.id}…`;
     input.focus();
-
     this.activePanel.mount(this.contentEl);
-
     input.oninput = () => {
       this.selectedIndex = 0;
       this.activePanel.filter(input.value.toLowerCase());
@@ -105,11 +109,7 @@ export class CommandPopup extends Modal {
 
   private renderDetail(spell: Spell): void {
     this.phase = "detail";
-
-    const barEl = this.tabBar?.el;
-    this.contentEl.empty();
-    if (barEl) this.contentEl.appendChild(barEl);
-
+    this.reattachTabBar();
     this.contentEl.createEl("h2", { text: spell.name });
     const back = this.contentEl.createEl("button", { text: "← Back" });
     back.onClickEvent(() => this.renderSearch());
