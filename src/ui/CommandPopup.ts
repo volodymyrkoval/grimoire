@@ -109,10 +109,11 @@ export class CommandPopup extends Modal {
 
   private renderDetail(spell: Spell): void {
     this.phase = "detail";
+    this.#kb.suspend();
     this.reattachTabBar();
     this.contentEl.createEl("h2", { text: spell.name });
     const back = this.contentEl.createEl("button", { text: "← Back" });
-    back.onClickEvent(() => this.renderSearch());
+    back.onClickEvent(() => { this.#kb.resume(); this.renderSearch(); });
   }
 
   private renderSentinelDetail(sentinel: Sentinel): void {
@@ -120,9 +121,10 @@ export class CommandPopup extends Modal {
     this.reattachTabBar();
 
     if (sentinel.kind === "forge") {
+      this.#kb.suspend();
       new ForgeSentinelDetail(this.contentEl, this.scope, {
-        onBack: () => this.renderSearch(),
-        onSubmit: () => this.renderSearch(),
+        onBack: () => { this.#kb.resume(); this.renderSearch(); },
+        onSubmit: () => { this.#kb.resume(); this.renderSearch(); },
       });
     } else {
       // Generic sentinel detail for other kinds
