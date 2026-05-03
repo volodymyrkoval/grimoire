@@ -10,42 +10,53 @@ interface Callbacks {
 }
 
 export class ForgeSentinelDetail {
-  constructor(contentEl: HTMLElement, callbacks: Callbacks) {
-    // Back button
-    const back = contentEl.createEl('button', { text: '← Back' });
-    back.onClickEvent(() => callbacks.onBack());
+  private readonly nameInput: HTMLInputElement;
+  private readonly descInput: HTMLTextAreaElement;
+  private readonly modelSelect: HTMLSelectElement;
 
+  constructor(contentEl: HTMLElement, callbacks: Callbacks) {
+    this.buildBackButton(contentEl, callbacks.onBack);
     const form = contentEl.createEl('form');
     form.addClass('forge-sentinel-form');
+    this.nameInput = this.buildNameField(form);
+    this.descInput = this.buildDescriptionField(form);
+    this.modelSelect = this.buildModelSelect(form);
+    form.createEl('button', { type: 'submit', text: 'Submit' });
+    this.wireSubmitHandler(form, callbacks.onSubmit);
+  }
 
-    // Name field
-    const nameLabel = form.createEl('label');
-    const nameInput = nameLabel.createEl('input', { type: 'text', placeholder: 'Name' }) as HTMLInputElement;
+  private buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
+    const back = contentEl.createEl('button', { text: '← Back' });
+    back.onClickEvent(onBack);
+  }
 
-    // Description field
-    const descLabel = form.createEl('label');
-    const descInput = descLabel.createEl('textarea', { placeholder: 'Description' }) as HTMLTextAreaElement;
+  private buildNameField(form: HTMLElement): HTMLInputElement {
+    const label = form.createEl('label');
+    return label.createEl('input', { type: 'text', placeholder: 'Name' }) as HTMLInputElement;
+  }
 
-    // Model field
-    const modelLabel = form.createEl('label');
-    const select = modelLabel.createEl('select') as HTMLSelectElement;
-    const models = ['haiku', 'sonnet', 'opus'];
-    models.forEach((model) => {
+  private buildDescriptionField(form: HTMLElement): HTMLTextAreaElement {
+    const label = form.createEl('label');
+    return label.createEl('textarea', { placeholder: 'Description' }) as HTMLTextAreaElement;
+  }
+
+  private buildModelSelect(form: HTMLElement): HTMLSelectElement {
+    const label = form.createEl('label');
+    const select = label.createEl('select') as HTMLSelectElement;
+    ['haiku', 'sonnet', 'opus'].forEach((model) => {
       select.createEl('option', { value: model, text: model });
     });
+    return select;
+  }
 
-    // Submit button
-    form.createEl('button', { type: 'submit', text: 'Submit' });
-
-    // Handle form submission
-    form.onsubmit = (e: Event): void => {
+  private wireSubmitHandler(form: HTMLElement, onSubmit: (data: ForgeFormData) => void): void {
+    (form as HTMLFormElement).onsubmit = (e: Event): void => {
       e.preventDefault();
-      const data: ForgeFormData = {
-        name: nameInput.value || '',
-        description: descInput.value || '',
-        model: select.value || 'haiku',
-      };
-      callbacks.onSubmit(data);
+      onSubmit({
+        name: this.nameInput.value || '',
+        description: this.descInput.value || '',
+        model: this.modelSelect.value || 'haiku',
+      });
     };
   }
 }
