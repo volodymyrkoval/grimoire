@@ -1,9 +1,14 @@
 import { App, Modal } from "obsidian";
 import { KeyboardController } from "./KeyboardController";
-import {Spell} from "../domain/spells/Spell";
-import {spellPath} from "../domain/spells/SpellPath";
+import type { Spell } from "../domain/spells/Spell";
+import { spellPath } from "../domain/spells/SpellPath";
+import { ALL_LOGS, type Log } from "../domain/logs/Log";
+import { TabBar } from "./components/TabBar";
+import { SpellList } from "./components/SpellList";
+import { LogList } from "./components/LogList";
 
 type Tab = "spells" | "logs";
+
 const ALL_SPELLS: readonly Spell[] = [
   { name: "Summoning Circle", path: spellPath("/spells/summoning") },
   { name: "Protection Rune", path: spellPath("/spells/protection") },
@@ -17,53 +22,35 @@ const ALL_SPELLS: readonly Spell[] = [
   { name: "Warding Barrier", path: spellPath("/spells/warding") },
 ];
 
-type Log = {
-  name: string
-}
 
-const LOGS = [
-  {
-    name: 'log 1'
-  }
-]
-
-
-const TAB_DATA: Record<Tab, readonly Spell[] | Log[]> = {
-  spells: ALL_SPELLS,
-  logs: LOGS,
-};
-
-const TABS: Tab[] = ["spells", "logs"];
+const TABS: readonly Tab[] = ["spells", "logs"];
 
 export class CommandPopup extends Modal {
   private selectedIndex = 0;
   private activeTab: Tab = "spells";
   private phase: "search" | "detail" = "search";
-  private filtered: Spell[] = [...ALL_SPELLS];
+  private filteredSpells: Spell[] = [...ALL_SPELLS];
+  private filteredLogs: Log[] = [...ALL_LOGS];
+  private tabBar: TabBar | null = null;
+  private spellList: SpellList | null = null;
+  private logList: LogList | null = null;
   #kb = new KeyboardController(this.scope);
 
   constructor(app: App) {
     super(app);
   }
 
-  onOpen() {
+  onOpen(): void {
+    this.selectedIndex = 0;
+    this.activeTab = "spells";
+    this.phase = "search";
+    this.filteredSpells = [...ALL_SPELLS];
+    this.filteredLogs = [...ALL_LOGS];
     this.render();
 
-    this.#kb.bind([], "ArrowDown", () => {
-      this.move(1);
-      return true
-    })
-
-    this.#kb.bind([], "ArrowUp", () => {
-      this.move(-1);
-      return true;
-    });
-
-    this.#kb.bind([], "Enter", () => {
-      this.confirm();
-      return true;
-    });
-
+    this.#kb.bind([], "ArrowDown", () => { this.move(1); return true; });
+    this.#kb.bind([], "ArrowUp", () => { this.move(-1); return true; });
+    this.#kb.bind([], "Enter", () => { this.confirm(); return true; });
     this.#kb.bind([], "Tab", () => {
       if (this.phase === "detail") return false;
       const next = (TABS.indexOf(this.activeTab) + 1) % TABS.length;
@@ -72,11 +59,11 @@ export class CommandPopup extends Modal {
     });
   }
 
-  onClose() {
+  onClose(): void {
     this.contentEl.empty();
   }
 
-  close() {
+  close(): void {
     if (this.phase === "detail") {
       this.renderSearch();
       return;
@@ -84,136 +71,90 @@ export class CommandPopup extends Modal {
     super.close();
   }
 
-  private render() {
+  private render(): void {
     this.contentEl.empty();
-    this.renderTabBar();
+    this.tabBar = new TabBar(
+      this.contentEl,
+      TABS,
+      this.activeTab,
+      this.phase === "detail",
+      (tab) => this.switchTab(tab as Tab)
+    );
     this.renderSearch();
   }
 
-  private renderTabBar() {
-    const bar = this.contentEl.createDiv({ cls: "modal-tab-bar" });
-
-    TABS.forEach((id) => {
-      const tab = bar.createDiv({ cls: "modal-tab" });
-      if (id === this.activeTab) tab.addClass("is-active");
-      if (this.phase === "detail") tab.addClass("is-disabled");
-      tab.setText(id.charAt(0).toUpperCase() + id.slice(1));
-      tab.onClickEvent(() => {
-        if (this.phase === "detail") return;
-        this.switchTab(id);
-      });
-    });
-  }
-
-  private renderSearch() {
+  private renderSearch(): void {
     this.phase = "search";
 
-    // Remove everything below the tab bar
-    const bar = this.contentEl.querySelector(".modal-tab-bar");
+    const barEl = this.tabBar?.el;
     this.contentEl.empty();
-    if (bar) this.contentEl.appendChild(bar);
+    if (barEl) this.contentEl.appendChild(barEl);
 
     const input = this.contentEl.createEl("input", { type: "text" });
     input.placeholder = `Search ${this.activeTab}…`;
     input.focus();
 
+    if (this.activeTab === "spells") {
+      this.spellList = new SpellList(this.contentEl, (spell) => this.renderDetail(spell));
+      this.spellList.render(this.filteredSpells, this.selectedIndex);
+      this.logList = null;
+    } else {
+      this.logList = new LogList(this.contentEl);
+      this.logList.render(this.filteredLogs, this.selectedIndex);
+      this.spellList = null;
+    }
+
     input.oninput = () => {
       const query = input.value.toLowerCase();
-      this.filtered = TAB_DATA[this.activeTab].filter((s) =>
-        s.name.toLowerCase().includes(query)
-      );
       this.selectedIndex = 0;
-      this.renderList();
-    };
-
-    this.contentEl.createDiv({ cls: "spell-list" });
-    this.renderList();
-  }
-
-  private renderList() {
-    const list = this.contentEl.querySelector<HTMLElement>(".spell-list");
-    if (!list) return;
-    list.empty();
-
-    this.filtered.forEach((spell, i) => {
-      const row = list.createDiv({ cls: "spell-row" });
-      if (i === this.selectedIndex) row.addClass("is-selected");
-
-      const header = row.createDiv({ cls: "spell-row-header" });
-      header.createSpan({ text: spell.name });
-
-      if (spell.expandable) {
-        header.createSpan({ text: "▶", cls: "spell-expand-icon" });
-
-        const body = row.createDiv({ cls: "spell-row-body" });
-        body.createEl("p", { text: spell.description });
-        body.createEl("p", { text: `Damage: ${spell.damage}` });
-
-        header.onClickEvent(() => {
-          const expanded = row.hasClass("is-expanded");
-          row.toggleClass("is-expanded", !expanded);
-          header.querySelector<HTMLElement>(".spell-expand-icon")!.textContent =
-            expanded ? "▶" : "▼";
-        });
+      if (this.activeTab === "spells") {
+        this.filteredSpells = ALL_SPELLS.filter((s) => s.name.toLowerCase().includes(query));
+        this.spellList?.render(this.filteredSpells, 0);
       } else {
-        header.onClickEvent(() => this.renderDetail(spell));
+        this.filteredLogs = ALL_LOGS.filter((l) => l.name.toLowerCase().includes(query));
+        this.logList?.render(this.filteredLogs, 0);
       }
-    });
+    };
   }
 
-  private move(delta: number) {
-    if (this.phase !== "search" || this.filtered.length === 0) return;
-
-    const list = this.contentEl.querySelector(".spell-list");
-    list?.children[this.selectedIndex]?.removeClass("is-selected");
-
-    this.selectedIndex =
-      (this.selectedIndex + delta + this.filtered.length) %
-      this.filtered.length;
-
-    const next = list?.children[this.selectedIndex] as HTMLElement | undefined;
-    next?.addClass("is-selected");
-    next?.scrollIntoView({ block: "nearest" });
-  }
-
-  private renderDetail(spell: Spell) {
+  private renderDetail(spell: Spell): void {
     this.phase = "detail";
 
-    const bar = this.contentEl.querySelector(".modal-tab-bar");
+    const barEl = this.tabBar?.el;
     this.contentEl.empty();
-    if (bar) this.contentEl.appendChild(bar);
+    if (barEl) this.contentEl.appendChild(barEl);
 
     this.contentEl.createEl("h2", { text: spell.name });
-    this.contentEl.createEl("p", { text: spell.description });
-    this.contentEl.createEl("p", { text: `Damage: ${spell.damage}` });
-
     const back = this.contentEl.createEl("button", { text: "← Back" });
     back.onClickEvent(() => this.renderSearch());
   }
 
-  private confirm() {
-    if (this.phase !== "search") return;
-    const spell = this.filtered[this.selectedIndex];
-    if (!spell) return;
+  private move(delta: number): void {
+    const list = this.activeTab === "spells" ? this.spellList : this.logList;
+    if (this.phase !== "search" || !list || list.length === 0) return;
 
-    if (spell.expandable) {
-      const list = this.contentEl.querySelector(".spell-list");
-      const row = list?.children[this.selectedIndex] as HTMLElement | undefined;
-      if (!row) return;
-      const expanded = row.hasClass("is-expanded");
-      row.toggleClass("is-expanded", !expanded);
-      const icon = row.querySelector<HTMLElement>(".spell-expand-icon");
-      if (icon) icon.textContent = expanded ? "▶" : "▼";
+    const prev = this.selectedIndex;
+    this.selectedIndex = (this.selectedIndex + delta + list.length) % list.length;
+    list.updateSelection(prev, this.selectedIndex);
+  }
+
+  private confirm(): void {
+    if (this.phase !== "search") return;
+
+    if (this.activeTab === "spells") {
+      const spell = this.filteredSpells[this.selectedIndex];
+      if (spell) this.renderDetail(spell);
     } else {
-      this.renderDetail(spell);
+      this.logList?.toggleExpand(this.selectedIndex);
     }
   }
 
-  private switchTab(tab: Tab) {
+  private switchTab(tab: Tab): void {
     this.activeTab = tab;
     this.phase = "search";
     this.selectedIndex = 0;
-    this.filtered = [...TAB_DATA[tab]];
+    this.filteredSpells = [...ALL_SPELLS];
+    this.filteredLogs = [...ALL_LOGS];
     this.render();
   }
 }

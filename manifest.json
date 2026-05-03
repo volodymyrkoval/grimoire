@@ -1,10 +1,12 @@
 {
   "id": "grimoire",
   "name": "Grimoire",
-  "version": "1.0.0",
-  "minAppVersion": "1.0.0",
-  "description": "A grimoire Obsidian plugin",
-  "author": "Volodymyr Koval",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "AI spell-casting interface for Claude Code",
+  "author": "",
   "authorUrl": "",
-  "isDesktopOnly": false
+  "fundingUrl": "",
+  "isDesktopOnly": false,
+  "styles": "main.css"
 }

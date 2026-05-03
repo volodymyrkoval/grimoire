@@ -1,8 +1,14 @@
 import { Plugin } from 'obsidian';
+import {CommandPopup} from './ui/CommandPopup';
+import '../styles.css';
 
 export default class GrimoirePlugin extends Plugin {
   async onload() {
-    console.log('Grimoire plugin loaded');
+    this.addCommand({
+      id: 'open-command-popup',
+      name: 'Open Grimoire',
+      callback: () => new CommandPopup(this.app).open(),
+    });
   }
 
   onunload() {
