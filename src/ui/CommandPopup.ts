@@ -47,6 +47,16 @@ export class CommandPopup extends Modal {
     });
   }
 
+  // Obsidian's scope system and subcomponents can call close() directly,
+  // bypassing keyboard handlers — intercept here to enforce phase navigation.
+  override close(): void {
+    if (this.phase === "detail") {
+      this.renderSearch();
+      return;
+    }
+    super.close();
+  }
+
   onClose(): void {
     this.contentEl.empty();
   }
