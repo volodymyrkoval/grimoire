@@ -120,7 +120,7 @@ export class CommandPopup extends Modal {
     this.reattachTabBar();
 
     if (sentinel.kind === "forge") {
-      new ForgeSentinelDetail(this.contentEl, {
+      new ForgeSentinelDetail(this.contentEl, this.scope, {
         onBack: () => this.renderSearch(),
         onSubmit: () => this.renderSearch(),
       });

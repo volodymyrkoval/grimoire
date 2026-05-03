@@ -14,6 +14,11 @@ describe('ForgeSentinelDetail', () => {
     };
   };
 
+  const makeScope = () => ({
+    register: vi.fn(() => ({})),
+    unregister: vi.fn(),
+  });
+
   it('renders a form element with CSS class forge-sentinel-form', () => {
     const container = createMockElement();
     const button = createMockElement();
@@ -32,7 +37,7 @@ describe('ForgeSentinelDetail', () => {
     label.createEl.mockReturnValue(select);
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks);
 
     // Verify form was created
     const formCall = container.createEl.mock.calls.find(
@@ -58,7 +63,7 @@ describe('ForgeSentinelDetail', () => {
     label.createEl.mockReturnValue(createMockElement());
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks);
 
     // Verify first label was created for name
     const labelCalls = form.createEl.mock.calls.filter(
@@ -86,7 +91,7 @@ describe('ForgeSentinelDetail', () => {
     label.createEl.mockReturnValue(createMockElement());
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks);
 
     // Verify textarea was created in a label
     expect(label.createEl).toHaveBeenCalledWith('textarea', { placeholder: 'Description' });
@@ -115,7 +120,7 @@ describe('ForgeSentinelDetail', () => {
     select.createEl.mockReturnValue(createMockElement());
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks);
 
     // Verify select was created
     expect(label.createEl).toHaveBeenCalledWith('select');
@@ -147,7 +152,7 @@ describe('ForgeSentinelDetail', () => {
 
     const onBack = vi.fn();
     const callbacks = { onBack, onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks);
 
     // Verify back button was created
     expect(container.createEl).toHaveBeenCalledWith('button', { text: '← Back' });
@@ -207,7 +212,7 @@ describe('ForgeSentinelDetail', () => {
 
     const onSubmit = vi.fn();
     const callbacks = { onBack: vi.fn(), onSubmit };
-    new ForgeSentinelDetail(container, callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks);
 
     // Get the form submit handler that was set
     const formSubmitHandler = (form as any).onsubmit;
@@ -222,6 +227,49 @@ describe('ForgeSentinelDetail', () => {
       name: 'My Forge',
       description: 'A description',
       model: 'opus',
+    });
+  });
+
+  describe('with scope — keyboard model cycling', () => {
+    const makeScope = () => ({
+      register: vi.fn(() => ({})),
+      unregister: vi.fn(),
+    });
+
+    const buildDetail = (scope: any) => {
+      const container = createMockElement();
+      const button = createMockElement();
+      const form = createMockElement();
+      const label = createMockElement();
+      const select = { selectedIndex: 0, options: { length: 3 } } as any;
+
+      container.createEl.mockImplementation((tag: string) => {
+        if (tag === 'button') return button;
+        if (tag === 'form') return form;
+        return createMockElement();
+      });
+      form.createEl.mockImplementation((tag: string) => {
+        if (tag === 'label') return label;
+        return createMockElement();
+      });
+      label.createEl.mockImplementation((tag: string) => {
+        if (tag === 'select') return select;
+        return createMockElement();
+      });
+      select.createEl = vi.fn(() => createMockElement());
+
+      const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
+      new ForgeSentinelDetail(container, scope, callbacks);
+      return { scope, select, callbacks };
+    };
+
+    it('registers ArrowDown and ArrowUp handlers on the provided scope', () => {
+      const scope = makeScope();
+      buildDetail(scope);
+
+      const keys = scope.register.mock.calls.map((c: any[]) => c[1]);
+      expect(keys).toContain('ArrowDown');
+      expect(keys).toContain('ArrowUp');
     });
   });
 });

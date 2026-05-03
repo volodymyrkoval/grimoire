@@ -1,3 +1,6 @@
+import { Scope } from 'obsidian';
+import { KeyboardController } from '../KeyboardController';
+
 export type ForgeFormData = {
   name: string;
   description: string;
@@ -13,8 +16,10 @@ export class ForgeSentinelDetail {
   private readonly nameInput: HTMLInputElement;
   private readonly descInput: HTMLTextAreaElement;
   private readonly modelSelect: HTMLSelectElement;
+  #kb: KeyboardController;
 
-  constructor(contentEl: HTMLElement, callbacks: Callbacks) {
+  constructor(contentEl: HTMLElement, scope: Scope, callbacks: Callbacks) {
+    this.#kb = new KeyboardController(scope);
     this.buildBackButton(contentEl, callbacks.onBack);
     const form = contentEl.createEl('form');
     form.addClass('forge-sentinel-form');
@@ -23,11 +28,29 @@ export class ForgeSentinelDetail {
     this.modelSelect = this.buildModelSelect(form);
     form.createEl('button', { type: 'submit', text: 'Submit' });
     this.wireSubmitHandler(form, callbacks.onSubmit);
+    this.bindModelKeys();
+  }
+
+  private bindModelKeys(): void {
+    this.#kb.bind([], 'ArrowDown', () => {
+      this.modelSelect.selectedIndex =
+        (this.modelSelect.selectedIndex + 1) % this.modelSelect.options.length;
+      return true;
+    });
+    this.#kb.bind([], 'ArrowUp', () => {
+      this.modelSelect.selectedIndex =
+        (this.modelSelect.selectedIndex - 1 + this.modelSelect.options.length) %
+        this.modelSelect.options.length;
+      return true;
+    });
   }
 
   private buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
     const back = contentEl.createEl('button', { text: '← Back' });
-    back.onClickEvent(onBack);
+    back.onClickEvent(() => {
+      this.#kb.unbindAll();
+      onBack();
+    });
   }
 
   private buildNameField(form: HTMLElement): HTMLInputElement {
@@ -52,6 +75,7 @@ export class ForgeSentinelDetail {
   private wireSubmitHandler(form: HTMLElement, onSubmit: (data: ForgeFormData) => void): void {
     (form as HTMLFormElement).onsubmit = (e: Event): void => {
       e.preventDefault();
+      this.#kb.unbindAll();
       onSubmit({
         name: this.nameInput.value || '',
         description: this.descInput.value || '',

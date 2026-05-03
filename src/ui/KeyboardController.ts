@@ -36,7 +36,7 @@ export class KeyboardController {
     });
   }
 
-  unbindAll() {
+  unbindAll(): void {
     this.#registered.forEach((cb) => this.scope.unregister(cb));
     this.#registered = [];
     this.#bindings = [];
