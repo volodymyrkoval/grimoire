@@ -14,6 +14,20 @@
     background-color: var(--background-modifier-active-hover);
 }
 
+.sentinel-row {
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.sentinel-row:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.sentinel-row.is-selected {
+    background-color: var(--background-modifier-active-hover);
+}
+
 .modal-tab-bar {
     display: flex;
     gap: 4px;
