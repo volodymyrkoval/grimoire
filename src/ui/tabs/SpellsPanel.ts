@@ -2,6 +2,8 @@ import type { TabPanel } from "./TabPanel";
 import type { Spell } from "../../domain/spells/Spell";
 import { spellPath } from "../../domain/spells/SpellPath";
 import { SpellList } from "../components/SpellList";
+import { TypedEmitter } from "../TypedEmitter";
+import type { SpellEvents } from "../SpellEvents";
 
 const ALL_SPELLS: readonly Spell[] = [
   { name: "Summoning Circle", path: spellPath("/spells/summoning") },
@@ -18,13 +20,12 @@ const ALL_SPELLS: readonly Spell[] = [
 
 export class SpellsPanel implements TabPanel {
   readonly id = "spells";
+  readonly events = new TypedEmitter<SpellEvents>();
   private filteredSpells: Spell[] = [...ALL_SPELLS];
   private spellList: SpellList | null = null;
 
-  constructor(private readonly onDetail: (spell: Spell) => void) {}
-
   mount(container: HTMLElement): void {
-    this.spellList = new SpellList(container, (spell) => this.onDetail(spell));
+    this.spellList = new SpellList(container, this.events);
     this.spellList.render(this.filteredSpells, 0);
   }
 
@@ -37,7 +38,7 @@ export class SpellsPanel implements TabPanel {
 
   confirm(index: number): void {
     const spell = this.filteredSpells[index];
-    if (spell) this.onDetail(spell);
+    if (spell) this.events.emit("detail", spell);
   }
 
   move(delta: number, current: number): number {
