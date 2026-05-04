@@ -1,6 +1,5 @@
 import { Plugin } from 'obsidian';
 import {CommandPopup} from './ui/CommandPopup';
-import '../styles.css';
 
 export default class GrimoirePlugin extends Plugin {
   async onload() {
