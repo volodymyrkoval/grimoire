@@ -8,6 +8,7 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:mutate": "stryker run --incremental",
     "lint": "eslint src --ext .ts",
     "arch:check": "depcruise src --config .dependency-cruiser.cjs --progress",
