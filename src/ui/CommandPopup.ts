@@ -2,6 +2,7 @@ import { App, Modal } from "obsidian";
 import { KeyboardController } from "./KeyboardController";
 import type { Spell, Sentinel } from "../domain/spells/Spell";
 import { TabBar } from "./components/TabBar";
+import { SearchInput } from "./components/SearchInput";
 import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
 import type { TabPanel } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
@@ -97,18 +98,10 @@ export class CommandPopup extends Modal {
   }
 
   private mountSearchInput(): void {
-    const input = this.contentEl.createEl("input", { type: "text" });
-    input.placeholder = `Search ${this.activePanel.id}…`;
-    input.value = this.#searchQuery;
-    input.focus();
-    this.activePanel.mount(this.contentEl);
-    if (this.#searchQuery) {
-      this.selectedIndex = this.activePanel.filter(this.#searchQuery);
-    }
-    input.oninput = () => {
-      this.#searchQuery = input.value.toLowerCase();
-      this.selectedIndex = this.activePanel.filter(this.#searchQuery);
-    };
+    new SearchInput(this.contentEl, this.activePanel, this.#searchQuery, (query, idx) => {
+      this.#searchQuery = query;
+      this.selectedIndex = idx;
+    });
   }
 
   private renderDetail(spell: Spell): void {
