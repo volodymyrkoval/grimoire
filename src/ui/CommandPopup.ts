@@ -86,7 +86,6 @@ export class CommandPopup extends Modal {
 
   private renderSearch(): void {
     this.phase = "search";
-    this.selectedIndex = 0;
     this.reattachTabBar();
     this.mountSearchInput();
   }
@@ -98,7 +97,7 @@ export class CommandPopup extends Modal {
   }
 
   private mountSearchInput(): void {
-    new SearchInput(this.contentEl, this.activePanel, this.#searchQuery, (query, idx) => {
+    new SearchInput(this.contentEl, this.activePanel, this.#searchQuery, this.selectedIndex, (query, idx) => {
       this.#searchQuery = query;
       this.selectedIndex = idx;
     });
@@ -174,6 +173,7 @@ export class CommandPopup extends Modal {
     this.activePanel = panel;
     this.phase = "search";
     this.#searchQuery = "";
+    this.selectedIndex = 0;
     panel.reset();
     this.render();
   }

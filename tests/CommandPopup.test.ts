@@ -163,5 +163,29 @@ describe('CommandPopup keyboard suspend/resume', () => {
 
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
+
+  it('restores selected index when returning from spell detail', () => {
+    const popup = new CommandPopup({} as any);
+    const { dispatch } = installFakeScope(popup as any);
+    popup.onOpen();
+
+    const spellsPanel = (popup as any).panels[0];
+    const updateSpy = vi.spyOn(spellsPanel, 'updateSelection').mockImplementation(() => {});
+
+    // Navigate to index 2
+    dispatch('ArrowDown');
+    dispatch('ArrowDown');
+    updateSpy.mockClear();
+
+    // Enter spell detail
+    spellsPanel.events.emit('detail', { name: 'Summoning Circle', path: '/spells/summoning' });
+    updateSpy.mockClear();
+
+    // Return from detail (Obsidian's Escape path)
+    popup.close();
+
+    // Selection should be visually restored to index 2 (not 0)
+    expect(updateSpy).toHaveBeenCalledWith(0, 2);
+  });
 });
 
