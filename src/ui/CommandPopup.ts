@@ -128,25 +128,33 @@ export class CommandPopup extends Modal {
     this.reattachTabBar();
 
     if (sentinel.kind === "forge") {
-      this.#kb.suspend();
-      const exit = () => this.exitDetail();
-      const forgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
-        onBack: exit,
-        onSubmit: exit,
-      });
-      this.#activeDetail = forgeSentinelDetail;
-      this.#onDetailBack = exit;
+      this.renderForgeSentinelDetail();
     } else {
-      const exit = (): void => {
-        this.#onDetailBack = null;
-        this.renderSearch();
-      };
-      this.#onDetailBack = exit;
-      this.contentEl.createEl("h2", { text: sentinel.name });
-      this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
-      const back = this.contentEl.createEl("button", { text: "← Back" });
-      back.onClickEvent(exit);
+      this.renderGenericSentinelDetail(sentinel);
     }
+  }
+
+  private renderForgeSentinelDetail(): void {
+    this.#kb.suspend();
+    const exit = () => this.exitDetail();
+    const forgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
+      onBack: exit,
+      onSubmit: exit,
+    });
+    this.#activeDetail = forgeSentinelDetail;
+    this.#onDetailBack = exit;
+  }
+
+  private renderGenericSentinelDetail(sentinel: Sentinel): void {
+    const exit = (): void => {
+      this.#onDetailBack = null;
+      this.renderSearch();
+    };
+    this.#onDetailBack = exit;
+    this.contentEl.createEl("h2", { text: sentinel.name });
+    this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
+    const back = this.contentEl.createEl("button", { text: "← Back" });
+    back.onClickEvent(exit);
   }
 
   private move(delta: number): void {
