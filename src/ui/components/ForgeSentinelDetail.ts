@@ -61,7 +61,9 @@ export class ForgeSentinelDetail {
 
   private buildNameField(form: HTMLElement): HTMLInputElement {
     const label = form.createEl('label');
-    return label.createEl('input', { type: 'text', placeholder: 'Name' }) as HTMLInputElement;
+    const input = label.createEl('input', { type: 'text', placeholder: 'Name' }) as HTMLInputElement;
+    input.focus();
+    return input;
   }
 
   private buildDescriptionField(form: HTMLElement): HTMLTextAreaElement {

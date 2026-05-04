@@ -16,12 +16,46 @@ describe('ForgeSentinelDetail', () => {
       addEventListener: vi.fn(),
       appendChild: vi.fn(),
       onClickEvent: vi.fn(),
+      focus: vi.fn(),
     };
   };
 
   const makeScope = () => ({
     register: vi.fn(() => ({})),
     unregister: vi.fn(),
+  });
+
+  it('focuses the name input immediately on construction', () => {
+    const container = createMockElement();
+    const form = createMockElement();
+    const nameLabel = createMockElement();
+    const otherLabel = createMockElement();
+    const nameInput = { focus: vi.fn() };
+    const select = createMockElement();
+    select.createEl = vi.fn(() => createMockElement());
+
+    container.createEl.mockImplementation((tag: string) => {
+      if (tag === 'button') return createMockElement();
+      if (tag === 'form') return form;
+      return createMockElement();
+    });
+
+    let labelCount = 0;
+    form.createEl.mockImplementation((tag: string) => {
+      if (tag === 'label') return ++labelCount === 1 ? nameLabel : otherLabel;
+      return createMockElement();
+    });
+
+    nameLabel.createEl.mockReturnValue(nameInput);
+    otherLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'select') return select;
+      return createMockElement();
+    });
+
+    const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
+    new ForgeSentinelDetail(container, makeScope(), callbacks);
+
+    expect(nameInput.focus).toHaveBeenCalled();
   });
 
   it('renders a form element with CSS class forge-sentinel-form', () => {
@@ -178,7 +212,7 @@ describe('ForgeSentinelDetail', () => {
     const submitButton = createMockElement();
     const modelSelect = createMockElement();
 
-    const nameInput = { value: 'My Forge' };
+    const nameInput = { value: 'My Forge', focus: vi.fn() };
     const descInput = { value: 'A description' };
     modelSelect.value = 'opus';
 
