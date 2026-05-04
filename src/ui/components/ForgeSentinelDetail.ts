@@ -29,21 +29,13 @@ export class ForgeSentinelDetail {
     form.createEl('button', { type: 'submit', text: 'Submit' });
     this.wireSubmitHandler(form, callbacks.onSubmit);
     this.bindModelKeys();
-    this.bindEscape(callbacks.onBack);
   }
 
-  private bindEscape(onBack: () => void): void {
-    this.#kb.bind([], 'Escape', () => {
-      this.dismiss(onBack);
-      return true;
-    });
-  }
-
-  // Unbind component-owned keys before handing control back to the parent —
-  // prevents stale ArrowDown/ArrowUp bindings from intercepting popup keys.
-  private dismiss(callback: () => void): void {
+  // Unbind component-owned keys when the parent transitions away from this detail.
+  // The parent must call destroy() before re-binding its own keys, otherwise stale
+  // ArrowDown/ArrowUp bindings on the shared scope will intercept popup keys.
+  destroy(): void {
     this.#kb.unbindAll();
-    callback();
   }
 
   private bindModelKeys(): void {
@@ -62,7 +54,7 @@ export class ForgeSentinelDetail {
 
   private buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
     const back = contentEl.createEl('button', { text: '← Back' });
-    back.onClickEvent(() => this.dismiss(onBack));
+    back.onClickEvent(() => onBack());
   }
 
   private buildNameField(form: HTMLElement): HTMLInputElement {
@@ -87,11 +79,11 @@ export class ForgeSentinelDetail {
   private wireSubmitHandler(form: HTMLElement, onSubmit: (data: ForgeFormData) => void): void {
     (form as HTMLFormElement).onsubmit = (e: Event): void => {
       e.preventDefault();
-      this.dismiss(() => onSubmit({
+      onSubmit({
         name: this.nameInput.value || '',
         description: this.descInput.value || '',
         model: this.modelSelect.value || 'haiku',
-      }));
+      });
     };
   }
 }

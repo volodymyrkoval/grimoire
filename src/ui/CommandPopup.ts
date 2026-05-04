@@ -14,6 +14,7 @@ export class CommandPopup extends Modal {
   private activePanel: TabPanel;
   private tabBar: TabBar | null = null;
   #kb = new KeyboardController(this.scope);
+  #activeForgeSentinelDetail: ForgeSentinelDetail | null = null;
 
   constructor(app: App) {
     super(app);
@@ -36,13 +37,6 @@ export class CommandPopup extends Modal {
     this.#kb.bind([], "ArrowDown", () => { this.move(1); return true; });
     this.#kb.bind([], "ArrowUp", () => { this.move(-1); return true; });
     this.#kb.bind([], "Enter", () => { this.confirm(); return true; });
-    this.#kb.bind([], "Escape", () => {
-      if (this.phase === "detail") {
-        this.renderSearch();
-        return true;
-      }
-      return false;
-    });
     this.#kb.bind([], "Tab", () => {
       if (this.phase === "detail") return false;
       const next = (this.panels.indexOf(this.activePanel) + 1) % this.panels.length;
@@ -55,6 +49,8 @@ export class CommandPopup extends Modal {
   // bypassing keyboard handlers — intercept here to enforce phase navigation.
   override close(): void {
     if (this.phase === "detail") {
+      this.#activeForgeSentinelDetail?.destroy();
+      this.#activeForgeSentinelDetail = null;
       this.#kb.resume();
       this.renderSearch();
       return;
@@ -123,9 +119,15 @@ export class CommandPopup extends Modal {
 
     if (sentinel.kind === "forge") {
       this.#kb.suspend();
-      new ForgeSentinelDetail(this.contentEl, this.scope, {
-        onBack: () => { this.#kb.resume(); this.renderSearch(); },
-        onSubmit: () => { this.#kb.resume(); this.renderSearch(); },
+      const exitForgeDetail = (): void => {
+        this.#activeForgeSentinelDetail?.destroy();
+        this.#activeForgeSentinelDetail = null;
+        this.#kb.resume();
+        this.renderSearch();
+      };
+      this.#activeForgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
+        onBack: exitForgeDetail,
+        onSubmit: exitForgeDetail,
       });
     } else {
       // Generic sentinel detail for other kinds

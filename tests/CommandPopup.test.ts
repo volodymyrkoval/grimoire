@@ -30,7 +30,11 @@ const installFakeScope = (popup: any) => {
 };
 
 describe('CommandPopup escape from forge sentinel detail', () => {
-  it('after Escape closes forge detail, ArrowDown moves search-phase selection', () => {
+  // Obsidian's real Modal binds Escape directly to close() at the DOM layer,
+  // bypassing the Scope. Simulate that by calling close() directly — the popup
+  // must tear down ForgeSentinelDetail's scope bindings so they don't intercept
+  // arrow keys after the popup re-binds its own.
+  it('after close() (Obsidian Escape path) leaves forge detail, ArrowDown moves search selection', () => {
     const popup = new CommandPopup({} as any);
     const { dispatch } = installFakeScope(popup as any);
 
@@ -39,14 +43,11 @@ describe('CommandPopup escape from forge sentinel detail', () => {
     const spellsPanel = (popup as any).panels[0];
     const updateSpy = vi.spyOn(spellsPanel, 'updateSelection').mockImplementation(() => {});
 
-    // Enter forge sentinel detail — popup suspends its keys, ForgeSentinelDetail
-    // registers ArrowDown/ArrowUp on the same scope.
     spellsPanel.events.emit('sentinel', { kind: 'forge', name: 'My Forge' });
 
-    // User presses Escape to leave the detail view.
-    dispatch('Escape');
+    // Simulate Obsidian's built-in DOM-level Escape handler that calls close().
+    popup.close();
 
-    // Back in search phase, ArrowDown must move the selection.
     dispatch('ArrowDown');
 
     expect(updateSpy).toHaveBeenCalled();
@@ -59,7 +60,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
-    expect(scope.register.mock.calls.length).toBeGreaterThanOrEqual(5);
+    expect(scope.register.mock.calls.length).toBeGreaterThanOrEqual(4);
 
     scope.unregister.mockClear();
 
@@ -82,7 +83,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
       function (_el: any, _scope: any, callbacks: any) {
         capturedOnBack = callbacks.onBack;
-        return Object.create(OrigFSD.prototype);
+        return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
       } as any
     );
 
@@ -150,7 +151,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
       function (_el: any, _scope: any, callbacks: any) {
         capturedOnSubmit = callbacks.onSubmit;
-        return Object.create(OrigFSD.prototype);
+        return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
       } as any
     );
 
