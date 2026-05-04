@@ -29,6 +29,13 @@ export class SpellList {
       return row;
     });
     this.rows = [...spellRows, ...sentinelRows];
+    // Chromium doesn't recalculate :hover after DOM mutation without a mouse-move;
+    // toggling pointer-events + forcing a reflow resets stale hover states immediately.
+    if (this.el.style) {
+      this.el.style.pointerEvents = "none";
+      void this.el.offsetHeight;
+      this.el.style.pointerEvents = "";
+    }
   }
 
   updateSelection(prev: number, next: number): void {
