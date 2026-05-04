@@ -1,16 +1,53 @@
 import { vi } from 'vitest';
 
-export class Scope {
-  register = vi.fn(() => ({}));
-  unregister = vi.fn();
+export class App {}
+
+type RegisteredHandler = (e: KeyboardEvent) => boolean;
+
+function scopeKey(modifiers: string[], key: string): string {
+  return [...modifiers].sort().join('+') + '::' + key;
 }
 
-// Recursive mock element — every DOM-creation method returns another mock element
-function makeMockEl(): any {
+export class Scope {
+  private readonly handlers = new Map<string, RegisteredHandler[]>();
+  // For unit tests that expect to spy on register/unregister, provide vi.fn() methods
+  // that forward to real implementation. For integration tests, these will be called directly.
+  register = vi.fn((modifiers: string[], key: string, handler: RegisteredHandler): RegisteredHandler => {
+    const k = scopeKey(modifiers, key);
+    const bucket = this.handlers.get(k) ?? [];
+    bucket.unshift(handler); // LIFO
+    this.handlers.set(k, bucket);
+    return handler;
+  });
+
+  unregister = vi.fn((handler: RegisteredHandler): void => {
+    for (const [k, bucket] of this.handlers) {
+      const i = bucket.indexOf(handler);
+      if (i >= 0) {
+        bucket.splice(i, 1);
+        if (bucket.length === 0) this.handlers.delete(k);
+      }
+    }
+  });
+
+  dispatch(key: string, modifiers: string[] = []): boolean {
+    const k = scopeKey(modifiers, key);
+    const bucket = this.handlers.get(k) ?? [];
+    const fakeEvent = new KeyboardEvent('keydown', { key, bubbles: true });
+    for (const h of bucket) {
+      if (h(fakeEvent) === false) return true; // handler claimed it
+    }
+    return false;
+  }
+}
+
+// Create a mock element for Node environment (vitest run with environment: 'node')
+function createMockElement(): any {
   const el: any = {};
-  const child = () => makeMockEl();
   el.empty = vi.fn();
   el.appendChild = vi.fn();
+  el.removeChild = vi.fn();
+  el.remove = vi.fn();
   el.addClass = vi.fn();
   el.removeClass = vi.fn();
   el.focus = vi.fn();
@@ -21,9 +58,9 @@ function makeMockEl(): any {
   el.onsubmit = null;
   el.selectedIndex = 0;
   el.options = { length: 0 };
-  el.createEl = vi.fn().mockImplementation(() => makeMockEl());
-  el.createDiv = vi.fn().mockImplementation(() => makeMockEl());
-  el.createSpan = vi.fn().mockImplementation(() => makeMockEl());
+  el.createEl = vi.fn().mockImplementation(() => createMockElement());
+  el.createDiv = vi.fn().mockImplementation(() => createMockElement());
+  el.createSpan = vi.fn().mockImplementation(() => createMockElement());
   el.setText = vi.fn();
   el.setAttr = vi.fn();
   el.classList = { add: vi.fn(), remove: vi.fn(), contains: vi.fn() };
@@ -31,9 +68,35 @@ function makeMockEl(): any {
 }
 
 export class Modal {
-  scope = new Scope();
-  contentEl: any = makeMockEl();
-  close() {}
-}
+  readonly app: App;
+  readonly scope = new Scope();
+  readonly contentEl: HTMLElement | any;
 
-export class App {}
+  constructor(app: App) {
+    this.app = app;
+    // Use document if available (happy-dom integration tests), otherwise use mock
+    if (typeof document !== 'undefined') {
+      this.contentEl = document.createElement('div');
+    } else {
+      // Node environment (unit tests) — use vi.fn() mock
+      this.contentEl = createMockElement();
+    }
+  }
+
+  open(): void {
+    if (typeof document !== 'undefined') {
+      document.body.appendChild(this.contentEl);
+    }
+    this.onOpen();
+  }
+
+  close(): void {
+    this.onClose();
+    if (typeof document !== 'undefined') {
+      this.contentEl.remove();
+    }
+  }
+
+  onOpen(): void {}
+  onClose(): void {}
+}
