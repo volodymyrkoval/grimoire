@@ -27,6 +27,7 @@
     "dependency-cruiser": "^16.2.1",
     "esbuild": "^0.20.2",
     "eslint": "^8.57.0",
+    "happy-dom": "^20.9.0",
     "obsidian": "latest",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3",
