@@ -10,6 +10,7 @@ import { LogsPanel } from "./tabs/LogsPanel";
 export class CommandPopup extends Modal {
   private selectedIndex = 0;
   private phase: "search" | "detail" = "search";
+  #searchQuery = "";
   private readonly panels: readonly TabPanel[];
   private activePanel: TabPanel;
   private tabBar: TabBar | null = null;
@@ -27,6 +28,7 @@ export class CommandPopup extends Modal {
 
   onOpen(): void {
     this.selectedIndex = 0;
+    this.#searchQuery = "";
     this.activePanel = this.panels[0];
     this.phase = "search";
     this.render();
@@ -97,10 +99,15 @@ export class CommandPopup extends Modal {
   private mountSearchInput(): void {
     const input = this.contentEl.createEl("input", { type: "text" });
     input.placeholder = `Search ${this.activePanel.id}…`;
+    input.value = this.#searchQuery;
     input.focus();
     this.activePanel.mount(this.contentEl);
+    if (this.#searchQuery) {
+      this.selectedIndex = this.activePanel.filter(this.#searchQuery);
+    }
     input.oninput = () => {
-      this.selectedIndex = this.activePanel.filter(input.value.toLowerCase());
+      this.#searchQuery = input.value.toLowerCase();
+      this.selectedIndex = this.activePanel.filter(this.#searchQuery);
     };
   }
 
@@ -154,6 +161,7 @@ export class CommandPopup extends Modal {
   private switchTab(panel: TabPanel): void {
     this.activePanel = panel;
     this.phase = "search";
+    this.#searchQuery = "";
     panel.reset();
     this.render();
   }
