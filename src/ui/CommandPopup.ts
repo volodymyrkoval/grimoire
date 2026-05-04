@@ -16,7 +16,8 @@ export class CommandPopup extends Modal {
   private activePanel: TabPanel;
   private tabBar: TabBar | null = null;
   #kb = new KeyboardController(this.scope);
-  #activeForgeSentinelDetail: ForgeSentinelDetail | null = null;
+  #onDetailBack: (() => void) | null = null;
+  #activeDetail: { destroy(): void } | null = null;
 
   constructor(app: App) {
     super(app);
@@ -52,10 +53,9 @@ export class CommandPopup extends Modal {
   // bypassing keyboard handlers — intercept here to enforce phase navigation.
   override close(): void {
     if (this.phase === "detail") {
-      this.#activeForgeSentinelDetail?.destroy();
-      this.#activeForgeSentinelDetail = null;
-      this.#kb.resume();
-      this.renderSearch();
+      const back = this.#onDetailBack;
+      this.#onDetailBack = null;
+      back?.();
       return;
     }
     super.close();
@@ -104,13 +104,23 @@ export class CommandPopup extends Modal {
     });
   }
 
+  private exitDetail(): void {
+    this.#onDetailBack = null;
+    this.#activeDetail?.destroy();
+    this.#activeDetail = null;
+    this.#kb.resume();
+    this.renderSearch();
+  }
+
   private renderDetail(spell: Spell): void {
     this.phase = "detail";
     this.#kb.suspend();
+    const exit = () => this.exitDetail();
+    this.#onDetailBack = exit;
     this.reattachTabBar();
     this.contentEl.createEl("h2", { text: spell.name });
     const back = this.contentEl.createEl("button", { text: "← Back" });
-    back.onClickEvent(() => { this.#kb.resume(); this.renderSearch(); });
+    back.onClickEvent(exit);
   }
 
   private renderSentinelDetail(sentinel: Sentinel): void {
@@ -119,22 +129,23 @@ export class CommandPopup extends Modal {
 
     if (sentinel.kind === "forge") {
       this.#kb.suspend();
-      const exitForgeDetail = (): void => {
-        this.#activeForgeSentinelDetail?.destroy();
-        this.#activeForgeSentinelDetail = null;
-        this.#kb.resume();
+      const exit = () => this.exitDetail();
+      const forgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
+        onBack: exit,
+        onSubmit: exit,
+      });
+      this.#activeDetail = forgeSentinelDetail;
+      this.#onDetailBack = exit;
+    } else {
+      const exit = (): void => {
+        this.#onDetailBack = null;
         this.renderSearch();
       };
-      this.#activeForgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
-        onBack: exitForgeDetail,
-        onSubmit: exitForgeDetail,
-      });
-    } else {
-      // Generic sentinel detail for other kinds
+      this.#onDetailBack = exit;
       this.contentEl.createEl("h2", { text: sentinel.name });
       this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
       const back = this.contentEl.createEl("button", { text: "← Back" });
-      back.onClickEvent(() => this.renderSearch());
+      back.onClickEvent(exit);
     }
   }
 
