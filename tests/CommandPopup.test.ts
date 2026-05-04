@@ -3,6 +3,56 @@ import { describe, it, expect, vi } from 'vitest';
 import { CommandPopup } from '../src/ui/CommandPopup';
 import * as FSDModule from '../src/ui/components/ForgeSentinelDetail';
 
+// Real-enough Scope fake: simulates Obsidian's registration-order dispatch.
+// register() returns a unique handle; unregister(handle) removes that binding;
+// dispatch(key) walks bindings in registration order, invoking each matching
+// callback until one returns false (consumed, in Obsidian's convention).
+const installFakeScope = (popup: any) => {
+  type Binding = { key: string; cb: (e: any) => any; handle: object };
+  const bindings: (Binding | null)[] = [];
+  popup.scope.register = vi.fn((_mods: any, key: string, cb: (e: any) => any) => {
+    const handle = {};
+    bindings.push({ key, cb, handle });
+    return handle;
+  });
+  popup.scope.unregister = vi.fn((handle: object) => {
+    const idx = bindings.findIndex((b) => b && b.handle === handle);
+    if (idx >= 0) bindings[idx] = null;
+  });
+  const dispatch = (key: string) => {
+    for (const b of bindings) {
+      if (!b || b.key !== key) continue;
+      const result = b.cb({ preventDefault: vi.fn() });
+      if (result === false) return; // consumed
+    }
+  };
+  return { dispatch };
+};
+
+describe('CommandPopup escape from forge sentinel detail', () => {
+  it('after Escape closes forge detail, ArrowDown moves search-phase selection', () => {
+    const popup = new CommandPopup({} as any);
+    const { dispatch } = installFakeScope(popup as any);
+
+    popup.onOpen();
+
+    const spellsPanel = (popup as any).panels[0];
+    const updateSpy = vi.spyOn(spellsPanel, 'updateSelection').mockImplementation(() => {});
+
+    // Enter forge sentinel detail — popup suspends its keys, ForgeSentinelDetail
+    // registers ArrowDown/ArrowUp on the same scope.
+    spellsPanel.events.emit('sentinel', { kind: 'forge', name: 'My Forge' });
+
+    // User presses Escape to leave the detail view.
+    dispatch('Escape');
+
+    // Back in search phase, ArrowDown must move the selection.
+    dispatch('ArrowDown');
+
+    expect(updateSpy).toHaveBeenCalled();
+  });
+});
+
 describe('CommandPopup keyboard suspend/resume', () => {
   it('suspends keyboard bindings when entering forge sentinel detail', () => {
     const popup = new CommandPopup({} as any);
@@ -113,3 +163,4 @@ describe('CommandPopup keyboard suspend/resume', () => {
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
 });
+

@@ -19,6 +19,8 @@ function makeMockEl(): any {
   el.placeholder = '';
   el.oninput = null;
   el.onsubmit = null;
+  el.selectedIndex = 0;
+  el.options = { length: 0 };
   el.createEl = vi.fn().mockImplementation(() => makeMockEl());
   el.createDiv = vi.fn().mockImplementation(() => makeMockEl());
   el.createSpan = vi.fn().mockImplementation(() => makeMockEl());
