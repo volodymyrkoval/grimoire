@@ -55,6 +55,7 @@ export class CommandPopup extends Modal {
   // bypassing keyboard handlers — intercept here to enforce phase navigation.
   override close(): void {
     if (this.phase === "detail") {
+      this.#kb.resume();
       this.renderSearch();
       return;
     }
