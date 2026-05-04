@@ -1,5 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ForgeSentinelDetail } from '../src/ui/components/ForgeSentinelDetail';
+
+// Mock document.activeElement for focus checks
+(global as any).document = {
+  activeElement: null,
+};
 
 describe('ForgeSentinelDetail', () => {
   const createMockElement = (): any => {
@@ -282,6 +287,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 0;
+      (document as any).activeElement = select;
 
       getHandler(scope, 'ArrowDown')();
 
@@ -292,6 +298,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 2; // opus — last
+      (document as any).activeElement = select;
 
       getHandler(scope, 'ArrowDown')();
 
@@ -302,6 +309,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 2;
+      (document as any).activeElement = select;
 
       getHandler(scope, 'ArrowUp')();
 
@@ -312,6 +320,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 0;
+      (document as any).activeElement = select;
 
       getHandler(scope, 'ArrowUp')();
 

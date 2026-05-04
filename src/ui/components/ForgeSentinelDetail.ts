@@ -40,11 +40,13 @@ export class ForgeSentinelDetail {
 
   private bindModelKeys(): void {
     this.#kb.bind([], 'ArrowDown', () => {
+      if (document.activeElement !== this.modelSelect) return false;
       this.modelSelect.selectedIndex =
         (this.modelSelect.selectedIndex + 1) % this.modelSelect.options.length;
       return true;
     });
     this.#kb.bind([], 'ArrowUp', () => {
+      if (document.activeElement !== this.modelSelect) return false;
       this.modelSelect.selectedIndex =
         (this.modelSelect.selectedIndex - 1 + this.modelSelect.options.length) %
         this.modelSelect.options.length;
