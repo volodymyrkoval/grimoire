@@ -46,7 +46,7 @@ describe('ForgeSentinelDetail', () => {
     const otherLabel = createMockElement();
     const nameInput = { focus: vi.fn() };
     const select = createMockElement();
-    select.createEl = vi.fn(() => createMockElement());
+    select.createEl = vi.fn(() => createMockElement()) as unknown as typeof select.createEl;
 
     container.createEl.mockImplementation((tag: string) => {
       if (tag === 'button') return createMockElement();
@@ -272,7 +272,7 @@ describe('ForgeSentinelDetail', () => {
 
     // Simulate form submission
     const event = { preventDefault: vi.fn() };
-    formSubmitHandler!(event as unknown as SubmitEvent);
+    (formSubmitHandler as unknown as (event: SubmitEvent) => void)(event as unknown as SubmitEvent);
 
     // Verify onSubmit was called with the form data
     expect(onSubmit).toHaveBeenCalledWith({
