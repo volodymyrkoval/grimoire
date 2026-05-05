@@ -4,6 +4,7 @@ export type KeyHandler = () => boolean;
 
 type Binding = { modifiers: Modifier[]; key: string; handler: KeyHandler };
 
+/** Manages key bindings on an Obsidian `Scope`, with support for suspend/resume and focus-trap bindings. */
 export class KeyboardController {
   #bindings: Binding[] = [];
   #registered: KeymapEventHandler[] = [];
@@ -42,10 +43,11 @@ export class KeyboardController {
     this.#bindings = [];
   }
 
-  // bindTrap — always consumes the event regardless of handler return value.
-  // Use when the binding's purpose is to prevent the platform from acting on
-  // a key (e.g. swallowing Tab inside a focus trap) while still running an
-  // internal action.
+  /**
+   * Like `bind()`, but always consumes the event regardless of handler return value.
+   * Use to prevent the platform from acting on a key (e.g. swallowing Tab inside a
+   * focus trap) while still running an internal action.
+   */
   bindTrap(modifiers: Modifier[], key: string, handler: KeyHandler): void {
     this.scope.register(modifiers, key, (e: KeyboardEvent) => {
       handler();

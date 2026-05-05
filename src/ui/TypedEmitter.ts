@@ -1,5 +1,6 @@
 type Listener<T> = (payload: T) => void;
 
+/** Minimal type-safe event emitter keyed by the event map `T`. */
 export class TypedEmitter<T extends Record<string, unknown>> {
   private readonly listeners = new Map<keyof T, Listener<unknown>[]>();
 

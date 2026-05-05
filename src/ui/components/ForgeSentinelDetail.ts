@@ -1,6 +1,7 @@
 import { Scope } from 'obsidian';
 import { KeyboardController } from '../KeyboardController';
 
+/** Fields collected by the Forge sentinel form when authoring a new spell. */
 export type ForgeFormData = {
   name: string;
   description: string;
@@ -12,6 +13,7 @@ interface Callbacks {
   onSubmit: (data: ForgeFormData) => void;
 }
 
+/** Detail panel for the Forge sentinel: name/description/model form with its own keyboard bindings. */
 export class ForgeSentinelDetail {
   private readonly nameInput: HTMLInputElement;
   private readonly descInput: HTMLTextAreaElement;
@@ -31,9 +33,11 @@ export class ForgeSentinelDetail {
     this.bindModelKeys();
   }
 
-  // Unbind component-owned keys when the parent transitions away from this detail.
-  // The parent must call destroy() before re-binding its own keys, otherwise stale
-  // ArrowDown/ArrowUp bindings on the shared scope will intercept popup keys.
+  /**
+   * Release component-owned key bindings on the shared scope.
+   * Must be called before the parent re-binds its own keys; otherwise stale
+   * ArrowDown/ArrowUp handlers will intercept popup navigation.
+   */
   destroy(): void {
     this.#kb.unbindAll();
   }

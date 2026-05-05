@@ -12,6 +12,7 @@ export interface Sentinel {
   readonly name: string;
 }
 
+/** Type guard — returns `true` when `item` is a `Sentinel` (has a `kind` field). */
 export function isSentinel(item: Spell | Sentinel): item is Sentinel {
   return "kind" in item;
 }

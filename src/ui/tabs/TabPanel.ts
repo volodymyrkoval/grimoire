@@ -1,3 +1,4 @@
+/** Contract for a tab panel rendered inside `CommandPopup`: mount, filter, navigate, and confirm entries. */
 export interface TabPanel {
   readonly id: string;
   mount(container: HTMLElement): void;
