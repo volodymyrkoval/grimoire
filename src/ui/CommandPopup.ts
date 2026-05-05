@@ -21,7 +21,7 @@ export class CommandPopup extends Modal {
 
   constructor(app: App) {
     super(app);
-    const spellsPanel = new SpellsPanel();
+    const spellsPanel = new SpellsPanel(this.app, 'spell');
     spellsPanel.events.on("detail", (spell) => this.renderDetail(spell));
     spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
     this.panels = [spellsPanel, new LogsPanel()];

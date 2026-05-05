@@ -1,6 +1,17 @@
 import { vi } from 'vitest';
 
-export class App {}
+export class App {
+  vault = {
+    getMarkdownFiles: vi.fn<() => any[]>(() => []),
+  };
+  metadataCache = {
+    getFileCache: vi.fn<(file: any) => any>(() => null),
+  };
+}
+
+export class TFile {
+  constructor(public basename: string, public path: string) {}
+}
 
 type RegisteredHandler = (e: KeyboardEvent) => boolean;
 

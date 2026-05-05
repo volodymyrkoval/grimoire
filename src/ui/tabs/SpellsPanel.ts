@@ -1,23 +1,11 @@
+import { App } from "obsidian";
 import type { TabPanel } from "./TabPanel";
 import { type Spell, type Sentinel, isSentinel } from "../../domain/spells/Spell";
-import { spellPath } from "../../domain/spells/SpellPath";
 import { fuzzyFilter } from "../../domain/spells/fuzzyFilter";
+import { getSpells } from "../../domain/spells/spellScanner";
 import { SpellList } from "../components/SpellList";
 import { TypedEmitter } from "../TypedEmitter";
 import type { SpellEvents } from "../SpellEvents";
-
-const ALL_SPELLS: readonly Spell[] = [
-  { name: "Summoning Circle", path: spellPath("/spells/summoning") },
-  { name: "Protection Rune", path: spellPath("/spells/protection") },
-  { name: "Transmutation", path: spellPath("/spells/transmutation") },
-  { name: "Scrying Mirror", path: spellPath("/spells/scrying") },
-  { name: "Healing Incantation", path: spellPath("/spells/healing") },
-  { name: "Banishment Hex", path: spellPath("/spells/banishment") },
-  { name: "Divination Ritual", path: spellPath("/spells/divination") },
-  { name: "Enchantment Charm", path: spellPath("/spells/enchantment") },
-  { name: "Restoration Spell", path: spellPath("/spells/restoration") },
-  { name: "Warding Barrier", path: spellPath("/spells/warding") },
-];
 
 const SENTINELS: readonly Sentinel[] = [
   { kind: "forge", name: "Forge" },
@@ -27,8 +15,14 @@ const SENTINELS: readonly Sentinel[] = [
 export class SpellsPanel implements TabPanel {
   readonly id = "spells";
   readonly events = new TypedEmitter<SpellEvents>();
-  private filteredSpells: Spell[] = [...ALL_SPELLS];
+  private readonly allSpells: readonly Spell[];
+  private filteredSpells: Spell[];
   private spellList: SpellList | null = null;
+
+  constructor(app: App, tag: string) {
+    this.allSpells = getSpells(app, tag);
+    this.filteredSpells = [...this.allSpells];
+  }
 
   mount(container: HTMLElement): void {
     this.spellList = new SpellList(container, this.events, [...SENTINELS]);
@@ -36,7 +30,7 @@ export class SpellsPanel implements TabPanel {
   }
 
   filter(query: string): number {
-    const results = fuzzyFilter(ALL_SPELLS, SENTINELS, query);
+    const results = fuzzyFilter(this.allSpells, SENTINELS, query);
     this.filteredSpells = results.filter((item): item is Spell => !isSentinel(item));
     const initialIndex = this.sentinelFocusIndex(query);
     this.spellList?.render(this.filteredSpells, initialIndex);
@@ -67,7 +61,7 @@ export class SpellsPanel implements TabPanel {
   }
 
   reset(): void {
-    this.filteredSpells = [...ALL_SPELLS];
+    this.filteredSpells = [...this.allSpells];
   }
 
   private sentinelFocusIndex(query: string): number {

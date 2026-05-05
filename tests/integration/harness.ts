@@ -22,7 +22,23 @@ export interface PopupHarness {
 }
 
 export function createPopupHarness(): PopupHarness {
-  const app = new App();
+  const app = new App() as any;
+  const testFiles = [
+    { basename: 'Summoning Circle', path: '/spells/summoning.md' },
+    { basename: 'Protection Rune', path: '/spells/protection.md' },
+    { basename: 'Transmutation', path: '/spells/transmutation.md' },
+    { basename: 'Scrying Mirror', path: '/spells/scrying.md' },
+    { basename: 'Healing Incantation', path: '/spells/healing.md' },
+    { basename: 'Banishment Hex', path: '/spells/banishment.md' },
+    { basename: 'Divination Ritual', path: '/spells/divination.md' },
+    { basename: 'Enchantment Charm', path: '/spells/enchantment.md' },
+    { basename: 'Restoration Spell', path: '/spells/restoration.md' },
+    { basename: 'Warding Barrier', path: '/spells/warding.md' },
+  ];
+  app.vault.getMarkdownFiles.mockReturnValue(testFiles);
+  app.metadataCache.getFileCache.mockReturnValue({
+    frontmatter: { tags: ['spell'] },
+  });
   const modal = new CommandPopup(app);
   modal.open();
   const { contentEl } = modal;

@@ -8,12 +8,12 @@ describe('spell detail transitions', () => {
     h = createPopupHarness();
   });
 
-  it('C1: pressKey Enter on initial selection opens spell detail with h2 Summoning Circle', () => {
+  it('C1: pressKey Enter on initial selection opens spell detail with h2 Banishment Hex', () => {
     h.pressKey('Enter');
 
     expect(h.isInDetail()).toBe(true);
     const h2 = h.contentEl.querySelector('h2');
-    expect(h2?.textContent).toBe('Summoning Circle');
+    expect(h2?.textContent).toBe('Banishment Hex');
   });
 
   it('C2: modal.close() from spell detail exits to search without disconnecting contentEl', () => {
@@ -38,18 +38,18 @@ describe('spell detail transitions', () => {
     expect(h.contentEl.isConnected).toBe(true);
   });
 
-  it('C4: selection memory — enter detail at index 3, exit, selected row is Scrying Mirror', () => {
+  it('C4: selection memory — enter detail at index 3, exit, selected row is Healing Incantation', () => {
     h.pressKey('ArrowDown');
     h.pressKey('ArrowDown');
     h.pressKey('ArrowDown');
-    // Now at index 3 (Scrying Mirror)
+    // Now at index 3 (Healing Incantation in alphabetical order)
     h.pressKey('Enter');
     expect(h.isInDetail()).toBe(true);
 
     h.modal.close();
     expect(h.isInDetail()).toBe(false);
 
-    expect(h.selectedRow()?.textContent).toBe('Scrying Mirror');
+    expect(h.selectedRow()?.textContent).toBe('Healing Incantation');
   });
 
   it('C5: close() override in detail phase never calls super.close() — contentEl remains in document', () => {

@@ -1,7 +1,28 @@
 import { describe, it, expect, vi } from 'vitest';
 // obsidian is aliased to tests/__mocks__/obsidian.ts in vitest.config.ts
+import { App } from 'obsidian';
 import { CommandPopup } from '../src/ui/CommandPopup';
 import * as FSDModule from '../src/ui/components/ForgeSentinelDetail';
+
+const STUB_SPELLS = [
+  { basename: 'Banishment Hex', path: '/spells/banishment.md' },
+  { basename: 'Divination Ritual', path: '/spells/divination.md' },
+  { basename: 'Enchantment Charm', path: '/spells/enchantment.md' },
+  { basename: 'Healing Incantation', path: '/spells/healing.md' },
+  { basename: 'Protection Rune', path: '/spells/protection.md' },
+  { basename: 'Restoration Spell', path: '/spells/restoration.md' },
+  { basename: 'Scrying Mirror', path: '/spells/scrying.md' },
+  { basename: 'Summoning Circle', path: '/spells/summoning.md' },
+  { basename: 'Transmutation', path: '/spells/transmutation.md' },
+  { basename: 'Warding Barrier', path: '/spells/warding.md' },
+];
+
+function makeApp() {
+  const app = new App() as any;
+  app.vault.getMarkdownFiles.mockReturnValue(STUB_SPELLS);
+  app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { tags: ['spell'] } });
+  return app;
+}
 
 // Real-enough Scope fake: simulates Obsidian's registration-order dispatch.
 // register() returns a unique handle; unregister(handle) removes that binding;
@@ -35,7 +56,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
   // must tear down ForgeSentinelDetail's scope bindings so they don't intercept
   // arrow keys after the popup re-binds its own.
   it('after close() (Obsidian Escape path) leaves forge detail, ArrowDown moves search selection', () => {
-    const popup = new CommandPopup({} as any);
+    const popup = new CommandPopup(makeApp());
     const { dispatch } = installFakeScope(popup as any);
 
     popup.onOpen();
@@ -56,7 +77,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
 
 describe('CommandPopup keyboard suspend/resume', () => {
   it('suspends keyboard bindings when entering forge sentinel detail', () => {
-    const popup = new CommandPopup({} as any);
+    const popup = new CommandPopup(makeApp());
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -72,7 +93,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onBack fires', () => {
-    const popup = new CommandPopup({} as any);
+    const popup = new CommandPopup(makeApp());
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -98,7 +119,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('suspends keyboard bindings when entering spell detail', () => {
-    const popup = new CommandPopup({} as any);
+    const popup = new CommandPopup(makeApp());
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -111,7 +132,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when spell detail back button fires', () => {
-    const popup = new CommandPopup({} as any);
+    const popup = new CommandPopup(makeApp());
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -140,7 +161,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onSubmit fires', () => {
-    const popup = new CommandPopup({} as any);
+    const popup = new CommandPopup(makeApp());
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -165,7 +186,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('restores selected index when returning from spell detail', () => {
-    const popup = new CommandPopup({} as any);
+    const popup = new CommandPopup(makeApp());
     const { dispatch } = installFakeScope(popup as any);
     popup.onOpen();
 

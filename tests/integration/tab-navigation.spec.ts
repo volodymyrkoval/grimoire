@@ -33,7 +33,7 @@ describe('tab navigation', () => {
     h.clickTab('spells');
 
     expect(h.activeTabId()).toBe('spells');
-    expect(h.selectedRow()?.textContent).toBe('Summoning Circle');
+    expect(h.selectedRow()?.textContent).toBe('Banishment Hex');
   });
 
   it('B4: pressKey Tab returns false while suspended in spell detail; clickTab from detail exits detail and switches panel', () => {
