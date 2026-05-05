@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { FormDefaults } from '../src/ui/CommandPopup';
 // obsidian is aliased to tests/__mocks__/obsidian.ts in vitest.config.ts
 import { App } from 'obsidian';
 import { CommandPopup } from '../src/ui/CommandPopup';
@@ -56,7 +57,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
   // must tear down ForgeSentinelDetail's scope bindings so they don't intercept
   // arrow keys after the popup re-binds its own.
   it('after close() (Obsidian Escape path) leaves forge detail, ArrowDown moves search selection', () => {
-    const popup = new CommandPopup(makeApp(), 'spell');
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const { dispatch } = installFakeScope(popup as any);
 
     popup.onOpen();
@@ -77,7 +78,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
 
 describe('CommandPopup keyboard suspend/resume', () => {
   it('suspends keyboard bindings when entering forge sentinel detail', () => {
-    const popup = new CommandPopup(makeApp(), 'spell');
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -93,7 +94,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onBack fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell');
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -102,7 +103,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     let capturedOnBack: (() => void) | undefined;
     const OrigFSD = FSDModule.ForgeSentinelDetail;
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
-      function (_el: any, _scope: any, callbacks: any) {
+      function (_el: any, _scope: any, callbacks: any, _defaults?: any) {
         capturedOnBack = callbacks.onBack;
         return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
       } as any
@@ -119,7 +120,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('suspends keyboard bindings when entering spell detail', () => {
-    const popup = new CommandPopup(makeApp(), 'spell');
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -132,7 +133,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when spell detail back button fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell');
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -161,7 +162,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onSubmit fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell');
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -170,7 +171,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     let capturedOnSubmit: ((...args: any[]) => void) | undefined;
     const OrigFSD = FSDModule.ForgeSentinelDetail;
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
-      function (_el: any, _scope: any, callbacks: any) {
+      function (_el: any, _scope: any, callbacks: any, _defaults?: any) {
         capturedOnSubmit = callbacks.onSubmit;
         return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
       } as any
@@ -186,7 +187,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('restores selected index when returning from spell detail', () => {
-    const popup = new CommandPopup(makeApp(), 'spell');
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const { dispatch } = installFakeScope(popup as any);
     popup.onOpen();
 

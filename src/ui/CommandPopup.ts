@@ -27,9 +27,13 @@ export class CommandPopup extends Modal {
   #kb = new KeyboardController(this.scope);
   #onDetailBack: (() => void) | null = null;
   #activeDetail: { destroy(): void } | null = null;
+  readonly #imprintAction: ImprintAction;
+  readonly #formDefaults: FormDefaults;
 
-  constructor(app: App, spellTag: string) {
+  constructor(app: App, spellTag: string, imprintAction: ImprintAction, defaults: FormDefaults) {
     super(app);
+    this.#imprintAction = imprintAction;
+    this.#formDefaults = defaults;
     const spellsPanel = new SpellsPanel(this.app, spellTag);
     spellsPanel.events.on("detail", (spell) => this.renderDetail(spell));
     spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
@@ -147,8 +151,11 @@ export class CommandPopup extends Modal {
     const exit = () => this.exitDetail();
     const forgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
       onBack: exit,
-      onSubmit: exit,
-    });
+      onSubmit: (snapshot) => {
+        this.#imprintAction(snapshot);
+        exit();
+      },
+    }, this.#formDefaults);
     this.#activeDetail = forgeSentinelDetail;
     this.#onDetailBack = exit;
   }
