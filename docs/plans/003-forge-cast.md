@@ -298,7 +298,7 @@ CommandPopup also calls exitDetail() after imprintAction returns
 
 **junior-dev**
 
-- [ ] B1: add `Notice` class to `tests/__mocks__/obsidian.ts` exactly as specified in *Interfaces → `Notice` (Obsidian mock, new)*. Verify by running the existing `npm test` — no test should break. Add no other exports. — S, junior-dev
+- [x] B1: add `Notice` class to `tests/__mocks__/obsidian.ts` exactly as specified in *Interfaces → `Notice` (Obsidian mock, new)*. Verify by running the existing `npm test` — no test should break. Add no other exports. — S, junior-dev
 
 ### C. Type scaffolding for the new contract (no runtime behaviour change)
 
@@ -314,9 +314,9 @@ CommandPopup also calls exitDetail() after imprintAction returns
 
 **junior-dev**
 
-- [ ] C1: declare `export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;` and `export interface FormDefaults { defaultModel: string; defaultEffort: Effort | null }` at the top of `src/ui/CommandPopup.ts`. Import `ForgeFormSnapshot` from `src/forge/ForgeFormSnapshot.ts` and `Effort` from `src/domain/settings/Settings.ts`. — S, junior-dev
-- [ ] C2: in `src/ui/components/ForgeSentinelDetail.ts`, delete the `ForgeFormData` type. Change the `Callbacks.onSubmit` parameter type from `(data: ForgeFormData)` to `(snapshot: ForgeFormSnapshot)`. Import `ForgeFormSnapshot` from `src/forge/ForgeFormSnapshot.ts`. In `wireSubmitHandler`, **temporarily** emit `{ name, description, model, effort: null }` so the type matches — actual effort capture is wired in D2. — S, junior-dev
-- [ ] C3: update `tests/ForgeSentinelDetail.test.ts` to expect the snapshot shape `{ name, description, model, effort: null }` in the `'submitting form calls onSubmit with ForgeFormData'` test (rename it to `'submitting form calls onSubmit with ForgeFormSnapshot'`). Update `tests/integration/forge-sentinel-detail.spec.ts` `D1b` to expect `{ name: 'X', description: 'Y', model: 'sonnet', effort: null }`. Update `tests/CommandPopup.test.ts`'s `capturedOnSubmit!()` call to pass a stub snapshot `{ name: '', description: '', model: 'sonnet', effort: null }`. — S, junior-dev
+- [x] C1: declare `export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;` and `export interface FormDefaults { defaultModel: string; defaultEffort: Effort | null }` at the top of `src/ui/CommandPopup.ts`. Import `ForgeFormSnapshot` from `src/forge/ForgeFormSnapshot.ts` and `Effort` from `src/domain/settings/Settings.ts`. — S, junior-dev
+- [x] C2: in `src/ui/components/ForgeSentinelDetail.ts`, delete the `ForgeFormData` type. Change the `Callbacks.onSubmit` parameter type from `(data: ForgeFormData)` to `(snapshot: ForgeFormSnapshot)`. Import `ForgeFormSnapshot` from `src/forge/ForgeFormSnapshot.ts`. In `wireSubmitHandler`, **temporarily** emit `{ name, description, model, effort: null }` so the type matches — actual effort capture is wired in D2. — S, junior-dev
+- [x] C3: update `tests/ForgeSentinelDetail.test.ts` to expect the snapshot shape `{ name, description, model, effort: null }` in the `'submitting form calls onSubmit with ForgeFormData'` test (rename it to `'submitting form calls onSubmit with ForgeFormSnapshot'`). Update `tests/integration/forge-sentinel-detail.spec.ts` `D1b` to expect `{ name: 'X', description: 'Y', model: 'sonnet', effort: null }`. Update `tests/CommandPopup.test.ts`'s `capturedOnSubmit!()` call to pass a stub snapshot `{ name: '', description: '', model: 'sonnet', effort: null }`. — S, junior-dev
 
 ### D. Wire the popup → form → imprint-action seam
 
@@ -332,7 +332,7 @@ CommandPopup also calls exitDetail() after imprintAction returns
 
 **ui-integration-tester**
 
-- [ ] D0: write `tests/integration/forge-cast.spec.ts` containing the four `it()` blocks specified in the Red criterion above. Build the popup via the existing `createPopupHarness()` (after extending the harness in D5) so the test reads at the same level as `forge-sentinel-detail.spec.ts`. The stub `imprintAction` is `vi.fn()`; assert call count, call args, and post-submit `isInDetail()`. Do not assert anything below the `imprintAction` boundary (no `Notice`, no `CastRunner`, no spawn). — M, ui-integration-tester
+- [x] D0: write `tests/integration/forge-cast.spec.ts` containing the four `it()` blocks specified in the Red criterion above. Build the popup via the existing `createPopupHarness()` (after extending the harness in D5) so the test reads at the same level as `forge-sentinel-detail.spec.ts`. The stub `imprintAction` is `vi.fn()`; assert call count, call args, and post-submit `isInDetail()`. Do not assert anything below the `imprintAction` boundary (no `Notice`, no `CastRunner`, no spawn). — M, ui-integration-tester
 
 **senior-dev**
 
