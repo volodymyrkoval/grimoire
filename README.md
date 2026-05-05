@@ -67,11 +67,18 @@ npm run arch:check   # Dependency architecture check
 │   │   ├── KeyboardController.ts
 │   │   ├── TypedEmitter.ts
 │   │   ├── SpellEvents.ts
+│   │   ├── SegmentedControl.ts  # Keyboard-navigable button group
 │   │   ├── components/          # SearchInput, TabBar, ForgeSentinelDetail, …
-│   │   └── tabs/                # TabPanel interface, SpellsPanel, LogsPanel
-│   └── domain/
-│       ├── spells/              # Spell, Sentinel, SpellPath types
-│       └── logs/                # Log type and placeholder data
+│   │   ├── tabs/                # TabPanel interface, SpellsPanel, LogsPanel
+│   │   ├── widgets/             # EffortRow (model-aware effort selector)
+│   │   ├── options/             # OptionsFormState, OptionsSessionMap, OptionsSnapshot
+│   │   └── settings/            # GrimoireSettingTab (Obsidian Settings panel)
+│   ├── domain/
+│   │   ├── spells/              # Spell, Sentinel, SpellPath types
+│   │   ├── logs/                # Log type and placeholder data
+│   │   └── settings/            # Settings, hydrate, SpellOverrideStore, …
+│   └── infra/
+│       └── DebouncedSaver.ts    # 500 ms debounce + flush
 ├── tests/                       # Unit tests (vitest)
 │   └── integration/             # UI integration tests (happy-dom, mocked obsidian)
 ├── docs/
