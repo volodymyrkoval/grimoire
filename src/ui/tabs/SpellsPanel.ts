@@ -1,6 +1,7 @@
 import type { TabPanel } from "./TabPanel";
-import type { Spell, Sentinel } from "../../domain/spells/Spell";
+import { type Spell, type Sentinel, isSentinel } from "../../domain/spells/Spell";
 import { spellPath } from "../../domain/spells/SpellPath";
+import { fuzzyFilter } from "../../domain/spells/fuzzyFilter";
 import { SpellList } from "../components/SpellList";
 import { TypedEmitter } from "../TypedEmitter";
 import type { SpellEvents } from "../SpellEvents";
@@ -35,9 +36,8 @@ export class SpellsPanel implements TabPanel {
   }
 
   filter(query: string): number {
-    this.filteredSpells = ALL_SPELLS.filter((s) =>
-      s.name.toLowerCase().includes(query)
-    );
+    const results = fuzzyFilter(ALL_SPELLS, SENTINELS, query);
+    this.filteredSpells = results.filter((item): item is Spell => !isSentinel(item));
     const initialIndex = this.sentinelFocusIndex(query);
     this.spellList?.render(this.filteredSpells, initialIndex);
     return initialIndex;

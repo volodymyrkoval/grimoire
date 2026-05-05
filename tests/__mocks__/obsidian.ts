@@ -100,3 +100,19 @@ export class Modal {
   onOpen(): void {}
   onClose(): void {}
 }
+
+export function prepareFuzzySearch(query: string): (text: string) => { score: number } | null {
+  const lower = query.toLowerCase();
+  return (text: string) => {
+    const t = text.toLowerCase();
+    let qi = 0;
+    for (let i = 0; i < t.length && qi < lower.length; i++) {
+      if (t[i] === lower[qi]) qi++;
+    }
+    return qi === lower.length ? { score: lower.length - t.length } : null;
+  };
+}
+
+export function sortSearchResults(results: Array<{ match: { score: number } }>): void {
+  results.sort((a, b) => b.match.score - a.match.score);
+}
