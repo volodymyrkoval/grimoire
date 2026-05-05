@@ -7,7 +7,6 @@ function tagMatches(tagValue: string, targetTag: string): boolean {
 }
 
 function hasTag(app: App, file: TFile, tag: string): boolean {
-  console.log('file', file);
   const cache = app.metadataCache.getFileCache(file);
 
   // Check inline tags
