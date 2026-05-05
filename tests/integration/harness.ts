@@ -39,7 +39,7 @@ export function createPopupHarness(): PopupHarness {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup(app);
+  const modal = new CommandPopup(app, 'spell');
   modal.open();
   const { contentEl } = modal;
 

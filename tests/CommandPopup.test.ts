@@ -56,7 +56,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
   // must tear down ForgeSentinelDetail's scope bindings so they don't intercept
   // arrow keys after the popup re-binds its own.
   it('after close() (Obsidian Escape path) leaves forge detail, ArrowDown moves search selection', () => {
-    const popup = new CommandPopup(makeApp());
+    const popup = new CommandPopup(makeApp(), 'spell');
     const { dispatch } = installFakeScope(popup as any);
 
     popup.onOpen();
@@ -77,7 +77,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
 
 describe('CommandPopup keyboard suspend/resume', () => {
   it('suspends keyboard bindings when entering forge sentinel detail', () => {
-    const popup = new CommandPopup(makeApp());
+    const popup = new CommandPopup(makeApp(), 'spell');
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -93,7 +93,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onBack fires', () => {
-    const popup = new CommandPopup(makeApp());
+    const popup = new CommandPopup(makeApp(), 'spell');
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -119,7 +119,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('suspends keyboard bindings when entering spell detail', () => {
-    const popup = new CommandPopup(makeApp());
+    const popup = new CommandPopup(makeApp(), 'spell');
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -132,7 +132,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when spell detail back button fires', () => {
-    const popup = new CommandPopup(makeApp());
+    const popup = new CommandPopup(makeApp(), 'spell');
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -161,7 +161,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onSubmit fires', () => {
-    const popup = new CommandPopup(makeApp());
+    const popup = new CommandPopup(makeApp(), 'spell');
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -186,7 +186,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('restores selected index when returning from spell detail', () => {
-    const popup = new CommandPopup(makeApp());
+    const popup = new CommandPopup(makeApp(), 'spell');
     const { dispatch } = installFakeScope(popup as any);
     popup.onOpen();
 

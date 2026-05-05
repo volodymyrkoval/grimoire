@@ -127,3 +127,182 @@ export function prepareFuzzySearch(query: string): (text: string) => { score: nu
 export function sortSearchResults(results: Array<{ match: { score: number } }>): void {
   results.sort((a, b) => b.match.score - a.match.score);
 }
+
+export class Plugin {
+  readonly app: App;
+  loadData = vi.fn(async () => undefined);
+  saveData = vi.fn(async () => {});
+  addCommand = vi.fn();
+  addSettingTab = vi.fn();
+
+  constructor(app: App) {
+    this.app = app;
+  }
+}
+
+export class PluginSettingTab {
+  readonly app: App;
+  readonly plugin: Plugin;
+  readonly containerEl: HTMLElement | any;
+
+  constructor(app: App, plugin: Plugin) {
+    this.app = app;
+    this.plugin = plugin;
+    // Use document if available (happy-dom), otherwise use mock
+    if (typeof document !== 'undefined') {
+      this.containerEl = document.createElement('div');
+    } else {
+      this.containerEl = createMockElement();
+    }
+  }
+
+  display(): void {}
+  hide(): void {}
+}
+
+class TextComponent {
+  private onChangeHandler: ((value: string) => void) | null = null;
+  readonly inputEl: HTMLInputElement | any;
+
+  constructor(containerEl: HTMLElement | any) {
+    if (typeof document !== 'undefined') {
+      this.inputEl = document.createElement('input') as HTMLInputElement;
+      this.inputEl.type = 'text';
+      containerEl.appendChild(this.inputEl);
+      (this.inputEl as any).__triggerChange = this.__triggerChange.bind(this);
+    } else {
+      this.inputEl = createMockElement();
+      this.inputEl.value = '';
+    }
+  }
+
+  setValue(value: string): this {
+    this.inputEl.value = value;
+    return this;
+  }
+
+  setPlaceholder(placeholder: string): this {
+    this.inputEl.placeholder = placeholder;
+    return this;
+  }
+
+  onChange(handler: (value: string) => void): this {
+    this.onChangeHandler = handler;
+    return this;
+  }
+
+  __triggerChange(value: string): void {
+    this.inputEl.value = value;
+    if (this.onChangeHandler) {
+      this.onChangeHandler(value);
+    }
+  }
+}
+
+class DropdownComponent {
+  private onChangeHandler: ((value: string) => void) | null = null;
+  readonly selectEl: HTMLSelectElement | any;
+
+  constructor(containerEl: HTMLElement | any) {
+    if (typeof document !== 'undefined') {
+      this.selectEl = document.createElement('select') as HTMLSelectElement;
+      containerEl.appendChild(this.selectEl);
+      (this.selectEl as any).__triggerChange = this.__triggerChange.bind(this);
+    } else {
+      this.selectEl = createMockElement();
+      this.selectEl.value = '';
+      this.selectEl.options = { length: 0 };
+    }
+  }
+
+  addOption(value: string, label: string): this {
+    if (typeof document !== 'undefined') {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      this.selectEl.appendChild(option);
+    } else {
+      // In node env, mock the options array
+      if (!Array.isArray(this.selectEl.options)) {
+        this.selectEl.options = [];
+      }
+      (this.selectEl.options as any).push({ value, label });
+      this.selectEl.options.length = (this.selectEl.options as any).length;
+    }
+    return this;
+  }
+
+  setValue(value: string): this {
+    this.selectEl.value = value;
+    return this;
+  }
+
+  onChange(handler: (value: string) => void): this {
+    this.onChangeHandler = handler;
+    return this;
+  }
+
+  __triggerChange(value: string): void {
+    this.selectEl.value = value;
+    if (this.onChangeHandler) {
+      this.onChangeHandler(value);
+    }
+  }
+}
+
+export class Setting {
+  readonly settingEl: HTMLElement | any;
+  readonly controlEl: HTMLElement | any;
+
+  constructor(containerEl: HTMLElement | any) {
+    if (typeof document !== 'undefined') {
+      this.settingEl = document.createElement('div');
+      this.controlEl = document.createElement('div');
+      containerEl.appendChild(this.settingEl);
+      containerEl.appendChild(this.controlEl);
+    } else {
+      this.settingEl = createMockElement();
+      this.controlEl = createMockElement();
+    }
+  }
+
+  setName(name: string): this {
+    if (typeof this.settingEl.textContent !== 'undefined') {
+      this.settingEl.textContent = name;
+    } else {
+      this.settingEl.setText?.(name);
+    }
+    return this;
+  }
+
+  setDesc(desc: string): this {
+    if (typeof this.settingEl.textContent !== 'undefined') {
+      // In happy-dom, just append to settingEl for simplicity
+      const descEl = document.createElement('div');
+      descEl.textContent = desc;
+      this.settingEl.appendChild(descEl);
+    } else {
+      // In node, call a mock method if it exists
+      this.settingEl.setText?.(desc);
+    }
+    return this;
+  }
+
+  addText(callback: (component: TextComponent) => void): this {
+    const textComponent = new TextComponent(this.controlEl);
+    callback(textComponent);
+    return this;
+  }
+
+  addDropdown(callback: (component: DropdownComponent) => void): this {
+    const dropdownComponent = new DropdownComponent(this.controlEl);
+    callback(dropdownComponent);
+    return this;
+  }
+}
+
+export const Platform = { isDesktop: true };
+
+export class FileSystemAdapter {
+  getBasePath = vi.fn(() => '/test/vault');
+}
