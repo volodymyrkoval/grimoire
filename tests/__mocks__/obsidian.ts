@@ -298,3 +298,9 @@ export class Setting {
     return this;
   }
 }
+
+export const Platform = { isDesktop: true };
+
+export class FileSystemAdapter {
+  getBasePath = vi.fn(() => '/test/vault');
+}
