@@ -215,7 +215,7 @@ describe('ForgeSentinelDetail', () => {
     expect(onBack).toHaveBeenCalled();
   });
 
-  it('submitting form calls onSubmit with ForgeFormData', () => {
+  it('submitting form calls onSubmit with ForgeFormSnapshot', () => {
     const container = createMockElement();
     const backButton = createMockElement();
     const form = createMockElement();
@@ -279,6 +279,7 @@ describe('ForgeSentinelDetail', () => {
       name: 'My Forge',
       description: 'A description',
       model: 'opus',
+      effort: null,
     });
   });
 

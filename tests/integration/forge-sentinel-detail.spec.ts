@@ -43,7 +43,7 @@ describe('ForgeSentinelDetail component', () => {
 
     form.dispatchEvent(new Event('submit'));
 
-    expect(onSubmit).toHaveBeenCalledWith({ name: 'X', description: 'Y', model: 'sonnet' });
+    expect(onSubmit).toHaveBeenCalledWith({ name: 'X', description: 'Y', model: 'sonnet', effort: null });
   });
 
   it('D1c: clicking the Back button calls onBack', () => {

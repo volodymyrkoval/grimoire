@@ -7,6 +7,15 @@ import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
 import type { TabPanel } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
 import { LogsPanel } from "./tabs/LogsPanel";
+import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
+import type { Effort } from "../domain/settings/Settings";
+
+export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
+
+export interface FormDefaults {
+  defaultModel: string;
+  defaultEffort: Effort | null;
+}
 
 export class CommandPopup extends Modal {
   private selectedIndex = 0;

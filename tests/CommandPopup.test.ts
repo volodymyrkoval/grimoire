@@ -180,7 +180,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     spellsPanel.events.emit('sentinel', { kind: 'forge', name: 'My Forge' });
 
     expect(capturedOnSubmit).toBeDefined();
-    capturedOnSubmit!();
+    capturedOnSubmit!({ name: '', description: '', model: 'sonnet', effort: null });
 
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });

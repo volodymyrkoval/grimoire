@@ -1,16 +1,10 @@
 import { Scope } from 'obsidian';
 import { KeyboardController } from '../KeyboardController';
-
-/** Fields collected by the Forge sentinel form when authoring a new spell. */
-export type ForgeFormData = {
-  name: string;
-  description: string;
-  model: string;
-};
+import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 
 interface Callbacks {
   onBack: () => void;
-  onSubmit: (data: ForgeFormData) => void;
+  onSubmit: (snapshot: ForgeFormSnapshot) => void;
 }
 
 /** Detail panel for the Forge sentinel: name/description/model form with its own keyboard bindings. */
@@ -84,13 +78,14 @@ export class ForgeSentinelDetail {
     return select;
   }
 
-  private wireSubmitHandler(form: HTMLElement, onSubmit: (data: ForgeFormData) => void): void {
+  private wireSubmitHandler(form: HTMLElement, onSubmit: (snapshot: ForgeFormSnapshot) => void): void {
     (form as HTMLFormElement).onsubmit = (e: Event): void => {
       e.preventDefault();
       onSubmit({
         name: this.nameInput.value || '',
         description: this.descInput.value || '',
         model: this.modelSelect.value || 'haiku',
+        effort: null,
       });
     };
   }
