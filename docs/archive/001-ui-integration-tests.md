@@ -204,14 +204,14 @@ Test-helper failures (e.g. `clickTab('nonexistent')`) throw immediately with a d
 
 **junior-dev**
 
-- [ ] A1: Add `happy-dom` to `devDependencies` in `package.json` and run `npm install`. Verify `npm test` still passes (no behavior change yet). — S, junior-dev
-- [ ] A2: Create `vitest.integration.config.ts` at repo root. Config: `environment: 'happy-dom'`, `setupFiles: ['./tests/integration/setup.ts']`, same `obsidian` alias as `vitest.config.ts` pointing at `tests/__mocks__/obsidian.ts`, `include: ['tests/integration/**/*.spec.ts']`. Add npm script `test:integration` running `vitest run --config vitest.integration.config.ts`. — S, junior-dev
-- [ ] A3: Create `tests/integration/setup.ts` polyfilling onto `HTMLElement.prototype` exactly the methods listed in **Interfaces → `tests/integration/setup.ts`**: `createEl`, `createDiv`, `createSpan`, `addClass`, `removeClass`, `hasClass`, `toggleClass`, `setText`, `setAttr`, `empty`, `onClickEvent`. Each implementation is one line of standard-DOM. `createEl(tag, opts)` must accept `{ text?, cls?, type?, value?, placeholder? }` (the union of options used across `src/ui/`). — M, junior-dev
-- [ ] A4: Rewrite `tests/__mocks__/obsidian.ts` per the **Interfaces → `obsidian.ts`** block. `Scope.register` returns the handler itself (acts as the `KeymapEventHandler` token). `Scope.unregister` removes by reference. `Scope.dispatch(key, modifiers)` walks the LIFO bucket, invokes handlers until one returns `false` (claimed), and returns whether any handler claimed. `Modal` constructor creates `contentEl = document.createElement('div')` and appends to `document.body` on `open()`; `close()` calls `onClose()` then detaches. — M, junior-dev
-- [ ] A5: Create `tests/integration/harness.ts` exporting `createPopupHarness()` and `PopupHarness` matching the **Interfaces** block. Implement every method listed there. `pressKey` delegates to `modal.scope.dispatch`. `type(text)` sets `input.value` and dispatches a real `Event('input')` so the production `input.oninput` handler fires. `submitForge` fills fields and dispatches `Event('submit')` on the form (or calls `form.onsubmit` directly — production sets it via assignment, not `addEventListener`, so direct invocation matches reality). `selectedRow()` returns the first `.is-selected` element under `contentEl` or `null`. `activeTabId()` reads the lowercase text content of the `.modal-tab.is-active` element. — L, junior-dev
-- [ ] A6: Create `tests/integration/smoke.spec.ts` covering the Section A Red criterion: harness construction, search input visible, ArrowDown dispatches. This is *only* the harness smoke check — no popup behavior assertions. — S, junior-dev
-- [ ] A7: Create `.claude/integration-test-cmd` containing exactly `npm run test:integration` (single line). Verify `/done` is the only consumer (per the global hook docs); pre-commit-green and stop-guard do not read this file. — S, junior-dev
-- [ ] A8: Grep `src/` and existing `tests/` for any consumer of the old `obsidian.ts` mock shape (specifically: code that relies on `createEl` returning a `vi.fn()`-mock element). Document findings in the commit message. Today this should be empty. — S, junior-dev
+- [x] A1: Add `happy-dom` to `devDependencies` in `package.json` and run `npm install`. Verify `npm test` still passes (no behavior change yet). — S, junior-dev
+- [x] A2: Create `vitest.integration.config.ts` at repo root. Config: `environment: 'happy-dom'`, `setupFiles: ['./tests/integration/setup.ts']`, same `obsidian` alias as `vitest.config.ts` pointing at `tests/__mocks__/obsidian.ts`, `include: ['tests/integration/**/*.spec.ts']`. Add npm script `test:integration` running `vitest run --config vitest.integration.config.ts`. — S, junior-dev
+- [x] A3: Create `tests/integration/setup.ts` polyfilling onto `HTMLElement.prototype` exactly the methods listed in **Interfaces → `tests/integration/setup.ts`**: `createEl`, `createDiv`, `createSpan`, `addClass`, `removeClass`, `hasClass`, `toggleClass`, `setText`, `setAttr`, `empty`, `onClickEvent`. Each implementation is one line of standard-DOM. `createEl(tag, opts)` must accept `{ text?, cls?, type?, value?, placeholder? }` (the union of options used across `src/ui/`). — M, junior-dev
+- [x] A4: Rewrite `tests/__mocks__/obsidian.ts` per the **Interfaces → `obsidian.ts`** block. `Scope.register` returns the handler itself (acts as the `KeymapEventHandler` token). `Scope.unregister` removes by reference. `Scope.dispatch(key, modifiers)` walks the LIFO bucket, invokes handlers until one returns `false` (claimed), and returns whether any handler claimed. `Modal` constructor creates `contentEl = document.createElement('div')` and appends to `document.body` on `open()`; `close()` calls `onClose()` then detaches. — M, junior-dev
+- [x] A5: Create `tests/integration/harness.ts` exporting `createPopupHarness()` and `PopupHarness` matching the **Interfaces** block. Implement every method listed there. `pressKey` delegates to `modal.scope.dispatch`. `type(text)` sets `input.value` and dispatches a real `Event('input')` so the production `input.oninput` handler fires. `submitForge` fills fields and dispatches `Event('submit')` on the form (or calls `form.onsubmit` directly — production sets it via assignment, not `addEventListener`, so direct invocation matches reality). `selectedRow()` returns the first `.is-selected` element under `contentEl` or `null`. `activeTabId()` reads the lowercase text content of the `.modal-tab.is-active` element. — L, junior-dev
+- [x] A6: Create `tests/integration/smoke.spec.ts` covering the Section A Red criterion: harness construction, search input visible, ArrowDown dispatches. This is *only* the harness smoke check — no popup behavior assertions. — S, junior-dev
+- [x] A7: Create `.claude/integration-test-cmd` containing exactly `npm run test:integration` (single line). Verify `/done` is the only consumer (per the global hook docs); pre-commit-green and stop-guard do not read this file. — S, junior-dev
+- [x] A8: Grep `src/` and existing `tests/` for any consumer of the old `obsidian.ts` mock shape (specifically: code that relies on `createEl` returning a `vi.fn()`-mock element). Document findings in the commit message. Today this should be empty. — S, junior-dev
 
 ### B. Tab cycling and TabBar wiring
 
@@ -224,10 +224,10 @@ Test-helper failures (e.g. `clickTab('nonexistent')`) throw immediately with a d
 
 **ui-integration-tester**
 
-- [ ] B1: integration test: `pressKey('Tab')` cycles activeTabId from 'spells' → 'logs' → 'spells' across two presses; each press's return value is `true`. — S, ui-integration-tester
-- [ ] B2: integration test: `clickTab('logs')` switches activeTabId to 'logs' and the search input's `value` is empty afterward (state reset per `switchTab`). Type a query first, then click — assert clear. — S, ui-integration-tester
-- [ ] B3: integration test: `clickTab('logs')` followed by `clickTab('spells')` lands back on Spells with `selectedIndex` reset (i.e. `selectedRow().textContent === 'Summoning Circle'` — the first spell). — S, ui-integration-tester
-- [ ] B4: integration test: enter detail (`pressKey('Enter')` on the first row), then `pressKey('Tab')` returns `false`, `activeTabId()` unchanged. Also assert `clickTab('logs')` while in detail does not switch (TabBar passes `disabled = true` so the click handler is gated). — M, ui-integration-tester
+- [x] B1: integration test: `pressKey('Tab')` cycles activeTabId from 'spells' → 'logs' → 'spells' across two presses; each press's return value is `true`. — S, ui-integration-tester
+- [x] B2: integration test: `clickTab('logs')` switches activeTabId to 'logs' and the search input's `value` is empty afterward (state reset per `switchTab`). Type a query first, then click — assert clear. — S, ui-integration-tester
+- [x] B3: integration test: `clickTab('logs')` followed by `clickTab('spells')` lands back on Spells with `selectedIndex` reset (i.e. `selectedRow().textContent === 'Summoning Circle'` — the first spell). — S, ui-integration-tester
+- [x] B4: integration test: enter detail (`pressKey('Enter')` on the first row), then `pressKey('Tab')` returns `false`, `activeTabId()` unchanged. Also assert `clickTab('logs')` while in detail does not switch (TabBar passes `disabled = true` so the click handler is gated). — M, ui-integration-tester
 
 ### C. Spell-list to spell-detail transitions
 
@@ -240,11 +240,11 @@ Test-helper failures (e.g. `clickTab('nonexistent')`) throw immediately with a d
 
 **ui-integration-tester**
 
-- [ ] C1: integration test: `pressKey('Enter')` on the initial selection opens spell detail — `isInDetail()` true, `contentEl` contains `<h2>` with text `Summoning Circle`. — S, ui-integration-tester
-- [ ] C2: integration test: from spell detail, `pressKey('Escape')` exits to search — `isInDetail()` false, `searchInput()` is present, modal is *still open* (no `super.close()`). Assert by checking `contentEl.isConnected === true`. — M, ui-integration-tester
-- [ ] C3: integration test: from spell detail, `clickBack()` exits to search with the same assertions as C2. — S, ui-integration-tester
-- [ ] C4: integration test: selection memory — move selection to index 3 (`pressKey('ArrowDown')` × 3), `pressKey('Enter')` to enter detail, `pressKey('Escape')` to exit, assert `selectedRow().textContent === 'Scrying Mirror'` (the spell at index 3). Pins commit `50de545`. — M, ui-integration-tester
-- [ ] C5: integration test: calling `modal.close()` directly from spell detail routes through the override — modal stays open, returns to search. Assert `contentEl.isConnected === true` and `searchInput()` exists. — M, ui-integration-tester
+- [x] C1: integration test: `pressKey('Enter')` on the initial selection opens spell detail — `isInDetail()` true, `contentEl` contains `<h2>` with text `Summoning Circle`. — S, ui-integration-tester
+- [x] C2: integration test: from spell detail, `pressKey('Escape')` exits to search — `isInDetail()` false, `searchInput()` is present, modal is *still open* (no `super.close()`). Assert by checking `contentEl.isConnected === true`. — M, ui-integration-tester
+- [x] C3: integration test: from spell detail, `clickBack()` exits to search with the same assertions as C2. — S, ui-integration-tester
+- [x] C4: integration test: selection memory — move selection to index 3 (`pressKey('ArrowDown')` × 3), `pressKey('Enter')` to enter detail, `pressKey('Escape')` to exit, assert `selectedRow().textContent === 'Scrying Mirror'` (the spell at index 3). Pins commit `50de545`. — M, ui-integration-tester
+- [x] C5: integration test: calling `modal.close()` directly from spell detail routes through the override — modal stays open, returns to search. Assert `contentEl.isConnected === true` and `searchInput()` exists. — M, ui-integration-tester
 
 ### D. Sentinel detail — forge and generic variants
 
@@ -257,11 +257,11 @@ Test-helper failures (e.g. `clickTab('nonexistent')`) throw immediately with a d
 
 **ui-integration-tester**
 
-- [ ] D1: focused component test (`forge-sentinel-detail.spec.ts`): instantiate `ForgeSentinelDetail` directly with a fresh `Scope` and a mock `contentEl`; assert (a) the name input is the active element after construction, (b) submitting the form invokes `onSubmit` with `{ name: 'X', description: 'Y', model: 'sonnet' }` after `submitForge({ name: 'X', description: 'Y', model: 'sonnet' })`, (c) clicking the Back button invokes `onBack`. — M, ui-integration-tester
-- [ ] D2: integration test: navigate to the Forge sentinel (move to index 10), `pressKey('Enter')`, assert `isInDetail()` true and a `<form class="forge-sentinel-form">` is mounted. `clickBack()` returns to search with modal still open. — M, ui-integration-tester
-- [ ] D3: integration test: enter Forge detail, type into the name input, submit the form via `submitForge()`, assert detail exited (back to search). — S, ui-integration-tester
-- [ ] D4: integration test: navigate to the Refine sentinel (index 11), `pressKey('Enter')`, assert `<h2>` text is `Refine` and `<p>` text is `Type: refine`. `clickBack()` returns to search. — M, ui-integration-tester
-- [ ] D5: integration test: from Refine detail, `pressKey('Escape')` routes through `close()` override and exits to search (same modal-stays-open contract as C2). Pins the generic-sentinel exit path. — S, ui-integration-tester
+- [x] D1: focused component test (`forge-sentinel-detail.spec.ts`): instantiate `ForgeSentinelDetail` directly with a fresh `Scope` and a mock `contentEl`; assert (a) the name input is the active element after construction, (b) submitting the form invokes `onSubmit` with `{ name: 'X', description: 'Y', model: 'sonnet' }` after `submitForge({ name: 'X', description: 'Y', model: 'sonnet' })`, (c) clicking the Back button invokes `onBack`. — M, ui-integration-tester
+- [x] D2: integration test: navigate to the Forge sentinel (move to index 10), `pressKey('Enter')`, assert `isInDetail()` true and a `<form class="forge-sentinel-form">` is mounted. `clickBack()` returns to search with modal still open. — M, ui-integration-tester
+- [x] D3: integration test: enter Forge detail, type into the name input, submit the form via `submitForge()`, assert detail exited (back to search). — S, ui-integration-tester
+- [x] D4: integration test: navigate to the Refine sentinel (index 11), `pressKey('Enter')`, assert `<h2>` text is `Refine` and `<p>` text is `Type: refine`. `clickBack()` returns to search. — M, ui-integration-tester
+- [x] D5: integration test: from Refine detail, `pressKey('Escape')` routes through `close()` override and exits to search (same modal-stays-open contract as C2). Pins the generic-sentinel exit path. — S, ui-integration-tester
 
 ### E. Keyboard suspend/resume around forge detail
 
@@ -274,9 +274,9 @@ Test-helper failures (e.g. `clickTab('nonexistent')`) throw immediately with a d
 
 **ui-integration-tester**
 
-- [ ] E1: integration test: enter Forge detail; `pressKey('Tab')` returns `false` (popup Tab handler suspended; no platform handler in our Scope); `pressKey('Enter')` returns `false` likewise. — M, ui-integration-tester
-- [ ] E2: integration test: enter Forge detail, exit via `clickBack()`, then `pressKey('ArrowDown')` advances `selectedRow()` to the next spell. Pins resume-after-detail. — M, ui-integration-tester
-- [ ] E3: integration test: re-enter Forge detail a second time and exit again — popup keys still work after multiple suspend/resume cycles. (Catches mutations that resume only once.) — S, ui-integration-tester
+- [x] E1: integration test: enter Forge detail; `pressKey('Tab')` returns `false` (popup Tab handler suspended; no platform handler in our Scope); `pressKey('Enter')` returns `false` likewise. — M, ui-integration-tester
+- [x] E2: integration test: enter Forge detail, exit via `clickBack()`, then `pressKey('ArrowDown')` advances `selectedRow()` to the next spell. Pins resume-after-detail. — M, ui-integration-tester
+- [x] E3: integration test: re-enter Forge detail a second time and exit again — popup keys still work after multiple suspend/resume cycles. (Catches mutations that resume only once.) — S, ui-integration-tester
 
 ### F. SearchInput wiring and modal lifecycle
 
@@ -289,12 +289,12 @@ Test-helper failures (e.g. `clickTab('nonexistent')`) throw immediately with a d
 
 **ui-integration-tester**
 
-- [ ] F1: integration test: `type('protect')` reduces visible spell rows to one (`Protection Rune`); `selectedRow().textContent === 'Protection Rune'`. — S, ui-integration-tester
-- [ ] F2: integration test: with no filter, `pressKey('ArrowDown')` then `pressKey('Enter')` opens the *second* spell's detail (`Protection Rune`). — S, ui-integration-tester
-- [ ] F3: integration test: ArrowUp from index 0 wraps to the last visible row (last sentinel — `Refine`). Pins `move(delta, current)` modular arithmetic. — S, ui-integration-tester
-- [ ] F4: integration test: typing a query that matches no spells but matches a sentinel ('forge') auto-selects the Forge sentinel row. Pins `sentinelFocusIndex`. — M, ui-integration-tester
-- [ ] F5: integration test (`modal-lifecycle.spec.ts`): open the modal, switch to Logs tab, type a query, then close-and-reopen — assert active tab is Spells, search input is empty, first spell row is selected. Pins `onOpen` reset. — M, ui-integration-tester
-- [ ] F6: integration test: close the modal (from search phase); assert `contentEl.children.length === 0` after close. Pins `onClose`. — S, ui-integration-tester
+- [x] F1: integration test: `type('protect')` reduces visible spell rows to one (`Protection Rune`); `selectedRow().textContent === 'Protection Rune'`. — S, ui-integration-tester
+- [x] F2: integration test: with no filter, `pressKey('ArrowDown')` then `pressKey('Enter')` opens the *second* spell's detail (`Protection Rune`). — S, ui-integration-tester
+- [x] F3: integration test: ArrowUp from index 0 wraps to the last visible row (last sentinel — `Refine`). Pins `move(delta, current)` modular arithmetic. — S, ui-integration-tester
+- [x] F4: integration test: typing a query that matches no spells but matches a sentinel ('forge') auto-selects the Forge sentinel row. Pins `sentinelFocusIndex`. — M, ui-integration-tester
+- [x] F5: integration test (`modal-lifecycle.spec.ts`): open the modal, switch to Logs tab, type a query, then close-and-reopen — assert active tab is Spells, search input is empty, first spell row is selected. Pins `onOpen` reset. — M, ui-integration-tester
+- [x] F6: integration test: close the modal (from search phase); assert `contentEl.children.length === 0` after close. Pins `onClose`. — S, ui-integration-tester
 
 ## Overall effort summary
 
