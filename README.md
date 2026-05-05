@@ -43,9 +43,10 @@ A keyboard-first Obsidian plugin that lets you browse, search, and cast reusable
 
 ```bash
 npm install
-npm run dev      # watch build + live reload
-npm test         # run tests
-npm run lint     # check code
+npm run dev              # watch build + live reload
+npm test                 # run unit tests
+npm run test:integration # run UI integration tests (happy-dom + mocked obsidian)
+npm run lint             # check code
 ```
 
 ## Quality gates
@@ -72,6 +73,7 @@ npm run arch:check   # Dependency architecture check
 │       ├── spells/              # Spell, Sentinel, SpellPath types
 │       └── logs/                # Log type and placeholder data
 ├── tests/                       # Unit tests (vitest)
+│   └── integration/             # UI integration tests (happy-dom, mocked obsidian)
 ├── docs/
 │   └── features/                # Live feature specs
 ├── manifest.json                # Obsidian plugin metadata

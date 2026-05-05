@@ -13,14 +13,15 @@
 ## Commands
 
 ```bash
-npm test              # run tests
-npm run test:watch   # watch mode
-npm run lint         # check code style
-npm run format       # auto-fix formatting
-npm run dev          # watch build during development
-npm run build        # production build
-npm run test:mutate  # mutation testing (quality gate)
-npm run arch:check   # architecture fitness check
+npm test                # run unit tests
+npm run test:watch      # watch mode (unit)
+npm run test:integration # run UI integration tests (happy-dom + mocked obsidian)
+npm run lint            # check code style
+npm run format          # auto-fix formatting
+npm run dev             # watch build during development
+npm run build           # production build
+npm run test:mutate     # mutation testing (quality gate)
+npm run arch:check      # architecture fitness check
 ```
 
 ## Quality gates
@@ -38,9 +39,11 @@ npm run arch:check   # architecture fitness check
 
 ## Testing notes
 
-- Unit tests go in `tests/`
-- Tests run in Node.js environment (no Obsidian runtime needed for unit tests)
-- Integration tests with Obsidian APIs would require a different setup (out of scope for this scaffold)
+- Unit tests live in `tests/` (node environment, default `vitest.config.ts`)
+- UI integration tests live in `tests/integration/` (happy-dom environment, separate `vitest.integration.config.ts`)
+- Both layers mock the `obsidian` package via `tests/__mocks__/obsidian.ts` — no real Obsidian runtime needed
+- Real-Obsidian end-to-end tests would still require a running vault (out of scope)
+- `/done` runs the integration suite via `.claude/integration-test-cmd`; pre-commit and stop-guard do not
 
 ## Next steps
 
