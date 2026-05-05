@@ -1,14 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import type { Mock } from 'vitest';
+import type { Scope } from 'obsidian';
 import { ForgeSentinelDetail } from '../src/ui/components/ForgeSentinelDetail';
 
-// Mock document.activeElement for focus checks
-(global as any).document = {
-  activeElement: null,
+type MockEl = {
+  createEl: Mock;
+  addClass: Mock;
+  createDiv: Mock;
+  createSpan: Mock;
+  addEventListener: Mock;
+  appendChild: Mock;
+  onClickEvent: Mock;
+  focus: Mock;
+  value?: string;
 };
 
+type ScopeMock = Scope & { register: Mock; unregister: Mock };
+
+const mockDocument = { activeElement: null as unknown };
+(global as Record<string, unknown>).document = mockDocument;
+
 describe('ForgeSentinelDetail', () => {
-  const createMockElement = (): any => {
-    return {
+  const createMockElement = () =>
+    ({
       createEl: vi.fn(),
       addClass: vi.fn(),
       createDiv: vi.fn(),
@@ -17,13 +31,13 @@ describe('ForgeSentinelDetail', () => {
       appendChild: vi.fn(),
       onClickEvent: vi.fn(),
       focus: vi.fn(),
-    };
-  };
+    }) as unknown as HTMLElement & MockEl;
 
-  const makeScope = () => ({
-    register: vi.fn(() => ({})),
-    unregister: vi.fn(),
-  });
+  const makeScope = (): ScopeMock =>
+    ({
+      register: vi.fn(),
+      unregister: vi.fn(),
+    }) as unknown as ScopeMock;
 
   it('focuses the name input immediately on construction', () => {
     const container = createMockElement();
@@ -65,7 +79,6 @@ describe('ForgeSentinelDetail', () => {
     const label = createMockElement();
     const select = createMockElement();
 
-    let callCount = 0;
     container.createEl.mockImplementation((tag: string) => {
       if (tag === 'button') return button;
       if (tag === 'form') return form;
@@ -80,7 +93,7 @@ describe('ForgeSentinelDetail', () => {
 
     // Verify form was created
     const formCall = container.createEl.mock.calls.find(
-      (call: any[]) => call[0] === 'form'
+      (call) => call[0] === 'form'
     );
     expect(formCall).toBeDefined();
     expect(form.addClass).toHaveBeenCalledWith('forge-sentinel-form');
@@ -106,7 +119,7 @@ describe('ForgeSentinelDetail', () => {
 
     // Verify first label was created for name
     const labelCalls = form.createEl.mock.calls.filter(
-      (call: any[]) => call[0] === 'label'
+      (call) => call[0] === 'label'
     );
     expect(labelCalls.length).toBeGreaterThan(0);
 
@@ -166,7 +179,7 @@ describe('ForgeSentinelDetail', () => {
 
     // Verify options were created in select
     const optionCalls = select.createEl.mock.calls.filter(
-      (call: any[]) => call[0] === 'option'
+      (call) => call[0] === 'option'
     );
     expect(optionCalls.length).toBe(3);
     expect(optionCalls[0][1]?.value).toBe('haiku');
@@ -254,12 +267,12 @@ describe('ForgeSentinelDetail', () => {
     new ForgeSentinelDetail(container, makeScope(), callbacks);
 
     // Get the form submit handler that was set
-    const formSubmitHandler = (form as any).onsubmit;
+    const formSubmitHandler = (form as unknown as HTMLFormElement).onsubmit;
     expect(formSubmitHandler).toBeDefined();
 
     // Simulate form submission
     const event = { preventDefault: vi.fn() };
-    formSubmitHandler(event);
+    formSubmitHandler!(event as unknown as SubmitEvent);
 
     // Verify onSubmit was called with the form data
     expect(onSubmit).toHaveBeenCalledWith({
@@ -270,17 +283,22 @@ describe('ForgeSentinelDetail', () => {
   });
 
   describe('with scope — keyboard model cycling', () => {
-    const makeScope = () => ({
-      register: vi.fn(() => ({})),
-      unregister: vi.fn(),
-    });
+    const makeScope = (): ScopeMock =>
+      ({
+        register: vi.fn(),
+        unregister: vi.fn(),
+      }) as unknown as ScopeMock;
 
-    const buildDetail = (scope: any) => {
+    const buildDetail = (scope: ScopeMock) => {
       const container = createMockElement();
       const button = createMockElement();
       const form = createMockElement();
       const label = createMockElement();
-      const select = { selectedIndex: 0, options: { length: 3 } } as any;
+      const select = {
+        selectedIndex: 0,
+        options: { length: 3 },
+        createEl: vi.fn(() => createMockElement()),
+      };
 
       container.createEl.mockImplementation((tag: string) => {
         if (tag === 'button') return button;
@@ -295,15 +313,14 @@ describe('ForgeSentinelDetail', () => {
         if (tag === 'select') return select;
         return createMockElement();
       });
-      select.createEl = vi.fn(() => createMockElement());
 
       const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
       new ForgeSentinelDetail(container, scope, callbacks);
       return { scope, select, callbacks };
     };
 
-    const getHandler = (scope: any, key: string) => {
-      const call = scope.register.mock.calls.find((c: any[]) => c[1] === key);
+    const getHandler = (scope: ScopeMock, key: string) => {
+      const call = scope.register.mock.calls.find((c) => c[1] === key);
       // The raw scope.register callback wraps the handler; invoke with a fake event
       return () => call[2]({ preventDefault: vi.fn() });
     };
@@ -312,7 +329,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       buildDetail(scope);
 
-      const keys = scope.register.mock.calls.map((c: any[]) => c[1]);
+      const keys = scope.register.mock.calls.map((c) => c[1]);
       expect(keys).toContain('ArrowDown');
       expect(keys).toContain('ArrowUp');
     });
@@ -321,7 +338,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 0;
-      (document as any).activeElement = select;
+      mockDocument.activeElement = select;
 
       getHandler(scope, 'ArrowDown')();
 
@@ -332,7 +349,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 2; // opus — last
-      (document as any).activeElement = select;
+      mockDocument.activeElement = select;
 
       getHandler(scope, 'ArrowDown')();
 
@@ -343,7 +360,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 2;
-      (document as any).activeElement = select;
+      mockDocument.activeElement = select;
 
       getHandler(scope, 'ArrowUp')();
 
@@ -354,7 +371,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { select } = buildDetail(scope);
       select.selectedIndex = 0;
-      (document as any).activeElement = select;
+      mockDocument.activeElement = select;
 
       getHandler(scope, 'ArrowUp')();
 
