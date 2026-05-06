@@ -142,7 +142,7 @@ describe('EffortRow', () => {
     expect(buttonLabels).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
   });
 
-  it('(f) update Case 2 — mount Sonnet, then update to Haiku: no error thrown, parent children unchanged (wrapper remains)', () => {
+  it('update Case 2 — mount Sonnet, then update to Haiku: wrapper is removed from DOM', () => {
     const onChange = vi.fn();
     const row = new EffortRow();
 
@@ -154,19 +154,17 @@ describe('EffortRow', () => {
       onChange,
     });
 
-    const initialChildCount = parent.children.length;
-    expect(initialChildCount).toBe(1); // One wrapper div
+    expect(parent.children.length).toBe(1); // One wrapper div present
 
-    // Update to Haiku (which has no effortOptions)
+    // Update to Haiku (which has no effortOptions) — should unmount the wrapper
     row.update('claude-haiku-4-5', null);
 
-    // No error should be thrown (checked by the lack of console.error calls)
+    // No error should be thrown
     expect(consoleErrorSpy).not.toHaveBeenCalled();
 
-    // Parent children should be unchanged (wrapper still there, no cleanup happens in Case 2)
-    expect(parent.children.length).toBe(initialChildCount);
-    const wrapper = parent.querySelector('div.grimoire-effort-row');
-    expect(wrapper).not.toBeNull();
+    // Wrapper should be removed from the DOM
+    expect(parent.children.length).toBe(0);
+    expect(parent.querySelector('div.grimoire-effort-row')).toBeNull();
   });
 
   it('(g) Case 3 is dead code — mount() assigns #parent after #segmented; mounts Haiku (no-op, stores nothing), then update to Sonnet hits Case 4 (model not in empty #models)', () => {

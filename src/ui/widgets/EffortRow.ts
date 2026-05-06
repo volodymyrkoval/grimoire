@@ -10,6 +10,7 @@ export interface EffortRowOpts {
 
 export class EffortRow {
   #segmented: SegmentedControl<Effort> | null = null;
+  #wrapper: HTMLElement | null = null;
   #parent: HTMLElement | null = null;
   #models: readonly SupportedModel[] = [];
   #onChange: ((effort: Effort) => void) | null = null;
@@ -34,6 +35,7 @@ export class EffortRow {
     // Create wrapper div
     const wrapper = document.createElement('div');
     wrapper.className = 'grimoire-effort-row';
+    this.#wrapper = wrapper;
     parent.appendChild(wrapper);
 
     // Determine the initial effort value
@@ -72,8 +74,11 @@ export class EffortRow {
       return;
     }
 
-    // Case 2: Row is currently mounted AND new model has NO options
+    // Case 2: Row is currently mounted AND new model has NO options → unmount
     if (this.#segmented && model.effortOptions === null) {
+      this.#wrapper?.parentNode?.removeChild(this.#wrapper);
+      this.#wrapper = null;
+      this.#segmented = null;
       return;
     }
 

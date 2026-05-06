@@ -60,7 +60,7 @@ export function createPopupHarness(options?: {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup(app, 'spell', imprintAction, castAction, defaults, overrides, sessionMap, optionsCastAction);
+  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction, defaults, overrides, sessionMap, optionsCastAction });
   modal.open();
   const { contentEl } = modal;
 
@@ -128,11 +128,12 @@ export function createPopupHarness(options?: {
       if (values.model !== undefined) {
         const sel = form.querySelector('select') as HTMLSelectElement;
         sel.value = values.model;
+        sel.dispatchEvent(new Event('change'));
       }
-      if (values.effort !== undefined) {
-        const selects = form.querySelectorAll('select');
-        const effortSel = selects[1] as HTMLSelectElement;
-        effortSel.value = values.effort === null ? '' : values.effort;
+      if (values.effort !== undefined && values.effort !== null) {
+        const effortBtns = Array.from(form.querySelectorAll('.grimoire-effort-row .grimoire-segmented__btn'));
+        const btn = effortBtns.find((b) => b.textContent === values.effort) as HTMLButtonElement | undefined;
+        if (btn) btn.click();
       }
       form.dispatchEvent(new Event('submit'));
     },

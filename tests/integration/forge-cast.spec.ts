@@ -39,7 +39,7 @@ function createHarnessWithAction(
     data: { settings: {} as any, spellOverrides: {} },
     saver: { schedule: vi.fn() } as any,
   });
-  const modal = new CommandPopup(app, 'spell', imprintAction, vi.fn(), defaults, stubOverrides, new OptionsSessionMap(), vi.fn());
+  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction: vi.fn(), defaults, overrides: stubOverrides, sessionMap: new OptionsSessionMap(), optionsCastAction: vi.fn() });
   modal.open();
   const { contentEl } = modal;
 
@@ -64,7 +64,7 @@ function createHarnessWithAction(
     name?: string;
     description?: string;
     model?: string;
-    effort?: string;
+    effort?: string | null;
   }): void {
     const form = getForm();
     if (values.name !== undefined) {
@@ -75,14 +75,16 @@ function createHarnessWithAction(
     }
     if (values.model !== undefined) {
       // Model select is the first <select> in the form (populated from SUPPORTED_MODELS).
-      const selects = form.querySelectorAll('select');
-      (selects[0] as HTMLSelectElement).value = values.model;
+      const modelSel = form.querySelector('select') as HTMLSelectElement;
+      modelSel.value = values.model;
+      // Dispatch change so ForgeSentinelDetail updates #currentEffort and effortRow
+      modelSel.dispatchEvent(new Event('change'));
     }
-    if (values.effort !== undefined) {
-      // Effort select is the second <select> in the form (added by D2).
-      // Empty string '' maps to the (none) option → snapshot.effort === null.
-      const selects = form.querySelectorAll('select');
-      (selects[1] as HTMLSelectElement).value = values.effort;
+    if (values.effort !== undefined && values.effort !== null) {
+      // EffortRow renders a SegmentedControl — click the matching button by text content.
+      const effortBtns = Array.from(form.querySelectorAll('.grimoire-effort-row .grimoire-segmented__btn'));
+      const btn = effortBtns.find((b) => b.textContent === values.effort) as HTMLButtonElement | undefined;
+      if (btn) btn.click();
     }
     form.dispatchEvent(new Event('submit'));
   }
@@ -120,24 +122,26 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     expect(form.querySelector('textarea')).toBeTruthy();
 
     // Model select is pre-selected to defaults.defaultModel
-    const selects = form.querySelectorAll('select');
-    expect(selects.length).toBeGreaterThanOrEqual(2); // model + effort selects (added by D2)
-    const modelSelect = selects[0] as HTMLSelectElement;
+    const modelSelect = form.querySelector('select') as HTMLSelectElement;
     expect(modelSelect.value).toBe(defaults.defaultModel);
 
-    // Effort select is pre-selected to defaults.defaultEffort
-    const effortSelect = selects[1] as HTMLSelectElement;
-    expect(effortSelect.value).toBe(defaults.defaultEffort);
+    // Effort SegmentedControl is present and the default effort button is active
+    const effortRow = form.querySelector('.grimoire-effort-row');
+    expect(effortRow).toBeTruthy();
+    const activeBtn = effortRow!.querySelector('.grimoire-segmented__btn.is-active') as HTMLButtonElement | null;
+    expect(activeBtn).toBeTruthy();
+    expect(activeBtn!.textContent).toBe(defaults.defaultEffort);
   });
 
   it('submitting form invokes imprintAction once with typed snapshot', () => {
     const h = createHarnessWithAction(imprintAction);
     h.navigateToForge();
 
+    // Use Sonnet (has effort options: low/medium/high/max)
     h.submitForm({
       name: 'My Spell',
       description: 'Do things',
-      model: 'claude-haiku-4-5',
+      model: 'claude-sonnet-4-5',
       effort: 'high',
     });
 
@@ -145,7 +149,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     expect(imprintAction).toHaveBeenCalledWith({
       name: 'My Spell',
       description: 'Do things',
-      model: 'claude-haiku-4-5',
+      model: 'claude-sonnet-4-5',
       effort: 'high',
     });
   });
@@ -154,12 +158,11 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     const h = createHarnessWithAction(imprintAction);
     h.navigateToForge();
 
-    // '' is the value of the (none) option; the submit handler maps '' → null
+    // Haiku has effortOptions: null → no effort UI, effort is always null
     h.submitForm({
       name: 'Silent Spell',
       description: 'No effort',
       model: 'claude-haiku-4-5',
-      effort: '',
     });
 
     expect(imprintAction).toHaveBeenCalledOnce();
@@ -171,7 +174,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     const h = createHarnessWithAction(imprintAction);
     h.navigateToForge();
 
-    h.submitForm({ name: 'AnySpell', description: 'desc', model: 'claude-haiku-4-5', effort: '' });
+    h.submitForm({ name: 'AnySpell', description: 'desc', model: 'claude-haiku-4-5' });
 
     // Forge form is gone — popup exited detail phase
     expect(h.isInForgeDetail()).toBe(false);
