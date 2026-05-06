@@ -1,7 +1,7 @@
 import { App } from 'obsidian';
 import { vi } from 'vitest';
 import { CommandPopup } from '../../src/ui/CommandPopup';
-import type { ImprintAction, FormDefaults } from '../../src/ui/CommandPopup';
+import type { ImprintAction, FormDefaults, CastAction } from '../../src/ui/CommandPopup';
 import type { Scope } from 'obsidian';
 import type { Effort } from '../../src/domain/settings/Settings';
 
@@ -26,10 +26,12 @@ export interface PopupHarness {
 
 export function createPopupHarness(options?: {
   imprintAction?: ImprintAction;
+  castAction?: CastAction;
   defaults?: FormDefaults;
 }): PopupHarness {
   const app = new App() as any;
   const imprintAction = options?.imprintAction ?? vi.fn();
+  const castAction: CastAction = options?.castAction ?? vi.fn();
   const defaults: FormDefaults = options?.defaults ?? { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' };
   const testFiles = [
     { basename: 'Summoning Circle', path: '/spells/summoning.md' },
@@ -47,7 +49,7 @@ export function createPopupHarness(options?: {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup(app, 'spell', imprintAction, defaults);
+  const modal = new CommandPopup(app, 'spell', imprintAction, castAction, defaults);
   modal.open();
   const { contentEl } = modal;
 

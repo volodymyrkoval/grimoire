@@ -29,14 +29,16 @@ export class CommandPopup extends Modal {
   #onDetailBack: (() => void) | null = null;
   #activeDetail: { destroy(): void } | null = null;
   readonly #imprintAction: ImprintAction;
+  readonly #castAction: CastAction;
   readonly #formDefaults: FormDefaults;
 
-  constructor(app: App, spellTag: string, imprintAction: ImprintAction, defaults: FormDefaults) {
+  constructor(app: App, spellTag: string, imprintAction: ImprintAction, castAction: CastAction, defaults: FormDefaults) {
     super(app);
     this.#imprintAction = imprintAction;
+    this.#castAction = castAction;
     this.#formDefaults = defaults;
     const spellsPanel = new SpellsPanel(this.app, spellTag);
-    spellsPanel.events.on("cast", (spell) => this.renderDetail(spell));
+    spellsPanel.events.on("cast", (spell) => this.#castAction(spell));
     spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
     this.panels = [spellsPanel, new LogsPanel()];
     this.activePanel = this.panels[0];
@@ -123,17 +125,6 @@ export class CommandPopup extends Modal {
     this.#activeDetail = null;
     this.#kb.resume();
     this.renderSearch();
-  }
-
-  private renderDetail(spell: Spell): void {
-    this.phase = "detail";
-    this.#kb.suspend();
-    const exit = () => this.exitDetail();
-    this.#onDetailBack = exit;
-    this.reattachTabBar();
-    this.contentEl.createEl("h2", { text: spell.name });
-    const back = this.contentEl.createEl("button", { text: "← Back" });
-    back.onClickEvent(exit);
   }
 
   private renderSentinelDetail(sentinel: Sentinel): void {

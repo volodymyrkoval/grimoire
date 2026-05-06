@@ -36,18 +36,4 @@ describe('tab navigation', () => {
     expect(h.selectedRow()?.textContent).toBe('Banishment Hex');
   });
 
-  it('B4: pressKey Tab returns false while suspended in spell detail; clickTab from detail exits detail and switches panel', () => {
-    // Enter spell detail — keyboard gets suspended
-    h.pressKey('Enter');
-    expect(h.isInDetail()).toBe(true);
-
-    // Tab key is not handled (suspended)
-    const tabResult = h.pressKey('Tab');
-    expect(tabResult).toBe(false);
-
-    // clickTab from detail DOES work — it calls switchTab which exits detail
-    h.clickTab('logs');
-    expect(h.isInDetail()).toBe(false);
-    expect(h.activeTabId()).toBe('logs');
-  });
 });

@@ -33,8 +33,8 @@ function createHarnessWithAction(
     frontmatter: { tags: ['spell'] },
   });
 
-  // New 4-arg constructor introduced by D3 — fails to compile until D3 lands.
-  const modal = new CommandPopup(app, 'spell', imprintAction, defaults);
+  // 5-arg constructor: app, spellTag, imprintAction, castAction, defaults.
+  const modal = new CommandPopup(app, 'spell', imprintAction, vi.fn(), defaults);
   modal.open();
   const { contentEl } = modal;
 
