@@ -127,7 +127,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     scope.unregister.mockClear();
 
     const spellsPanel = (popup as any).panels[0];
-    spellsPanel.events.emit('detail', { name: 'My Spell', description: '', tags: [], kind: 'spell' });
+    spellsPanel.events.emit('cast', { name: 'My Spell', description: '', tags: [], kind: 'spell' });
 
     expect(scope.unregister).toHaveBeenCalled();
   });
@@ -153,7 +153,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
       return el;
     });
 
-    spellsPanel.events.emit('detail', { name: 'My Spell', description: '', tags: [], kind: 'spell' });
+    spellsPanel.events.emit('cast', { name: 'My Spell', description: '', tags: [], kind: 'spell' });
 
     expect(capturedOnClick).toBeDefined();
     capturedOnClick!();
@@ -200,7 +200,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     updateSpy.mockClear();
 
     // Enter spell detail
-    spellsPanel.events.emit('detail', { name: 'Summoning Circle', path: '/spells/summoning' });
+    spellsPanel.events.emit('cast', { name: 'Summoning Circle', path: '/spells/summoning' });
     updateSpy.mockClear();
 
     // Return from detail (Obsidian's Escape path)

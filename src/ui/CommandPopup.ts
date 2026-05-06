@@ -35,7 +35,7 @@ export class CommandPopup extends Modal {
     this.#imprintAction = imprintAction;
     this.#formDefaults = defaults;
     const spellsPanel = new SpellsPanel(this.app, spellTag);
-    spellsPanel.events.on("detail", (spell) => this.renderDetail(spell));
+    spellsPanel.events.on("cast", (spell) => this.renderDetail(spell));
     spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
     this.panels = [spellsPanel, new LogsPanel()];
     this.activePanel = this.panels[0];
