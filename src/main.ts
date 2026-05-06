@@ -3,6 +3,7 @@ import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
 import { SpellOverrideStore } from './domain/settings/SpellOverrideStore';
+import { OptionsSessionMap } from './ui/options/OptionsSessionMap';
 import { GrimoireSettingTab } from './ui/settings/GrimoireSettingTab';
 import { CommandPopup } from './ui/CommandPopup';
 import { ForgeImprinter } from './forge/ForgeImprinter';
@@ -18,6 +19,7 @@ export default class GrimoirePlugin extends Plugin {
     this.data = hydrate(await this.loadData(), this.app);
     this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
     this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
+    const sessionMap = new OptionsSessionMap();
     this.addSettingTab(new GrimoireSettingTab(this.app, this));
     const imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
@@ -48,6 +50,17 @@ export default class GrimoirePlugin extends Plugin {
             activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
           }),
           { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
+          this.overrides,
+          sessionMap,
+          (spell, snap) => dispatcher.dispatch({
+            spell,
+            model: snap.model,
+            effort: snap.effort,
+            contextNotePaths: snap.contextNotePaths,
+            followUp: snap.followUp,
+            settings: this.data.settings,
+            activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
+          }),
         );
         closeRef.close = () => popup.close();
         popup.open();
