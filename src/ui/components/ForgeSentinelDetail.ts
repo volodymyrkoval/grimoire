@@ -23,6 +23,7 @@ export class ForgeSentinelDetail {
   readonly #modelSelect: HTMLSelectElement;
   #effortRow: EffortRow;
   #currentEffort: Effort | null;
+  #executeOnNote: boolean = true;
   #kb: KeyboardController;
 
   constructor({ contentEl, scope, callbacks, defaults }: ForgeSentinelDetailParams) {
@@ -33,6 +34,7 @@ export class ForgeSentinelDetail {
     this.#descInput = this.#buildDescriptionField(form);
     this.#modelSelect = this.#buildModelSelect(form, defaults.defaultModel);
     this.#currentEffort = this.#resolveInitialEffort(defaults);
+    this.#buildExecuteOnNoteCheckbox(form);
     this.#effortRow = this.#initEffortRow(form, defaults);
     this.#buildSubmitButton(form);
     this.#wireSubmitHandler(form, callbacks.onSubmit);
@@ -112,6 +114,18 @@ export class ForgeSentinelDetail {
     form.appendChild(submitBtn);
   }
 
+  #buildExecuteOnNoteCheckbox(form: HTMLElement): void {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset['grimoire'] = 'execute-on-note';
+    input.checked = true;
+    input.addEventListener('change', () => { this.#executeOnNote = input.checked; });
+    label.appendChild(input);
+    label.append(' Execute on active note');
+    form.appendChild(label);
+  }
+
   #buildModelSelect(form: HTMLElement, defaultModel: string): HTMLSelectElement {
     const label = document.createElement('label');
     form.appendChild(label);
@@ -132,6 +146,7 @@ export class ForgeSentinelDetail {
         description: this.#descInput.value || '',
         model: this.#modelSelect.value,
         effort: this.#currentEffort,
+        executeOnNote: this.#executeOnNote,
       });
     };
   }

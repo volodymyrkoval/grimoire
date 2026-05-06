@@ -151,6 +151,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
       description: 'Do things',
       model: 'claude-sonnet-4-5',
       effort: 'high',
+      executeOnNote: true,
     });
   });
 
