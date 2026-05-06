@@ -167,19 +167,15 @@ describe('EffortRow', () => {
     expect(parent.querySelector('div.grimoire-effort-row')).toBeNull();
   });
 
-  it('(g) Case 3 is dead code — mount() assigns #parent after #segmented; mounts Haiku (no-op, stores nothing), then update to Sonnet hits Case 4 (model not in empty #models)', () => {
+  it('(g) Case 3 — mount Haiku (no effort row, but stores parent/models/onChange), then update to Sonnet re-mounts effort row into same parent', () => {
     // Case 3: !#segmented && effortOptions !== null && #parent && #onChange
-    // mount() stores #parent only at the very end, after #segmented. If mount()
-    // returns early (Haiku has effortOptions === null), neither #parent nor
-    // #segmented is set. There is no public-API path to reach Case 3.
-    //
-    // Verifying the invariant: mounting Haiku stores nothing; update to Sonnet
-    // then triggers the "model not found" guard (empty #models) rather than
-    // the lazy-mount branch.
+    // mount() now stores #parent, #models, #onChange before the early return for
+    // models with no effortOptions. This enables Case 3 to fire when update() is
+    // called with a model that has options.
     const onChange = vi.fn();
     const row = new EffortRow();
 
-    // Mount with Haiku: effortOptions === null → early return, nothing stored
+    // Mount with Haiku: effortOptions === null → no wrapper, but context stored
     row.mount(parent, {
       models: SUPPORTED_MODELS,
       modelId: 'claude-haiku-4-5',
@@ -188,12 +184,14 @@ describe('EffortRow', () => {
     });
     expect(parent.querySelector('.grimoire-effort-row')).toBeNull();
 
-    // update to Sonnet: #models is empty → model not found → console.error, no DOM change
+    // update to Sonnet: Case 3 fires → re-mounts effort row into original parent
     row.update('claude-sonnet-4-5', 'medium');
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'EffortRow.update: model claude-sonnet-4-5 not found'
-    );
-    expect(parent.querySelector('.grimoire-effort-row')).toBeNull();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    const wrapper = parent.querySelector('.grimoire-effort-row');
+    expect(wrapper).not.toBeNull();
+    // Buttons should reflect Sonnet options
+    const buttons = wrapper?.querySelectorAll('.grimoire-segmented__btn');
+    expect(buttons).toHaveLength(4);
   });
 
   it('(h) update Case 4 — create EffortRow without mounting; call update with invalid model: console.error, no DOM', () => {

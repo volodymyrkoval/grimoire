@@ -83,6 +83,38 @@ describe('ForgeSentinelDetail component', () => {
     expect(onBack).toHaveBeenCalledOnce();
   });
 
+  it('D1e: switching Haiku→Sonnet re-mounts effort row before the Submit button (not after)', () => {
+    const contentEl = document.createElement('div');
+    document.body.appendChild(contentEl);
+    const scope = new Scope();
+    const detail = new ForgeSentinelDetail(contentEl, scope, {
+      onBack: vi.fn(),
+      onSubmit: vi.fn(),
+    }, { defaultModel: 'claude-haiku-4-5', defaultEffort: null });
+
+    const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
+
+    // Haiku has no effort options — row should be absent initially
+    expect(form.querySelector('.grimoire-effort-row')).toBeNull();
+
+    const modelSelect = form.querySelector('select') as HTMLSelectElement;
+    modelSelect.value = 'claude-sonnet-4-5';
+    modelSelect.dispatchEvent(new Event('change'));
+
+    // Effort row should now be present
+    expect(form.querySelector('.grimoire-effort-row')).toBeTruthy();
+
+    // Effort row container must appear BEFORE the Submit button in the form
+    const allFormChildren = Array.from(form.children);
+    const effortIdx = allFormChildren.findIndex(el => el.querySelector('.grimoire-effort-row') !== null);
+    const submitIdx = allFormChildren.findIndex(el => el.matches('button[type="submit"]'));
+    expect(effortIdx).toBeGreaterThanOrEqual(0);
+    expect(effortIdx).toBeLessThan(submitIdx);
+
+    detail.destroy();
+    document.body.removeChild(contentEl);
+  });
+
   it('D1d: ArrowDown on focused model select calls EffortRow.update with the new model id', () => {
     const updateSpy = vi.spyOn(EffortRow.prototype, 'update');
     const { contentEl, scope } = mountDetail({});

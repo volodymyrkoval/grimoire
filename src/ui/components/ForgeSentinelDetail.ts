@@ -31,8 +31,9 @@ export class ForgeSentinelDetail {
 
     const initialModel = SUPPORTED_MODELS.find((m) => m.id === defaults.defaultModel);
     this.#currentEffort = defaults.defaultEffort ?? (initialModel?.defaultEffort ?? null);
+    const effortContainer = form.createEl('div');
     this.#effortRow = new EffortRow();
-    this.#effortRow.mount(form, {
+    this.#effortRow.mount(effortContainer, {
       models: SUPPORTED_MODELS,
       modelId: defaults.defaultModel,
       effort: this.#currentEffort,

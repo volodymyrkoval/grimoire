@@ -23,14 +23,15 @@ export class EffortRow {
       return;
     }
 
+    // Store for later use in update (must happen before any early return)
+    this.#models = opts.models;
+    this.#onChange = opts.onChange;
+    this.#parent = parent;
+
     // If model has no effort options, don't mount anything
     if (model.effortOptions === null) {
       return;
     }
-
-    // Store for later use in update
-    this.#models = opts.models;
-    this.#onChange = opts.onChange;
 
     // Create wrapper div
     const wrapper = document.createElement('div');
@@ -53,8 +54,6 @@ export class EffortRow {
       value: initialEffort,
       onChange: opts.onChange,
     });
-
-    this.#parent = parent;
   }
 
   update(modelId: string, effort: Effort | null): void {
