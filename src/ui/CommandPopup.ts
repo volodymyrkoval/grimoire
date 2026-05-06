@@ -9,13 +9,30 @@ import { SpellsPanel } from "./tabs/SpellsPanel";
 import { LogsPanel } from "./tabs/LogsPanel";
 import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
 import type { Effort } from "../domain/settings/Settings";
+import { SUPPORTED_MODELS } from "../domain/settings/Settings";
+import { SpellOverrideStore } from "../domain/settings/SpellOverrideStore";
+import { OptionsSessionMap } from "./options/OptionsSessionMap";
+import type { OptionsFormSnapshot } from "./options/OptionsFormState";
+import { SpellOptionsDetail } from "./components/SpellOptionsDetail";
 
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
 export type CastAction = (spell: Spell) => void;
+export type OptionsCastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
 
 export interface FormDefaults {
   defaultModel: string;
   defaultEffort: Effort | null;
+}
+
+export interface CommandPopupParams {
+  app: App;
+  spellTag: string;
+  imprintAction: ImprintAction;
+  castAction: CastAction;
+  defaults: FormDefaults;
+  overrides: SpellOverrideStore;
+  sessionMap: OptionsSessionMap;
+  optionsCastAction: OptionsCastAction;
 }
 
 export class CommandPopup extends Modal {
@@ -31,16 +48,19 @@ export class CommandPopup extends Modal {
   readonly #imprintAction: ImprintAction;
   readonly #castAction: CastAction;
   readonly #formDefaults: FormDefaults;
+  readonly #overrides: SpellOverrideStore;
+  readonly #sessionMap: OptionsSessionMap;
+  readonly #optionsCastAction: OptionsCastAction;
 
-  constructor(app: App, spellTag: string, imprintAction: ImprintAction, castAction: CastAction, defaults: FormDefaults) {
-    super(app);
-    this.#imprintAction = imprintAction;
-    this.#castAction = castAction;
-    this.#formDefaults = defaults;
-    const spellsPanel = new SpellsPanel(this.app, spellTag);
-    spellsPanel.events.on("cast", (spell) => this.#castAction(spell));
-    spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
-    this.panels = [spellsPanel, new LogsPanel()];
+  constructor(params: CommandPopupParams) {
+    super(params.app);
+    this.#imprintAction = params.imprintAction;
+    this.#castAction = params.castAction;
+    this.#formDefaults = params.defaults;
+    this.#overrides = params.overrides;
+    this.#sessionMap = params.sessionMap;
+    this.#optionsCastAction = params.optionsCastAction;
+    this.panels = [this.createSpellsPanel(params.spellTag), new LogsPanel()];
     this.activePanel = this.panels[0];
   }
 
@@ -61,6 +81,12 @@ export class CommandPopup extends Modal {
       if (this.phase === "detail") return false;
       const next = (this.panels.indexOf(this.activePanel) + 1) % this.panels.length;
       this.switchTab(this.panels[next]);
+      return true;
+    });
+    this.#kb.bind([], "ArrowRight", () => {
+      if (this.phase !== "search") return false;
+      if (this.activePanel !== this.panels[0]) return false;
+      (this.panels[0] as SpellsPanel).openOptions(this.selectedIndex);
       return true;
     });
   }
@@ -98,6 +124,15 @@ export class CommandPopup extends Modal {
         if (panel) this.switchTab(panel);
       }
     );
+  }
+
+  private createSpellsPanel(spellTag: string): SpellsPanel {
+    const panel = new SpellsPanel(this.app, spellTag);
+    panel.setHasOverride((path) => this.#overrides.has(path));
+    panel.events.on("cast", (spell) => this.#castAction(spell));
+    panel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
+    panel.events.on("open-options", (spell) => this.renderOptionsPanel(spell));
+    return panel;
   }
 
   private renderSearch(): void {
@@ -141,14 +176,39 @@ export class CommandPopup extends Modal {
   private renderForgeSentinelDetail(): void {
     this.#kb.suspend();
     const exit = () => this.exitDetail();
-    const forgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
-      onBack: exit,
-      onSubmit: (snapshot) => {
-        this.#imprintAction(snapshot);
-        exit();
+    this.#activeDetail = new ForgeSentinelDetail(
+      this.contentEl,
+      this.scope,
+      {
+        onBack: exit,
+        onSubmit: (snapshot) => {
+          this.#imprintAction(snapshot);
+          exit();
+        },
       },
-    }, this.#formDefaults);
-    this.#activeDetail = forgeSentinelDetail;
+      this.#formDefaults
+    );
+    this.#onDetailBack = exit;
+  }
+
+  private renderOptionsPanel(spell: Spell): void {
+    this.phase = "detail";
+    this.reattachTabBar();
+    this.#kb.suspend();
+    const exit = () => this.exitDetail();
+    this.#activeDetail = new SpellOptionsDetail({
+      contentEl: this.contentEl,
+      scope: this.scope,
+      spell,
+      app: this.app,
+      overrides: this.#overrides,
+      sessionMap: this.#sessionMap,
+      formDefaults: this.#formDefaults,
+      models: SUPPORTED_MODELS,
+      onBack: exit,
+      onCast: (snap) => this.#optionsCastAction(spell, snap),
+      onOverrideChanged: () => (this.panels[0] as SpellsPanel).refreshOverrides(),
+    });
     this.#onDetailBack = exit;
   }
 

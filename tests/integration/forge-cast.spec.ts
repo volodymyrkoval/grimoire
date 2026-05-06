@@ -11,6 +11,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { App } from 'obsidian';
 import { CommandPopup } from '../../src/ui/CommandPopup';
 import type { ImprintAction, FormDefaults } from '../../src/ui/CommandPopup';
+import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
+import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
 
 // ─── local harness ────────────────────────────────────────────────────────────
 // D5 will update the shared harness.ts; until then this file wires the popup
@@ -33,8 +35,11 @@ function createHarnessWithAction(
     frontmatter: { tags: ['spell'] },
   });
 
-  // 5-arg constructor: app, spellTag, imprintAction, castAction, defaults.
-  const modal = new CommandPopup(app, 'spell', imprintAction, vi.fn(), defaults);
+  const stubOverrides = new SpellOverrideStore({
+    data: { settings: {} as any, spellOverrides: {} },
+    saver: { schedule: vi.fn() } as any,
+  });
+  const modal = new CommandPopup(app, 'spell', imprintAction, vi.fn(), defaults, stubOverrides, new OptionsSessionMap(), vi.fn());
   modal.open();
   const { contentEl } = modal;
 

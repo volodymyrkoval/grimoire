@@ -1,9 +1,11 @@
 import { App } from 'obsidian';
 import { vi } from 'vitest';
 import { CommandPopup } from '../../src/ui/CommandPopup';
-import type { ImprintAction, FormDefaults, CastAction } from '../../src/ui/CommandPopup';
+import type { ImprintAction, FormDefaults, CastAction, OptionsCastAction } from '../../src/ui/CommandPopup';
 import type { Scope } from 'obsidian';
 import type { Effort } from '../../src/domain/settings/Settings';
+import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
+import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
 
 export interface PopupHarness {
   modal: CommandPopup;
@@ -28,11 +30,20 @@ export function createPopupHarness(options?: {
   imprintAction?: ImprintAction;
   castAction?: CastAction;
   defaults?: FormDefaults;
+  overrides?: SpellOverrideStore;
+  sessionMap?: OptionsSessionMap;
+  optionsCastAction?: OptionsCastAction;
 }): PopupHarness {
   const app = new App() as any;
   const imprintAction = options?.imprintAction ?? vi.fn();
   const castAction: CastAction = options?.castAction ?? vi.fn();
   const defaults: FormDefaults = options?.defaults ?? { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' };
+  const overrides = options?.overrides ?? new SpellOverrideStore({
+    data: { settings: {} as any, spellOverrides: {} },
+    saver: { schedule: vi.fn() } as any,
+  });
+  const sessionMap = options?.sessionMap ?? new OptionsSessionMap();
+  const optionsCastAction: OptionsCastAction = options?.optionsCastAction ?? vi.fn();
   const testFiles = [
     { basename: 'Summoning Circle', path: '/spells/summoning.md' },
     { basename: 'Protection Rune', path: '/spells/protection.md' },
@@ -49,7 +60,7 @@ export function createPopupHarness(options?: {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup(app, 'spell', imprintAction, castAction, defaults);
+  const modal = new CommandPopup(app, 'spell', imprintAction, castAction, defaults, overrides, sessionMap, optionsCastAction);
   modal.open();
   const { contentEl } = modal;
 

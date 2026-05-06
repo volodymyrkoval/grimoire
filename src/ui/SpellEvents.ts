@@ -4,4 +4,5 @@ import type { Spell, Sentinel } from "../domain/spells/Spell";
 export type SpellEvents = {
   cast: Spell;
   sentinel: Sentinel;
+  "open-options": Spell;
 };

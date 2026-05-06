@@ -1,6 +1,7 @@
 import { App } from "obsidian";
 import type { TabPanel } from "./TabPanel";
 import { type Spell, type Sentinel, isSentinel } from "../../domain/spells/Spell";
+import type { SpellPath } from "../../domain/spells/SpellPath";
 import { fuzzyFilter } from "../../domain/spells/fuzzyFilter";
 import { getSpells } from "../../domain/spells/spellScanner";
 import { SpellList } from "../components/SpellList";
@@ -18,22 +19,29 @@ export class SpellsPanel implements TabPanel {
   private readonly allSpells: readonly Spell[];
   private filteredSpells: Spell[];
   private spellList: SpellList | null = null;
+  #hasOverride: (path: SpellPath) => boolean = () => false;
+  #lastSelectedIndex: number = 0;
 
   constructor(app: App, tag: string) {
     this.allSpells = getSpells(app, tag);
     this.filteredSpells = [...this.allSpells];
   }
 
-  mount(container: HTMLElement): void {
+  mount(container: HTMLElement, hasOverride?: (path: SpellPath) => boolean): void {
+    if (hasOverride) {
+      this.#hasOverride = hasOverride;
+    }
     this.spellList = new SpellList(container, this.events, [...SENTINELS]);
-    this.spellList.render(this.filteredSpells, 0);
+    this.#lastSelectedIndex = 0;
+    this.spellList.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
   }
 
   filter(query: string): number {
     const results = fuzzyFilter(this.allSpells, SENTINELS, query);
     this.filteredSpells = results.filter((item): item is Spell => !isSentinel(item));
     const initialIndex = this.sentinelFocusIndex(query);
-    this.spellList?.render(this.filteredSpells, initialIndex);
+    this.#lastSelectedIndex = initialIndex;
+    this.spellList?.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
     return initialIndex;
   }
 
@@ -47,12 +55,19 @@ export class SpellsPanel implements TabPanel {
     }
   }
 
+  openOptions(index: number): void {
+    if (index < 0 || index >= this.filteredSpells.length) return;
+    const spell = this.filteredSpells[index]!;
+    this.events.emit("open-options", spell);
+  }
+
   move(delta: number, current: number): number {
     if (this.length === 0) return current;
     return (current + delta + this.length) % this.length;
   }
 
   updateSelection(prev: number, next: number): void {
+    this.#lastSelectedIndex = next;
     this.spellList?.updateSelection(prev, next);
   }
 
@@ -62,6 +77,14 @@ export class SpellsPanel implements TabPanel {
 
   reset(): void {
     this.filteredSpells = [...this.allSpells];
+  }
+
+  setHasOverride(predicate: (path: SpellPath) => boolean): void {
+    this.#hasOverride = predicate;
+  }
+
+  refreshOverrides(): void {
+    this.spellList?.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
   }
 
   private sentinelFocusIndex(query: string): number {

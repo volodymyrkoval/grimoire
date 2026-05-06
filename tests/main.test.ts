@@ -62,7 +62,7 @@ describe('GrimoirePlugin', () => {
     );
   });
 
-  it('command callback constructs CommandPopup with app, spellTag, imprintAction, castAction, defaults', async () => {
+  it('command callback constructs CommandPopup with app, spellTag, imprintAction, castAction, defaults, overrides, sessionMap, optionsCastAction', async () => {
     await plugin.onload();
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
@@ -79,16 +79,20 @@ describe('GrimoirePlugin', () => {
     callback();
 
     expect(popupSpy).toHaveBeenCalledOnce();
-    expect(popupSpy.mock.calls[0]).toHaveLength(5);
-    const [arg0, arg1, arg2, arg3, arg4] = popupSpy.mock.calls[0];
-    expect(arg0).toBe(plugin.app);
-    expect(arg1).toBe(plugin.data.settings.spellTag);
-    expect(typeof arg2).toBe('function');
-    expect(typeof arg3).toBe('function');
-    expect(arg4).toStrictEqual({
+    expect(popupSpy.mock.calls[0]).toHaveLength(1);
+    const params = popupSpy.mock.calls[0][0] as any;
+    expect(params.app).toBe(plugin.app);
+    expect(params.spellTag).toBe(plugin.data.settings.spellTag);
+    expect(typeof params.imprintAction).toBe('function');
+    expect(typeof params.castAction).toBe('function');
+    expect(params.defaults).toStrictEqual({
       defaultModel: 'claude-sonnet-4-5',
       defaultEffort: 'medium',
     });
+    expect(params.overrides).toBe(plugin.overrides);
+    const { OptionsSessionMap } = await import('../src/ui/options/OptionsSessionMap');
+    expect(params.sessionMap).toBeInstanceOf(OptionsSessionMap);
+    expect(typeof params.optionsCastAction).toBe('function');
 
     popupSpy.mockRestore();
   });
@@ -107,13 +111,13 @@ describe('GrimoirePlugin', () => {
     const callback = commandCall![0].callback;
 
     callback();
-    const firstDefaults = popupSpy.mock.calls[0][4];
+    const firstDefaults = popupSpy.mock.calls[0][0].defaults;
     expect(firstDefaults.defaultModel).toBe('claude-sonnet-4-5');
 
     plugin.data.settings.defaultModel = 'claude-opus-4-5';
 
     callback();
-    const secondDefaults = popupSpy.mock.calls[1][4];
+    const secondDefaults = popupSpy.mock.calls[1][0].defaults;
     expect(secondDefaults.defaultModel).toBe('claude-opus-4-5');
 
     popupSpy.mockRestore();
@@ -128,8 +132,8 @@ describe('GrimoirePlugin', () => {
     const CommandPopupModule = await import('../src/ui/CommandPopup');
     let capturedAction: ((snapshot: any) => void) | undefined;
     const popupMock = { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() };
-    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(_app: any, _tag: any, action: any) {
-      capturedAction = action;
+    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(params: any) {
+      capturedAction = params.imprintAction;
       return popupMock as any;
     } as any);
 
@@ -164,8 +168,8 @@ describe('GrimoirePlugin', () => {
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
     let capturedCastAction: ((spell: any) => void) | undefined;
-    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(_app: any, _tag: any, _imprint: any, castAction: any) {
-      capturedCastAction = castAction;
+    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(params: any) {
+      capturedCastAction = params.castAction;
       return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
     } as any);
 
@@ -201,8 +205,8 @@ describe('GrimoirePlugin', () => {
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
     const capturedCastActions: Array<(spell: any) => void> = [];
-    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(_app: any, _tag: any, _imprint: any, castAction: any) {
-      capturedCastActions.push(castAction);
+    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(params: any) {
+      capturedCastActions.push(params.castAction);
       return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
     } as any);
 
@@ -221,6 +225,49 @@ describe('GrimoirePlugin', () => {
 
     expect(dispatchSpy).toHaveBeenCalledOnce();
     expect(dispatchSpy.mock.calls[0][0]).toMatchObject({ model: 'different-model' });
+
+    dispatchSpy.mockRestore();
+  });
+
+  it('optionsCastAction closure dispatches with snapshot values and current settings', async () => {
+    await plugin.onload();
+
+    const dispatchSpy = vi.spyOn(CastDispatcher.prototype, 'dispatch').mockImplementation(() => {});
+
+    const CommandPopupModule = await import('../src/ui/CommandPopup');
+    let capturedOptionsCastAction: ((spell: any, snapshot: any) => void) | undefined;
+    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(params: any) {
+      capturedOptionsCastAction = params.optionsCastAction;
+      return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
+    } as any);
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-command-popup'
+    );
+    commandCall![0].callback();
+
+    expect(capturedOptionsCastAction).toBeDefined();
+
+    (app as any).workspace.getActiveFile.mockReturnValue({ path: 'notes/active.md', basename: 'active' });
+    const stubSpell = { name: 'Test Spell', path: 'spells/test.md' };
+    const stubSnapshot = {
+      model: 'claude-opus-4-5',
+      effort: 'high' as const,
+      contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
+      followUp: 'This is a follow-up.',
+    };
+    capturedOptionsCastAction!(stubSpell, stubSnapshot);
+
+    expect(dispatchSpy).toHaveBeenCalledOnce();
+    expect(dispatchSpy).toHaveBeenCalledWith({
+      spell: stubSpell,
+      model: 'claude-opus-4-5',
+      effort: 'high',
+      contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
+      followUp: 'This is a follow-up.',
+      settings: plugin.data.settings,
+      activeFilePath: 'notes/active.md',
+    });
 
     dispatchSpy.mockRestore();
   });

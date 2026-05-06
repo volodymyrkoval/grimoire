@@ -3,6 +3,7 @@ import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
 import { SpellOverrideStore } from './domain/settings/SpellOverrideStore';
+import { OptionsSessionMap } from './ui/options/OptionsSessionMap';
 import { GrimoireSettingTab } from './ui/settings/GrimoireSettingTab';
 import { CommandPopup } from './ui/CommandPopup';
 import { ForgeImprinter } from './forge/ForgeImprinter';
@@ -15,44 +16,13 @@ export default class GrimoirePlugin extends Plugin {
   overrides!: SpellOverrideStore;
 
   async onload(): Promise<void> {
-    this.data = hydrate(await this.loadData(), this.app);
-    this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
-    this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
-    this.addSettingTab(new GrimoireSettingTab(this.app, this));
+    await this.initCore();
+    const sessionMap = new OptionsSessionMap();
     const imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
       castRunner: new CastRunner(),
     });
-    this.addCommand({
-      id: 'open-command-popup',
-      name: 'Open Grimoire',
-      callback: () => {
-        // close is captured by reference — popup and dispatcher are assigned before either close can fire.
-        const closeRef = { close: () => {} };
-        const dispatcher = new CastDispatcher({
-          notify: (msg) => { new Notice(msg); },
-          close: () => closeRef.close(),
-          castRunner: new CastRunner(),
-        });
-        const popup = new CommandPopup(
-          this.app,
-          this.data.settings.spellTag,
-          (snapshot) => imprinter.imprint(snapshot, this.data.settings, () => closeRef.close()),
-          (spell) => dispatcher.dispatch({
-            spell,
-            model: this.data.settings.defaultModel,
-            effort: this.data.settings.defaultEffort,
-            contextNotePaths: [],
-            followUp: '',
-            settings: this.data.settings,
-            activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
-          }),
-          { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
-        );
-        closeRef.close = () => popup.close();
-        popup.open();
-      },
-    });
+    this.registerUI(sessionMap, imprinter);
   }
 
   onunload(): void {
@@ -60,4 +30,70 @@ export default class GrimoirePlugin extends Plugin {
   }
 
   save(): void { this.saver.schedule(); }
+
+  private async initCore(): Promise<void> {
+    this.data = hydrate(await this.loadData(), this.app);
+    this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
+    this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
+  }
+
+  private registerUI(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
+    this.addSettingTab(new GrimoireSettingTab(this.app, this));
+    this.addCommand({
+      id: 'open-command-popup',
+      name: 'Open Grimoire',
+      callback: () => this.openCommandPopup(sessionMap, imprinter),
+    });
+  }
+
+  private openCommandPopup(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
+    // close is captured by reference — popup and dispatcher are assigned before either close can fire.
+    const closeRef = { close: () => {} };
+    const dispatcher = this.createDispatcher(closeRef);
+    const popup = this.createCommandPopup(sessionMap, imprinter, dispatcher, closeRef);
+    closeRef.close = () => popup.close();
+    popup.open();
+  }
+
+  private createDispatcher(closeRef: { close: () => void }): CastDispatcher {
+    return new CastDispatcher({
+      notify: (msg) => { new Notice(msg); },
+      close: () => closeRef.close(),
+      castRunner: new CastRunner(),
+    });
+  }
+
+  private createCommandPopup(
+    sessionMap: OptionsSessionMap,
+    imprinter: ForgeImprinter,
+    dispatcher: CastDispatcher,
+    closeRef: { close: () => void },
+  ): CommandPopup {
+    return new CommandPopup({
+      app: this.app,
+      spellTag: this.data.settings.spellTag,
+      imprintAction: (snapshot) => imprinter.imprint(snapshot, this.data.settings, () => closeRef.close()),
+      castAction: (spell) => dispatcher.dispatch({
+        spell,
+        model: this.data.settings.defaultModel,
+        effort: this.data.settings.defaultEffort,
+        contextNotePaths: [],
+        followUp: '',
+        settings: this.data.settings,
+        activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
+      }),
+      defaults: { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
+      overrides: this.overrides,
+      sessionMap,
+      optionsCastAction: (spell, snap) => dispatcher.dispatch({
+        spell,
+        model: snap.model,
+        effort: snap.effort,
+        contextNotePaths: snap.contextNotePaths,
+        followUp: snap.followUp,
+        settings: this.data.settings,
+        activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
+      }),
+    });
+  }
 }

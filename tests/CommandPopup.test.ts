@@ -1,9 +1,20 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { FormDefaults } from '../src/ui/CommandPopup';
+import type { FormDefaults, OptionsCastAction } from '../src/ui/CommandPopup';
 // obsidian is aliased to tests/__mocks__/obsidian.ts in vitest.config.ts
 import { App } from 'obsidian';
 import { CommandPopup } from '../src/ui/CommandPopup';
 import * as FSDModule from '../src/ui/components/ForgeSentinelDetail';
+import * as OptionsPanelModule from '../src/ui/options/OptionsPanel';
+import { SpellOverrideStore } from '../src/domain/settings/SpellOverrideStore';
+import { OptionsSessionMap } from '../src/ui/options/OptionsSessionMap';
+
+// EffortRow uses document.createElement — not available in the unit test environment
+vi.mock('../src/ui/widgets/EffortRow', () => ({
+  EffortRow: vi.fn().mockImplementation(() => ({
+    mount: vi.fn(),
+    update: vi.fn(),
+  })),
+}));
 
 const STUB_SPELLS = [
   { basename: 'Banishment Hex', path: '/spells/banishment.md' },
@@ -23,6 +34,26 @@ function makeApp() {
   app.vault.getMarkdownFiles.mockReturnValue(STUB_SPELLS);
   app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { tags: ['spell'] } });
   return app;
+}
+
+function makeStubOverrides() {
+  return new SpellOverrideStore({
+    data: { settings: {} as any, spellOverrides: {} },
+    saver: { schedule: vi.fn() } as any,
+  });
+}
+
+function makePopup(optionsCastAction?: OptionsCastAction) {
+  return new CommandPopup({
+    app: makeApp(),
+    spellTag: 'spell',
+    imprintAction: vi.fn(),
+    castAction: vi.fn(),
+    defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+    overrides: makeStubOverrides(),
+    sessionMap: new OptionsSessionMap(),
+    optionsCastAction: optionsCastAction ?? vi.fn(),
+  });
 }
 
 // Real-enough Scope fake: simulates Obsidian's registration-order dispatch.
@@ -57,7 +88,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
   // must tear down ForgeSentinelDetail's scope bindings so they don't intercept
   // arrow keys after the popup re-binds its own.
   it('after close() (Obsidian Escape path) leaves forge detail, ArrowDown moves search selection', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = makePopup();
     const { dispatch } = installFakeScope(popup as any);
 
     popup.onOpen();
@@ -78,7 +109,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
 
 describe('CommandPopup keyboard suspend/resume', () => {
   it('suspends keyboard bindings when entering forge sentinel detail', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = makePopup();
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -94,7 +125,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onBack fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = makePopup();
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -120,7 +151,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onSubmit fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = makePopup();
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -144,5 +175,112 @@ describe('CommandPopup keyboard suspend/resume', () => {
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
 
+});
+
+describe('CommandPopup ArrowRight — open options', () => {
+  it('ArrowRight in search phase on spells tab calls openOptions at selectedIndex', () => {
+    const popup = makePopup();
+    const { dispatch } = installFakeScope(popup as any);
+    popup.onOpen();
+
+    const spellsPanel = (popup as any).panels[0];
+    // Prevent openOptions from emitting open-options (which would try to render OptionsPanel in node env)
+    const openOptionsSpy = vi.spyOn(spellsPanel, 'openOptions').mockImplementation(() => {});
+
+    dispatch('ArrowRight');
+
+    expect(openOptionsSpy).toHaveBeenCalledWith(0);
+  });
+
+  it('ArrowRight in detail phase is a no-op', () => {
+    const popup = makePopup();
+    const { dispatch } = installFakeScope(popup as any);
+    popup.onOpen();
+
+    // Force detail phase directly without triggering ForgeSentinelDetail
+    (popup as any).phase = 'detail';
+
+    const spellsPanel = (popup as any).panels[0];
+    const openOptionsSpy = vi.spyOn(spellsPanel, 'openOptions');
+    dispatch('ArrowRight');
+
+    expect(openOptionsSpy).not.toHaveBeenCalled();
+  });
+
+  it('ArrowRight in search phase on logs tab is a no-op', () => {
+    const popup = makePopup();
+    const { dispatch } = installFakeScope(popup as any);
+    popup.onOpen();
+
+    // Switch to logs tab (panels[1])
+    const logsPanel = (popup as any).panels[1];
+    (popup as any).switchTab(logsPanel);
+
+    const spellsPanel = (popup as any).panels[0];
+    const openOptionsSpy = vi.spyOn(spellsPanel, 'openOptions');
+    dispatch('ArrowRight');
+
+    expect(openOptionsSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('CommandPopup open-options event → renderOptionsPanel', () => {
+  it('open-options event on spellsPanel constructs OptionsPanel', () => {
+    const popup = makePopup();
+    popup.onOpen();
+
+    const OrigOP = OptionsPanelModule.OptionsPanel;
+    const constructorSpy = vi.spyOn(OptionsPanelModule, 'OptionsPanel' as any).mockImplementationOnce(
+      function (..._args: any[]) {
+        return Object.assign(Object.create(OrigOP.prototype), { destroy: vi.fn() });
+      } as any
+    );
+
+    const spellsPanel = (popup as any).panels[0];
+    spellsPanel.events.emit('open-options', STUB_SPELLS[0]);
+
+    expect(constructorSpy).toHaveBeenCalledOnce();
+  });
+
+  it('open-options event switches phase to detail', () => {
+    const popup = makePopup();
+    popup.onOpen();
+
+    vi.spyOn(OptionsPanelModule, 'OptionsPanel' as any).mockImplementationOnce(
+      function (..._args: any[]) {
+        return { destroy: vi.fn() };
+      } as any
+    );
+
+    const spellsPanel = (popup as any).panels[0];
+    spellsPanel.events.emit('open-options', STUB_SPELLS[0]);
+
+    expect((popup as any).phase).toBe('detail');
+  });
+});
+
+describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
+  it('spellsPanel hasOverride predicate delegates to overrides.has()', () => {
+    const stubOverrides = makeStubOverrides();
+    const popup = new CommandPopup({
+      app: makeApp(),
+      spellTag: 'spell',
+      imprintAction: vi.fn(),
+      castAction: vi.fn(),
+      defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+      overrides: stubOverrides,
+      sessionMap: new OptionsSessionMap(),
+      optionsCastAction: vi.fn(),
+    });
+
+    const spellsPanel = (popup as any).panels[0];
+    expect(typeof spellsPanel.setHasOverride).toBe('function');
+
+    // After onOpen(), refreshOverrides() renders with the predicate → delegates to overrides.has()
+    const hasSpy = vi.spyOn(stubOverrides, 'has').mockReturnValue(true);
+    popup.onOpen();
+    spellsPanel.refreshOverrides();
+    expect(hasSpy).toHaveBeenCalled();
+  });
 });
 
