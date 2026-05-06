@@ -9,9 +9,18 @@ import { SpellsPanel } from "./tabs/SpellsPanel";
 import { LogsPanel } from "./tabs/LogsPanel";
 import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
 import type { Effort } from "../domain/settings/Settings";
+import { SUPPORTED_MODELS } from "../domain/settings/Settings";
+import { SpellOverrideStore } from "../domain/settings/SpellOverrideStore";
+import { OptionsSessionMap } from "./options/OptionsSessionMap";
+import { OptionsPanel } from "./options/OptionsPanel";
+import { OptionsFormState } from "./options/OptionsFormState";
+import type { OptionsFormSnapshot } from "./options/OptionsFormState";
+import type { OptionsSnapshot } from "./options/OptionsSnapshot";
+import { resolveSpellOptions } from "../domain/settings/spellOptionsResolver";
 
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
 export type CastAction = (spell: Spell) => void;
+export type OptionsCastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
 
 export interface FormDefaults {
   defaultModel: string;
@@ -31,15 +40,32 @@ export class CommandPopup extends Modal {
   readonly #imprintAction: ImprintAction;
   readonly #castAction: CastAction;
   readonly #formDefaults: FormDefaults;
+  readonly #overrides: SpellOverrideStore;
+  readonly #sessionMap: OptionsSessionMap;
+  readonly #optionsCastAction: OptionsCastAction;
 
-  constructor(app: App, spellTag: string, imprintAction: ImprintAction, castAction: CastAction, defaults: FormDefaults) {
+  constructor(
+    app: App,
+    spellTag: string,
+    imprintAction: ImprintAction,
+    castAction: CastAction,
+    defaults: FormDefaults,
+    overrides: SpellOverrideStore,
+    sessionMap: OptionsSessionMap,
+    optionsCastAction: OptionsCastAction,
+  ) {
     super(app);
     this.#imprintAction = imprintAction;
     this.#castAction = castAction;
     this.#formDefaults = defaults;
+    this.#overrides = overrides;
+    this.#sessionMap = sessionMap;
+    this.#optionsCastAction = optionsCastAction;
     const spellsPanel = new SpellsPanel(this.app, spellTag);
+    spellsPanel.setHasOverride((path) => this.#overrides.has(path));
     spellsPanel.events.on("cast", (spell) => this.#castAction(spell));
     spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
+    spellsPanel.events.on("open-options", (spell) => this.renderOptionsPanel(spell));
     this.panels = [spellsPanel, new LogsPanel()];
     this.activePanel = this.panels[0];
   }
@@ -61,6 +87,12 @@ export class CommandPopup extends Modal {
       if (this.phase === "detail") return false;
       const next = (this.panels.indexOf(this.activePanel) + 1) % this.panels.length;
       this.switchTab(this.panels[next]);
+      return true;
+    });
+    this.#kb.bind([], "ArrowRight", () => {
+      if (this.phase !== "search") return false;
+      if (this.activePanel !== this.panels[0]) return false;
+      (this.panels[0] as SpellsPanel).openOptions(this.selectedIndex);
       return true;
     });
   }
@@ -149,6 +181,51 @@ export class CommandPopup extends Modal {
       },
     }, this.#formDefaults);
     this.#activeDetail = forgeSentinelDetail;
+    this.#onDetailBack = exit;
+  }
+
+  private renderOptionsPanel(spell: Spell): void {
+    this.phase = "detail";
+    this.reattachTabBar();
+    this.#kb.suspend();
+
+    const resolved = resolveSpellOptions({
+      spellPath: spell.path,
+      session: this.#sessionMap,
+      overrides: this.#overrides,
+      settings: {
+        defaultModel: this.#formDefaults.defaultModel,
+        defaultEffort: this.#formDefaults.defaultEffort,
+        spellTag: "",
+        cliCommand: "",
+        binaryPath: "",
+        forgeOutputFolder: "",
+        vaultMountPath: "",
+      },
+      models: SUPPORTED_MODELS,
+    });
+
+    const sessionEntry = this.#sessionMap.get(spell.path);
+    const formState = new OptionsFormState({
+      model: resolved.model,
+      effort: resolved.effort,
+      contextNotePaths: sessionEntry?.contextNotePaths ?? [],
+      followUp: sessionEntry?.followUp ?? "",
+    });
+
+    const snapshot: OptionsSnapshot = { model: resolved.model, effort: resolved.effort };
+
+    const exit = () => this.exitDetail();
+    const panel = new OptionsPanel(this.contentEl, this.scope, formState, snapshot, {
+      app: this.app,
+      overrides: this.#overrides,
+      sessionMap: this.#sessionMap,
+      spellPath: spell.path,
+      onCast: (snap) => this.#optionsCastAction(spell, snap),
+      onOverrideChanged: () => (this.panels[0] as SpellsPanel).refreshOverrides(),
+      onBack: exit,
+    });
+    this.#activeDetail = panel;
     this.#onDetailBack = exit;
   }
 

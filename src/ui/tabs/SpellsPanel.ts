@@ -79,6 +79,10 @@ export class SpellsPanel implements TabPanel {
     this.filteredSpells = [...this.allSpells];
   }
 
+  setHasOverride(predicate: (path: SpellPath) => boolean): void {
+    this.#hasOverride = predicate;
+  }
+
   refreshOverrides(): void {
     this.spellList?.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
   }
