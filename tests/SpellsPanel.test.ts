@@ -113,3 +113,48 @@ describe('SpellsPanel with vault', () => {
     expect(panel.length).toBe(2);
   });
 });
+
+describe('SpellsPanel.openOptions', () => {
+  it('in-range index emits open-options with correct spell', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+    const firstSpell = panel['filteredSpells'][0];
+
+    panel.openOptions(0);
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledWith('open-options', firstSpell);
+  });
+
+  it('out-of-range index (>= length) is a no-op', () => {
+    const panel = makePanel();
+    panel.filter('protect');
+    const spy = vi.spyOn(panel.events, 'emit');
+
+    panel.openOptions(panel['filteredSpells'].length);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('sentinel-row index (spell count) is a no-op', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+    const sentinelIndex = panel['filteredSpells'].length;
+
+    panel.openOptions(sentinelIndex);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('negative index is a no-op', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+
+    panel.openOptions(-1);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
