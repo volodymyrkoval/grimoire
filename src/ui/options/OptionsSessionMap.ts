@@ -6,6 +6,7 @@ export interface OptionsSessionEntry {
   effort: Effort | null;
   contextNotePaths: readonly string[];
   followUp: string;
+  executeOnNote: boolean;
 }
 
 export class OptionsSessionMap {
