@@ -1,6 +1,9 @@
 import { App } from 'obsidian';
+import { vi } from 'vitest';
 import { CommandPopup } from '../../src/ui/CommandPopup';
+import type { ImprintAction, FormDefaults } from '../../src/ui/CommandPopup';
 import type { Scope } from 'obsidian';
+import type { Effort } from '../../src/domain/settings/Settings';
 
 export interface PopupHarness {
   modal: CommandPopup;
@@ -11,7 +14,7 @@ export interface PopupHarness {
   clickTab(id: string): void;
   clickRow(index: number): void;
   clickBack(): void;
-  submitForge(values?: { name?: string; description?: string; model?: string }): void;
+  submitForge(values?: { name?: string; description?: string; model?: string; effort?: Effort | null }): void;
 
   visibleSpellRows(): HTMLElement[];
   visibleSentinelRows(): HTMLElement[];
@@ -21,8 +24,13 @@ export interface PopupHarness {
   isInDetail(): boolean;
 }
 
-export function createPopupHarness(): PopupHarness {
+export function createPopupHarness(options?: {
+  imprintAction?: ImprintAction;
+  defaults?: FormDefaults;
+}): PopupHarness {
   const app = new App() as any;
+  const imprintAction = options?.imprintAction ?? vi.fn();
+  const defaults: FormDefaults = options?.defaults ?? { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' };
   const testFiles = [
     { basename: 'Summoning Circle', path: '/spells/summoning.md' },
     { basename: 'Protection Rune', path: '/spells/protection.md' },
@@ -39,7 +47,7 @@ export function createPopupHarness(): PopupHarness {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup(app, 'spell');
+  const modal = new CommandPopup(app, 'spell', imprintAction, defaults);
   modal.open();
   const { contentEl } = modal;
 
@@ -93,7 +101,7 @@ export function createPopupHarness(): PopupHarness {
       btn.dispatchEvent(new Event('click'));
     },
 
-    submitForge(values = {}): void {
+    submitForge(values: { name?: string; description?: string; model?: string; effort?: Effort | null } = {}): void {
       const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement | null;
       if (!form) throw new Error('Forge form not found');
       if (values.name !== undefined) {
@@ -107,6 +115,11 @@ export function createPopupHarness(): PopupHarness {
       if (values.model !== undefined) {
         const sel = form.querySelector('select') as HTMLSelectElement;
         sel.value = values.model;
+      }
+      if (values.effort !== undefined) {
+        const selects = form.querySelectorAll('select');
+        const effortSel = selects[1] as HTMLSelectElement;
+        effortSel.value = values.effort === null ? '' : values.effort;
       }
       form.dispatchEvent(new Event('submit'));
     },

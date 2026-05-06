@@ -301,6 +301,13 @@ export class Setting {
   }
 }
 
+export class Notice {
+  static instances: Notice[] = [];
+  constructor(public readonly message: string) {
+    Notice.instances.push(this);
+  }
+}
+
 export const Platform = { isDesktop: true };
 
 export class FileSystemAdapter {

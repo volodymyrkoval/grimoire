@@ -1,10 +1,12 @@
-import { Plugin } from 'obsidian';
+import { Plugin, Notice } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
 import { SpellOverrideStore } from './domain/settings/SpellOverrideStore';
 import { GrimoireSettingTab } from './ui/settings/GrimoireSettingTab';
 import { CommandPopup } from './ui/CommandPopup';
+import { ForgeImprinter } from './forge/ForgeImprinter';
+import { CastRunner } from './cast/CastRunner';
 
 export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
@@ -16,10 +18,25 @@ export default class GrimoirePlugin extends Plugin {
     this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
     this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
     this.addSettingTab(new GrimoireSettingTab(this.app, this));
+    const imprinter = new ForgeImprinter({
+      notify: (msg) => { new Notice(msg); },
+      castRunner: new CastRunner(),
+    });
     this.addCommand({
       id: 'open-command-popup',
       name: 'Open Grimoire',
-      callback: () => new CommandPopup(this.app, this.data.settings.spellTag).open(),
+      callback: () => {
+        // close is captured by reference — popup is assigned before imprint() can invoke close().
+        const closeRef = { close: () => {} };
+        const popup = new CommandPopup(
+          this.app,
+          this.data.settings.spellTag,
+          (snapshot) => imprinter.imprint(snapshot, this.data.settings, () => closeRef.close()),
+          { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
+        );
+        closeRef.close = () => popup.close();
+        popup.open();
+      },
     });
   }
 

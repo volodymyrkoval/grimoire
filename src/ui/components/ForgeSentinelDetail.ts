@@ -1,16 +1,12 @@
 import { Scope } from 'obsidian';
 import { KeyboardController } from '../KeyboardController';
-
-/** Fields collected by the Forge sentinel form when authoring a new spell. */
-export type ForgeFormData = {
-  name: string;
-  description: string;
-  model: string;
-};
+import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
+import { SUPPORTED_MODELS, Effort } from '../../domain/settings/Settings';
+import type { FormDefaults } from '../CommandPopup';
 
 interface Callbacks {
   onBack: () => void;
-  onSubmit: (data: ForgeFormData) => void;
+  onSubmit: (snapshot: ForgeFormSnapshot) => void;
 }
 
 /** Detail panel for the Forge sentinel: name/description/model form with its own keyboard bindings. */
@@ -18,9 +14,10 @@ export class ForgeSentinelDetail {
   private readonly nameInput: HTMLInputElement;
   private readonly descInput: HTMLTextAreaElement;
   private readonly modelSelect: HTMLSelectElement;
+  private readonly effortSelect: HTMLSelectElement;
   #kb: KeyboardController;
 
-  constructor(contentEl: HTMLElement, scope: Scope, callbacks: Callbacks) {
+  constructor(contentEl: HTMLElement, scope: Scope, callbacks: Callbacks, defaults: FormDefaults) {
     this.#kb = new KeyboardController(scope);
     this.buildBackButton(contentEl, callbacks.onBack);
     const form = contentEl.createEl('form');
@@ -28,6 +25,10 @@ export class ForgeSentinelDetail {
     this.nameInput = this.buildNameField(form);
     this.descInput = this.buildDescriptionField(form);
     this.modelSelect = this.buildModelSelect(form);
+    this.effortSelect = this.buildEffortSelect(form);
+    // Apply defaults
+    this.modelSelect.value = defaults.defaultModel;
+    this.effortSelect.value = defaults.defaultEffort ?? '';
     form.createEl('button', { type: 'submit', text: 'Submit' });
     this.wireSubmitHandler(form, callbacks.onSubmit);
     this.bindModelKeys();
@@ -78,19 +79,31 @@ export class ForgeSentinelDetail {
   private buildModelSelect(form: HTMLElement): HTMLSelectElement {
     const label = form.createEl('label');
     const select = label.createEl('select') as HTMLSelectElement;
-    ['haiku', 'sonnet', 'opus'].forEach((model) => {
-      select.createEl('option', { value: model, text: model });
+    SUPPORTED_MODELS.forEach((m) => {
+      select.createEl('option', { value: m.id, text: m.label });
     });
     return select;
   }
 
-  private wireSubmitHandler(form: HTMLElement, onSubmit: (data: ForgeFormData) => void): void {
+  private buildEffortSelect(form: HTMLElement): HTMLSelectElement {
+    const label = form.createEl('label');
+    const select = label.createEl('select') as HTMLSelectElement;
+    // (none) option — value '' maps to null on submit
+    select.createEl('option', { value: '', text: '(none)' });
+    (['low', 'medium', 'high', 'xhigh', 'max'] as Effort[]).forEach((e) => {
+      select.createEl('option', { value: e, text: e });
+    });
+    return select;
+  }
+
+  private wireSubmitHandler(form: HTMLElement, onSubmit: (snapshot: ForgeFormSnapshot) => void): void {
     (form as HTMLFormElement).onsubmit = (e: Event): void => {
       e.preventDefault();
       onSubmit({
         name: this.nameInput.value || '',
         description: this.descInput.value || '',
-        model: this.modelSelect.value || 'haiku',
+        model: this.modelSelect.value,
+        effort: this.effortSelect.value === '' ? null : (this.effortSelect.value as Effort),
       });
     };
   }

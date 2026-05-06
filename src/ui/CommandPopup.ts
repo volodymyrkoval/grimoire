@@ -7,6 +7,15 @@ import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
 import type { TabPanel } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
 import { LogsPanel } from "./tabs/LogsPanel";
+import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
+import type { Effort } from "../domain/settings/Settings";
+
+export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
+
+export interface FormDefaults {
+  defaultModel: string;
+  defaultEffort: Effort | null;
+}
 
 export class CommandPopup extends Modal {
   private selectedIndex = 0;
@@ -18,9 +27,13 @@ export class CommandPopup extends Modal {
   #kb = new KeyboardController(this.scope);
   #onDetailBack: (() => void) | null = null;
   #activeDetail: { destroy(): void } | null = null;
+  readonly #imprintAction: ImprintAction;
+  readonly #formDefaults: FormDefaults;
 
-  constructor(app: App, spellTag: string) {
+  constructor(app: App, spellTag: string, imprintAction: ImprintAction, defaults: FormDefaults) {
     super(app);
+    this.#imprintAction = imprintAction;
+    this.#formDefaults = defaults;
     const spellsPanel = new SpellsPanel(this.app, spellTag);
     spellsPanel.events.on("detail", (spell) => this.renderDetail(spell));
     spellsPanel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
@@ -138,8 +151,11 @@ export class CommandPopup extends Modal {
     const exit = () => this.exitDetail();
     const forgeSentinelDetail = new ForgeSentinelDetail(this.contentEl, this.scope, {
       onBack: exit,
-      onSubmit: exit,
-    });
+      onSubmit: (snapshot) => {
+        this.#imprintAction(snapshot);
+        exit();
+      },
+    }, this.#formDefaults);
     this.#activeDetail = forgeSentinelDetail;
     this.#onDetailBack = exit;
   }

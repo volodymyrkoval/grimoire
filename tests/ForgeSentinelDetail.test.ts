@@ -67,7 +67,7 @@ describe('ForgeSentinelDetail', () => {
     });
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, makeScope(), callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
 
     expect(nameInput.focus).toHaveBeenCalled();
   });
@@ -89,7 +89,7 @@ describe('ForgeSentinelDetail', () => {
     label.createEl.mockReturnValue(select);
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, makeScope(), callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
 
     // Verify form was created
     const formCall = container.createEl.mock.calls.find(
@@ -115,7 +115,7 @@ describe('ForgeSentinelDetail', () => {
     label.createEl.mockReturnValue(createMockElement());
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, makeScope(), callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
 
     // Verify first label was created for name
     const labelCalls = form.createEl.mock.calls.filter(
@@ -143,18 +143,27 @@ describe('ForgeSentinelDetail', () => {
     label.createEl.mockReturnValue(createMockElement());
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, makeScope(), callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
 
     // Verify textarea was created in a label
     expect(label.createEl).toHaveBeenCalledWith('textarea', { placeholder: 'Description' });
   });
 
-  it('model select has options: haiku, sonnet, opus', () => {
+  it('model select has options from SUPPORTED_MODELS: haiku, sonnet, opus ids', () => {
     const container = createMockElement();
     const button = createMockElement();
     const form = createMockElement();
-    const label = createMockElement();
-    const select = createMockElement();
+    const modelLabel = createMockElement();
+    const effortLabel = createMockElement();
+    const modelSelect = createMockElement();
+    const effortSelect = createMockElement();
+
+    // Generic label — all createEl calls return a mock element with focus()
+    const makeFullLabel = () => {
+      const lbl = createMockElement();
+      lbl.createEl.mockImplementation(() => createMockElement());
+      return lbl;
+    };
 
     container.createEl.mockImplementation((tag: string) => {
       if (tag === 'button') return button;
@@ -162,29 +171,41 @@ describe('ForgeSentinelDetail', () => {
       return createMockElement();
     });
 
-    form.createEl.mockReturnValue(label);
-
-    label.createEl.mockImplementation((tag: string) => {
-      if (tag === 'select') return select;
+    let labelCount = 0;
+    form.createEl.mockImplementation((tag: string) => {
+      if (tag === 'label') {
+        labelCount++;
+        // label 3 = modelLabel, label 4 = effortLabel; others return fully-mocked generic
+        if (labelCount === 3) return modelLabel;
+        if (labelCount === 4) return effortLabel;
+        return makeFullLabel();
+      }
       return createMockElement();
     });
 
-    select.createEl.mockReturnValue(createMockElement());
+    modelLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'select') return modelSelect;
+      return createMockElement();
+    });
+    effortLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'select') return effortSelect;
+      return createMockElement();
+    });
+
+    modelSelect.createEl.mockReturnValue(createMockElement());
+    effortSelect.createEl.mockReturnValue(createMockElement());
 
     const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, makeScope(), callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
 
-    // Verify select was created
-    expect(label.createEl).toHaveBeenCalledWith('select');
-
-    // Verify options were created in select
-    const optionCalls = select.createEl.mock.calls.filter(
+    // Verify model select options come from SUPPORTED_MODELS
+    const modelOptionCalls = modelSelect.createEl.mock.calls.filter(
       (call) => call[0] === 'option'
     );
-    expect(optionCalls.length).toBe(3);
-    expect(optionCalls[0][1]?.value).toBe('haiku');
-    expect(optionCalls[1][1]?.value).toBe('sonnet');
-    expect(optionCalls[2][1]?.value).toBe('opus');
+    expect(modelOptionCalls.length).toBe(3);
+    expect(modelOptionCalls[0][1]?.value).toBe('claude-haiku-4-5');
+    expect(modelOptionCalls[1][1]?.value).toBe('claude-sonnet-4-5');
+    expect(modelOptionCalls[2][1]?.value).toBe('claude-opus-4-5');
   });
 
   it('clicking back button calls onBack', () => {
@@ -204,7 +225,7 @@ describe('ForgeSentinelDetail', () => {
 
     const onBack = vi.fn();
     const callbacks = { onBack, onSubmit: vi.fn() };
-    new ForgeSentinelDetail(container, makeScope(), callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
 
     // Verify back button was created
     expect(container.createEl).toHaveBeenCalledWith('button', { text: '← Back' });
@@ -215,19 +236,20 @@ describe('ForgeSentinelDetail', () => {
     expect(onBack).toHaveBeenCalled();
   });
 
-  it('submitting form calls onSubmit with ForgeFormData', () => {
+  it('submitting form calls onSubmit with ForgeFormSnapshot', () => {
     const container = createMockElement();
     const backButton = createMockElement();
     const form = createMockElement();
     const nameLabel = createMockElement();
     const descLabel = createMockElement();
     const modelLabel = createMockElement();
+    const effortLabel = createMockElement();
     const submitButton = createMockElement();
     const modelSelect = createMockElement();
+    const effortSelect = createMockElement();
 
     const nameInput = { value: 'My Forge', focus: vi.fn() };
     const descInput = { value: 'A description' };
-    modelSelect.value = 'opus';
 
     container.createEl.mockImplementation((tag: string) => {
       if (tag === 'button') return backButton;
@@ -241,7 +263,8 @@ describe('ForgeSentinelDetail', () => {
         labelCount++;
         if (labelCount === 1) return nameLabel;
         if (labelCount === 2) return descLabel;
-        return modelLabel;
+        if (labelCount === 3) return modelLabel;
+        return effortLabel;
       }
       if (tag === 'button' && labelCount >= 3) return submitButton;
       return createMockElement();
@@ -262,9 +285,22 @@ describe('ForgeSentinelDetail', () => {
       return createMockElement();
     });
 
+    effortLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'select') return effortSelect;
+      return createMockElement();
+    });
+
+    // effortSelect.createEl is called for each option (including (none))
+    effortSelect.createEl.mockImplementation(() => createMockElement());
+    modelSelect.createEl.mockImplementation(() => createMockElement());
+
     const onSubmit = vi.fn();
     const callbacks = { onBack: vi.fn(), onSubmit };
-    new ForgeSentinelDetail(container, makeScope(), callbacks);
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
+
+    // Set desired form values AFTER construction (constructor applies defaults first)
+    modelSelect.value = 'claude-opus-4-5';
+    effortSelect.value = ''; // (none) → null
 
     // Get the form submit handler that was set
     const formSubmitHandler = (form as unknown as HTMLFormElement).onsubmit;
@@ -278,8 +314,79 @@ describe('ForgeSentinelDetail', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       name: 'My Forge',
       description: 'A description',
-      model: 'opus',
+      model: 'claude-opus-4-5',
+      effort: null,
     });
+  });
+
+  it('wireSubmitHandler uses modelSelect.value directly — no haiku fallback when value is empty', () => {
+    const container = createMockElement();
+    const backButton = createMockElement();
+    const form = createMockElement();
+    const nameLabel = createMockElement();
+    const descLabel = createMockElement();
+    const modelLabel = createMockElement();
+    const effortLabel = createMockElement();
+    const submitButton = createMockElement();
+    const modelSelect = createMockElement();
+    const effortSelect = createMockElement();
+
+    const nameInput = { value: '', focus: vi.fn() };
+    const descInput = { value: '' };
+
+    container.createEl.mockImplementation((tag: string) => {
+      if (tag === 'button') return backButton;
+      if (tag === 'form') return form;
+      return createMockElement();
+    });
+
+    let labelCount = 0;
+    form.createEl.mockImplementation((tag: string) => {
+      if (tag === 'label') {
+        labelCount++;
+        if (labelCount === 1) return nameLabel;
+        if (labelCount === 2) return descLabel;
+        if (labelCount === 3) return modelLabel;
+        return effortLabel;
+      }
+      if (tag === 'button' && labelCount >= 3) return submitButton;
+      return createMockElement();
+    });
+
+    nameLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'input') return nameInput;
+      return createMockElement();
+    });
+    descLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'textarea') return descInput;
+      return createMockElement();
+    });
+    modelLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'select') return modelSelect;
+      return createMockElement();
+    });
+    effortLabel.createEl.mockImplementation((tag: string) => {
+      if (tag === 'select') return effortSelect;
+      return createMockElement();
+    });
+
+    effortSelect.createEl.mockImplementation(() => createMockElement());
+    modelSelect.createEl.mockImplementation(() => createMockElement());
+
+    const onSubmit = vi.fn();
+    const callbacks = { onBack: vi.fn(), onSubmit };
+    new ForgeSentinelDetail(container, makeScope(), callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: null });
+
+    // Force value to empty string to prove no 'haiku' fallback is applied
+    modelSelect.value = '';
+    effortSelect.value = '';
+
+    const formSubmitHandler = (form as unknown as HTMLFormElement).onsubmit;
+    const event = { preventDefault: vi.fn() };
+    (formSubmitHandler as unknown as (event: SubmitEvent) => void)(event as unknown as SubmitEvent);
+
+    // model must be '' (passed through directly), not the fallback string 'haiku'
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ model: '' }));
   });
 
   describe('with scope — keyboard model cycling', () => {
@@ -315,7 +422,7 @@ describe('ForgeSentinelDetail', () => {
       });
 
       const callbacks = { onBack: vi.fn(), onSubmit: vi.fn() };
-      new ForgeSentinelDetail(container, scope, callbacks);
+      new ForgeSentinelDetail(container, scope, callbacks, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
       return { scope, select, callbacks };
     };
 

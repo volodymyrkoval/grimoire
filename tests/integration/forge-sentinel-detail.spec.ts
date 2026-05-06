@@ -12,7 +12,7 @@ function mountDetail(callbacks: {
   const detail = new ForgeSentinelDetail(contentEl, scope, {
     onBack: callbacks.onBack ?? vi.fn(),
     onSubmit: callbacks.onSubmit ?? vi.fn(),
-  });
+  }, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
   return { contentEl, detail };
 }
 
@@ -28,22 +28,25 @@ describe('ForgeSentinelDetail component', () => {
     expect(document.activeElement).toBe(nameInput);
   });
 
-  it('D1b: submitting the form calls onSubmit with filled name, description, and model', () => {
+  it('D1b: submitting the form calls onSubmit with filled name, description, model, and effort', () => {
     const onSubmit = vi.fn();
     const { contentEl } = mountDetail({ onSubmit });
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
     const nameInput = form.querySelector('input[type="text"]') as HTMLInputElement;
     const descTextarea = form.querySelector('textarea') as HTMLTextAreaElement;
-    const modelSelect = form.querySelector('select') as HTMLSelectElement;
+    const selects = form.querySelectorAll('select');
+    const modelSelect = selects[0] as HTMLSelectElement;
+    const effortSelect = selects[1] as HTMLSelectElement;
 
     nameInput.value = 'X';
     descTextarea.value = 'Y';
-    modelSelect.value = 'sonnet';
+    modelSelect.value = 'claude-haiku-4-5';
+    effortSelect.value = ''; // (none) → null
 
     form.dispatchEvent(new Event('submit'));
 
-    expect(onSubmit).toHaveBeenCalledWith({ name: 'X', description: 'Y', model: 'sonnet' });
+    expect(onSubmit).toHaveBeenCalledWith({ name: 'X', description: 'Y', model: 'claude-haiku-4-5', effort: null });
   });
 
   it('D1c: clicking the Back button calls onBack', () => {
