@@ -202,7 +202,7 @@ export interface CastDispatchInput {
 
 **senior-dev**
 
-- [ ] B1: Add `executeOnNote: boolean` to `CastDispatchInput`. In `dispatch()`: gate the `activeFilePath === null` bail on `input.executeOnNote === true`. Refactor `#buildUserPrompt` to accept the flag and to omit the leading "Execute this spell against the note at …" sentence when `executeOnNote === false`; context-notes and follow-up clauses are unchanged. When `executeOnNote === false` and there are no context notes and no follow-up, the prompt is the empty string — that is acceptable and the runner should still be invoked (the system prompt file carries the spell body). Update `tests/CastDispatcher.test.ts` with the four behavioral cases enumerated in the Red criterion above. Existing seven test cases must stay green by adding `executeOnNote: true` to their input literals (they all assert the existing note-bound behavior). — M, senior-dev
+- [x] B1: Add `executeOnNote: boolean` to `CastDispatchInput`. In `dispatch()`: gate the `activeFilePath === null` bail on `input.executeOnNote === true`. Refactor `#buildUserPrompt` to accept the flag and to omit the leading "Execute this spell against the note at …" sentence when `executeOnNote === false`; context-notes and follow-up clauses are unchanged. When `executeOnNote === false` and there are no context notes and no follow-up, the prompt is the empty string — that is acceptable and the runner should still be invoked (the system prompt file carries the spell body). Update `tests/CastDispatcher.test.ts` with the four behavioral cases enumerated in the Red criterion above. Existing seven test cases must stay green by adding `executeOnNote: true` to their input literals (they all assert the existing note-bound behavior). — M, senior-dev (77657a8)
 
 ### C. Forge meta-spell: emit frontmatter instruction
 
@@ -217,9 +217,9 @@ export interface CastDispatchInput {
 
 **junior-dev**
 
-- [ ] C1: Add `executeOnNote: boolean` to `ForgeFormSnapshot` in `src/forge/ForgeFormSnapshot.ts`. — S, junior-dev
-- [ ] C2: Add `executeOnNote: boolean` to `MetaSpellInput` in `src/forge/buildMetaSpell.ts`. Import `EXECUTE_ON_NOTE_KEY` from `../domain/spells/Spell`. Extend the frontmatter instruction at step 3 of the returned text so it tells the LLM to set both `tags: [${spellTag}]` AND `${EXECUTE_ON_NOTE_KEY}: ${executeOnNote}`. Keep the rest of the meta-spell body unchanged. Update `tests/buildMetaSpell.test.ts` with the three cases listed in the Red criterion above. — M, junior-dev
-- [ ] C3: Update `ForgeImprinter.imprint`'s `getMetaSpell` private method in `src/forge/ForgeImprinter.ts` to pass `executeOnNote: snapshot.executeOnNote` into `buildMetaSpell`. Update `tests/ForgeImprinter.test.ts` with one new case asserting that `buildMetaSpell` is called (or its output contains evidence of) the snapshot's `executeOnNote` value. — S, junior-dev
+- [x] C1: Add `executeOnNote: boolean` to `ForgeFormSnapshot` in `src/forge/ForgeFormSnapshot.ts`. — S, junior-dev
+- [x] C2: Add `executeOnNote: boolean` to `MetaSpellInput` in `src/forge/buildMetaSpell.ts`. Import `EXECUTE_ON_NOTE_KEY` from `../domain/spells/Spell`. Extend the frontmatter instruction at step 3 of the returned text so it tells the LLM to set both `tags: [${spellTag}]` AND `${EXECUTE_ON_NOTE_KEY}: ${executeOnNote}`. Keep the rest of the meta-spell body unchanged. Update `tests/buildMetaSpell.test.ts` with the three cases listed in the Red criterion above. — M, junior-dev
+- [x] C3: Update `ForgeImprinter.imprint`'s `getMetaSpell` private method in `src/forge/ForgeImprinter.ts` to pass `executeOnNote: snapshot.executeOnNote` into `buildMetaSpell`. Update `tests/ForgeImprinter.test.ts` with one new case asserting that `buildMetaSpell` is called (or its output contains evidence of) the snapshot's `executeOnNote` value. — S, junior-dev
 
 ### D. Options panel: per-cast toggle (UI integration first)
 
@@ -240,9 +240,9 @@ export interface CastDispatchInput {
 
 **junior-dev**
 
-- [ ] D1: Add `executeOnNote: boolean` to `OptionsFormSnapshot` in `src/ui/options/OptionsFormState.ts`. Add `setExecuteOnNote(value: boolean): void` that updates the field and calls `this.#emit()`. Initial value is read from the constructor's `initial.executeOnNote`. Update `snapshot()` to include the field. Update `tests/OptionsFormState.test.ts` with cases for: initial seed, `setExecuteOnNote(true|false)` mutation + listener notification, snapshot round-trip. — S, junior-dev
-- [ ] D2: Add `executeOnNote: boolean` to `OptionsSessionEntry` in `src/ui/options/OptionsSessionMap.ts` so per-spell session storage round-trips the field. No method changes — the `put`/`get` flow already accepts the entry shape. Update `tests/OptionsSessionMap.test.ts` if it asserts the entry shape exhaustively. — S, junior-dev
-- [ ] D3: Update `src/ui/components/SpellOptionsDetail.ts` `#buildFormState` to seed `executeOnNote` from `params.spell.executeOnNote`, with session entry value taking precedence when present (mirrors the existing `contextNotePaths`/`followUp` pattern). — S, junior-dev
+- [x] D1: Add `executeOnNote: boolean` to `OptionsFormSnapshot` in `src/ui/options/OptionsFormState.ts`. Add `setExecuteOnNote(value: boolean): void` that updates the field and calls `this.#emit()`. Initial value is read from the constructor's `initial.executeOnNote`. Update `snapshot()` to include the field. Update `tests/OptionsFormState.test.ts` with cases for: initial seed, `setExecuteOnNote(true|false)` mutation + listener notification, snapshot round-trip. — S, junior-dev
+- [x] D2: Add `executeOnNote: boolean` to `OptionsSessionEntry` in `src/ui/options/OptionsSessionMap.ts` so per-spell session storage round-trips the field. No method changes — the `put`/`get` flow already accepts the entry shape. Update `tests/OptionsSessionMap.test.ts` if it asserts the entry shape exhaustively. — S, junior-dev
+- [x] D3: Update `src/ui/components/SpellOptionsDetail.ts` `#buildFormState` to seed `executeOnNote` from `params.spell.executeOnNote`, with session entry value taking precedence when present (mirrors the existing `contextNotePaths`/`followUp` pattern). — S, junior-dev (327809c)
 
 **senior-dev**
 
