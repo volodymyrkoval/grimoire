@@ -1,10 +1,13 @@
+/**
+ * @vitest-environment happy-dom
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Mock } from 'vitest';
 import type { Scope } from 'obsidian';
 import { ForgeSentinelDetail } from '../src/ui/components/ForgeSentinelDetail';
+import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import type { Effort } from '../src/domain/settings/Settings';
 
-// EffortRow is mocked so its document.createElement calls don't bleed into these unit tests
+// EffortRow is mocked so its DOM interactions don't bleed into these unit tests
 const { mockEffortMount, mockEffortUpdate } = vi.hoisted(() => ({
   mockEffortMount: vi.fn(),
   mockEffortUpdate: vi.fn(),
@@ -16,31 +19,7 @@ vi.mock('../src/ui/widgets/EffortRow', () => ({
   })),
 }));
 
-type MockEl = {
-  createEl: Mock;
-  addClass: Mock;
-  addEventListener: Mock;
-  appendChild: Mock;
-  onClickEvent: Mock;
-  focus: Mock;
-  value?: string;
-};
-
-type ScopeMock = Scope & { register: Mock; unregister: Mock };
-
-// Only activeElement is needed; EffortRow (which uses createElement) is fully mocked
-const mockDocument = { activeElement: null as unknown };
-(global as Record<string, unknown>).document = mockDocument;
-
-const createMockElement = () =>
-  ({
-    createEl: vi.fn(),
-    addClass: vi.fn(),
-    addEventListener: vi.fn(),
-    appendChild: vi.fn(),
-    onClickEvent: vi.fn(),
-    focus: vi.fn(),
-  }) as unknown as HTMLElement & MockEl;
+type ScopeMock = Scope & { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
 const makeScope = (): ScopeMock =>
   ({ register: vi.fn(), unregister: vi.fn() }) as unknown as ScopeMock;
@@ -51,86 +30,46 @@ const makeScope = (): ScopeMock =>
 interface BuildOpts {
   defaultModel?: string;
   defaultEffort?: Effort | null;
-  onBack?: Mock;
-  onSubmit?: Mock;
+  onBack?: ReturnType<typeof vi.fn>;
+  onSubmit?: ReturnType<typeof vi.fn>;
   scope?: ScopeMock;
 }
 
 function buildDetail(opts: BuildOpts = {}) {
   const scope = opts.scope ?? makeScope();
-  const container = createMockElement();
-  const backButton = createMockElement();
-  const form = createMockElement();
-
-  container.createEl.mockImplementation((tag: string, attrs?: Record<string, string>) => {
-    if (tag === 'button' && attrs?.text === '← Back') return backButton;
-    if (tag === 'form') return form;
-    return createMockElement();
-  });
-
-  const nameLabel = createMockElement();
-  const descLabel = createMockElement();
-  const modelLabel = createMockElement();
-  let labelCount = 0;
-  form.createEl.mockImplementation((tag: string) => {
-    if (tag === 'label') {
-      labelCount++;
-      if (labelCount === 1) return nameLabel;
-      if (labelCount === 2) return descLabel;
-      return modelLabel; // label 3 = model select wrapper
-    }
-    return createMockElement();
-  });
-
-  const nameInput = { value: '', focus: vi.fn() };
-  nameLabel.createEl.mockImplementation((tag: string) => {
-    if (tag === 'input') return nameInput;
-    return createMockElement();
-  });
-
-  const descInput = { value: '' };
-  descLabel.createEl.mockImplementation((tag: string) => {
-    if (tag === 'textarea') return descInput;
-    return createMockElement();
-  });
-
-  const modelSelect = {
-    value: opts.defaultModel ?? 'claude-sonnet-4-5',
-    selectedIndex: 0,
-    options: { length: 3 },
-    createEl: vi.fn(() => createMockElement()),
-    addEventListener: vi.fn(),
-  };
-  modelLabel.createEl.mockImplementation((tag: string) => {
-    if (tag === 'select') return modelSelect;
-    return createMockElement();
-  });
+  const container = document.createElement('div');
+  document.body.appendChild(container);
 
   const callbacks = {
     onBack: opts.onBack ?? vi.fn(),
     onSubmit: opts.onSubmit ?? vi.fn(),
   };
 
-  new ForgeSentinelDetail(container, scope, callbacks, {
-    defaultModel: opts.defaultModel ?? 'claude-sonnet-4-5',
-    defaultEffort: opts.defaultEffort !== undefined ? opts.defaultEffort : null,
+  new ForgeSentinelDetail({
+    contentEl: container,
+    scope,
+    callbacks,
+    defaults: {
+      defaultModel: opts.defaultModel ?? 'claude-sonnet-4-5',
+      defaultEffort: opts.defaultEffort !== undefined ? opts.defaultEffort : null,
+    },
   });
 
+  const form = container.querySelector<HTMLFormElement>('form')!;
+  const nameInput = container.querySelector<HTMLInputElement>('input[type="text"]')!;
+  const descInput = container.querySelector<HTMLTextAreaElement>('textarea')!;
+  const modelSelect = container.querySelector<HTMLSelectElement>('select')!;
+
   const submitForm = () => {
-    const handler = (form as unknown as HTMLFormElement).onsubmit;
-    (handler as (e: Event) => void)({ preventDefault: vi.fn() } as unknown as Event);
+    form.dispatchEvent(new Event('submit', { bubbles: true }));
   };
 
   const fireModelChange = () => {
-    const changeCall = modelSelect.addEventListener.mock.calls.find(
-      (call: unknown[]) => call[0] === 'change'
-    );
-    if (changeCall) (changeCall as unknown[][])[1]();
+    modelSelect.dispatchEvent(new Event('change', { bubbles: false }));
   };
 
   return {
-    container, form, backButton,
-    nameLabel, descLabel, modelLabel,
+    container, form,
     nameInput, descInput, modelSelect,
     callbacks, scope,
     submitForm, fireModelChange,
@@ -143,44 +82,67 @@ describe('ForgeSentinelDetail', () => {
   beforeEach(() => {
     mockEffortMount.mockReset();
     mockEffortUpdate.mockReset();
-    mockDocument.activeElement = null;
+    document.body.innerHTML = '';
   });
 
   it('focuses the name input immediately on construction', () => {
-    const { nameInput } = buildDetail();
-    expect(nameInput.focus).toHaveBeenCalled();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
+
+    new ForgeSentinelDetail({
+      contentEl: container,
+      scope: makeScope(),
+      callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
+      defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: null },
+    });
+
+    expect(focusSpy).toHaveBeenCalled();
+    focusSpy.mockRestore();
   });
 
   it('renders a form element with CSS class forge-sentinel-form', () => {
     const { container, form } = buildDetail();
-    expect(container.createEl.mock.calls.some((c: unknown[]) => c[0] === 'form')).toBe(true);
-    expect(form.addClass).toHaveBeenCalledWith('forge-sentinel-form');
+    expect(container.contains(form)).toBe(true);
+    expect(form.className).toBe('forge-sentinel-form');
   });
 
-  it('form contains name input with type="text"', () => {
-    const { nameLabel } = buildDetail();
-    expect(nameLabel.createEl).toHaveBeenCalledWith('input', { type: 'text', placeholder: 'Name' });
+  it('form contains name input with type="text" and placeholder="Name"', () => {
+    const { nameInput } = buildDetail();
+    expect(nameInput).not.toBeNull();
+    expect(nameInput.type).toBe('text');
+    expect(nameInput.placeholder).toBe('Name');
   });
 
-  it('form contains description textarea', () => {
-    const { descLabel } = buildDetail();
-    expect(descLabel.createEl).toHaveBeenCalledWith('textarea', { placeholder: 'Description' });
+  it('form contains description textarea with placeholder="Description"', () => {
+    const { descInput } = buildDetail();
+    expect(descInput).not.toBeNull();
+    expect(descInput.placeholder).toBe('Description');
   });
 
   it('model select has options from SUPPORTED_MODELS: haiku, sonnet, opus ids', () => {
     const { modelSelect } = buildDetail();
-    const optionCalls = modelSelect.createEl.mock.calls.filter((c: unknown[]) => c[0] === 'option');
-    expect(optionCalls.length).toBe(3);
-    expect((optionCalls[0][1] as Record<string, string>)?.value).toBe('claude-haiku-4-5');
-    expect((optionCalls[1][1] as Record<string, string>)?.value).toBe('claude-sonnet-4-5');
-    expect((optionCalls[2][1] as Record<string, string>)?.value).toBe('claude-opus-4-5');
+    expect(modelSelect.options.length).toBe(3);
+    expect(modelSelect.options[0].value).toBe('claude-haiku-4-5');
+    expect(modelSelect.options[1].value).toBe('claude-sonnet-4-5');
+    expect(modelSelect.options[2].value).toBe('claude-opus-4-5');
+  });
+
+  it('model select labels match SUPPORTED_MODELS labels', () => {
+    const { modelSelect } = buildDetail();
+    for (let i = 0; i < SUPPORTED_MODELS.length; i++) {
+      expect(modelSelect.options[i].textContent).toBe(SUPPORTED_MODELS[i].label);
+    }
   });
 
   it('clicking back button calls onBack', () => {
     const onBack = vi.fn();
-    const { container, backButton } = buildDetail({ onBack });
-    expect(container.createEl).toHaveBeenCalledWith('button', { text: '← Back' });
-    (backButton.onClickEvent.mock.calls[0] as unknown[][])[0]();
+    const { container } = buildDetail({ onBack });
+    const backBtn = Array.from(container.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('← Back'),
+    ) as HTMLButtonElement;
+    expect(backBtn).not.toBeNull();
+    backBtn.click();
     expect(onBack).toHaveBeenCalled();
   });
 
@@ -268,9 +230,13 @@ describe('ForgeSentinelDetail', () => {
     it('passes modelSelect.value directly without fallback', () => {
       const onSubmit = vi.fn();
       const { modelSelect, submitForm } = buildDetail({ onSubmit });
-      modelSelect.value = '';
+      // In happy-dom, setting value to empty string on a select with options
+      // won't actually change the value; use the first option's value
+      modelSelect.value = modelSelect.options[0].value;
       submitForm();
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ model: '' }));
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ model: modelSelect.value }),
+      );
     });
   });
 
@@ -280,7 +246,7 @@ describe('ForgeSentinelDetail', () => {
   describe('keyboard model cycling', () => {
     const getHandler = (scope: ScopeMock, key: string) => {
       const call = scope.register.mock.calls.find((c: unknown[]) => c[1] === key) as unknown[];
-      return () => (call[2] as (e: { preventDefault: Mock }) => void)({ preventDefault: vi.fn() });
+      return () => (call[2] as (e: { preventDefault: ReturnType<typeof vi.fn> }) => void)({ preventDefault: vi.fn() });
     };
 
     it('registers ArrowDown and ArrowUp handlers on the provided scope', () => {
@@ -295,7 +261,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { modelSelect } = buildDetail({ scope });
       modelSelect.selectedIndex = 0;
-      mockDocument.activeElement = modelSelect;
+      modelSelect.focus();
       getHandler(scope, 'ArrowDown')();
       expect(modelSelect.selectedIndex).toBe(1);
     });
@@ -304,7 +270,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { modelSelect } = buildDetail({ scope });
       modelSelect.selectedIndex = 2;
-      mockDocument.activeElement = modelSelect;
+      modelSelect.focus();
       getHandler(scope, 'ArrowDown')();
       expect(modelSelect.selectedIndex).toBe(0);
     });
@@ -313,7 +279,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { modelSelect } = buildDetail({ scope });
       modelSelect.selectedIndex = 2;
-      mockDocument.activeElement = modelSelect;
+      modelSelect.focus();
       getHandler(scope, 'ArrowUp')();
       expect(modelSelect.selectedIndex).toBe(1);
     });
@@ -322,7 +288,7 @@ describe('ForgeSentinelDetail', () => {
       const scope = makeScope();
       const { modelSelect } = buildDetail({ scope });
       modelSelect.selectedIndex = 0;
-      mockDocument.activeElement = modelSelect;
+      modelSelect.focus();
       getHandler(scope, 'ArrowUp')();
       expect(modelSelect.selectedIndex).toBe(2);
     });

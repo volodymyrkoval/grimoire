@@ -2,6 +2,7 @@ import type { App, Scope } from 'obsidian';
 import { KeyboardController } from '../KeyboardController';
 import { SUPPORTED_MODELS } from '../../domain/settings/Settings';
 import type { Effort } from '../../domain/settings/Settings';
+import { buildModelSelect } from '../widgets/ModelSelect';
 import { EffortRow } from '../widgets/EffortRow';
 import { ContextNotesInput } from '../widgets/ContextNotesInput';
 import type { OptionsFormState, OptionsFormSnapshot } from './OptionsFormState';
@@ -10,6 +11,14 @@ import { snapshotEqualsCurrent } from './OptionsSnapshot';
 import type { OptionsSessionMap } from './OptionsSessionMap';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { SpellPath } from '../../domain/spells/SpellPath';
+
+interface ReactiveContext {
+  checkboxLabel: HTMLLabelElement;
+  checkbox: HTMLInputElement;
+  effortContainer: HTMLDivElement;
+  effortRow: EffortRow;
+  effortRowMountedRef: { value: boolean };
+}
 
 export interface OptionsPanelDeps {
   app: App;
@@ -35,30 +44,10 @@ export class OptionsPanel {
   ) {
     this.#kb = new KeyboardController(scope);
     this.#contextNotesInput = new ContextNotesInput();
-
     this.#buildBackButton(contentEl, deps.onBack);
-
-    const form = document.createElement('form');
-    form.className = 'options-panel';
-    contentEl.appendChild(form);
-    const select = this.#buildModelSelect(form, formState);
-    const { effortContainer, effortRow, effortRowMountedRef } = this.#buildEffortContainer(form, formState);
-    this.#buildContextNotes(form, formState, deps.app);
-    const textarea = this.#buildTextarea(form, formState);
-    const { checkboxLabel, checkbox } = this.#buildCheckbox(form, formState, snapshot, deps);
-    this.#buildCastButton(form, formState, deps);
-    this.#buildResetButton(form, snapshot, formState, deps, select, textarea);
-
-    this.#unsubscribe = this.#subscribeReactive(
-      formState,
-      snapshot,
-      deps,
-      checkboxLabel,
-      checkbox,
-      effortRowMountedRef,
-      effortRow,
-      effortContainer,
-    );
+    const form = this.#buildForm(contentEl);
+    const ctx = this.#buildFormControls(form, formState, snapshot, deps);
+    this.#unsubscribe = this.#subscribeReactive(formState, snapshot, deps, ctx);
   }
 
   #buildBackButton(container: HTMLElement, onBack: () => void): void {
@@ -69,35 +58,33 @@ export class OptionsPanel {
     container.appendChild(backBtn);
   }
 
-  #buildModelSelect(form: HTMLFormElement, formState: OptionsFormState): HTMLSelectElement {
-    const select = document.createElement('select');
-    for (const m of SUPPORTED_MODELS) {
-      const opt = document.createElement('option');
-      opt.value = m.id;
-      opt.textContent = m.label;
-      select.appendChild(opt);
-    }
-    select.value = formState.snapshot().model;
-    select.addEventListener('change', () => {
-      formState.setModel(select.value, SUPPORTED_MODELS);
-    });
-    form.appendChild(select);
+  #buildForm(contentEl: HTMLElement): HTMLFormElement {
+    const form = document.createElement('form');
+    form.className = 'options-panel';
+    contentEl.appendChild(form);
+    return form;
+  }
 
-    this.#kb.bind([], 'ArrowDown', () => {
-      if (document.activeElement !== select) return false;
-      select.selectedIndex = (select.selectedIndex + 1) % select.options.length;
-      formState.setModel(select.value, SUPPORTED_MODELS);
-      return true;
+  #buildFormControls(
+    form: HTMLFormElement,
+    formState: OptionsFormState,
+    snapshot: OptionsSnapshot,
+    deps: OptionsPanelDeps,
+  ): ReactiveContext {
+    const select = buildModelSelect({
+      container: form,
+      kb: this.#kb,
+      models: SUPPORTED_MODELS,
+      initialModel: formState.snapshot().model,
+      onChange: (id) => formState.setModel(id, SUPPORTED_MODELS),
     });
-    this.#kb.bind([], 'ArrowUp', () => {
-      if (document.activeElement !== select) return false;
-      select.selectedIndex =
-        (select.selectedIndex - 1 + select.options.length) % select.options.length;
-      formState.setModel(select.value, SUPPORTED_MODELS);
-      return true;
-    });
-
-    return select;
+    const { effortContainer, effortRow, effortRowMountedRef } = this.#buildEffortContainer(form, formState);
+    this.#buildContextNotes(form, formState, deps.app);
+    const textarea = this.#buildTextarea(form, formState);
+    const { checkboxLabel, checkbox } = this.#buildCheckbox(form, formState, snapshot, deps);
+    this.#buildCastButton(form, formState, deps);
+    this.#buildResetButton(form, snapshot, formState, deps, select, textarea);
+    return { checkboxLabel, checkbox, effortContainer, effortRow, effortRowMountedRef };
   }
 
   #buildEffortContainer(
@@ -229,11 +216,7 @@ export class OptionsPanel {
     formState: OptionsFormState,
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
-    checkboxLabel: HTMLLabelElement,
-    checkbox: HTMLInputElement,
-    effortRowMountedRef: { value: boolean },
-    effortRow: EffortRow,
-    effortContainer: HTMLDivElement,
+    { checkboxLabel, checkbox, effortRowMountedRef, effortRow, effortContainer }: ReactiveContext,
   ): () => void {
     const updateReactive = () => {
       const current = formState.snapshot();

@@ -16,6 +16,22 @@ vi.mock('../src/ui/widgets/EffortRow', () => ({
   })),
 }));
 
+// ForgeSentinelDetail uses document.createElement — stub it to register keyboard
+// handlers on the scope (preserving suspend/resume semantics) without touching DOM.
+vi.mock('../src/ui/components/ForgeSentinelDetail', async (importOriginal) => {
+  const { KeyboardController } = await import('../src/ui/KeyboardController');
+  return {
+    ForgeSentinelDetail: vi.fn().mockImplementation(
+      ({ scope }: any) => {
+        const kb = new KeyboardController(scope);
+        kb.bind([], 'ArrowDown', () => false);
+        kb.bind([], 'ArrowUp', () => false);
+        return { destroy: () => kb.unbindAll() };
+      },
+    ),
+  };
+});
+
 const STUB_SPELLS = [
   { basename: 'Banishment Hex', path: '/spells/banishment.md' },
   { basename: 'Divination Ritual', path: '/spells/divination.md' },
@@ -134,7 +150,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     let capturedOnBack: (() => void) | undefined;
     const OrigFSD = FSDModule.ForgeSentinelDetail;
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
-      function (_el: any, _scope: any, callbacks: any, _defaults?: any) {
+      function ({ callbacks }: any) {
         capturedOnBack = callbacks.onBack;
         return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
       } as any
@@ -160,7 +176,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     let capturedOnSubmit: ((...args: any[]) => void) | undefined;
     const OrigFSD = FSDModule.ForgeSentinelDetail;
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
-      function (_el: any, _scope: any, callbacks: any, _defaults?: any) {
+      function ({ callbacks }: any) {
         capturedOnSubmit = callbacks.onSubmit;
         return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
       } as any

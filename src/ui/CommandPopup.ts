@@ -176,18 +176,18 @@ export class CommandPopup extends Modal {
   private renderForgeSentinelDetail(): void {
     this.#kb.suspend();
     const exit = () => this.exitDetail();
-    this.#activeDetail = new ForgeSentinelDetail(
-      this.contentEl,
-      this.scope,
-      {
+    this.#activeDetail = new ForgeSentinelDetail({
+      contentEl: this.contentEl,
+      scope: this.scope,
+      callbacks: {
         onBack: exit,
         onSubmit: (snapshot) => {
           this.#imprintAction(snapshot);
           exit();
         },
       },
-      this.#formDefaults
-    );
+      defaults: this.#formDefaults,
+    });
     this.#onDetailBack = exit;
   }
 

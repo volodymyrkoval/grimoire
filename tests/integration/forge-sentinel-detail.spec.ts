@@ -10,10 +10,15 @@ function mountDetail(callbacks: {
   const contentEl = document.createElement('div');
   document.body.appendChild(contentEl);
   const scope = new Scope();
-  const detail = new ForgeSentinelDetail(contentEl, scope, {
-    onBack: callbacks.onBack ?? vi.fn(),
-    onSubmit: callbacks.onSubmit ?? vi.fn(),
-  }, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
+  const detail = new ForgeSentinelDetail({
+    contentEl,
+    scope,
+    callbacks: {
+      onBack: callbacks.onBack ?? vi.fn(),
+      onSubmit: callbacks.onSubmit ?? vi.fn(),
+    },
+    defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' },
+  });
   return { contentEl, detail, scope };
 }
 
@@ -87,10 +92,12 @@ describe('ForgeSentinelDetail component', () => {
     const contentEl = document.createElement('div');
     document.body.appendChild(contentEl);
     const scope = new Scope();
-    const detail = new ForgeSentinelDetail(contentEl, scope, {
-      onBack: vi.fn(),
-      onSubmit: vi.fn(),
-    }, { defaultModel: 'claude-haiku-4-5', defaultEffort: null });
+    const detail = new ForgeSentinelDetail({
+      contentEl,
+      scope,
+      callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
+      defaults: { defaultModel: 'claude-haiku-4-5', defaultEffort: null },
+    });
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
 
