@@ -1,5 +1,9 @@
 import { vi } from 'vitest';
 
+export class Workspace {
+  getActiveFile = vi.fn<() => any>(() => null);
+}
+
 export class App {
   vault = {
     getMarkdownFiles: vi.fn<() => any[]>(() => []),
@@ -7,6 +11,7 @@ export class App {
   metadataCache = {
     getFileCache: vi.fn<(file: any) => any>(() => null),
   };
+  workspace = new Workspace();
 }
 
 export class TFile {
