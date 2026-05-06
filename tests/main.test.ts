@@ -2,6 +2,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { App } from 'obsidian';
 import { GrimoireSettingTab } from '../src/ui/settings/GrimoireSettingTab';
 import GrimoirePlugin from '../src/main';
+import { CastDispatcher } from '../src/cast/CastDispatcher';
 
 vi.mock('../src/domain/settings/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
@@ -61,7 +62,7 @@ describe('GrimoirePlugin', () => {
     );
   });
 
-  it('command callback constructs CommandPopup with app, spellTag, imprintAction, defaults', async () => {
+  it('command callback constructs CommandPopup with app, spellTag, imprintAction, castAction, defaults', async () => {
     await plugin.onload();
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
@@ -78,11 +79,12 @@ describe('GrimoirePlugin', () => {
     callback();
 
     expect(popupSpy).toHaveBeenCalledOnce();
-    const [arg0, arg1, arg2, arg3] = popupSpy.mock.calls[0];
+    const [arg0, arg1, arg2, arg3, arg4] = popupSpy.mock.calls[0];
     expect(arg0).toBe(plugin.app);
     expect(arg1).toBe(plugin.data.settings.spellTag);
     expect(typeof arg2).toBe('function');
-    expect(arg3).toMatchObject({
+    expect(typeof arg3).toBe('function');
+    expect(arg4).toMatchObject({
       defaultModel: plugin.data.settings.defaultModel,
       defaultEffort: plugin.data.settings.defaultEffort,
     });
@@ -104,13 +106,13 @@ describe('GrimoirePlugin', () => {
     const callback = commandCall![0].callback;
 
     callback();
-    const firstDefaults = popupSpy.mock.calls[0][3];
+    const firstDefaults = popupSpy.mock.calls[0][4];
     expect(firstDefaults.defaultModel).toBe('claude-sonnet-4-5');
 
     plugin.data.settings.defaultModel = 'claude-opus-4-5';
 
     callback();
-    const secondDefaults = popupSpy.mock.calls[1][3];
+    const secondDefaults = popupSpy.mock.calls[1][4];
     expect(secondDefaults.defaultModel).toBe('claude-opus-4-5');
 
     popupSpy.mockRestore();
@@ -152,5 +154,97 @@ describe('GrimoirePlugin', () => {
     expect(popupMock.close).toHaveBeenCalledOnce();
 
     imprintSpy.mockRestore();
+  });
+
+  it('constructs popup with five positional args', async () => {
+    await plugin.onload();
+
+    const CommandPopupModule = await import('../src/ui/CommandPopup');
+    const popupSpy = vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function() {
+      return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
+    } as any);
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-command-popup'
+    );
+    commandCall![0].callback();
+
+    expect(popupSpy).toHaveBeenCalledOnce();
+    expect(popupSpy.mock.calls[0]).toHaveLength(5);
+    expect(typeof popupSpy.mock.calls[0][3]).toBe('function');
+    expect(popupSpy.mock.calls[0][4]).toMatchObject({
+      defaultModel: expect.any(String),
+      defaultEffort: expect.any(String),
+    });
+
+    popupSpy.mockRestore();
+  });
+
+  it('cast action dispatches with current settings', async () => {
+    await plugin.onload();
+
+    const dispatchSpy = vi.spyOn(CastDispatcher.prototype, 'dispatch').mockImplementation(() => {});
+
+    const CommandPopupModule = await import('../src/ui/CommandPopup');
+    let capturedCastAction: ((spell: any) => void) | undefined;
+    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(_app: any, _tag: any, _imprint: any, castAction: any) {
+      capturedCastAction = castAction;
+      return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
+    } as any);
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-command-popup'
+    );
+    commandCall![0].callback();
+
+    expect(capturedCastAction).toBeDefined();
+
+    (app as any).workspace.getActiveFile.mockReturnValue({ path: 'notes/active.md', basename: 'active' });
+    const stubSpell = { name: 'Test Spell', path: 'spells/test.md' };
+    capturedCastAction!(stubSpell);
+
+    expect(dispatchSpy).toHaveBeenCalledOnce();
+    expect(dispatchSpy).toHaveBeenCalledWith({
+      spell: stubSpell,
+      model: plugin.data.settings.defaultModel,
+      effort: plugin.data.settings.defaultEffort,
+      contextNotePaths: [],
+      followUp: '',
+      settings: plugin.data.settings,
+      activeFilePath: 'notes/active.md',
+    });
+
+    dispatchSpy.mockRestore();
+  });
+
+  it('settings mutation is reflected in subsequent popups', async () => {
+    await plugin.onload();
+
+    const dispatchSpy = vi.spyOn(CastDispatcher.prototype, 'dispatch').mockImplementation(() => {});
+
+    const CommandPopupModule = await import('../src/ui/CommandPopup');
+    const capturedCastActions: Array<(spell: any) => void> = [];
+    vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(_app: any, _tag: any, _imprint: any, castAction: any) {
+      capturedCastActions.push(castAction);
+      return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
+    } as any);
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-command-popup'
+    );
+
+    commandCall![0].callback();
+    plugin.data.settings.defaultModel = 'different-model';
+    commandCall![0].callback();
+
+    expect(capturedCastActions).toHaveLength(2);
+
+    const stubSpell = { name: 'Stub Spell', path: 'spells/stub.md' };
+    capturedCastActions[1]!(stubSpell);
+
+    expect(dispatchSpy).toHaveBeenCalledOnce();
+    expect(dispatchSpy.mock.calls[0][0]).toMatchObject({ model: 'different-model' });
+
+    dispatchSpy.mockRestore();
   });
 });
