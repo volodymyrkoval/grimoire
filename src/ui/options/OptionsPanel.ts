@@ -82,8 +82,10 @@ export class OptionsPanel {
     this.#buildContextNotes(form, formState, deps.app);
     const textarea = this.#buildTextarea(form, formState);
     const { checkboxLabel, checkbox } = this.#buildCheckbox(form, formState, snapshot, deps);
+    const initialExecuteOnNote = formState.snapshot().executeOnNote;
+    const eonCheckbox = this.#buildExecuteOnNoteCheckbox(form, formState, initialExecuteOnNote);
     this.#buildCastButton(form, formState, deps);
-    this.#buildResetButton(form, snapshot, formState, deps, select, textarea);
+    this.#buildResetButton(form, snapshot, formState, deps, select, textarea, eonCheckbox, initialExecuteOnNote);
     return { checkboxLabel, checkbox, effortContainer, effortRow, effortRowMountedRef };
   }
 
@@ -132,6 +134,29 @@ export class OptionsPanel {
     });
     form.appendChild(textarea);
     return textarea;
+  }
+
+  #buildExecuteOnNoteCheckbox(
+    form: HTMLFormElement,
+    formState: OptionsFormState,
+    initialValue: boolean,
+  ): HTMLInputElement {
+    const container = document.createElement('div');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = 'grimoire-execute-on-note';
+    checkbox.dataset['grimoire'] = 'execute-on-note';
+    checkbox.checked = initialValue;
+    checkbox.addEventListener('change', () => {
+      formState.setExecuteOnNote(checkbox.checked);
+    });
+    const label = document.createElement('label');
+    label.htmlFor = checkbox.id;
+    label.textContent = 'Execute on active note';
+    container.appendChild(checkbox);
+    container.appendChild(label);
+    form.appendChild(container);
+    return checkbox;
   }
 
   #buildCheckbox(
@@ -193,6 +218,8 @@ export class OptionsPanel {
     deps: OptionsPanelDeps,
     select: HTMLSelectElement,
     textarea: HTMLTextAreaElement,
+    eonCheckbox: HTMLInputElement,
+    initialExecuteOnNote: boolean,
   ): void {
     const resetBtn = document.createElement('button');
     resetBtn.type = 'button';
@@ -205,6 +232,9 @@ export class OptionsPanel {
       this.#contextNotesInput.clear();
       textarea.value = '';
       formState.setFollowUp('');
+      // executeOnNote was captured at panel construction, same as snapshot for model/effort
+      formState.setExecuteOnNote(initialExecuteOnNote);
+      eonCheckbox.checked = initialExecuteOnNote;
       deps.sessionMap.delete(deps.spellPath);
       // Restore select value explicitly (setModel emits but select needs sync)
       select.value = snapshot.model;
