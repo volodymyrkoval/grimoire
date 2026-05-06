@@ -2,10 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Scope } from 'obsidian';
 import { ForgeSentinelDetail } from '../../src/ui/components/ForgeSentinelDetail';
 import { EffortRow } from '../../src/ui/widgets/EffortRow';
+import type { ForgeFormSnapshot } from '../../src/forge/ForgeFormSnapshot';
 
 function mountDetail(callbacks: {
   onBack?: () => void;
-  onSubmit?: (data: { name: string; description: string; model: string }) => void;
+  onSubmit?: (data: ForgeFormSnapshot) => void;
 }): { contentEl: HTMLElement; detail: ForgeSentinelDetail; scope: Scope } {
   const contentEl = document.createElement('div');
   document.body.appendChild(contentEl);
@@ -57,7 +58,7 @@ describe('ForgeSentinelDetail component', () => {
 
     form.dispatchEvent(new Event('submit'));
 
-    expect(onSubmit).toHaveBeenCalledWith({ name: 'X', description: 'Y', model: 'claude-sonnet-4-5', effort: 'high' });
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', description: 'Y', model: 'claude-sonnet-4-5', effort: 'high' }));
   });
 
   it('D1b-haiku: switching model to Haiku removes effort row from DOM', () => {
@@ -135,5 +136,69 @@ describe('ForgeSentinelDetail component', () => {
 
     expect(updateSpy).toHaveBeenCalledWith('claude-opus-4-5', null);
     updateSpy.mockRestore();
+  });
+
+  it('E0.1: form renders a checkbox with data-grimoire="execute-on-note"', () => {
+    const { contentEl } = mountDetail({});
+    const form = contentEl.querySelector('form.forge-sentinel-form')!;
+    const eonCheckbox = form.querySelector('input[type="checkbox"][data-grimoire="execute-on-note"]');
+    expect(eonCheckbox).not.toBeNull();
+  });
+
+  it('E0.2: executeOnNote checkbox starts checked by default', () => {
+    const { contentEl } = mountDetail({});
+    const form = contentEl.querySelector('form.forge-sentinel-form')!;
+    const eonCheckbox = form.querySelector<HTMLInputElement>('input[type="checkbox"][data-grimoire="execute-on-note"]')!;
+    expect(eonCheckbox.checked).toBe(true);
+  });
+
+  it('E0.3: submitting with default checkbox emits executeOnNote: true', () => {
+    const onSubmit = vi.fn();
+    const { contentEl } = mountDetail({ onSubmit });
+    const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: true }));
+  });
+
+  it('E0.4: unchecking then submitting emits executeOnNote: false', () => {
+    const onSubmit = vi.fn();
+    const { contentEl } = mountDetail({ onSubmit });
+    const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
+    const eonCheckbox = form.querySelector<HTMLInputElement>('input[type="checkbox"][data-grimoire="execute-on-note"]')!;
+    eonCheckbox.checked = false;
+    eonCheckbox.dispatchEvent(new Event('change'));
+    form.dispatchEvent(new Event('submit'));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: false }));
+  });
+
+  it('E0.5: executeOnNote checkbox does not appear between effort-row and Submit button', () => {
+    const contentEl = document.createElement('div');
+    document.body.appendChild(contentEl);
+    const scope = new Scope();
+    const detail = new ForgeSentinelDetail({
+      contentEl,
+      scope,
+      callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
+      defaults: { defaultModel: 'claude-haiku-4-5', defaultEffort: null },
+    });
+
+    const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
+    const modelSelect = form.querySelector('select') as HTMLSelectElement;
+    modelSelect.value = 'claude-sonnet-4-5';
+    modelSelect.dispatchEvent(new Event('change'));
+
+    const allChildren = Array.from(form.children);
+    const effortIdx = allChildren.findIndex(el => el.querySelector?.('.grimoire-effort-row') !== null);
+    const submitIdx = allChildren.findIndex(el => el.matches?.('button[type="submit"]'));
+    const eonIdx = allChildren.findIndex(el => el.querySelector?.('input[data-grimoire="execute-on-note"]') !== null);
+
+    // eonCheckbox must NOT be placed between effortRow and Submit
+    expect(effortIdx).toBeGreaterThanOrEqual(0);
+    expect(submitIdx).toBeGreaterThan(effortIdx);
+    // eon must be outside the [effortIdx, submitIdx) range
+    expect(eonIdx < effortIdx || eonIdx >= submitIdx).toBe(true);
+
+    detail.destroy();
+    document.body.removeChild(contentEl);
   });
 });
