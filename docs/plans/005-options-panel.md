@@ -373,8 +373,8 @@ None deferred — every applicable edge case is decided above. The scope of this
 
 **junior-dev**
 
-- [ ] A1: add `"open-options": Spell` to `SpellEvents` in `src/ui/SpellEvents.ts` — S, junior-dev
-- [ ] A2: add `openOptions(index: number): void` to `SpellsPanel`. Bounds-check `index < 0 || index >= this.filteredSpells.length`; if in range emit `open-options` with `this.filteredSpells[index]`; else no-op. Add a unit test in `tests/SpellsPanel.test.ts` covering: in-range emits once with the correct spell; out-of-range no-op; sentinel-row index no-op. — S, junior-dev
+- [x] A1: add `"open-options": Spell` to `SpellEvents` in `src/ui/SpellEvents.ts` — S, junior-dev (29ee6d0)
+- [x] A2: add `openOptions(index: number): void` to `SpellsPanel`. Bounds-check `index < 0 || index >= this.filteredSpells.length`; if in range emit `open-options` with `this.filteredSpells[index]`; else no-op. Add a unit test in `tests/SpellsPanel.test.ts` covering: in-range emits once with the correct spell; out-of-range no-op; sentinel-row index no-op. — S, junior-dev (29ee6d0)
 
 ### B. SpellRow notification dot + SpellList predicate
 
