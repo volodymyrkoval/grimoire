@@ -22,26 +22,14 @@ export class ForgeSentinelDetail {
   constructor(contentEl: HTMLElement, scope: Scope, callbacks: Callbacks, defaults: FormDefaults) {
     this.#kb = new KeyboardController(scope);
     this.#buildBackButton(contentEl, callbacks.onBack);
-    const form = contentEl.createEl('form');
-    form.addClass('forge-sentinel-form');
+    const form = this.#buildForm(contentEl);
     this.#nameInput = this.#buildNameField(form);
     this.#descInput = this.#buildDescriptionField(form);
     this.#modelSelect = this.#buildModelSelect(form);
-    this.#modelSelect.value = defaults.defaultModel;
-
-    const initialModel = SUPPORTED_MODELS.find((m) => m.id === defaults.defaultModel);
-    this.#currentEffort = defaults.defaultEffort ?? (initialModel?.defaultEffort ?? null);
-    const effortContainer = form.createEl('div');
-    this.#effortRow = new EffortRow();
-    this.#effortRow.mount(effortContainer, {
-      models: SUPPORTED_MODELS,
-      modelId: defaults.defaultModel,
-      effort: this.#currentEffort,
-      onChange: (effort) => { this.#currentEffort = effort; },
-    });
-
-    this.#modelSelect.addEventListener('change', () => this.#applyModelChange());
-
+    this.#initModelSelect(defaults.defaultModel);
+    this.#currentEffort = this.#resolveInitialEffort(defaults);
+    this.#effortRow = this.#initEffortRow(form, defaults);
+    this.#wireModelChangeListener();
     form.createEl('button', { type: 'submit', text: 'Submit' });
     this.#wireSubmitHandler(form, callbacks.onSubmit);
     this.#bindModelKeys();
@@ -77,6 +65,37 @@ export class ForgeSentinelDetail {
       this.#applyModelChange();
       return true;
     });
+  }
+
+  #buildForm(contentEl: HTMLElement): HTMLElement {
+    const form = contentEl.createEl('form');
+    form.addClass('forge-sentinel-form');
+    return form;
+  }
+
+  #initModelSelect(defaultModel: string): void {
+    this.#modelSelect.value = defaultModel;
+  }
+
+  #resolveInitialEffort(defaults: FormDefaults): Effort | null {
+    const initialModel = SUPPORTED_MODELS.find((m) => m.id === defaults.defaultModel);
+    return defaults.defaultEffort ?? (initialModel?.defaultEffort ?? null);
+  }
+
+  #initEffortRow(form: HTMLElement, defaults: FormDefaults): EffortRow {
+    const effortContainer = form.createEl('div');
+    const row = new EffortRow();
+    row.mount(effortContainer, {
+      models: SUPPORTED_MODELS,
+      modelId: defaults.defaultModel,
+      effort: this.#currentEffort,
+      onChange: (effort) => { this.#currentEffort = effort; },
+    });
+    return row;
+  }
+
+  #wireModelChangeListener(): void {
+    this.#modelSelect.addEventListener('change', () => this.#applyModelChange());
   }
 
   #buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
