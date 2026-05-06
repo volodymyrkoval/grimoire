@@ -39,10 +39,7 @@ export class ForgeSentinelDetail {
       onChange: (effort) => { this.#currentEffort = effort; },
     });
 
-    this.modelSelect.addEventListener('change', () => {
-      this.#currentEffort = null;
-      this.#effortRow.update(this.modelSelect.value, null);
-    });
+    this.modelSelect.addEventListener('change', () => this.#applyModelChange());
 
     form.createEl('button', { type: 'submit', text: 'Submit' });
     this.wireSubmitHandler(form, callbacks.onSubmit);
@@ -58,11 +55,17 @@ export class ForgeSentinelDetail {
     this.#kb.unbindAll();
   }
 
+  #applyModelChange(): void {
+    this.#currentEffort = null;
+    this.#effortRow.update(this.modelSelect.value, null);
+  }
+
   private bindModelKeys(): void {
     this.#kb.bind([], 'ArrowDown', () => {
       if (document.activeElement !== this.modelSelect) return false;
       this.modelSelect.selectedIndex =
         (this.modelSelect.selectedIndex + 1) % this.modelSelect.options.length;
+      this.#applyModelChange();
       return true;
     });
     this.#kb.bind([], 'ArrowUp', () => {
@@ -70,6 +73,7 @@ export class ForgeSentinelDetail {
       this.modelSelect.selectedIndex =
         (this.modelSelect.selectedIndex - 1 + this.modelSelect.options.length) %
         this.modelSelect.options.length;
+      this.#applyModelChange();
       return true;
     });
   }

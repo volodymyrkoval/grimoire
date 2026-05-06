@@ -1,11 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Scope } from 'obsidian';
 import { ForgeSentinelDetail } from '../../src/ui/components/ForgeSentinelDetail';
+import { EffortRow } from '../../src/ui/widgets/EffortRow';
 
 function mountDetail(callbacks: {
   onBack?: () => void;
   onSubmit?: (data: { name: string; description: string; model: string }) => void;
-}): { contentEl: HTMLElement; detail: ForgeSentinelDetail } {
+}): { contentEl: HTMLElement; detail: ForgeSentinelDetail; scope: Scope } {
   const contentEl = document.createElement('div');
   document.body.appendChild(contentEl);
   const scope = new Scope();
@@ -13,7 +14,7 @@ function mountDetail(callbacks: {
     onBack: callbacks.onBack ?? vi.fn(),
     onSubmit: callbacks.onSubmit ?? vi.fn(),
   }, { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' });
-  return { contentEl, detail };
+  return { contentEl, detail, scope };
 }
 
 describe('ForgeSentinelDetail component', () => {
@@ -80,5 +81,20 @@ describe('ForgeSentinelDetail component', () => {
     backBtn!.dispatchEvent(new Event('click'));
 
     expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it('D1d: ArrowDown on focused model select calls EffortRow.update with the new model id', () => {
+    const updateSpy = vi.spyOn(EffortRow.prototype, 'update');
+    const { contentEl, scope } = mountDetail({});
+
+    const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
+    const modelSelect = form.querySelector('select') as HTMLSelectElement;
+    // Default is sonnet (index 1); ArrowDown moves to opus (index 2)
+    modelSelect.focus();
+
+    (scope as unknown as { dispatch(k: string, m: string[]): boolean }).dispatch('ArrowDown', []);
+
+    expect(updateSpy).toHaveBeenCalledWith('claude-opus-4-5', null);
+    updateSpy.mockRestore();
   });
 });
