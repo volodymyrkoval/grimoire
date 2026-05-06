@@ -81,6 +81,7 @@ export default class GrimoirePlugin extends Plugin {
         followUp: '',
         settings: this.data.settings,
         activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
+        executeOnNote: true,
       }),
       defaults: { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
       overrides: this.overrides,
@@ -93,6 +94,7 @@ export default class GrimoirePlugin extends Plugin {
         followUp: snap.followUp,
         settings: this.data.settings,
         activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
+        executeOnNote: true,
       }),
     });
   }

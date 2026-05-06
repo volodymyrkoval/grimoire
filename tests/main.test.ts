@@ -193,6 +193,7 @@ describe('GrimoirePlugin', () => {
       followUp: '',
       settings: plugin.data.settings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     dispatchSpy.mockRestore();
@@ -267,6 +268,7 @@ describe('GrimoirePlugin', () => {
       followUp: 'This is a follow-up.',
       settings: plugin.data.settings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     dispatchSpy.mockRestore();
