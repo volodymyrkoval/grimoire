@@ -20,6 +20,7 @@ export class SpellsPanel implements TabPanel {
   private filteredSpells: Spell[];
   private spellList: SpellList | null = null;
   #hasOverride: (path: SpellPath) => boolean = () => false;
+  #lastSelectedIndex: number = 0;
 
   constructor(app: App, tag: string) {
     this.allSpells = getSpells(app, tag);
@@ -31,14 +32,16 @@ export class SpellsPanel implements TabPanel {
       this.#hasOverride = hasOverride;
     }
     this.spellList = new SpellList(container, this.events, [...SENTINELS]);
-    this.spellList.render(this.filteredSpells, 0, this.#hasOverride);
+    this.#lastSelectedIndex = 0;
+    this.spellList.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
   }
 
   filter(query: string): number {
     const results = fuzzyFilter(this.allSpells, SENTINELS, query);
     this.filteredSpells = results.filter((item): item is Spell => !isSentinel(item));
     const initialIndex = this.sentinelFocusIndex(query);
-    this.spellList?.render(this.filteredSpells, initialIndex, this.#hasOverride);
+    this.#lastSelectedIndex = initialIndex;
+    this.spellList?.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
     return initialIndex;
   }
 
@@ -64,6 +67,7 @@ export class SpellsPanel implements TabPanel {
   }
 
   updateSelection(prev: number, next: number): void {
+    this.#lastSelectedIndex = next;
     this.spellList?.updateSelection(prev, next);
   }
 
@@ -73,6 +77,10 @@ export class SpellsPanel implements TabPanel {
 
   reset(): void {
     this.filteredSpells = [...this.allSpells];
+  }
+
+  refreshOverrides(): void {
+    this.spellList?.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
   }
 
   private sentinelFocusIndex(query: string): number {
