@@ -12,6 +12,7 @@ import { App, Scope } from 'obsidian';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { OptionsPanel } from '../../src/ui/options/OptionsPanel';
 import { OptionsFormState } from '../../src/ui/options/OptionsFormState';
+import { EffortRow } from '../../src/ui/widgets/EffortRow';
 import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
 import { snapshotEqualsCurrent } from '../../src/ui/options/OptionsSnapshot';
 import type { OptionsSnapshot } from '../../src/ui/options/OptionsSnapshot';
@@ -341,6 +342,46 @@ describe('OptionsPanel integration', () => {
     (scope as any).dispatch('Enter', ['Mod']);
 
     expect(onCast).toHaveBeenCalledOnce();
+  });
+
+  // ------------------------------------------------------------------ A10
+  it('ArrowDown on focused model select updates formState and calls EffortRow.update with new model', () => {
+    const updateSpy = vi.spyOn(EffortRow.prototype, 'update');
+    const { contentEl, scope, formState } = mountPanel();
+    document.body.appendChild(contentEl);
+
+    const form = contentEl.querySelector('form.options-panel')!;
+    const select = form.querySelector<HTMLSelectElement>('select')!;
+    // Default is sonnet (index 1); ArrowDown moves to opus (index 2)
+    select.focus();
+
+    (scope as any).dispatch('ArrowDown', []);
+
+    // effort survives when new model also has the current effort in its options
+    expect(updateSpy).toHaveBeenCalledWith('claude-opus-4-5', expect.anything());
+    expect(formState.snapshot().model).toBe('claude-opus-4-5');
+    document.body.removeChild(contentEl);
+    updateSpy.mockRestore();
+  });
+
+  // ------------------------------------------------------------------ A11
+  it('ArrowUp on focused model select updates formState and calls EffortRow.update with new model', () => {
+    const updateSpy = vi.spyOn(EffortRow.prototype, 'update');
+    const { contentEl, scope, formState } = mountPanel();
+    document.body.appendChild(contentEl);
+
+    const form = contentEl.querySelector('form.options-panel')!;
+    const select = form.querySelector<HTMLSelectElement>('select')!;
+    // Default is sonnet (index 1); ArrowUp moves to haiku (index 0)
+    select.focus();
+
+    (scope as any).dispatch('ArrowUp', []);
+
+    // haiku has null effort (no effort options)
+    expect(updateSpy).toHaveBeenCalledWith('claude-haiku-4-5', null);
+    expect(formState.snapshot().model).toBe('claude-haiku-4-5');
+    document.body.removeChild(contentEl);
+    updateSpy.mockRestore();
   });
 
   // ------------------------------------------------------------------ A9

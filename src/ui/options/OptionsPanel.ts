@@ -86,12 +86,14 @@ export class OptionsPanel {
     this.#kb.bind([], 'ArrowDown', () => {
       if (document.activeElement !== select) return false;
       select.selectedIndex = (select.selectedIndex + 1) % select.options.length;
+      formState.setModel(select.value, SUPPORTED_MODELS);
       return true;
     });
     this.#kb.bind([], 'ArrowUp', () => {
       if (document.activeElement !== select) return false;
       select.selectedIndex =
         (select.selectedIndex - 1 + select.options.length) % select.options.length;
+      formState.setModel(select.value, SUPPORTED_MODELS);
       return true;
     });
 
