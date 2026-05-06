@@ -12,22 +12,22 @@ interface Callbacks {
 
 /** Detail panel for the Forge sentinel: name/description/model form with its own keyboard bindings. */
 export class ForgeSentinelDetail {
-  private readonly nameInput: HTMLInputElement;
-  private readonly descInput: HTMLTextAreaElement;
-  private readonly modelSelect: HTMLSelectElement;
+  readonly #nameInput: HTMLInputElement;
+  readonly #descInput: HTMLTextAreaElement;
+  readonly #modelSelect: HTMLSelectElement;
   #effortRow: EffortRow;
   #currentEffort: Effort | null;
   #kb: KeyboardController;
 
   constructor(contentEl: HTMLElement, scope: Scope, callbacks: Callbacks, defaults: FormDefaults) {
     this.#kb = new KeyboardController(scope);
-    this.buildBackButton(contentEl, callbacks.onBack);
+    this.#buildBackButton(contentEl, callbacks.onBack);
     const form = contentEl.createEl('form');
     form.addClass('forge-sentinel-form');
-    this.nameInput = this.buildNameField(form);
-    this.descInput = this.buildDescriptionField(form);
-    this.modelSelect = this.buildModelSelect(form);
-    this.modelSelect.value = defaults.defaultModel;
+    this.#nameInput = this.#buildNameField(form);
+    this.#descInput = this.#buildDescriptionField(form);
+    this.#modelSelect = this.#buildModelSelect(form);
+    this.#modelSelect.value = defaults.defaultModel;
 
     const initialModel = SUPPORTED_MODELS.find((m) => m.id === defaults.defaultModel);
     this.#currentEffort = defaults.defaultEffort ?? (initialModel?.defaultEffort ?? null);
@@ -39,11 +39,11 @@ export class ForgeSentinelDetail {
       onChange: (effort) => { this.#currentEffort = effort; },
     });
 
-    this.modelSelect.addEventListener('change', () => this.#applyModelChange());
+    this.#modelSelect.addEventListener('change', () => this.#applyModelChange());
 
     form.createEl('button', { type: 'submit', text: 'Submit' });
-    this.wireSubmitHandler(form, callbacks.onSubmit);
-    this.bindModelKeys();
+    this.#wireSubmitHandler(form, callbacks.onSubmit);
+    this.#bindModelKeys();
   }
 
   /**
@@ -57,45 +57,45 @@ export class ForgeSentinelDetail {
 
   #applyModelChange(): void {
     this.#currentEffort = null;
-    this.#effortRow.update(this.modelSelect.value, null);
+    this.#effortRow.update(this.#modelSelect.value, null);
   }
 
-  private bindModelKeys(): void {
+  #bindModelKeys(): void {
     this.#kb.bind([], 'ArrowDown', () => {
-      if (document.activeElement !== this.modelSelect) return false;
-      this.modelSelect.selectedIndex =
-        (this.modelSelect.selectedIndex + 1) % this.modelSelect.options.length;
+      if (document.activeElement !== this.#modelSelect) return false;
+      this.#modelSelect.selectedIndex =
+        (this.#modelSelect.selectedIndex + 1) % this.#modelSelect.options.length;
       this.#applyModelChange();
       return true;
     });
     this.#kb.bind([], 'ArrowUp', () => {
-      if (document.activeElement !== this.modelSelect) return false;
-      this.modelSelect.selectedIndex =
-        (this.modelSelect.selectedIndex - 1 + this.modelSelect.options.length) %
-        this.modelSelect.options.length;
+      if (document.activeElement !== this.#modelSelect) return false;
+      this.#modelSelect.selectedIndex =
+        (this.#modelSelect.selectedIndex - 1 + this.#modelSelect.options.length) %
+        this.#modelSelect.options.length;
       this.#applyModelChange();
       return true;
     });
   }
 
-  private buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
+  #buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
     const back = contentEl.createEl('button', { text: '← Back' });
     back.onClickEvent(() => onBack());
   }
 
-  private buildNameField(form: HTMLElement): HTMLInputElement {
+  #buildNameField(form: HTMLElement): HTMLInputElement {
     const label = form.createEl('label');
     const input = label.createEl('input', { type: 'text', placeholder: 'Name' }) as HTMLInputElement;
     input.focus();
     return input;
   }
 
-  private buildDescriptionField(form: HTMLElement): HTMLTextAreaElement {
+  #buildDescriptionField(form: HTMLElement): HTMLTextAreaElement {
     const label = form.createEl('label');
     return label.createEl('textarea', { placeholder: 'Description' }) as HTMLTextAreaElement;
   }
 
-  private buildModelSelect(form: HTMLElement): HTMLSelectElement {
+  #buildModelSelect(form: HTMLElement): HTMLSelectElement {
     const label = form.createEl('label');
     const select = label.createEl('select') as HTMLSelectElement;
     SUPPORTED_MODELS.forEach((m) => {
@@ -104,13 +104,13 @@ export class ForgeSentinelDetail {
     return select;
   }
 
-  private wireSubmitHandler(form: HTMLElement, onSubmit: (snapshot: ForgeFormSnapshot) => void): void {
+  #wireSubmitHandler(form: HTMLElement, onSubmit: (snapshot: ForgeFormSnapshot) => void): void {
     (form as HTMLFormElement).onsubmit = (e: Event): void => {
       e.preventDefault();
       onSubmit({
-        name: this.nameInput.value || '',
-        description: this.descInput.value || '',
-        model: this.modelSelect.value,
+        name: this.#nameInput.value || '',
+        description: this.#descInput.value || '',
+        model: this.#modelSelect.value,
         effort: this.#currentEffort,
       });
     };

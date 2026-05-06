@@ -36,11 +36,11 @@ export class OptionsPanel {
     this.#kb = new KeyboardController(scope);
     this.#contextNotesInput = new ContextNotesInput();
 
+    this.#buildBackButton(contentEl, deps.onBack);
+
     const form = document.createElement('form');
     form.className = 'options-panel';
     contentEl.appendChild(form);
-
-    this.#buildBackButton(form, deps.onBack);
     const select = this.#buildModelSelect(form, formState);
     const { effortContainer, effortRow, effortRowMountedRef } = this.#buildEffortContainer(form, formState);
     this.#buildContextNotes(form, formState, deps.app);
@@ -61,12 +61,12 @@ export class OptionsPanel {
     );
   }
 
-  #buildBackButton(form: HTMLFormElement, onBack: () => void): void {
+  #buildBackButton(container: HTMLElement, onBack: () => void): void {
     const backBtn = document.createElement('button');
     backBtn.type = 'button';
     backBtn.textContent = '← Back';
     backBtn.addEventListener('click', () => onBack());
-    form.appendChild(backBtn);
+    container.appendChild(backBtn);
   }
 
   #buildModelSelect(form: HTMLFormElement, formState: OptionsFormState): HTMLSelectElement {
