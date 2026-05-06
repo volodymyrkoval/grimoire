@@ -5,6 +5,7 @@ export interface OptionsFormSnapshot {
   effort: Effort | null;
   contextNotePaths: readonly string[];
   followUp: string;
+  executeOnNote: boolean;
 }
 
 export class OptionsFormState {
@@ -12,6 +13,7 @@ export class OptionsFormState {
   #effort: Effort | null;
   #contextNotePaths: readonly string[];
   #followUp: string;
+  #executeOnNote: boolean;
   #listeners: Set<() => void>;
 
   constructor(initial: OptionsFormSnapshot) {
@@ -19,6 +21,7 @@ export class OptionsFormState {
     this.#effort = initial.effort;
     this.#contextNotePaths = initial.contextNotePaths;
     this.#followUp = initial.followUp;
+    this.#executeOnNote = initial.executeOnNote;
     this.#listeners = new Set();
   }
 
@@ -63,12 +66,18 @@ export class OptionsFormState {
     this.#emit();
   }
 
+  setExecuteOnNote(value: boolean): void {
+    this.#executeOnNote = value;
+    this.#emit();
+  }
+
   snapshot(): OptionsFormSnapshot {
     return {
       model: this.#model,
       effort: this.#effort,
       contextNotePaths: Array.from(this.#contextNotePaths),
       followUp: this.#followUp,
+      executeOnNote: this.#executeOnNote,
     };
   }
 

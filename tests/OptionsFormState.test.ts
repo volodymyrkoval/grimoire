@@ -11,6 +11,7 @@ describe('OptionsFormState', () => {
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
+      executeOnNote: true,
     };
   });
 
@@ -57,6 +58,7 @@ describe('OptionsFormState', () => {
       effort: 'xhigh',
       contextNotePaths: [],
       followUp: '',
+      executeOnNote: true,
     };
     const state = new OptionsFormState(stateSnapshot);
     const listener = vi.fn();
@@ -151,5 +153,39 @@ describe('OptionsFormState', () => {
     const snap2 = state.snapshot();
     expect(snap2.contextNotePaths).toEqual(['original.md']);
     expect(snap2.contextNotePaths).not.toContain('mutated.md');
+  });
+
+  // (j) Initial seed: new OptionsFormState with executeOnNote: false → snapshot().executeOnNote === false
+  it('stores initial executeOnNote in constructor', () => {
+    const state = new OptionsFormState({
+      ...initialSnapshot,
+      executeOnNote: false,
+    });
+
+    expect(state.snapshot().executeOnNote).toBe(false);
+  });
+
+  // (k) setExecuteOnNote(false) on state initialized with true → snapshot().executeOnNote === false, listener fires once
+  it('setExecuteOnNote updates executeOnNote and fires onChange once', () => {
+    const state = new OptionsFormState(initialSnapshot);
+    const listener = vi.fn();
+
+    state.onChange(listener);
+    state.setExecuteOnNote(false);
+
+    expect(state.snapshot().executeOnNote).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  // (l) Snapshot round-trip: setExecuteOnNote(true) → snapshot().executeOnNote === true
+  it('setExecuteOnNote(true) updates executeOnNote to true', () => {
+    const state = new OptionsFormState({
+      ...initialSnapshot,
+      executeOnNote: false,
+    });
+
+    state.setExecuteOnNote(true);
+
+    expect(state.snapshot().executeOnNote).toBe(true);
   });
 });
