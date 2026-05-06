@@ -1,4 +1,5 @@
 import type { Spell, Sentinel } from "../../domain/spells/Spell";
+import type { SpellPath } from "../../domain/spells/SpellPath";
 import type { TypedEmitter } from "../TypedEmitter";
 import type { SpellEvents } from "../SpellEvents";
 import { SpellRow } from "./SpellRow";
@@ -16,10 +17,10 @@ export class SpellList {
     this.el = container.createDiv({ cls: "spells-list" });
   }
 
-  render(spells: Spell[], selectedIndex: number): void {
+  render(spells: Spell[], selectedIndex: number, hasOverride: (path: SpellPath) => boolean = () => false): void {
     this.el.empty();
     const spellRows = spells.map((spell, i) => {
-      const row = new SpellRow(this.el, spell, i === selectedIndex);
+      const row = new SpellRow(this.el, spell, i === selectedIndex, hasOverride(spell.path));
       row.el.onClickEvent(() => this.emitter.emit("cast", spell));
       return row;
     });
