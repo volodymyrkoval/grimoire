@@ -15,15 +15,6 @@ describe('search input filtering and navigation', () => {
     expect(h.selectedRow()?.textContent).toBe('Protection Rune');
   });
 
-  it('F2: ArrowDown then Enter opens second spell detail with h2 Divination Ritual', () => {
-    h.pressKey('ArrowDown'); // 0 → 1 (Divination Ritual in alphabetical order)
-    h.pressKey('Enter');
-
-    expect(h.isInDetail()).toBe(true);
-    const h2 = h.contentEl.querySelector('h2');
-    expect(h2?.textContent).toBe('Divination Ritual');
-  });
-
   it('F3: ArrowUp from index 0 wraps to last row; selectedRow is Refine', () => {
     h.pressKey('ArrowUp'); // 0 → 11 (Refine)
 

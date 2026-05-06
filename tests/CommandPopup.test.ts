@@ -57,7 +57,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
   // must tear down ForgeSentinelDetail's scope bindings so they don't intercept
   // arrow keys after the popup re-binds its own.
   it('after close() (Obsidian Escape path) leaves forge detail, ArrowDown moves search selection', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const { dispatch } = installFakeScope(popup as any);
 
     popup.onOpen();
@@ -78,7 +78,7 @@ describe('CommandPopup escape from forge sentinel detail', () => {
 
 describe('CommandPopup keyboard suspend/resume', () => {
   it('suspends keyboard bindings when entering forge sentinel detail', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -94,7 +94,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
   });
 
   it('resumes keyboard bindings when forge sentinel onBack fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -119,50 +119,8 @@ describe('CommandPopup keyboard suspend/resume', () => {
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
 
-  it('suspends keyboard bindings when entering spell detail', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
-    const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
-
-    popup.onOpen();
-    scope.unregister.mockClear();
-
-    const spellsPanel = (popup as any).panels[0];
-    spellsPanel.events.emit('detail', { name: 'My Spell', description: '', tags: [], kind: 'spell' });
-
-    expect(scope.unregister).toHaveBeenCalled();
-  });
-
-  it('resumes keyboard bindings when spell detail back button fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
-    const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
-
-    popup.onOpen();
-    const countAfterOpen = scope.register.mock.calls.length;
-
-    const spellsPanel = (popup as any).panels[0];
-
-    // Capture onClickEvent handler from the back button created in renderDetail
-    let capturedOnClick: (() => void) | undefined;
-    const contentEl = (popup as any).contentEl;
-    const origCreateEl = contentEl.createEl.bind(contentEl);
-    contentEl.createEl = vi.fn().mockImplementation((tag: string, opts: any) => {
-      const el = origCreateEl(tag, opts);
-      if (tag === 'button') {
-        el.onClickEvent = vi.fn((cb: () => void) => { capturedOnClick = cb; });
-      }
-      return el;
-    });
-
-    spellsPanel.events.emit('detail', { name: 'My Spell', description: '', tags: [], kind: 'spell' });
-
-    expect(capturedOnClick).toBeDefined();
-    capturedOnClick!();
-
-    expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
-  });
-
   it('resumes keyboard bindings when forge sentinel onSubmit fires', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
+    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
@@ -186,28 +144,5 @@ describe('CommandPopup keyboard suspend/resume', () => {
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
 
-  it('restores selected index when returning from spell detail', () => {
-    const popup = new CommandPopup(makeApp(), 'spell', vi.fn(), { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults);
-    const { dispatch } = installFakeScope(popup as any);
-    popup.onOpen();
-
-    const spellsPanel = (popup as any).panels[0];
-    const updateSpy = vi.spyOn(spellsPanel, 'updateSelection').mockImplementation(() => {});
-
-    // Navigate to index 2
-    dispatch('ArrowDown');
-    dispatch('ArrowDown');
-    updateSpy.mockClear();
-
-    // Enter spell detail
-    spellsPanel.events.emit('detail', { name: 'Summoning Circle', path: '/spells/summoning' });
-    updateSpy.mockClear();
-
-    // Return from detail (Obsidian's Escape path)
-    popup.close();
-
-    // Selection should be visually restored to index 2 (not 0)
-    expect(updateSpy).toHaveBeenCalledWith(0, 2);
-  });
 });
 

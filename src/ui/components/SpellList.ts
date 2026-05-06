@@ -20,7 +20,7 @@ export class SpellList {
     this.el.empty();
     const spellRows = spells.map((spell, i) => {
       const row = new SpellRow(this.el, spell, i === selectedIndex);
-      row.el.onClickEvent(() => this.emitter.emit("detail", spell));
+      row.el.onClickEvent(() => this.emitter.emit("cast", spell));
       return row;
     });
     const sentinelRows = this.sentinels.map((sentinel, i) => {

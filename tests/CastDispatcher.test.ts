@@ -217,4 +217,35 @@ describe('CastDispatcher', () => {
 
     expect(notifyFn).toHaveBeenCalledWith('Cast failed: something went wrong');
   });
+
+  it('notifies "Casting <name>…" with single-quoted spell name', () => {
+    const notifyFn = vi.fn();
+    const { stub } = makeStubRunner();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: vi.fn(),
+      castRunner: stub,
+    });
+
+    dispatcher.dispatch({
+      spell: { name: 'Summoning Circle', path: 'spells/summoning.md' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: {
+        vaultMountPath: '/vault',
+        spellTag: 'grimoire/spell',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        forgeOutputFolder: 'Spells/',
+        defaultModel: 'claude-sonnet-4-5',
+        defaultEffort: null,
+      } as GrimoireSettings,
+      activeFilePath: 'notes/active.md',
+    });
+
+    expect(notifyFn).toHaveBeenCalledWith("Casting 'Summoning Circle'…");
+  });
 });

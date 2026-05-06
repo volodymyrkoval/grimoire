@@ -40,7 +40,7 @@ export class SpellsPanel implements TabPanel {
   confirm(index: number): void {
     if (index < this.filteredSpells.length) {
       const spell = this.filteredSpells[index];
-      if (spell) this.events.emit("detail", spell);
+      if (spell) this.events.emit("cast", spell);
     } else {
       const sentinel = SENTINELS[index - this.filteredSpells.length];
       if (sentinel) this.events.emit("sentinel", sentinel);
