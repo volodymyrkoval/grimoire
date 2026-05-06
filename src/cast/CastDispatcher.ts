@@ -44,7 +44,7 @@ export class CastDispatcher {
 
     const userPrompt = this.#buildUserPrompt(settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
 
-    this.#notify('Casting…');
+    this.#notify(`Casting '${spell.name}'…`);
     this.#close();
 
     const runner = this.#castRunner ?? new CastRunner(this.#spawner);
