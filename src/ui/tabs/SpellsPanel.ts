@@ -1,6 +1,7 @@
 import { App } from "obsidian";
 import type { TabPanel } from "./TabPanel";
 import { type Spell, type Sentinel, isSentinel } from "../../domain/spells/Spell";
+import type { SpellPath } from "../../domain/spells/SpellPath";
 import { fuzzyFilter } from "../../domain/spells/fuzzyFilter";
 import { getSpells } from "../../domain/spells/spellScanner";
 import { SpellList } from "../components/SpellList";
@@ -18,22 +19,26 @@ export class SpellsPanel implements TabPanel {
   private readonly allSpells: readonly Spell[];
   private filteredSpells: Spell[];
   private spellList: SpellList | null = null;
+  #hasOverride: (path: SpellPath) => boolean = () => false;
 
   constructor(app: App, tag: string) {
     this.allSpells = getSpells(app, tag);
     this.filteredSpells = [...this.allSpells];
   }
 
-  mount(container: HTMLElement): void {
+  mount(container: HTMLElement, hasOverride?: (path: SpellPath) => boolean): void {
+    if (hasOverride) {
+      this.#hasOverride = hasOverride;
+    }
     this.spellList = new SpellList(container, this.events, [...SENTINELS]);
-    this.spellList.render(this.filteredSpells, 0);
+    this.spellList.render(this.filteredSpells, 0, this.#hasOverride);
   }
 
   filter(query: string): number {
     const results = fuzzyFilter(this.allSpells, SENTINELS, query);
     this.filteredSpells = results.filter((item): item is Spell => !isSentinel(item));
     const initialIndex = this.sentinelFocusIndex(query);
-    this.spellList?.render(this.filteredSpells, initialIndex);
+    this.spellList?.render(this.filteredSpells, initialIndex, this.#hasOverride);
     return initialIndex;
   }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { App } from 'obsidian';
 import { SpellsPanel } from '../src/ui/tabs/SpellsPanel';
+import { spellPath } from '../src/domain/spells/SpellPath';
 
 function makeMockEl(): any {
   const el: any = {
@@ -156,5 +157,61 @@ describe('SpellsPanel.openOptions', () => {
     panel.openOptions(-1);
 
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('SpellsPanel with hasOverride predicate', () => {
+  it('mount without hasOverride uses default predicate (no overrides)', () => {
+    const panel = makePanel();
+    // Default mount (no predicate)
+    const container = makeMockEl();
+    panel['spellList'] = null; // reset
+    panel.mount(container);
+
+    const spellListEl = panel['spellList']?.el;
+    if (spellListEl) {
+      // With default predicate, no dots should appear
+      let totalDots = 0;
+      spellListEl.createDiv.mock.results.forEach((result: any) => {
+        const rowEl = result.value;
+        if (rowEl) {
+          const dotCalls = rowEl.createSpan.mock.calls?.filter(
+            (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
+          ) ?? [];
+          totalDots += dotCalls.length;
+        }
+      });
+      expect(totalDots).toBe(0);
+    }
+  });
+
+  it('mount with hasOverride predicate applies it to render', () => {
+    const app = makeApp(DEFAULT_TEST_SPELLS);
+    const panel = new SpellsPanel(app, 'spell');
+    const container = makeMockEl();
+    const predicateSpy = vi.fn((path: string) => path === '/spells/summoning.md');
+
+    panel.mount(container, predicateSpy);
+
+    // Verify the predicate was called
+    expect(predicateSpy).toHaveBeenCalled();
+  });
+
+  it('filter preserves the hasOverride predicate', () => {
+    const app = makeApp(DEFAULT_TEST_SPELLS);
+    const panel = new SpellsPanel(app, 'spell');
+    const container = makeMockEl();
+    const predicateSpy = vi.fn((path: string) => path === '/spells/summoning.md');
+
+    panel.mount(container, predicateSpy);
+    const callCountAfterMount = predicateSpy.mock.calls.length;
+
+    // Reset mock to count only filter calls
+    predicateSpy.mockClear();
+
+    panel.filter('');
+
+    // Predicate should be called again during filter
+    expect(predicateSpy).toHaveBeenCalled();
   });
 });
