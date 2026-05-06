@@ -11,6 +11,7 @@ import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
 import type { Effort } from "../domain/settings/Settings";
 
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
+export type CastAction = (spell: Spell) => void;
 
 export interface FormDefaults {
   defaultModel: string;
