@@ -11,6 +11,7 @@ describe('buildMetaSpell', () => {
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/vault',
+      executeOnNote: true,
     });
     expect(output).toContain('- **Description:** test description here');
   });
@@ -24,6 +25,7 @@ describe('buildMetaSpell', () => {
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/vault',
+      executeOnNote: true,
     });
     expect(output).toContain('- **Name (already sanitised):** test-spell');
   });
@@ -37,6 +39,7 @@ describe('buildMetaSpell', () => {
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/vault',
+      executeOnNote: true,
     });
     expect(output).toContain('- **Model:** claude-sonnet-4-5');
   });
@@ -50,6 +53,7 @@ describe('buildMetaSpell', () => {
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/vault',
+      executeOnNote: true,
     });
     expect(output).toContain('- **Effort:** medium');
   });
@@ -63,6 +67,7 @@ describe('buildMetaSpell', () => {
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/vault',
+      executeOnNote: true,
     });
     expect(output).toContain('- **Effort:** n/a');
   });
@@ -102,8 +107,51 @@ describe('buildMetaSpell', () => {
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/my/vault/path',
+      executeOnNote: true,
     });
     expect(output).toContain('VAULT_MOUNT_PATH');
     expect(output).toContain('/my/vault/path');
+  });
+
+  it('includes executeOnNote: true in the output', () => {
+    const output = buildMetaSpell({
+      description: 'test',
+      name: 'test-spell',
+      model: 'claude-sonnet-4-5',
+      effort: 'low',
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+      executeOnNote: true,
+    });
+    expect(output).toContain('grimoire-execute-on-note: true');
+  });
+
+  it('includes executeOnNote: false in the output', () => {
+    const output = buildMetaSpell({
+      description: 'test',
+      name: 'test-spell',
+      model: 'claude-sonnet-4-5',
+      effort: 'low',
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+      executeOnNote: false,
+    });
+    expect(output).toContain('grimoire-execute-on-note: false');
+  });
+
+  it('tags instruction still appears after executeOnNote', () => {
+    const output = buildMetaSpell({
+      description: 'test',
+      name: 'test-spell',
+      model: 'claude-sonnet-4-5',
+      effort: 'low',
+      spellTag: 'my-spell-tag',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+      executeOnNote: true,
+    });
+    expect(output).toContain('[my-spell-tag]');
   });
 });
