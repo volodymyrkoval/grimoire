@@ -73,7 +73,6 @@ export class OptionsPanel {
   ): ReactiveContext {
     this.#buildHint(form, 'Context notes');
     this.#buildContextNotes(form, formState, deps.app);
-    this.#buildHint(form, 'Follow-up');
     const textarea = this.#buildTextarea(form, formState);
     const initialExecuteOnNote = formState.snapshot().executeOnNote;
     const eonCheckbox = this.#buildExecuteOnNoteCheckbox(form, formState, initialExecuteOnNote);
@@ -87,8 +86,11 @@ export class OptionsPanel {
     });
     const { effortContainer, effortRow, effortRowMountedRef } = this.#buildEffortContainer(form, formState);
     const { checkboxLabel, checkbox } = this.#buildCheckbox(form, formState, snapshot, deps);
-    this.#buildCastButton(form, formState, deps);
-    this.#buildResetButton(form, snapshot, formState, deps, select, textarea, eonCheckbox, initialExecuteOnNote);
+    const buttonRow = document.createElement('div');
+    buttonRow.className = 'grimoire-button-row';
+    form.appendChild(buttonRow);
+    this.#buildCastButton(buttonRow, form, formState, deps);
+    this.#buildResetButton(buttonRow, snapshot, formState, deps, select, textarea, eonCheckbox, initialExecuteOnNote);
     return { checkboxLabel, checkbox, effortContainer, effortRow, effortRowMountedRef };
   }
 
@@ -142,6 +144,7 @@ export class OptionsPanel {
 
   #buildTextarea(form: HTMLFormElement, formState: OptionsFormState): HTMLTextAreaElement {
     const textarea = document.createElement('textarea');
+    textarea.placeholder = 'Follow-up';
     textarea.value = formState.snapshot().followUp;
     textarea.addEventListener('input', () => {
       formState.setFollowUp(textarea.value);
@@ -156,6 +159,7 @@ export class OptionsPanel {
     initialValue: boolean,
   ): HTMLInputElement {
     const container = document.createElement('div');
+    container.className = 'grimoire-checkbox-row';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.id = 'grimoire-execute-on-note';
@@ -200,6 +204,7 @@ export class OptionsPanel {
   }
 
   #buildCastButton(
+    container: HTMLElement,
     form: HTMLFormElement,
     formState: OptionsFormState,
     deps: OptionsPanelDeps,
@@ -207,7 +212,7 @@ export class OptionsPanel {
     const castBtn = document.createElement('button');
     castBtn.type = 'submit';
     castBtn.textContent = 'Cast';
-    form.appendChild(castBtn);
+    container.appendChild(castBtn);
 
     const cast = () => {
       const current = formState.snapshot();
@@ -227,7 +232,7 @@ export class OptionsPanel {
   }
 
   #buildResetButton(
-    form: HTMLFormElement,
+    container: HTMLElement,
     snapshot: OptionsSnapshot,
     formState: OptionsFormState,
     deps: OptionsPanelDeps,
@@ -254,7 +259,7 @@ export class OptionsPanel {
       // Restore select value explicitly (setModel emits but select needs sync)
       select.value = snapshot.model;
     });
-    form.appendChild(resetBtn);
+    container.appendChild(resetBtn);
   }
 
   #subscribeReactive(

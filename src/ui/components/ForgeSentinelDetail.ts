@@ -109,10 +109,13 @@ export class ForgeSentinelDetail {
   }
 
   #buildSubmitButton(form: HTMLFormElement): void {
+    const buttonRow = document.createElement('div');
+    buttonRow.className = 'grimoire-button-row';
     const submitBtn = document.createElement('button');
     submitBtn.type = 'submit';
     submitBtn.textContent = 'Submit';
-    form.appendChild(submitBtn);
+    buttonRow.appendChild(submitBtn);
+    form.appendChild(buttonRow);
   }
 
   #buildModelSectionHeader(form: HTMLElement): void {
