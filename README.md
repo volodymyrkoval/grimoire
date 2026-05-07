@@ -144,7 +144,7 @@ Set your spell tag, Claude Code binary path, default model and effort level, For
 Grimoire is not yet listed in the Obsidian community plugin registry. Install via **BRAT**:
 
 1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from the Obsidian community plugins.
-2. In BRAT settings, click **Add Beta Plugin** and paste this repository's URL.
+2. In BRAT settings, click **Add Beta plugin** and enter `volodymyrkoval/grimoire`.
 3. Enable **Grimoire** under **Settings → Community plugins**.
 
 ---
