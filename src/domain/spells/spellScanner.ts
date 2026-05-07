@@ -1,5 +1,6 @@
 import { App, TFile } from 'obsidian';
 import type { Spell } from './Spell';
+import { EXECUTE_ON_NOTE_KEY } from './Spell';
 import { spellPath } from './SpellPath';
 
 function tagMatches(tagValue: string, targetTag: string): boolean {
@@ -31,9 +32,15 @@ export function getSpells(app: App, tag: string): Spell[] {
   return app.vault
     .getMarkdownFiles()
     .filter((file) => hasTag(app, file, tag))
-    .map((file) => ({
-      name: file.basename,
-      path: spellPath(file.path),
-    }))
+    .map((file) => {
+      const cache = app.metadataCache.getFileCache(file);
+      const eonValue = cache?.frontmatter?.[EXECUTE_ON_NOTE_KEY];
+      const executeOnNote = eonValue === true ? true : eonValue === false ? false : true;
+      return {
+        name: file.basename,
+        path: spellPath(file.path),
+        executeOnNote,
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 }

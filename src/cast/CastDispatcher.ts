@@ -11,6 +11,7 @@ export interface CastDispatchInput {
   followUp: string;
   settings: GrimoireSettings;
   activeFilePath: string | null;
+  executeOnNote: boolean;
 }
 
 export interface CastDispatcherDeps {
@@ -36,13 +37,13 @@ export class CastDispatcher {
   dispatch(input: CastDispatchInput): void {
     const { spell, model, effort, contextNotePaths, followUp, settings, activeFilePath } = input;
 
-    if (activeFilePath === null) {
+    if (input.executeOnNote && activeFilePath === null) {
       this.#notify('Open a note to cast against');
       this.#close();
       return;
     }
 
-    const userPrompt = this.#buildUserPrompt(settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
+    const userPrompt = this.#buildUserPrompt(input.executeOnNote, settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
 
     this.#notify(`Casting '${spell.name}'…`);
     this.#close();
@@ -66,19 +67,22 @@ export class CastDispatcher {
   }
 
   #buildUserPrompt(
+    executeOnNote: boolean,
     vaultMountPath: string,
-    activeFilePath: string,
+    activeFilePath: string | null,
     contextNotePaths: readonly string[],
     followUp: string,
   ): string {
-    let prompt = `Execute this spell against the note at \`${vaultMountPath}/${activeFilePath}\`.`;
+    let prompt = executeOnNote && activeFilePath !== null
+      ? `Execute this spell against the note at \`${vaultMountPath}/${activeFilePath}\`.`
+      : 'Proceed with the execution according to the instructions';
 
     if (contextNotePaths.length > 0) {
-      prompt += ` Additional context notes: ${contextNotePaths.join(', ')}.`;
+      prompt += `${prompt.length > 0 ? ' ' : ''}Additional context notes: ${contextNotePaths.join(', ')}.`;
     }
 
     if (followUp.trim() !== '') {
-      prompt += ` Follow-up: ${followUp}`;
+      prompt += `${prompt.length > 0 ? ' ' : ''}Follow-up: ${followUp}`;
     }
 
     return prompt;

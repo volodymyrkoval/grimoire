@@ -75,6 +75,7 @@ export class ForgeImprinter {
       spellTag: settings.spellTag,
       forgeOutputFolder: settings.forgeOutputFolder,
       vaultMountPath: settings.vaultMountPath,
+      executeOnNote: snapshot.executeOnNote,
     });
   }
 }

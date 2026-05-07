@@ -45,6 +45,7 @@ function mountPanel(overrideInitial?: {
   contextNotePaths?: string[];
   followUp?: string;
   snapshot?: OptionsSnapshot;
+  executeOnNote?: boolean;
 }): MountResult {
   const model = overrideInitial?.model ?? 'claude-sonnet-4-5';
   const effort = overrideInitial?.effort !== undefined ? overrideInitial.effort : 'medium';
@@ -56,6 +57,7 @@ function mountPanel(overrideInitial?: {
     effort,
     contextNotePaths: overrideInitial?.contextNotePaths ?? [],
     followUp: overrideInitial?.followUp ?? '',
+    executeOnNote: overrideInitial?.executeOnNote ?? true,
   });
 
   const snapshot: OptionsSnapshot = overrideInitial?.snapshot ?? { model, effort };
@@ -131,6 +133,10 @@ describe('OptionsPanel integration', () => {
     const defaultLabel = form!.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
     expect(defaultLabel).not.toBeNull();
     expect(defaultLabel!.style.display).toBe('none');
+
+    // "Execute on active note" checkbox
+    const eonCheckbox = form!.querySelector('input[type="checkbox"][data-grimoire="execute-on-note"]');
+    expect(eonCheckbox).not.toBeNull();
   });
 
   // ------------------------------------------------------------------ A2
@@ -382,6 +388,80 @@ describe('OptionsPanel integration', () => {
     expect(formState.snapshot().model).toBe('claude-haiku-4-5');
     document.body.removeChild(contentEl);
     updateSpy.mockRestore();
+  });
+
+  // ------------------------------------------------------------------ B1
+  it('executeOnNote checkbox starts checked when mountPanel receives executeOnNote: true', () => {
+    const { contentEl } = mountPanel({ executeOnNote: true });
+
+    const form = contentEl.querySelector('form.options-panel')!;
+    const eonCheckbox = form.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][data-grimoire="execute-on-note"]'
+    );
+
+    expect(eonCheckbox).not.toBeNull();
+    expect(eonCheckbox!.checked).toBe(true);
+  });
+
+  // ------------------------------------------------------------------ B2
+  it('executeOnNote checkbox starts unchecked when mountPanel receives executeOnNote: false', () => {
+    const { contentEl } = mountPanel({ executeOnNote: false });
+
+    const form = contentEl.querySelector('form.options-panel')!;
+    const eonCheckbox = form.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][data-grimoire="execute-on-note"]'
+    );
+
+    expect(eonCheckbox).not.toBeNull();
+    expect(eonCheckbox!.checked).toBe(false);
+  });
+
+  // ------------------------------------------------------------------ B3
+  it('unchecking executeOnNote flips formState and Cast emits executeOnNote: false', () => {
+    const { contentEl, formState, onCast } = mountPanel({ executeOnNote: true });
+
+    const form = contentEl.querySelector('form.options-panel')!;
+    const eonCheckbox = form.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][data-grimoire="execute-on-note"]'
+    )!;
+
+    // Uncheck the box
+    eonCheckbox.checked = false;
+    eonCheckbox.dispatchEvent(new Event('change'));
+
+    expect(formState.snapshot().executeOnNote).toBe(false);
+
+    form.dispatchEvent(new Event('submit'));
+
+    expect(onCast).toHaveBeenCalledOnce();
+    expect(onCast).toHaveBeenCalledWith(
+      expect.objectContaining({ executeOnNote: false })
+    );
+  });
+
+  // ------------------------------------------------------------------ B4
+  it('Reset restores executeOnNote checkbox to the seeded value', () => {
+    const { contentEl, formState } = mountPanel({ executeOnNote: true });
+
+    const form = contentEl.querySelector('form.options-panel')!;
+    const eonCheckbox = form.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][data-grimoire="execute-on-note"]'
+    )!;
+
+    // Uncheck the box to drift away from the seeded value
+    eonCheckbox.checked = false;
+    eonCheckbox.dispatchEvent(new Event('change'));
+
+    expect(formState.snapshot().executeOnNote).toBe(false);
+
+    // Click Reset
+    const resetBtn = Array.from(form.querySelectorAll('button[type="button"]')).find(
+      (b) => b.textContent?.trim() === 'Reset'
+    ) as HTMLButtonElement;
+    resetBtn.click();
+
+    expect(formState.snapshot().executeOnNote).toBe(true);
+    expect(eonCheckbox.checked).toBe(true);
   });
 
   // ------------------------------------------------------------------ A9

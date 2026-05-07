@@ -213,6 +213,7 @@ describe('ForgeSentinelDetail', () => {
         description: 'A description',
         model: 'claude-opus-4-5',
         effort: 'low',
+        executeOnNote: true,
       });
     });
 
@@ -237,6 +238,24 @@ describe('ForgeSentinelDetail', () => {
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ model: modelSelect.value }),
       );
+    });
+
+    it('includes executeOnNote: true by default on submit', () => {
+      const onSubmit = vi.fn();
+      const { submitForm } = buildDetail({ onSubmit });
+      submitForm();
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: true }));
+    });
+
+    it('includes executeOnNote: false after unchecking the checkbox', () => {
+      const onSubmit = vi.fn();
+      const { form, submitForm } = buildDetail({ onSubmit });
+      const eonCheckbox = form.querySelector<HTMLInputElement>('input[type="checkbox"][data-grimoire="execute-on-note"]')!;
+      expect(eonCheckbox).not.toBeNull();
+      eonCheckbox.checked = false;
+      eonCheckbox.dispatchEvent(new Event('change'));
+      submitForm();
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: false }));
     });
   });
 

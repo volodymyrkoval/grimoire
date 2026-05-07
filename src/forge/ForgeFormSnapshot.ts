@@ -5,4 +5,5 @@ export interface ForgeFormSnapshot {
   name: string;
   model: string;
   effort: Effort | null;
+  executeOnNote: boolean;
 }

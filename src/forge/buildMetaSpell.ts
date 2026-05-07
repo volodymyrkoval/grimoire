@@ -1,3 +1,4 @@
+import { EXECUTE_ON_NOTE_KEY } from '../domain/spells/Spell';
 import { Effort } from '../domain/settings/Settings';
 
 export interface MetaSpellInput {
@@ -8,10 +9,11 @@ export interface MetaSpellInput {
   spellTag: string;
   forgeOutputFolder: string;
   vaultMountPath: string;
+  executeOnNote: boolean;
 }
 
 export function buildMetaSpell(input: MetaSpellInput): string {
-  const { description, name, model, effort, spellTag, forgeOutputFolder, vaultMountPath } = input;
+  const { description, name, model, effort, spellTag, forgeOutputFolder, vaultMountPath, executeOnNote } = input;
   const effortDisplay = effort ?? 'n/a';
 
   return `%%
@@ -49,7 +51,7 @@ Then execute in order:
    - A \`---\` separator
    - Closing \`%%\` block containing only \`Begin execution now.\`
 
-3. Set the file's YAML frontmatter \`tags\` field to \`[${spellTag}]\`.
+3. Set the file's YAML frontmatter \`tags\` field to \`[${spellTag}]\` and add \`${EXECUTE_ON_NOTE_KEY}: ${executeOnNote}\`.
 
 4. Determine the output path: \`${forgeOutputFolder}${name}.md\`. Create the folder if it does not exist.
 

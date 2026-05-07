@@ -22,6 +22,16 @@ function makeStubRunner() {
   };
 }
 
+const baseSettings: GrimoireSettings = {
+  vaultMountPath: '/vault',
+  spellTag: 'grimoire/spell',
+  binaryPath: '/usr/bin/claude',
+  cliCommand: 'claude',
+  forgeOutputFolder: 'Spells/',
+  defaultModel: 'claude-sonnet-4-5',
+  defaultEffort: null,
+};
+
 describe('CastDispatcher', () => {
   it('notifies "Open a note to cast against" and closes when activeFilePath is null', () => {
     const notifyFn = vi.fn();
@@ -40,16 +50,9 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
-      settings: {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      settings: baseSettings,
       activeFilePath: null,
+      executeOnNote: true,
     });
 
     expect(notifyFn).toHaveBeenCalledWith('Open a note to cast against');
@@ -72,16 +75,9 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
-      settings: {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      settings: baseSettings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     const input = getInput();
@@ -103,16 +99,9 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: ['a.md', 'b.md'],
       followUp: '',
-      settings: {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      settings: baseSettings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     const input = getInput();
@@ -134,16 +123,9 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: 'then do more',
-      settings: {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      settings: baseSettings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     const input = getInput();
@@ -166,16 +148,9 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
-      settings: {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      settings: baseSettings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     const callbacks = getCallbacks();
@@ -200,16 +175,9 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
-      settings: {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      settings: baseSettings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     const callbacks = getCallbacks();
@@ -234,18 +202,90 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
-      settings: {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      settings: baseSettings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     expect(notifyFn).toHaveBeenCalledWith("Casting 'Summoning Circle'…");
+  });
+
+  it('invokes runner when executeOnNote is false and activeFilePath is null', () => {
+    const { stub, getInput } = makeStubRunner();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      castRunner: stub,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: ['ctx.md'],
+      followUp: 'do something',
+      settings: baseSettings,
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(stub.run).toHaveBeenCalled();
+    const input = getInput();
+    expect(input.userPrompt).not.toContain('Execute this spell against the note at');
+    expect(input.userPrompt).toContain('Additional context notes: ctx.md.');
+    expect(input.userPrompt).toContain('Follow-up: do something');
+  });
+
+  it('omits leading sentence when executeOnNote is false even with an active file', () => {
+    const { stub, getInput } = makeStubRunner();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      castRunner: stub,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: ['ctx.md'],
+      followUp: 'extra instruction',
+      settings: baseSettings,
+      activeFilePath: 'notes/x.md',
+      executeOnNote: false,
+    });
+
+    expect(stub.run).toHaveBeenCalled();
+    const input = getInput();
+    expect(input.userPrompt).not.toContain('Execute this spell against the note at');
+    expect(input.userPrompt).toContain('Additional context notes: ctx.md.');
+    expect(input.userPrompt).toContain('Follow-up: extra instruction');
+  });
+
+  it('includes leading sentence when executeOnNote is true with an active file', () => {
+    const { stub, getInput } = makeStubRunner();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      castRunner: stub,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: baseSettings,
+      activeFilePath: 'notes/active.md',
+      executeOnNote: true,
+    });
+
+    expect(stub.run).toHaveBeenCalled();
+    const input = getInput();
+    expect(input.userPrompt).toContain('Execute this spell against the note at `/vault/notes/active.md`.');
   });
 });

@@ -39,6 +39,7 @@ describe('ForgeImprinter', () => {
         description: 'test',
         model: 'claude-sonnet-4-5',
         effort: null,
+        executeOnNote: true,
       } as ForgeFormSnapshot,
       {
         vaultMountPath: '/vault',
@@ -73,6 +74,7 @@ describe('ForgeImprinter', () => {
         description: 'test description',
         model: 'claude-sonnet-4-5',
         effort: 'medium',
+        executeOnNote: true,
       } as ForgeFormSnapshot,
       {
         vaultMountPath: '/vault',
@@ -105,6 +107,7 @@ describe('ForgeImprinter', () => {
         description: 'A test spell',
         model: 'claude-sonnet-4-5',
         effort: null,
+        executeOnNote: true,
       } as ForgeFormSnapshot,
       {
         vaultMountPath: '/vault',
@@ -172,6 +175,7 @@ describe('ForgeImprinter', () => {
         description: 'test',
         model: 'claude-sonnet-4-5',
         effort: null,
+        executeOnNote: true,
       } as ForgeFormSnapshot,
       {
         vaultMountPath: '/vault',
@@ -189,5 +193,37 @@ describe('ForgeImprinter', () => {
     callbacks?.onFailure('boom');
 
     expect(notifyFn).toHaveBeenCalledWith('Forge failed: boom');
+  });
+
+  it('threads executeOnNote: false into metaSpell', () => {
+    const { stub, getInput } = makeStubRunner();
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      castRunner: stub,
+    });
+
+    imprinter.imprint(
+      {
+        name: 'Test Spell',
+        description: 'A test spell',
+        model: 'claude-sonnet-4-5',
+        effort: null,
+        executeOnNote: false,
+      } as ForgeFormSnapshot,
+      {
+        vaultMountPath: '/vault',
+        spellTag: 'grimoire/spell',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        forgeOutputFolder: 'Spells/',
+        defaultModel: 'claude-sonnet-4-5',
+        defaultEffort: null,
+      } as GrimoireSettings,
+      vi.fn()
+    );
+
+    const input = getInput();
+    expect(input.metaSpell).toContain('grimoire-execute-on-note: false');
   });
 });

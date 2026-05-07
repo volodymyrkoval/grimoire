@@ -181,7 +181,7 @@ describe('GrimoirePlugin', () => {
     expect(capturedCastAction).toBeDefined();
 
     (app as any).workspace.getActiveFile.mockReturnValue({ path: 'notes/active.md', basename: 'active' });
-    const stubSpell = { name: 'Test Spell', path: 'spells/test.md' };
+    const stubSpell = { name: 'Test Spell', path: 'spells/test.md', executeOnNote: true };
     capturedCastAction!(stubSpell);
 
     expect(dispatchSpy).toHaveBeenCalledOnce();
@@ -193,6 +193,7 @@ describe('GrimoirePlugin', () => {
       followUp: '',
       settings: plugin.data.settings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     dispatchSpy.mockRestore();
@@ -255,6 +256,7 @@ describe('GrimoirePlugin', () => {
       effort: 'high' as const,
       contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
       followUp: 'This is a follow-up.',
+      executeOnNote: true,
     };
     capturedOptionsCastAction!(stubSpell, stubSnapshot);
 
@@ -267,6 +269,7 @@ describe('GrimoirePlugin', () => {
       followUp: 'This is a follow-up.',
       settings: plugin.data.settings,
       activeFilePath: 'notes/active.md',
+      executeOnNote: true,
     });
 
     dispatchSpy.mockRestore();

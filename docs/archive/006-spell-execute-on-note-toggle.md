@@ -186,8 +186,8 @@ export interface CastDispatchInput {
 
 **junior-dev**
 
-- [ ] A1: Add `executeOnNote: boolean` to the `Spell` interface in `src/domain/spells/Spell.ts`. Export `export const EXECUTE_ON_NOTE_KEY = 'grimoire-execute-on-note';` from the same file. Update no other code yet — this todo is type-only and will break downstream call sites that construct `Spell` literals; that's expected and fixed in subsequent todos. — S, junior-dev
-- [ ] A2: Extend `getSpells` in `src/domain/spells/spellScanner.ts` to read `frontmatter[EXECUTE_ON_NOTE_KEY]` from the metadata cache. Read rule: if value is strictly `=== true` use `true`; if strictly `=== false` use `false`; for any other value (including `undefined`, strings, numbers) use `true`. Include the resolved boolean in each returned `Spell`. Add a new `tests/spellScanner.test.ts` with cases: (i) frontmatter has `grimoire-execute-on-note: true` → spell.executeOnNote === true; (ii) `: false` → false; (iii) key absent → true; (iv) value is the string `'false'` → true (coercion guard); (v) value is `0` → true. Mock the obsidian `App` the same way existing scanner-adjacent tests do. — M, junior-dev
+- [x] A1: Add `executeOnNote: boolean` to the `Spell` interface in `src/domain/spells/Spell.ts`. Export `export const EXECUTE_ON_NOTE_KEY = 'grimoire-execute-on-note';` from the same file. Update no other code yet — this todo is type-only and will break downstream call sites that construct `Spell` literals; that's expected and fixed in subsequent todos. — S, junior-dev
+- [x] A2: Extend `getSpells` in `src/domain/spells/spellScanner.ts` to read `frontmatter[EXECUTE_ON_NOTE_KEY]` from the metadata cache. Read rule: if value is strictly `=== true` use `true`; if strictly `=== false` use `false`; for any other value (including `undefined`, strings, numbers) use `true`. Include the resolved boolean in each returned `Spell`. Add a new `tests/spellScanner.test.ts` with cases: (i) frontmatter has `grimoire-execute-on-note: true` → spell.executeOnNote === true; (ii) `: false` → false; (iii) key absent → true; (iv) value is the string `'false'` → true (coercion guard); (v) value is `0` → true. Mock the obsidian `App` the same way existing scanner-adjacent tests do. — M, junior-dev (9bb7593)
 
 ### B. Cast dispatcher: conditional bail and conditional prompt
 
@@ -202,7 +202,7 @@ export interface CastDispatchInput {
 
 **senior-dev**
 
-- [ ] B1: Add `executeOnNote: boolean` to `CastDispatchInput`. In `dispatch()`: gate the `activeFilePath === null` bail on `input.executeOnNote === true`. Refactor `#buildUserPrompt` to accept the flag and to omit the leading "Execute this spell against the note at …" sentence when `executeOnNote === false`; context-notes and follow-up clauses are unchanged. When `executeOnNote === false` and there are no context notes and no follow-up, the prompt is the empty string — that is acceptable and the runner should still be invoked (the system prompt file carries the spell body). Update `tests/CastDispatcher.test.ts` with the four behavioral cases enumerated in the Red criterion above. Existing seven test cases must stay green by adding `executeOnNote: true` to their input literals (they all assert the existing note-bound behavior). — M, senior-dev
+- [x] B1: Add `executeOnNote: boolean` to `CastDispatchInput`. In `dispatch()`: gate the `activeFilePath === null` bail on `input.executeOnNote === true`. Refactor `#buildUserPrompt` to accept the flag and to omit the leading "Execute this spell against the note at …" sentence when `executeOnNote === false`; context-notes and follow-up clauses are unchanged. When `executeOnNote === false` and there are no context notes and no follow-up, emit "Proceed with the execution according to the instructions" as a default prompt (ensures prompt is never empty). Update `tests/CastDispatcher.test.ts` with the four behavioral cases enumerated in the Red criterion above. Existing seven test cases must stay green by adding `executeOnNote: true` to their input literals (they all assert the existing note-bound behavior). — M, senior-dev (77657a8, refined in ffc01a9)
 
 ### C. Forge meta-spell: emit frontmatter instruction
 
@@ -217,9 +217,9 @@ export interface CastDispatchInput {
 
 **junior-dev**
 
-- [ ] C1: Add `executeOnNote: boolean` to `ForgeFormSnapshot` in `src/forge/ForgeFormSnapshot.ts`. — S, junior-dev
-- [ ] C2: Add `executeOnNote: boolean` to `MetaSpellInput` in `src/forge/buildMetaSpell.ts`. Import `EXECUTE_ON_NOTE_KEY` from `../domain/spells/Spell`. Extend the frontmatter instruction at step 3 of the returned text so it tells the LLM to set both `tags: [${spellTag}]` AND `${EXECUTE_ON_NOTE_KEY}: ${executeOnNote}`. Keep the rest of the meta-spell body unchanged. Update `tests/buildMetaSpell.test.ts` with the three cases listed in the Red criterion above. — M, junior-dev
-- [ ] C3: Update `ForgeImprinter.imprint`'s `getMetaSpell` private method in `src/forge/ForgeImprinter.ts` to pass `executeOnNote: snapshot.executeOnNote` into `buildMetaSpell`. Update `tests/ForgeImprinter.test.ts` with one new case asserting that `buildMetaSpell` is called (or its output contains evidence of) the snapshot's `executeOnNote` value. — S, junior-dev
+- [x] C1: Add `executeOnNote: boolean` to `ForgeFormSnapshot` in `src/forge/ForgeFormSnapshot.ts`. — S, junior-dev
+- [x] C2: Add `executeOnNote: boolean` to `MetaSpellInput` in `src/forge/buildMetaSpell.ts`. Import `EXECUTE_ON_NOTE_KEY` from `../domain/spells/Spell`. Extend the frontmatter instruction at step 3 of the returned text so it tells the LLM to set both `tags: [${spellTag}]` AND `${EXECUTE_ON_NOTE_KEY}: ${executeOnNote}`. Keep the rest of the meta-spell body unchanged. Update `tests/buildMetaSpell.test.ts` with the three cases listed in the Red criterion above. — M, junior-dev
+- [x] C3: Update `ForgeImprinter.imprint`'s `getMetaSpell` private method in `src/forge/ForgeImprinter.ts` to pass `executeOnNote: snapshot.executeOnNote` into `buildMetaSpell`. Update `tests/ForgeImprinter.test.ts` with one new case asserting that `buildMetaSpell` is called (or its output contains evidence of) the snapshot's `executeOnNote` value. — S, junior-dev
 
 ### D. Options panel: per-cast toggle (UI integration first)
 
@@ -236,17 +236,17 @@ export interface CastDispatchInput {
 
 **ui-integration-tester**
 
-- [ ] D0: Integration test in `tests/integration/options-panel.spec.ts` covering the four Red-criterion behaviors above. Use the existing `mountPanel` harness; extend it to accept an optional `executeOnNote` for both `formState` initial and `snapshot` (passed through `OptionsFormState` constructor). Use a stable DOM hook for the new checkbox — recommend `data-grimoire="execute-on-note"` on the input element so the test selector is stable across DOM-order refactors. Do NOT modify production code in this todo. — S, ui-integration-tester
+- [x] D0: Integration test in `tests/integration/options-panel.spec.ts` covering the four Red-criterion behaviors above. Use the existing `mountPanel` harness; extend it to accept an optional `executeOnNote` for both `formState` initial and `snapshot` (passed through `OptionsFormState` constructor). Use a stable DOM hook for the new checkbox — recommend `data-grimoire="execute-on-note"` on the input element so the test selector is stable across DOM-order refactors. Do NOT modify production code in this todo. — S, ui-integration-tester
 
 **junior-dev**
 
-- [ ] D1: Add `executeOnNote: boolean` to `OptionsFormSnapshot` in `src/ui/options/OptionsFormState.ts`. Add `setExecuteOnNote(value: boolean): void` that updates the field and calls `this.#emit()`. Initial value is read from the constructor's `initial.executeOnNote`. Update `snapshot()` to include the field. Update `tests/OptionsFormState.test.ts` with cases for: initial seed, `setExecuteOnNote(true|false)` mutation + listener notification, snapshot round-trip. — S, junior-dev
-- [ ] D2: Add `executeOnNote: boolean` to `OptionsSessionEntry` in `src/ui/options/OptionsSessionMap.ts` so per-spell session storage round-trips the field. No method changes — the `put`/`get` flow already accepts the entry shape. Update `tests/OptionsSessionMap.test.ts` if it asserts the entry shape exhaustively. — S, junior-dev
-- [ ] D3: Update `src/ui/components/SpellOptionsDetail.ts` `#buildFormState` to seed `executeOnNote` from `params.spell.executeOnNote`, with session entry value taking precedence when present (mirrors the existing `contextNotePaths`/`followUp` pattern). — S, junior-dev
+- [x] D1: Add `executeOnNote: boolean` to `OptionsFormSnapshot` in `src/ui/options/OptionsFormState.ts`. Add `setExecuteOnNote(value: boolean): void` that updates the field and calls `this.#emit()`. Initial value is read from the constructor's `initial.executeOnNote`. Update `snapshot()` to include the field. Update `tests/OptionsFormState.test.ts` with cases for: initial seed, `setExecuteOnNote(true|false)` mutation + listener notification, snapshot round-trip. — S, junior-dev
+- [x] D2: Add `executeOnNote: boolean` to `OptionsSessionEntry` in `src/ui/options/OptionsSessionMap.ts` so per-spell session storage round-trips the field. No method changes — the `put`/`get` flow already accepts the entry shape. Update `tests/OptionsSessionMap.test.ts` if it asserts the entry shape exhaustively. — S, junior-dev
+- [x] D3: Update `src/ui/components/SpellOptionsDetail.ts` `#buildFormState` to seed `executeOnNote` from `params.spell.executeOnNote`, with session entry value taking precedence when present (mirrors the existing `contextNotePaths`/`followUp` pattern). — S, junior-dev (327809c)
 
 **senior-dev**
 
-- [ ] D4: In `src/ui/options/OptionsPanel.ts` `#buildFormControls`, add a labelled checkbox for `executeOnNote`. Place it in DOM order between the follow-up `textarea` and the "Set as default" label. Tag the input with `data-grimoire="execute-on-note"` for test stability. Bind: initial `checked` from `formState.snapshot().executeOnNote`; `change` event calls `formState.setExecuteOnNote(checkbox.checked)`. The label text is "Execute on active note". This checkbox is independent of the "Set as default" visibility logic — always visible. Extend `#buildResetButton` so Reset also calls `formState.setExecuteOnNote(snapshot-or-spell-default)` — reuse the same seed value the panel was constructed with (extend `OptionsSnapshot`'s contract OR pass the seed via the form-state initial value, your call; document the choice in a one-line code comment). Make D0 green. — M, senior-dev
+- [x] D4: In `src/ui/options/OptionsPanel.ts` `#buildFormControls`, add a labelled checkbox for `executeOnNote`. Place it in DOM order between the follow-up `textarea` and the "Set as default" label. Tag the input with `data-grimoire="execute-on-note"` for test stability. Bind: initial `checked` from `formState.snapshot().executeOnNote`; `change` event calls `formState.setExecuteOnNote(checkbox.checked)`. The label text is "Execute on active note". This checkbox is independent of the "Set as default" visibility logic — always visible. Extend `#buildResetButton` so Reset also calls `formState.setExecuteOnNote(snapshot-or-spell-default)` — reuse the same seed value the panel was constructed with (extend `OptionsSnapshot`'s contract OR pass the seed via the form-state initial value, your call; document the choice in a one-line code comment). Make D0 green. — M, senior-dev (8f8ab82)
 
 ### E. Forge UI: forge-time toggle (UI integration first)
 
@@ -262,11 +262,11 @@ export interface CastDispatchInput {
 
 **ui-integration-tester**
 
-- [ ] E0: Integration test in `tests/integration/forge-sentinel-detail.spec.ts` covering the five Red-criterion behaviors above (re-running the existing `D1e` ordering case is acceptable as a regression guard, or extending it to assert the checkbox sits outside the effort-row → Submit sequence). Use a stable DOM hook for the checkbox. Do NOT modify production code in this todo. — S, ui-integration-tester
+- [x] E0: Integration test in `tests/integration/forge-sentinel-detail.spec.ts` covering the five Red-criterion behaviors above (re-running the existing `D1e` ordering case is acceptable as a regression guard, or extending it to assert the checkbox sits outside the effort-row → Submit sequence). Use a stable DOM hook for the checkbox. Do NOT modify production code in this todo. — S, ui-integration-tester
 
 **senior-dev**
 
-- [ ] E1: In `src/ui/components/ForgeSentinelDetail.ts`, add a labelled checkbox (label text "Execute on active note", input tagged with `data-grimoire="execute-on-note"`) defaulting to `checked = true`. Track its state on a private field (mirroring `#currentEffort`). Include `executeOnNote: <field>` in the `onSubmit` payload in `#wireSubmitHandler`. Place the checkbox in DOM order such that `D1e`'s effort-row → Submit invariant is preserved (recommend: between description textarea and model select, OR right before the Submit button — your judgment, but document in a one-line code comment). Update `tests/ForgeSentinelDetail.test.ts` with one new unit case: submit emits `executeOnNote: true` when default, `false` when toggled. Make E0 green. — M, senior-dev
+- [x] E1: In `src/ui/components/ForgeSentinelDetail.ts`, add a labelled checkbox (label text "Execute on active note", input tagged with `data-grimoire="execute-on-note"`) defaulting to `checked = true`. Track its state on a private field (mirroring `#currentEffort`). Include `executeOnNote: <field>` in the `onSubmit` payload in `#wireSubmitHandler`. Place the checkbox in DOM order such that `D1e`'s effort-row → Submit invariant is preserved (recommend: between description textarea and model select, OR right before the Submit button — your judgment, but document in a one-line code comment). Update `tests/ForgeSentinelDetail.test.ts` with one new unit case: submit emits `executeOnNote: true` when default, `false` when toggled. Make E0 green. — M, senior-dev (7d75550)
 
 ### F. Wire dispatcher input in `main.ts`
 
@@ -281,7 +281,7 @@ export interface CastDispatchInput {
 
 **junior-dev**
 
-- [ ] F1: In `src/main.ts` `createCommandPopup`, thread `executeOnNote: spell.executeOnNote` into the `castAction` `dispatcher.dispatch({...})` call, and thread `executeOnNote: snap.executeOnNote` into the `optionsCastAction` call. Update `tests/main.test.ts` (or whichever test pins the dispatch payload) and the integration specs in `tests/integration/spell-cast.spec.ts` and `tests/integration/options-panel-popup.spec.ts` to assert the field is present on the dispatched input. — S, junior-dev
+- [x] F1: In `src/main.ts` `createCommandPopup`, thread `executeOnNote: spell.executeOnNote` into the `castAction` `dispatcher.dispatch({...})` call, and thread `executeOnNote: snap.executeOnNote` into the `optionsCastAction` call. Update `tests/main.test.ts` (or whichever test pins the dispatch payload) and the integration specs in `tests/integration/spell-cast.spec.ts` and `tests/integration/options-panel-popup.spec.ts` to assert the field is present on the dispatched input. — S, junior-dev (085d07c)
 
 ### G. End-to-end integration coverage
 
@@ -294,7 +294,7 @@ export interface CastDispatchInput {
 
 **ui-integration-tester**
 
-- [ ] G1: Integration test as described in the Red criterion above. Use `tests/integration/harness.ts` helpers; mock `getSpells` (or seed via the existing fixture) to return a spell with `executeOnNote: false`. Two cases: (a) `false` + no active file → runner invoked, prompt missing the active-note sentence; (b) `true` + no active file → notify + close, runner NOT invoked. — M, ui-integration-tester
+- [x] G1: Integration test as described in the Red criterion above. Use `tests/integration/harness.ts` helpers; mock `getSpells` (or seed via the existing fixture) to return a spell with `executeOnNote: false`. Two cases: (a) `false` + no active file → runner invoked, prompt missing the active-note sentence; (b) `true` + no active file → notify + close, runner NOT invoked. — M, ui-integration-tester
 
 ## Edge cases (explicit checklist for each implementing dev agent)
 
@@ -312,3 +312,5 @@ export interface CastDispatchInput {
 - **By tier:** junior-dev = 7, senior-dev = 3, lead-dev = 0, ui-integration-tester = 3.
 - **Dispatch order:** A → B → C → D (D0 first, then D1–D4) → E (E0 first, then E1) → F → G.
 - Junior-dev dominates because the design questions (frontmatter key name, default value, prompt-omission shape, UI placement constraints) are all closed in Interfaces / Technical notes / Section briefings. Senior-dev only owns the UI seams in OptionsPanel and ForgeSentinelDetail (D4, E1) and the dispatcher branching with prompt regeneration (B1).
+
+reviewed @ 7d75550

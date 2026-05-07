@@ -1,8 +1,11 @@
 import type { SpellPath } from './SpellPath';
 
+export const EXECUTE_ON_NOTE_KEY = 'grimoire-execute-on-note';
+
 export interface Spell {
   readonly name: string;
   readonly path: SpellPath;
+  readonly executeOnNote: boolean;
 }
 
 export type SentinelKind = "forge" | "refine" | "separator";

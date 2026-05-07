@@ -62,6 +62,7 @@ export class SpellOptionsDetail {
       effort: resolved.effort,
       contextNotePaths: sessionEntry?.contextNotePaths ?? [],
       followUp: sessionEntry?.followUp ?? '',
+      executeOnNote: sessionEntry?.executeOnNote ?? params.spell.executeOnNote,
     });
   }
 
