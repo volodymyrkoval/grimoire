@@ -15,18 +15,12 @@ export class ContextNotesInput {
   mount(parent: HTMLElement, props: ContextNotesInputProps): void {
     this.#props = props;
 
-    this.#pillContainer = activeDocument.createDiv();
-    this.#pillContainer.className = 'context-notes-pills';
-    parent.appendChild(this.#pillContainer);
+    this.#pillContainer = parent.createDiv({ cls: 'context-notes-pills' });
 
-    this.#searchInput = activeDocument.createEl('input');
+    this.#searchInput = parent.createEl('input', { cls: 'context-notes-search' });
     this.#searchInput.type = 'text';
-    this.#searchInput.className = 'context-notes-search';
-    parent.appendChild(this.#searchInput);
 
-    this.#dropdown = activeDocument.createDiv();
-    this.#dropdown.className = 'context-notes-dropdown';
-    parent.appendChild(this.#dropdown);
+    this.#dropdown = parent.createDiv({ cls: 'context-notes-dropdown' });
 
     this.#searchInput.addEventListener('input', () => {
       this.#rebuildDropdown(this.#searchInput!.value);
@@ -55,14 +49,12 @@ export class ContextNotesInput {
       .slice(0, 6);
 
     for (const file of matches) {
-      const btn = activeDocument.createEl('button');
+      const btn = this.#dropdown.createEl('button', { text: file.basename });
       btn.type = 'button';
-      btn.textContent = file.basename;
       btn.addEventListener('mousedown', (e: MouseEvent) => {
         e.preventDefault();
         this.#addPill(file.path, file.basename);
       });
-      this.#dropdown.appendChild(btn);
     }
   }
 
@@ -80,23 +72,16 @@ export class ContextNotesInput {
   #renderPill(path: string, basename: string): void {
     this.#pillPaths.push(path);
 
-    const pill = activeDocument.createSpan();
-    pill.className = 'context-notes-pill';
+    const pill = this.#pillContainer!.createSpan({ cls: 'context-notes-pill' });
 
-    const label = activeDocument.createSpan();
-    label.textContent = basename;
-    pill.appendChild(label);
+    pill.createSpan({ text: basename });
 
-    const removeBtn = activeDocument.createEl('button');
+    const removeBtn = pill.createEl('button', { text: '×' });
     removeBtn.type = 'button';
-    removeBtn.textContent = '×';
     removeBtn.setAttribute('data-pill-remove', path);
     removeBtn.addEventListener('click', () => {
       this.#removePill(path, pill);
     });
-    pill.appendChild(removeBtn);
-
-    this.#pillContainer!.appendChild(pill);
   }
 
   #removePill(path: string, pillEl: HTMLElement): void {

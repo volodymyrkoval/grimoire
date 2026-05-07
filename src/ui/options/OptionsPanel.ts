@@ -51,18 +51,13 @@ export class OptionsPanel {
   }
 
   #buildBackButton(container: HTMLElement, onBack: () => void): void {
-    const backBtn = activeDocument.createEl('button');
+    const backBtn = container.createEl('button', { text: '← back' });
     backBtn.type = 'button';
-    backBtn.textContent = '← back';
     backBtn.addEventListener('click', () => onBack());
-    container.appendChild(backBtn);
   }
 
   #buildForm(contentEl: HTMLElement): HTMLFormElement {
-    const form = activeDocument.createEl('form');
-    form.className = 'options-panel';
-    contentEl.appendChild(form);
-    return form;
+    return contentEl.createEl('form', { cls: 'options-panel' });
   }
 
   #buildFormControls(
@@ -86,22 +81,18 @@ export class OptionsPanel {
     });
     const { effortContainer, effortRow, effortRowMountedRef } = this.#buildEffortContainer(form, formState);
     const { checkboxLabel, checkbox } = this.#buildCheckbox(form, formState, snapshot, deps);
-    const buttonRow = activeDocument.createDiv();
-    buttonRow.className = 'grimoire-button-row';
-    form.appendChild(buttonRow);
+    const buttonRow = form.createDiv({ cls: 'grimoire-button-row' });
     this.#buildCastButton(buttonRow, form, formState, deps);
     this.#buildResetButton(buttonRow, snapshot, formState, deps, select, textarea, eonCheckbox, initialExecuteOnNote);
     return { checkboxLabel, checkbox, effortContainer, effortRow, effortRowMountedRef };
   }
 
   #buildHint(form: HTMLFormElement, text: string): void {
-    const hint = activeDocument.createEl('small');
-    hint.textContent = text;
-    form.appendChild(hint);
+    form.createEl('small', { text });
   }
 
   #buildCastModelSectionHeader(form: HTMLFormElement): void {
-    form.appendChild(activeDocument.createEl('hr'));
+    form.createEl('hr');
     this.#buildHint(form, 'Cast model settings');
   }
 
@@ -109,8 +100,7 @@ export class OptionsPanel {
     form: HTMLFormElement,
     formState: OptionsFormState,
   ): { effortContainer: HTMLDivElement; effortRow: EffortRow; effortRowMountedRef: { value: boolean } } {
-    const effortContainer = activeDocument.createDiv();
-    form.appendChild(effortContainer);
+    const effortContainer = form.createDiv();
 
     const snap = formState.snapshot();
     const effortRow = new EffortRow();
@@ -128,8 +118,7 @@ export class OptionsPanel {
   }
 
   #buildContextNotes(form: HTMLFormElement, formState: OptionsFormState, app: App): void {
-    const contextContainer = activeDocument.createDiv();
-    form.appendChild(contextContainer);
+    const contextContainer = form.createDiv();
 
     this.#contextNotesInput.mount(contextContainer, {
       app,
@@ -143,13 +132,12 @@ export class OptionsPanel {
   }
 
   #buildTextarea(form: HTMLFormElement, formState: OptionsFormState): HTMLTextAreaElement {
-    const textarea = activeDocument.createEl('textarea');
+    const textarea = form.createEl('textarea');
     textarea.placeholder = 'Follow-up';
     textarea.value = formState.snapshot().followUp;
     textarea.addEventListener('input', () => {
       formState.setFollowUp(textarea.value);
     });
-    form.appendChild(textarea);
     return textarea;
   }
 
@@ -158,9 +146,8 @@ export class OptionsPanel {
     formState: OptionsFormState,
     initialValue: boolean,
   ): HTMLInputElement {
-    const container = activeDocument.createDiv();
-    container.className = 'grimoire-checkbox-row';
-    const checkbox = activeDocument.createEl('input');
+    const container = form.createDiv({ cls: 'grimoire-checkbox-row' });
+    const checkbox = container.createEl('input');
     checkbox.type = 'checkbox';
     checkbox.id = 'grimoire-execute-on-note';
     checkbox.dataset['grimoire'] = 'execute-on-note';
@@ -168,12 +155,8 @@ export class OptionsPanel {
     checkbox.addEventListener('change', () => {
       formState.setExecuteOnNote(checkbox.checked);
     });
-    const label = activeDocument.createEl('label');
+    const label = container.createEl('label', { text: 'Execute on active note' });
     label.htmlFor = checkbox.id;
-    label.textContent = 'Execute on active note';
-    container.appendChild(checkbox);
-    container.appendChild(label);
-    form.appendChild(container);
     return checkbox;
   }
 
@@ -183,9 +166,9 @@ export class OptionsPanel {
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
   ): { checkboxLabel: HTMLLabelElement; checkbox: HTMLInputElement } {
-    const checkboxLabel = activeDocument.createEl('label');
+    const checkboxLabel = form.createEl('label');
     checkboxLabel.hide();
-    const checkbox = activeDocument.createEl('input');
+    const checkbox = checkboxLabel.createEl('input');
     checkbox.type = 'checkbox';
     checkbox.dataset['grimoire'] = 'set-as-default';
     checkbox.addEventListener('change', () => {
@@ -197,9 +180,7 @@ export class OptionsPanel {
       }
       deps.onOverrideChanged();
     });
-    checkboxLabel.appendChild(checkbox);
-    checkboxLabel.appendChild(activeDocument.createTextNode('Set as default'));
-    form.appendChild(checkboxLabel);
+    checkboxLabel.append('Set as default');
     return { checkboxLabel, checkbox };
   }
 
@@ -209,10 +190,8 @@ export class OptionsPanel {
     formState: OptionsFormState,
     deps: OptionsPanelDeps,
   ): void {
-    const castBtn = activeDocument.createEl('button');
+    const castBtn = container.createEl('button', { text: 'Cast' });
     castBtn.type = 'submit';
-    castBtn.textContent = 'Cast';
-    container.appendChild(castBtn);
 
     const cast = () => {
       const current = formState.snapshot();
@@ -241,9 +220,8 @@ export class OptionsPanel {
     eonCheckbox: HTMLInputElement,
     initialExecuteOnNote: boolean,
   ): void {
-    const resetBtn = activeDocument.createEl('button');
+    const resetBtn = container.createEl('button', { text: 'Reset' });
     resetBtn.type = 'button';
-    resetBtn.textContent = 'Reset';
     resetBtn.addEventListener('click', () => {
       formState.setModel(snapshot.model, SUPPORTED_MODELS);
       if (snapshot.effort !== null) {
@@ -259,7 +237,6 @@ export class OptionsPanel {
       // Restore select value explicitly (setModel emits but select needs sync)
       select.value = snapshot.model;
     });
-    container.appendChild(resetBtn);
   }
 
   #subscribeReactive(

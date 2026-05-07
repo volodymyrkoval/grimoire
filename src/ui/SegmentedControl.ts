@@ -17,12 +17,10 @@ export class SegmentedControl<T extends string> {
     this.#current = opts.value;
     this.#onChange = opts.onChange;
 
-    const wrapper = activeDocument.createDiv();
-    wrapper.className = 'grimoire-segmented';
+    const wrapper = parent.createDiv({ cls: 'grimoire-segmented' });
     this.#wrapper = wrapper;
 
     this.#buildButtons(wrapper, opts.options, opts.value);
-    parent.appendChild(wrapper);
   }
 
   setValue(next: T): void {
@@ -71,15 +69,12 @@ export class SegmentedControl<T extends string> {
 
   #buildButtons(wrapper: HTMLElement, options: readonly T[], value: T): void {
     for (const opt of options) {
-      const btn = activeDocument.createEl('button');
+      const btn = wrapper.createEl('button', { cls: 'grimoire-segmented__btn', text: opt });
       btn.type = 'button';
-      btn.className = 'grimoire-segmented__btn';
-      btn.textContent = opt;
       this.#buttons.set(opt, btn);
       // @todo replace with Keyboard controller
       btn.addEventListener('click', () => this.#handleClick(opt));
       btn.addEventListener('keydown', (e) => this.#handleArrow(e));
-      wrapper.appendChild(btn);
     }
     this.#applyActive(value);
   }

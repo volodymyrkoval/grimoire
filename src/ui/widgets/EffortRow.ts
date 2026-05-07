@@ -34,10 +34,8 @@ export class EffortRow {
     }
 
     // Create wrapper div
-    const wrapper = activeDocument.createDiv();
-    wrapper.className = 'grimoire-effort-row';
+    const wrapper = parent.createDiv({ cls: 'grimoire-effort-row' });
     this.#wrapper = wrapper;
-    parent.appendChild(wrapper);
 
     // Determine the initial effort value
     const initialEffort = opts.effort ?? model.defaultEffort;

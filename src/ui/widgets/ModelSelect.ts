@@ -10,15 +10,14 @@ export interface ModelSelectOptions {
 }
 
 function createModelSelectElement(
+  container: HTMLElement,
   models: readonly SupportedModel[],
   initialModel: string,
 ): HTMLSelectElement {
-  const select = activeDocument.createEl('select');
+  const select = container.createEl('select');
   for (const m of models) {
-    const opt = activeDocument.createEl('option');
+    const opt = select.createEl('option', { text: m.label });
     opt.value = m.id;
-    opt.textContent = m.label;
-    select.appendChild(opt);
   }
   select.value = initialModel;
   return select;
@@ -51,9 +50,8 @@ export function buildModelSelect({
   initialModel,
   onChange,
 }: ModelSelectOptions): HTMLSelectElement {
-  const select = createModelSelectElement(models, initialModel);
+  const select = createModelSelectElement(container, models, initialModel);
   select.addEventListener('change', () => onChange(select.value));
   bindModelSelectKeys(select, kb, onChange);
-  container.appendChild(select);
   return select;
 }
