@@ -81,6 +81,7 @@ describe('buildMetaSpell', () => {
       spellTag: 'my-spell-tag',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/vault',
+      executeOnNote: true,
     });
     expect(output).toContain('[my-spell-tag]');
   });
@@ -94,6 +95,7 @@ describe('buildMetaSpell', () => {
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'forges/',
       vaultMountPath: '/vault',
+      executeOnNote: true,
     });
     expect(output).toContain('forges/test-spell.md');
   });

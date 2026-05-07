@@ -41,6 +41,7 @@ function mountPanel(overrides?: Partial<{
     effort,
     contextNotePaths: [],
     followUp: '',
+    executeOnNote: true,
   });
 
   const snapshot: OptionsSnapshot = { model, effort };
