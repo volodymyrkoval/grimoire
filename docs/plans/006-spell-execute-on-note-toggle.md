@@ -236,7 +236,7 @@ export interface CastDispatchInput {
 
 **ui-integration-tester**
 
-- [ ] D0: Integration test in `tests/integration/options-panel.spec.ts` covering the four Red-criterion behaviors above. Use the existing `mountPanel` harness; extend it to accept an optional `executeOnNote` for both `formState` initial and `snapshot` (passed through `OptionsFormState` constructor). Use a stable DOM hook for the new checkbox — recommend `data-grimoire="execute-on-note"` on the input element so the test selector is stable across DOM-order refactors. Do NOT modify production code in this todo. — S, ui-integration-tester
+- [x] D0: Integration test in `tests/integration/options-panel.spec.ts` covering the four Red-criterion behaviors above. Use the existing `mountPanel` harness; extend it to accept an optional `executeOnNote` for both `formState` initial and `snapshot` (passed through `OptionsFormState` constructor). Use a stable DOM hook for the new checkbox — recommend `data-grimoire="execute-on-note"` on the input element so the test selector is stable across DOM-order refactors. Do NOT modify production code in this todo. — S, ui-integration-tester
 
 **junior-dev**
 
@@ -246,7 +246,7 @@ export interface CastDispatchInput {
 
 **senior-dev**
 
-- [ ] D4: In `src/ui/options/OptionsPanel.ts` `#buildFormControls`, add a labelled checkbox for `executeOnNote`. Place it in DOM order between the follow-up `textarea` and the "Set as default" label. Tag the input with `data-grimoire="execute-on-note"` for test stability. Bind: initial `checked` from `formState.snapshot().executeOnNote`; `change` event calls `formState.setExecuteOnNote(checkbox.checked)`. The label text is "Execute on active note". This checkbox is independent of the "Set as default" visibility logic — always visible. Extend `#buildResetButton` so Reset also calls `formState.setExecuteOnNote(snapshot-or-spell-default)` — reuse the same seed value the panel was constructed with (extend `OptionsSnapshot`'s contract OR pass the seed via the form-state initial value, your call; document the choice in a one-line code comment). Make D0 green. — M, senior-dev
+- [x] D4: In `src/ui/options/OptionsPanel.ts` `#buildFormControls`, add a labelled checkbox for `executeOnNote`. Place it in DOM order between the follow-up `textarea` and the "Set as default" label. Tag the input with `data-grimoire="execute-on-note"` for test stability. Bind: initial `checked` from `formState.snapshot().executeOnNote`; `change` event calls `formState.setExecuteOnNote(checkbox.checked)`. The label text is "Execute on active note". This checkbox is independent of the "Set as default" visibility logic — always visible. Extend `#buildResetButton` so Reset also calls `formState.setExecuteOnNote(snapshot-or-spell-default)` — reuse the same seed value the panel was constructed with (extend `OptionsSnapshot`'s contract OR pass the seed via the form-state initial value, your call; document the choice in a one-line code comment). Make D0 green. — M, senior-dev (8f8ab82)
 
 ### E. Forge UI: forge-time toggle (UI integration first)
 
@@ -262,11 +262,11 @@ export interface CastDispatchInput {
 
 **ui-integration-tester**
 
-- [ ] E0: Integration test in `tests/integration/forge-sentinel-detail.spec.ts` covering the five Red-criterion behaviors above (re-running the existing `D1e` ordering case is acceptable as a regression guard, or extending it to assert the checkbox sits outside the effort-row → Submit sequence). Use a stable DOM hook for the checkbox. Do NOT modify production code in this todo. — S, ui-integration-tester
+- [x] E0: Integration test in `tests/integration/forge-sentinel-detail.spec.ts` covering the five Red-criterion behaviors above (re-running the existing `D1e` ordering case is acceptable as a regression guard, or extending it to assert the checkbox sits outside the effort-row → Submit sequence). Use a stable DOM hook for the checkbox. Do NOT modify production code in this todo. — S, ui-integration-tester
 
 **senior-dev**
 
-- [ ] E1: In `src/ui/components/ForgeSentinelDetail.ts`, add a labelled checkbox (label text "Execute on active note", input tagged with `data-grimoire="execute-on-note"`) defaulting to `checked = true`. Track its state on a private field (mirroring `#currentEffort`). Include `executeOnNote: <field>` in the `onSubmit` payload in `#wireSubmitHandler`. Place the checkbox in DOM order such that `D1e`'s effort-row → Submit invariant is preserved (recommend: between description textarea and model select, OR right before the Submit button — your judgment, but document in a one-line code comment). Update `tests/ForgeSentinelDetail.test.ts` with one new unit case: submit emits `executeOnNote: true` when default, `false` when toggled. Make E0 green. — M, senior-dev
+- [x] E1: In `src/ui/components/ForgeSentinelDetail.ts`, add a labelled checkbox (label text "Execute on active note", input tagged with `data-grimoire="execute-on-note"`) defaulting to `checked = true`. Track its state on a private field (mirroring `#currentEffort`). Include `executeOnNote: <field>` in the `onSubmit` payload in `#wireSubmitHandler`. Place the checkbox in DOM order such that `D1e`'s effort-row → Submit invariant is preserved (recommend: between description textarea and model select, OR right before the Submit button — your judgment, but document in a one-line code comment). Update `tests/ForgeSentinelDetail.test.ts` with one new unit case: submit emits `executeOnNote: true` when default, `false` when toggled. Make E0 green. — M, senior-dev (7d75550)
 
 ### F. Wire dispatcher input in `main.ts`
 
@@ -281,7 +281,7 @@ export interface CastDispatchInput {
 
 **junior-dev**
 
-- [ ] F1: In `src/main.ts` `createCommandPopup`, thread `executeOnNote: spell.executeOnNote` into the `castAction` `dispatcher.dispatch({...})` call, and thread `executeOnNote: snap.executeOnNote` into the `optionsCastAction` call. Update `tests/main.test.ts` (or whichever test pins the dispatch payload) and the integration specs in `tests/integration/spell-cast.spec.ts` and `tests/integration/options-panel-popup.spec.ts` to assert the field is present on the dispatched input. — S, junior-dev
+- [x] F1: In `src/main.ts` `createCommandPopup`, thread `executeOnNote: spell.executeOnNote` into the `castAction` `dispatcher.dispatch({...})` call, and thread `executeOnNote: snap.executeOnNote` into the `optionsCastAction` call. Update `tests/main.test.ts` (or whichever test pins the dispatch payload) and the integration specs in `tests/integration/spell-cast.spec.ts` and `tests/integration/options-panel-popup.spec.ts` to assert the field is present on the dispatched input. — S, junior-dev (085d07c)
 
 ### G. End-to-end integration coverage
 
@@ -312,3 +312,5 @@ export interface CastDispatchInput {
 - **By tier:** junior-dev = 7, senior-dev = 3, lead-dev = 0, ui-integration-tester = 3.
 - **Dispatch order:** A → B → C → D (D0 first, then D1–D4) → E (E0 first, then E1) → F → G.
 - Junior-dev dominates because the design questions (frontmatter key name, default value, prompt-omission shape, UI placement constraints) are all closed in Interfaces / Technical notes / Section briefings. Senior-dev only owns the UI seams in OptionsPanel and ForgeSentinelDetail (D4, E1) and the dispatcher branching with prompt regeneration (B1).
+
+reviewed @ 7d75550

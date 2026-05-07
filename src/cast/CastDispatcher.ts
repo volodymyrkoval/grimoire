@@ -75,7 +75,7 @@ export class CastDispatcher {
   ): string {
     let prompt = executeOnNote && activeFilePath !== null
       ? `Execute this spell against the note at \`${vaultMountPath}/${activeFilePath}\`.`
-      : '';
+      : 'Proceed with the execution according to the instructions';
 
     if (contextNotePaths.length > 0) {
       prompt += `${prompt.length > 0 ? ' ' : ''}Additional context notes: ${contextNotePaths.join(', ')}.`;
