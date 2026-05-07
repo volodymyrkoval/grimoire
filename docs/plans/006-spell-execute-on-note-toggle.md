@@ -294,7 +294,7 @@ export interface CastDispatchInput {
 
 **ui-integration-tester**
 
-- [ ] G1: Integration test as described in the Red criterion above. Use `tests/integration/harness.ts` helpers; mock `getSpells` (or seed via the existing fixture) to return a spell with `executeOnNote: false`. Two cases: (a) `false` + no active file → runner invoked, prompt missing the active-note sentence; (b) `true` + no active file → notify + close, runner NOT invoked. — M, ui-integration-tester
+- [x] G1: Integration test as described in the Red criterion above. Use `tests/integration/harness.ts` helpers; mock `getSpells` (or seed via the existing fixture) to return a spell with `executeOnNote: false`. Two cases: (a) `false` + no active file → runner invoked, prompt missing the active-note sentence; (b) `true` + no active file → notify + close, runner NOT invoked. — M, ui-integration-tester
 
 ## Edge cases (explicit checklist for each implementing dev agent)
 
