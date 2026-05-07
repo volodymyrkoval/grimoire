@@ -18,14 +18,14 @@
 }
 
 .spells-row-hint {
-    font-size: var(--font-ui-smaller);
-    color: var(--text-muted);
+    font-size: var(--font-ui-smallest);
+    color: var(--text-faint);
     opacity: 0;
     transition: opacity 0.1s;
 }
 
 .spells-row.is-selected .spells-row-hint {
-    opacity: 1;
+    opacity: 0.7;
 }
 
 .sentinel-row {
