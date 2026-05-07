@@ -43,6 +43,24 @@ export class SegmentedControl<T extends string> {
     }
     if (!this.#wrapper) return;
 
+    const currentKeys = [...this.#buttons.keys()];
+    const sameOptions =
+      currentKeys.length === options.length &&
+      currentKeys.every((k, i) => k === options[i]);
+
+    if (sameOptions) {
+      if (value === this.#current) return; // nothing changed
+      const prevBtn = this.#buttons.get(this.#current);
+      const hadFocus = prevBtn != null && document.activeElement === prevBtn;
+      this.#current = value;
+      this.#applyActive(value);
+      if (hadFocus) {
+        this.#buttons.get(value)?.focus();
+      }
+      return;
+    }
+
+    // Options changed — full rebuild
     this.#current = value;
     this.#buttons.clear();
     while (this.#wrapper.firstChild) {

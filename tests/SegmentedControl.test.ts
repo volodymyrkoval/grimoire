@@ -215,4 +215,40 @@ describe('SegmentedControl', () => {
 
     expect(document.activeElement).toBe(barButton);
   });
+
+  it('(k) setOptions with same options and new value preserves focus on the new active button', () => {
+    let emittedValue: string | undefined;
+    const control = new SegmentedControl(parent, {
+      options: ['low', 'medium', 'high'] as const,
+      value: 'low',
+      onChange: (v) => {
+        emittedValue = v;
+        // simulate the reactive subscription: setOptions called with same options + new value
+        control.setOptions(['low', 'medium', 'high'] as const, v);
+      },
+    });
+
+    const buttonsBefore = parent.querySelectorAll(
+      '.grimoire-segmented__btn'
+    ) as NodeListOf<HTMLButtonElement>;
+    const lowButton = buttonsBefore[0];
+    const mediumButtonBefore = buttonsBefore[1];
+
+    // focus the low button then press ArrowRight → onChange fires → setOptions called inside onChange
+    lowButton.focus();
+    lowButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+    expect(emittedValue).toBe('medium');
+
+    // The medium button that was focused by #handleArrow must still be the active element
+    // (i.e. setOptions must NOT have destroyed and recreated it)
+    const buttonsAfter = parent.querySelectorAll(
+      '.grimoire-segmented__btn'
+    ) as NodeListOf<HTMLButtonElement>;
+    const mediumButtonAfter = buttonsAfter[1];
+
+    expect(document.activeElement).toBe(mediumButtonAfter);
+    // And it must be the same DOM node (not rebuilt)
+    expect(mediumButtonAfter).toBe(mediumButtonBefore);
+  });
 });
