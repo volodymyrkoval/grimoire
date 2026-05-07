@@ -71,6 +71,13 @@ export class OptionsPanel {
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
   ): ReactiveContext {
+    this.#buildHint(form, 'Context notes');
+    this.#buildContextNotes(form, formState, deps.app);
+    this.#buildHint(form, 'Follow-up');
+    const textarea = this.#buildTextarea(form, formState);
+    const initialExecuteOnNote = formState.snapshot().executeOnNote;
+    const eonCheckbox = this.#buildExecuteOnNoteCheckbox(form, formState, initialExecuteOnNote);
+    this.#buildCastModelSectionHeader(form);
     const select = buildModelSelect({
       container: form,
       kb: this.#kb,
@@ -79,14 +86,21 @@ export class OptionsPanel {
       onChange: (id) => formState.setModel(id, SUPPORTED_MODELS),
     });
     const { effortContainer, effortRow, effortRowMountedRef } = this.#buildEffortContainer(form, formState);
-    this.#buildContextNotes(form, formState, deps.app);
-    const textarea = this.#buildTextarea(form, formState);
     const { checkboxLabel, checkbox } = this.#buildCheckbox(form, formState, snapshot, deps);
-    const initialExecuteOnNote = formState.snapshot().executeOnNote;
-    const eonCheckbox = this.#buildExecuteOnNoteCheckbox(form, formState, initialExecuteOnNote);
     this.#buildCastButton(form, formState, deps);
     this.#buildResetButton(form, snapshot, formState, deps, select, textarea, eonCheckbox, initialExecuteOnNote);
     return { checkboxLabel, checkbox, effortContainer, effortRow, effortRowMountedRef };
+  }
+
+  #buildHint(form: HTMLFormElement, text: string): void {
+    const hint = document.createElement('small');
+    hint.textContent = text;
+    form.appendChild(hint);
+  }
+
+  #buildCastModelSectionHeader(form: HTMLFormElement): void {
+    form.appendChild(document.createElement('hr'));
+    this.#buildHint(form, 'Cast model settings');
   }
 
   #buildEffortContainer(
@@ -169,6 +183,7 @@ export class OptionsPanel {
     checkboxLabel.style.display = 'none';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
+    checkbox.dataset['grimoire'] = 'set-as-default';
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) {
         const current = formState.snapshot();

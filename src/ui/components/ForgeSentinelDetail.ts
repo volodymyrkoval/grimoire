@@ -32,9 +32,10 @@ export class ForgeSentinelDetail {
     const form = this.#buildForm(contentEl);
     this.#nameInput = this.#buildNameField(form);
     this.#descInput = this.#buildDescriptionField(form);
+    this.#buildExecuteOnNoteCheckbox(form);
+    this.#buildModelSectionHeader(form);
     this.#modelSelect = this.#buildModelSelect(form, defaults.defaultModel);
     this.#currentEffort = this.#resolveInitialEffort(defaults);
-    this.#buildExecuteOnNoteCheckbox(form);
     this.#effortRow = this.#initEffortRow(form, defaults);
     this.#buildSubmitButton(form);
     this.#wireSubmitHandler(form, callbacks.onSubmit);
@@ -112,6 +113,13 @@ export class ForgeSentinelDetail {
     submitBtn.type = 'submit';
     submitBtn.textContent = 'Submit';
     form.appendChild(submitBtn);
+  }
+
+  #buildModelSectionHeader(form: HTMLElement): void {
+    form.appendChild(document.createElement('hr'));
+    const hint = document.createElement('small');
+    hint.textContent = 'Forging model settings';
+    form.appendChild(hint);
   }
 
   #buildExecuteOnNoteCheckbox(form: HTMLElement): void {

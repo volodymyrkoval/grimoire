@@ -110,7 +110,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
 
     // Step 3: tick "Set as default" checkbox
     // The checkbox label becomes visible because formState differs from snapshot
-    const checkbox = form.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    const checkbox = form.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
     // overrides.set('/spells/banishment.md', { model: 'claude-opus-4-5', effort: 'medium' })

@@ -251,7 +251,7 @@ describe('OptionsPanel integration', () => {
     select.value = 'claude-opus-4-5';
     select.dispatchEvent(new Event('change'));
 
-    const checkbox = form.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    const checkbox = form.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
 
@@ -276,7 +276,7 @@ describe('OptionsPanel integration', () => {
     select.dispatchEvent(new Event('change'));
 
     // Check then uncheck
-    const checkbox = form.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    const checkbox = form.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
 
