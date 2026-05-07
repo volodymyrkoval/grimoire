@@ -1,0 +1,129 @@
+/* Grimoire plugin styles */
+/* Grimoire plugin styles */
+.spells-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.spells-row:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.spells-row.is-selected {
+    background-color: var(--background-modifier-active-hover);
+}
+
+.spells-row-hint {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+.spells-row.is-selected .spells-row-hint {
+    opacity: 1;
+}
+
+.sentinel-row {
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.sentinel-row:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.sentinel-row.is-selected {
+    background-color: var(--background-modifier-active-hover);
+}
+
+.modal-tab-bar {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+}
+
+.modal-tab {
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+    user-select: none;
+}
+
+.modal-tab:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.modal-tab.is-active {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-active-hover);
+}
+
+.spells-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.spells-expand-icon {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+}
+
+.spells-row-body {
+    display: none;
+    padding: 6px 0 2px;
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+}
+
+.spells-row.is-expanded .spells-row-body {
+    display: block;
+}
+
+.modal-tab.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.forge-sentinel-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.forge-sentinel-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: var(--font-ui-small);
+}
+
+.forge-sentinel-form input,
+.forge-sentinel-form textarea,
+.forge-sentinel-form select {
+    width: 100%;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.forge-sentinel-form textarea {
+    resize: vertical;
+    min-height: 60px;
+}

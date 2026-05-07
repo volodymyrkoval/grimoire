@@ -8,5 +8,6 @@ export class SpellRow {
     if (selected) this.el.addClass("is-selected");
     this.el.createSpan({ text: spell.name });
     if (hasOverride) this.el.createSpan({ cls: "grimoire-override-dot" });
+    this.el.createSpan({ cls: "spells-row-hint", text: "↵ cast · → options" });
   }
 }
