@@ -51,15 +51,15 @@ export class OptionsPanel {
   }
 
   #buildBackButton(container: HTMLElement, onBack: () => void): void {
-    const backBtn = document.createElement('button');
+    const backBtn = activeDocument.createEl('button');
     backBtn.type = 'button';
-    backBtn.textContent = '← Back';
+    backBtn.textContent = '← back';
     backBtn.addEventListener('click', () => onBack());
     container.appendChild(backBtn);
   }
 
   #buildForm(contentEl: HTMLElement): HTMLFormElement {
-    const form = document.createElement('form');
+    const form = activeDocument.createEl('form');
     form.className = 'options-panel';
     contentEl.appendChild(form);
     return form;
@@ -86,7 +86,7 @@ export class OptionsPanel {
     });
     const { effortContainer, effortRow, effortRowMountedRef } = this.#buildEffortContainer(form, formState);
     const { checkboxLabel, checkbox } = this.#buildCheckbox(form, formState, snapshot, deps);
-    const buttonRow = document.createElement('div');
+    const buttonRow = activeDocument.createDiv();
     buttonRow.className = 'grimoire-button-row';
     form.appendChild(buttonRow);
     this.#buildCastButton(buttonRow, form, formState, deps);
@@ -95,13 +95,13 @@ export class OptionsPanel {
   }
 
   #buildHint(form: HTMLFormElement, text: string): void {
-    const hint = document.createElement('small');
+    const hint = activeDocument.createEl('small');
     hint.textContent = text;
     form.appendChild(hint);
   }
 
   #buildCastModelSectionHeader(form: HTMLFormElement): void {
-    form.appendChild(document.createElement('hr'));
+    form.appendChild(activeDocument.createEl('hr'));
     this.#buildHint(form, 'Cast model settings');
   }
 
@@ -109,7 +109,7 @@ export class OptionsPanel {
     form: HTMLFormElement,
     formState: OptionsFormState,
   ): { effortContainer: HTMLDivElement; effortRow: EffortRow; effortRowMountedRef: { value: boolean } } {
-    const effortContainer = document.createElement('div');
+    const effortContainer = activeDocument.createDiv();
     form.appendChild(effortContainer);
 
     const snap = formState.snapshot();
@@ -128,7 +128,7 @@ export class OptionsPanel {
   }
 
   #buildContextNotes(form: HTMLFormElement, formState: OptionsFormState, app: App): void {
-    const contextContainer = document.createElement('div');
+    const contextContainer = activeDocument.createDiv();
     form.appendChild(contextContainer);
 
     this.#contextNotesInput.mount(contextContainer, {
@@ -143,7 +143,7 @@ export class OptionsPanel {
   }
 
   #buildTextarea(form: HTMLFormElement, formState: OptionsFormState): HTMLTextAreaElement {
-    const textarea = document.createElement('textarea');
+    const textarea = activeDocument.createEl('textarea');
     textarea.placeholder = 'Follow-up';
     textarea.value = formState.snapshot().followUp;
     textarea.addEventListener('input', () => {
@@ -158,9 +158,9 @@ export class OptionsPanel {
     formState: OptionsFormState,
     initialValue: boolean,
   ): HTMLInputElement {
-    const container = document.createElement('div');
+    const container = activeDocument.createDiv();
     container.className = 'grimoire-checkbox-row';
-    const checkbox = document.createElement('input');
+    const checkbox = activeDocument.createEl('input');
     checkbox.type = 'checkbox';
     checkbox.id = 'grimoire-execute-on-note';
     checkbox.dataset['grimoire'] = 'execute-on-note';
@@ -168,7 +168,7 @@ export class OptionsPanel {
     checkbox.addEventListener('change', () => {
       formState.setExecuteOnNote(checkbox.checked);
     });
-    const label = document.createElement('label');
+    const label = activeDocument.createEl('label');
     label.htmlFor = checkbox.id;
     label.textContent = 'Execute on active note';
     container.appendChild(checkbox);
@@ -183,9 +183,9 @@ export class OptionsPanel {
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
   ): { checkboxLabel: HTMLLabelElement; checkbox: HTMLInputElement } {
-    const checkboxLabel = document.createElement('label');
-    checkboxLabel.style.display = 'none';
-    const checkbox = document.createElement('input');
+    const checkboxLabel = activeDocument.createEl('label');
+    checkboxLabel.hide();
+    const checkbox = activeDocument.createEl('input');
     checkbox.type = 'checkbox';
     checkbox.dataset['grimoire'] = 'set-as-default';
     checkbox.addEventListener('change', () => {
@@ -198,7 +198,7 @@ export class OptionsPanel {
       deps.onOverrideChanged();
     });
     checkboxLabel.appendChild(checkbox);
-    checkboxLabel.appendChild(document.createTextNode('Set as default'));
+    checkboxLabel.appendChild(activeDocument.createTextNode('Set as default'));
     form.appendChild(checkboxLabel);
     return { checkboxLabel, checkbox };
   }
@@ -209,7 +209,7 @@ export class OptionsPanel {
     formState: OptionsFormState,
     deps: OptionsPanelDeps,
   ): void {
-    const castBtn = document.createElement('button');
+    const castBtn = activeDocument.createEl('button');
     castBtn.type = 'submit';
     castBtn.textContent = 'Cast';
     container.appendChild(castBtn);
@@ -241,7 +241,7 @@ export class OptionsPanel {
     eonCheckbox: HTMLInputElement,
     initialExecuteOnNote: boolean,
   ): void {
-    const resetBtn = document.createElement('button');
+    const resetBtn = activeDocument.createEl('button');
     resetBtn.type = 'button';
     resetBtn.textContent = 'Reset';
     resetBtn.addEventListener('click', () => {

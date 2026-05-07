@@ -165,7 +165,7 @@ describe('OptionsPanel — per-control wiring', () => {
     const { contentEl, onBack } = mountPanel();
 
     const backBtn = Array.from(contentEl.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('Back')
+      (b) => b.textContent?.includes('back')
     ) as HTMLButtonElement;
     expect(backBtn).not.toBeNull();
 

@@ -54,11 +54,11 @@ describe('GrimoirePlugin', () => {
     expect(plugin.addSettingTab.mock.calls[0][0]).toBeInstanceOf(GrimoireSettingTab);
   });
 
-  it('onload registers the open-command-popup command', async () => {
+  it('onload registers the open-popup command', async () => {
     await plugin.onload();
 
     expect(plugin.addCommand).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'open-command-popup' }),
+      expect.objectContaining({ id: 'open-popup' }),
     );
   });
 
@@ -71,7 +71,7 @@ describe('GrimoirePlugin', () => {
     } as any);
 
     const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: any[]) => c[0].id === 'open-command-popup'
+      (c: any[]) => c[0].id === 'open-popup'
     );
     expect(commandCall).toBeDefined();
     const callback = commandCall![0].callback;
@@ -106,7 +106,7 @@ describe('GrimoirePlugin', () => {
     } as any);
 
     const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: any[]) => c[0].id === 'open-command-popup'
+      (c: any[]) => c[0].id === 'open-popup'
     );
     const callback = commandCall![0].callback;
 
@@ -138,7 +138,7 @@ describe('GrimoirePlugin', () => {
     } as any);
 
     const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: any[]) => c[0].id === 'open-command-popup'
+      (c: any[]) => c[0].id === 'open-popup'
     );
     commandCall![0].callback();
 
@@ -174,7 +174,7 @@ describe('GrimoirePlugin', () => {
     } as any);
 
     const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: any[]) => c[0].id === 'open-command-popup'
+      (c: any[]) => c[0].id === 'open-popup'
     );
     commandCall![0].callback();
 
@@ -212,7 +212,7 @@ describe('GrimoirePlugin', () => {
     } as any);
 
     const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: any[]) => c[0].id === 'open-command-popup'
+      (c: any[]) => c[0].id === 'open-popup'
     );
 
     commandCall![0].callback();
@@ -243,7 +243,7 @@ describe('GrimoirePlugin', () => {
     } as any);
 
     const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: any[]) => c[0].id === 'open-command-popup'
+      (c: any[]) => c[0].id === 'open-popup'
     );
     commandCall![0].callback();
 

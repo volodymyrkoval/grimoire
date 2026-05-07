@@ -5,7 +5,7 @@ import { EffortRow } from '../widgets/EffortRow';
 export class GrimoireSettingTab extends PluginSettingTab {
   constructor(app: App, private plugin: { app: App; data: GrimoireData; save(): void }) {
     // plugin satisfies PluginSettingTab structurally; 'as any' bridges the nominal Obsidian Plugin type
-    super(app, plugin as any);
+    super(app, plugin as unknown as import('obsidian').Plugin);
   }
 
   display(): void {
@@ -22,6 +22,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
     // Row 6 — defaultModel (dropdown)
     const modelSetting = new Setting(this.containerEl).setName('Default model');
     modelSetting.addDropdown(d => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- addOption return is not a real Promise
       SUPPORTED_MODELS.forEach(m => d.addOption(m.id, m.label));
       d.setValue(this.plugin.data.settings.defaultModel);
       d.onChange(modelId => {

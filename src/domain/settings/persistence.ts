@@ -12,7 +12,7 @@ export function hydrate(saved: unknown, app: App): GrimoireData {
   if (merged.vaultMountPath === '') {
     merged.vaultMountPath = computeVaultMountDefault(app);
   }
-  if (merged.defaultEffort !== null && !VALID_EFFORTS.includes(merged.defaultEffort as Effort)) {
+  if (merged.defaultEffort !== null && !VALID_EFFORTS.includes(merged.defaultEffort)) {
     merged.defaultEffort = 'medium';
   }
   return {

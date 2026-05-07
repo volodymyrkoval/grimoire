@@ -13,9 +13,9 @@ function createModelSelectElement(
   models: readonly SupportedModel[],
   initialModel: string,
 ): HTMLSelectElement {
-  const select = document.createElement('select');
+  const select = activeDocument.createEl('select');
   for (const m of models) {
-    const opt = document.createElement('option');
+    const opt = activeDocument.createEl('option');
     opt.value = m.id;
     opt.textContent = m.label;
     select.appendChild(opt);
@@ -30,13 +30,13 @@ function bindModelSelectKeys(
   onChange: (modelId: string) => void,
 ): void {
   kb.bind([], 'ArrowDown', () => {
-    if (document.activeElement !== select) return false;
+    if (activeDocument.activeElement !== select) return false;
     select.selectedIndex = (select.selectedIndex + 1) % select.options.length;
     onChange(select.value);
     return true;
   });
   kb.bind([], 'ArrowUp', () => {
-    if (document.activeElement !== select) return false;
+    if (activeDocument.activeElement !== select) return false;
     select.selectedIndex =
       (select.selectedIndex - 1 + select.options.length) % select.options.length;
     onChange(select.value);

@@ -220,7 +220,7 @@ export class CommandPopup extends Modal {
     this.#onDetailBack = exit;
     this.contentEl.createEl("h2", { text: sentinel.name });
     this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
-    const back = this.contentEl.createEl("button", { text: "← Back" });
+    const back = this.contentEl.createEl("button", { text: "← back" });
     back.onClickEvent(exit);
   }
 

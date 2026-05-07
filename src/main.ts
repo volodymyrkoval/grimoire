@@ -40,8 +40,8 @@ export default class GrimoirePlugin extends Plugin {
   private registerUI(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
     this.addSettingTab(new GrimoireSettingTab(this.app, this));
     this.addCommand({
-      id: 'open-command-popup',
-      name: 'Open Grimoire',
+      id: 'open-popup',
+      name: 'Open spell browser',
       callback: () => this.openCommandPopup(sessionMap, imprinter),
     });
   }

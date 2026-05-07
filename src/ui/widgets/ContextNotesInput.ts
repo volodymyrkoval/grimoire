@@ -15,16 +15,16 @@ export class ContextNotesInput {
   mount(parent: HTMLElement, props: ContextNotesInputProps): void {
     this.#props = props;
 
-    this.#pillContainer = document.createElement('div');
+    this.#pillContainer = activeDocument.createDiv();
     this.#pillContainer.className = 'context-notes-pills';
     parent.appendChild(this.#pillContainer);
 
-    this.#searchInput = document.createElement('input');
+    this.#searchInput = activeDocument.createEl('input');
     this.#searchInput.type = 'text';
     this.#searchInput.className = 'context-notes-search';
     parent.appendChild(this.#searchInput);
 
-    this.#dropdown = document.createElement('div');
+    this.#dropdown = activeDocument.createDiv();
     this.#dropdown.className = 'context-notes-dropdown';
     parent.appendChild(this.#dropdown);
 
@@ -55,7 +55,7 @@ export class ContextNotesInput {
       .slice(0, 6);
 
     for (const file of matches) {
-      const btn = document.createElement('button');
+      const btn = activeDocument.createEl('button');
       btn.type = 'button';
       btn.textContent = file.basename;
       btn.addEventListener('mousedown', (e: MouseEvent) => {
@@ -80,14 +80,14 @@ export class ContextNotesInput {
   #renderPill(path: string, basename: string): void {
     this.#pillPaths.push(path);
 
-    const pill = document.createElement('span');
+    const pill = activeDocument.createSpan();
     pill.className = 'context-notes-pill';
 
-    const label = document.createElement('span');
+    const label = activeDocument.createSpan();
     label.textContent = basename;
     pill.appendChild(label);
 
-    const removeBtn = document.createElement('button');
+    const removeBtn = activeDocument.createEl('button');
     removeBtn.type = 'button';
     removeBtn.textContent = '×';
     removeBtn.setAttribute('data-pill-remove', path);

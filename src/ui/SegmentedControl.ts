@@ -17,7 +17,7 @@ export class SegmentedControl<T extends string> {
     this.#current = opts.value;
     this.#onChange = opts.onChange;
 
-    const wrapper = document.createElement('div');
+    const wrapper = activeDocument.createDiv();
     wrapper.className = 'grimoire-segmented';
     this.#wrapper = wrapper;
 
@@ -51,7 +51,7 @@ export class SegmentedControl<T extends string> {
     if (sameOptions) {
       if (value === this.#current) return; // nothing changed
       const prevBtn = this.#buttons.get(this.#current);
-      const hadFocus = prevBtn != null && document.activeElement === prevBtn;
+      const hadFocus = prevBtn != null && activeDocument.activeElement === prevBtn;
       this.#current = value;
       this.#applyActive(value);
       if (hadFocus) {
@@ -71,7 +71,7 @@ export class SegmentedControl<T extends string> {
 
   #buildButtons(wrapper: HTMLElement, options: readonly T[], value: T): void {
     for (const opt of options) {
-      const btn = document.createElement('button');
+      const btn = activeDocument.createEl('button');
       btn.type = 'button';
       btn.className = 'grimoire-segmented__btn';
       btn.textContent = opt;

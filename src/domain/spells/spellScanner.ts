@@ -34,7 +34,7 @@ export function getSpells(app: App, tag: string): Spell[] {
     .filter((file) => hasTag(app, file, tag))
     .map((file) => {
       const cache = app.metadataCache.getFileCache(file);
-      const eonValue = cache?.frontmatter?.[EXECUTE_ON_NOTE_KEY];
+      const eonValue: unknown = cache?.frontmatter?.[EXECUTE_ON_NOTE_KEY];
       const executeOnNote = eonValue === true ? true : eonValue === false ? false : true;
       return {
         name: file.basename,

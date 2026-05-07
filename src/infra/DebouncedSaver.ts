@@ -1,7 +1,7 @@
 export class DebouncedSaver {
   #save: () => void | Promise<void>;
   #delayMs: number;
-  #timer: ReturnType<typeof setTimeout> | null = null;
+  #timer: ReturnType<typeof activeWindow.setTimeout> | null = null;
 
   constructor(save: () => void | Promise<void>, delayMs: number) {
     this.#save = save;
@@ -9,8 +9,8 @@ export class DebouncedSaver {
   }
 
   schedule(): void {
-    if (this.#timer !== null) clearTimeout(this.#timer);
-    this.#timer = setTimeout(() => {
+    if (this.#timer !== null) activeWindow.clearTimeout(this.#timer);
+    this.#timer = activeWindow.setTimeout(() => {
       this.#timer = null;
       void this.#runSave();
     }, this.#delayMs);
@@ -18,9 +18,9 @@ export class DebouncedSaver {
 
   flush(): void {
     if (this.#timer === null) return;
-    clearTimeout(this.#timer);
+    activeWindow.clearTimeout(this.#timer);
     this.#timer = null;
-    this.#runSave();
+    void this.#runSave();
   }
 
   async #runSave(): Promise<void> {

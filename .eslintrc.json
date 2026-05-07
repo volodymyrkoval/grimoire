@@ -11,9 +11,10 @@
   },
   "extends": [
     "eslint:recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "plugin:obsidianmd/recommended"
   ],
-  "plugins": ["@typescript-eslint"],
+  "plugins": ["@typescript-eslint", "obsidianmd"],
   "rules": {
     "@typescript-eslint/explicit-module-boundary-types": "warn",
     "@typescript-eslint/no-explicit-any": "warn",

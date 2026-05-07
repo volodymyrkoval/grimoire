@@ -34,7 +34,7 @@ export class EffortRow {
     }
 
     // Create wrapper div
-    const wrapper = document.createElement('div');
+    const wrapper = activeDocument.createDiv();
     wrapper.className = 'grimoire-effort-row';
     this.#wrapper = wrapper;
     parent.appendChild(wrapper);

@@ -3,6 +3,7 @@
 // Sync spawner throws reject the promise; async spawn errors (ENOENT, EACCES) resolve
 // with `{ code: null, error, stderrTail }` so callers can branch on the resolved shape.
 
+// eslint-disable-next-line obsidianmd/no-nodejs-modules -- plugin is desktop-only; child_process is the cast mechanism
 import { spawn as nodeSpawn } from "child_process";
 
 export interface CastSpawnConfig {

@@ -56,7 +56,7 @@ export class ForgeSentinelDetail {
   }
 
   #buildForm(contentEl: HTMLElement): HTMLFormElement {
-    const form = document.createElement('form');
+    const form = activeDocument.createEl('form');
     form.className = 'forge-sentinel-form';
     contentEl.appendChild(form);
     return form;
@@ -68,7 +68,7 @@ export class ForgeSentinelDetail {
   }
 
   #initEffortRow(form: HTMLElement, defaults: FormDefaults): EffortRow {
-    const effortContainer = document.createElement('div');
+    const effortContainer = activeDocument.createDiv();
     form.appendChild(effortContainer);
     const row = new EffortRow();
     row.mount(effortContainer, {
@@ -81,17 +81,17 @@ export class ForgeSentinelDetail {
   }
 
   #buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
-    const back = document.createElement('button');
+    const back = activeDocument.createEl('button');
     back.type = 'button';
-    back.textContent = '← Back';
+    back.textContent = '← back';
     back.addEventListener('click', () => onBack());
     contentEl.appendChild(back);
   }
 
   #buildNameField(form: HTMLElement): HTMLInputElement {
-    const label = document.createElement('label');
+    const label = activeDocument.createEl('label');
     form.appendChild(label);
-    const input = document.createElement('input');
+    const input = activeDocument.createEl('input');
     input.type = 'text';
     input.placeholder = 'Name';
     label.appendChild(input);
@@ -100,18 +100,18 @@ export class ForgeSentinelDetail {
   }
 
   #buildDescriptionField(form: HTMLElement): HTMLTextAreaElement {
-    const label = document.createElement('label');
+    const label = activeDocument.createEl('label');
     form.appendChild(label);
-    const textarea = document.createElement('textarea');
+    const textarea = activeDocument.createEl('textarea');
     textarea.placeholder = 'Description';
     label.appendChild(textarea);
     return textarea;
   }
 
   #buildSubmitButton(form: HTMLFormElement): void {
-    const buttonRow = document.createElement('div');
+    const buttonRow = activeDocument.createDiv();
     buttonRow.className = 'grimoire-button-row';
-    const submitBtn = document.createElement('button');
+    const submitBtn = activeDocument.createEl('button');
     submitBtn.type = 'submit';
     submitBtn.textContent = 'Submit';
     buttonRow.appendChild(submitBtn);
@@ -119,15 +119,15 @@ export class ForgeSentinelDetail {
   }
 
   #buildModelSectionHeader(form: HTMLElement): void {
-    form.appendChild(document.createElement('hr'));
-    const hint = document.createElement('small');
+    form.appendChild(activeDocument.createEl('hr'));
+    const hint = activeDocument.createEl('small');
     hint.textContent = 'Forging model settings';
     form.appendChild(hint);
   }
 
   #buildExecuteOnNoteCheckbox(form: HTMLElement): void {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
+    const label = activeDocument.createEl('label');
+    const input = activeDocument.createEl('input');
     input.type = 'checkbox';
     input.dataset['grimoire'] = 'execute-on-note';
     input.checked = true;
@@ -138,7 +138,7 @@ export class ForgeSentinelDetail {
   }
 
   #buildModelSelect(form: HTMLElement, defaultModel: string): HTMLSelectElement {
-    const label = document.createElement('label');
+    const label = activeDocument.createEl('label');
     form.appendChild(label);
     return buildModelSelect({
       container: label,

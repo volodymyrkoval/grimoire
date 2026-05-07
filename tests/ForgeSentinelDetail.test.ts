@@ -139,7 +139,7 @@ describe('ForgeSentinelDetail', () => {
     const onBack = vi.fn();
     const { container } = buildDetail({ onBack });
     const backBtn = Array.from(container.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('← Back'),
+      (b) => b.textContent?.includes('← back'),
     ) as HTMLButtonElement;
     expect(backBtn).not.toBeNull();
     backBtn.click();

@@ -36,8 +36,10 @@ export class SpellList {
     // Chromium doesn't recalculate :hover after DOM mutation without a mouse-move;
     // toggling pointer-events + forcing a reflow resets stale hover states immediately.
     if (this.el.style) {
+      // eslint-disable-next-line obsidianmd/no-static-styles-assignment -- intentional Chromium hover-reset hack; not a theming concern
       this.el.style.pointerEvents = "none";
       void this.el.offsetHeight;
+      // eslint-disable-next-line obsidianmd/no-static-styles-assignment -- restore after reflow
       this.el.style.pointerEvents = "";
     }
   }

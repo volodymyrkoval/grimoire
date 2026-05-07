@@ -6,7 +6,7 @@ export class TypedEmitter<T extends Record<string, unknown>> {
 
   on<K extends keyof T>(event: K, listener: Listener<T[K]>): void {
     const bucket = this.listeners.get(event) ?? [];
-    bucket.push(listener as Listener<unknown>);
+    bucket.push(listener);
     this.listeners.set(event, bucket);
   }
 

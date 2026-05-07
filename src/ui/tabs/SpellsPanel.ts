@@ -57,7 +57,7 @@ export class SpellsPanel implements TabPanel {
 
   openOptions(index: number): void {
     if (index < 0 || index >= this.filteredSpells.length) return;
-    const spell = this.filteredSpells[index]!;
+    const spell = this.filteredSpells[index];
     this.events.emit("open-options", spell);
   }
 
