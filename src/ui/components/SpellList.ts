@@ -24,8 +24,11 @@ export class SpellList {
       row.el.onClickEvent(() => this.emitter.emit("cast", spell));
       return row;
     });
+    const sentinelContainer = this.sentinels.length > 0
+      ? this.el.createDiv({ cls: "sentinels-section" })
+      : this.el;
     const sentinelRows = this.sentinels.map((sentinel, i) => {
-      const row = new SentinelRow(this.el, sentinel, spells.length + i === selectedIndex);
+      const row = new SentinelRow(sentinelContainer, sentinel, spells.length + i === selectedIndex);
       row.el.onClickEvent(() => this.emitter.emit("sentinel", sentinel));
       return row;
     });

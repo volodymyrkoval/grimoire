@@ -18,7 +18,7 @@ export class SearchInput {
   }
 
   private createInput(container: HTMLElement, panel: TabPanel, initialQuery: string): HTMLInputElement {
-    const input = container.createEl("input", { type: "text" });
+    const input = container.createEl("input", { type: "text", cls: "grimoire-search-input" });
     input.placeholder = `Search ${panel.id}…`;
     input.value = initialQuery;
     input.focus();

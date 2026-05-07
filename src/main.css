@@ -1,5 +1,4 @@
 /* Grimoire plugin styles */
-/* Grimoire plugin styles */
 .spells-row {
     padding: 4px 8px;
     cursor: pointer;
@@ -18,6 +17,12 @@
     padding: 4px 8px;
     cursor: pointer;
     border-radius: 4px;
+}
+
+.sentinels-section {
+    margin-top: 8px;
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 4px;
 }
 
 .sentinel-row:hover {
@@ -188,4 +193,23 @@
 
 .context-notes-pill button:hover {
     color: var(--text-normal);
+}
+
+.grimoire-search-input {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 4px 0;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: var(--text-normal);
+    font-size: var(--font-ui-large) !important;
+}
+
+.grimoire-search-input:focus {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }

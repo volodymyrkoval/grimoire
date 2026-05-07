@@ -5,5 +5,5 @@ dist/
 .DS_Store
 .idea/
 .claude/worktrees
-main.css
+styles.css
 data.json
