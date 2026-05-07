@@ -29,6 +29,16 @@ The suite is descriptive: it captures behavior as it stands at HEAD, including q
 - A `.claude/integration-test-cmd` consumed by `/done`.
 - An `npm run test:integration` script and a separate `vitest.integration.config.ts`.
 
+Subsequent iterations have grown the suite under `tests/integration/` to cover the seams shipped by 003–006:
+- `forge-cast.spec.ts` — popup → Forge form → `imprintAction` (003)
+- `spell-cast.spec.ts` — popup → spell row → `castAction` (004)
+- `options-panel.spec.ts` — focused panel ↔ formState ↔ stub deps (005)
+- `options-panel-popup.spec.ts` — popup → ArrowRight → `OptionsPanel` → `optionsCastAction` (005)
+- `forge-sentinel-detail.spec.ts` — focus, submit payload incl. `executeOnNote`, back (003 + 006)
+- `execute-on-note.spec.ts` — end-to-end vertical: scanned spell with `executeOnNote: false` casts with no active note (006)
+- `spell-options-detail-execute-on-note.spec.ts` — `SpellOptionsDetail` seeds form state from `spell.executeOnNote` (006)
+- `settings-panel.spec.ts` — settings tab seam (002)
+
 **Out:**
 
 - Refactoring any production code under `src/` — the plan was explicit that test seams could not be added by editing source; if a seam is missing, that is a follow-up plan.
