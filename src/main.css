@@ -237,10 +237,11 @@
 }
 
 .grimoire-segmented__btn {
-    padding: 3px 10px;
+    padding: 1px 10px;
     border-radius: 4px;
-    border: none;
-    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
     color: var(--text-muted);
     font-size: var(--font-ui-small);
     cursor: pointer;
@@ -252,6 +253,6 @@
 }
 
 .grimoire-segmented__btn.is-active {
-    background: var(--background-modifier-active-hover);
-    color: var(--text-normal);
+    background: var(--interactive-accent) !important;
+    color: var(--text-on-accent) !important;
 }
