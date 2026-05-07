@@ -109,11 +109,9 @@ export class SegmentedControl<T extends string> {
     for (const [opt, btn] of this.#buttons) {
       if (opt === active) {
         btn.classList.add('is-active');
-        btn.style.backgroundColor = 'var(--interactive-accent)';
         btn.tabIndex = 0;
       } else {
         btn.classList.remove('is-active');
-        btn.style.backgroundColor = 'var(--interactive-normal)';
         btn.tabIndex = -1;
       }
     }

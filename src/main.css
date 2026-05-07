@@ -1,8 +1,22 @@
 /* Grimoire plugin styles */
 .spells-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 4px 8px;
     cursor: pointer;
     border-radius: 4px;
+}
+
+.spells-row-hint {
+    font-size: calc(var(--font-ui-small) * 0.9) !important;
+    color: var(--text-faint) !important;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+.spells-row.is-selected .spells-row-hint {
+    opacity: 0.7 !important;
 }
 
 .spells-row:hover {
@@ -212,4 +226,32 @@
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
+}
+
+.grimoire-segmented {
+    display: inline-flex;
+    gap: 2px;
+    background: var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.grimoire-segmented__btn {
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+
+.grimoire-segmented__btn:hover {
+    color: var(--text-normal);
+}
+
+.grimoire-segmented__btn.is-active {
+    background: var(--background-modifier-active-hover);
+    color: var(--text-normal);
 }
