@@ -159,3 +159,33 @@
     display: flex;
     gap: 8px;
 }
+
+.context-notes-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.context-notes-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    font-size: var(--font-ui-small);
+    color: var(--text-normal);
+}
+
+.context-notes-pill button {
+    all: unset;
+    cursor: pointer;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.context-notes-pill button:hover {
+    color: var(--text-normal);
+}
