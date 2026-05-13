@@ -448,7 +448,7 @@ describe('GrimoirePlugin', () => {
     materializerSpy.mockRestore();
   });
 
-  it('onload invokes new CastLogStore exactly once with getBasePath and pluginDir', async () => {
+  it('onload invokes new CastLogStore exactly once with getLogPathAbs', async () => {
     const CastLogStoreModule = await import('../src/castLog/store');
     const OriginalStore = CastLogStoreModule.CastLogStore;
     const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
@@ -460,8 +460,7 @@ describe('GrimoirePlugin', () => {
     expect(storeSpy).toHaveBeenCalledTimes(1);
     expect(storeSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        getBasePath: expect.any(Function),
-        pluginDir: expect.any(String),
+        getLogPathAbs: expect.any(Function),
       })
     );
 

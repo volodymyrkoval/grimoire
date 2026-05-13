@@ -24,13 +24,12 @@ export default class GrimoirePlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.initCore();
-    this.castLogStore = new CastLogStore({
-      getBasePath: () => (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
-      pluginDir: this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`,
-    });
-
     const basePath = (this.app.vault.adapter as FileSystemAdapter).getBasePath();
     const pluginDirAbs = path.join(basePath, this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`);
+
+    this.castLogStore = new CastLogStore({
+      getLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-local.jsonl'),
+    });
 
     const materializer = new HookMaterializer({
       getPluginDirAbs: () => pluginDirAbs,
