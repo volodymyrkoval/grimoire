@@ -8,3 +8,5 @@ dist/
 styles.css
 data.json
 hooks/
+cast-log-local.jsonl
+cast-log-scratch/
