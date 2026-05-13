@@ -1,7 +1,7 @@
-import { Effort } from "../domain/settings/Settings";
-import { buildCastArgs } from "./buildCastArgs";
-import { resolveCliBinary } from "./resolveCliBinary";
-import { CastExitInfo, CastSpawner, SpawnFn } from "./spawnCast";
+import { Effort } from '../domain/settings/Settings';
+import { buildCastArgs } from './buildCastArgs';
+import { resolveCliBinary } from './resolveCliBinary';
+import { CastExitInfo, CastSpawner, SpawnFn } from './spawnCast';
 
 interface BaseCastRunInput {
   modelId: string;
@@ -10,7 +10,6 @@ interface BaseCastRunInput {
   binaryPath: string;
   cliCommand: string;
   castId: string;
-  castSettingsPath: string;
 }
 
 interface InlineCastRunInput extends BaseCastRunInput {
@@ -52,13 +51,14 @@ export class CastRunner {
     input: CastRunInput,
     callbacks: CastRunCallbacks
   ) {
-    void this.#castSpawner.run({
-      binary,
-      args,
-      // CAST_ID is opaque to the runner; producers guarantee uniqueness
-      env: { VAULT_MOUNT_PATH: input.vaultMountPath, CAST_ID: input.castId },
-      cwd: input.vaultMountPath,
-    })
+    void this.#castSpawner
+      .run({
+        binary,
+        args,
+        // CAST_ID is opaque to the runner; producers guarantee uniqueness
+        env: { VAULT_MOUNT_PATH: input.vaultMountPath, CAST_ID: input.castId },
+        cwd: input.vaultMountPath,
+      })
       .then(this.onCastExit(callbacks))
       .catch(this.onCastError(callbacks));
   }

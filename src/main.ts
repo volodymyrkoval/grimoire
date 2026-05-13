@@ -20,7 +20,6 @@ export default class GrimoirePlugin extends Plugin {
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
   private castLogStore!: CastLogStore;
-  private castSettingsPath!: string;
 
   async onload(): Promise<void> {
     await this.initCore();
@@ -36,10 +35,9 @@ export default class GrimoirePlugin extends Plugin {
       getLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-local.jsonl'),
     });
     try {
-      this.castSettingsPath = await materializer.run();
+      await materializer.run();
     } catch (e) {
       console.error('HookMaterializer failed', e);
-      this.castSettingsPath = path.join(pluginDirAbs, 'settings.json');
     }
 
     const sweeper = new ScratchSweeper({
@@ -52,7 +50,6 @@ export default class GrimoirePlugin extends Plugin {
       notify: (msg) => { new Notice(msg); },
       castRunner: new CastRunner(),
       castLogStore: this.castLogStore,
-      castSettingsPath: this.castSettingsPath,
     });
     this.registerUI(sessionMap, imprinter);
   }
@@ -93,7 +90,6 @@ export default class GrimoirePlugin extends Plugin {
       close: () => closeRef.close(),
       castRunner: new CastRunner(),
       castLogStore: this.castLogStore,
-      castSettingsPath: this.castSettingsPath,
     });
   }
 

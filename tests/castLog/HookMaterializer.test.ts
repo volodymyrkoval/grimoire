@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { HookMaterializer } from '../../src/castLog/HookMaterializer';
-import { renderSessionStartScript, renderPostToolUseScript, renderStopScript, renderSettingsJson } from '../../src/castLog/hookScripts';
+import { renderSessionStartScript, renderPostToolUseScript, renderStopScript } from '../../src/castLog/hookScripts';
 
 describe('HookMaterializer', () => {
   describe('run', () => {
-    it('should call mkdir once with hooks directory and writeFile 4 times with correct paths', async () => {
+    it('should call mkdir once with hooks directory and writeFile 3 times with correct paths', async () => {
       const mkdir = vi.fn().mockResolvedValue(undefined);
       const writeFile = vi.fn().mockResolvedValue(undefined);
 
@@ -20,30 +20,10 @@ describe('HookMaterializer', () => {
       expect(mkdir).toHaveBeenCalledTimes(1);
       expect(mkdir).toHaveBeenCalledWith('/p/hooks');
 
-      expect(writeFile).toHaveBeenCalledTimes(4);
+      expect(writeFile).toHaveBeenCalledTimes(3);
       expect(writeFile).toHaveBeenNthCalledWith(1, expect.stringContaining('/p/hooks/session-start.sh'), expect.any(String), expect.any(Number));
       expect(writeFile).toHaveBeenNthCalledWith(2, expect.stringContaining('/p/hooks/post-tool-use.sh'), expect.any(String), expect.any(Number));
       expect(writeFile).toHaveBeenNthCalledWith(3, expect.stringContaining('/p/hooks/stop.sh'), expect.any(String), expect.any(Number));
-      const fourthCall = writeFile.mock.calls[3];
-      expect(fourthCall[0]).toContain('/p/settings.json');
-      expect(fourthCall[1]).toEqual(expect.any(String));
-      expect(fourthCall.length).toBe(2);
-    });
-
-    it('should return the absolute path of settings.json', async () => {
-      const mkdir = vi.fn().mockResolvedValue(undefined);
-      const writeFile = vi.fn().mockResolvedValue(undefined);
-
-      const mat = new HookMaterializer({
-        getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
-        writeFile,
-        mkdir,
-      });
-
-      const result = await mat.run();
-
-      expect(result).toBe('/p/settings.json');
     });
 
     it('should write session-start.sh with content matching renderSessionStartScript', async () => {
@@ -100,7 +80,7 @@ describe('HookMaterializer', () => {
       expect(writeFile).toHaveBeenNthCalledWith(3, '/p/hooks/stop.sh', expectedContent, 0o755);
     });
 
-    it('should write settings.json with content matching renderSettingsJson', async () => {
+    it('should pass mode 0o755 for all three shell scripts', async () => {
       const mkdir = vi.fn().mockResolvedValue(undefined);
       const writeFile = vi.fn().mockResolvedValue(undefined);
 
@@ -113,34 +93,9 @@ describe('HookMaterializer', () => {
 
       await mat.run();
 
-      const expectedContent = renderSettingsJson({
-        sessionStartScriptAbs: '/p/hooks/session-start.sh',
-        postToolUseScriptAbs: '/p/hooks/post-tool-use.sh',
-        stopScriptAbs: '/p/hooks/stop.sh',
-      });
-      expect(writeFile).toHaveBeenNthCalledWith(4, '/p/settings.json', expectedContent);
-    });
-
-    it('should pass mode 0o755 for all three shell scripts and no mode for settings.json', async () => {
-      const mkdir = vi.fn().mockResolvedValue(undefined);
-      const writeFile = vi.fn().mockResolvedValue(undefined);
-
-      const mat = new HookMaterializer({
-        getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
-        writeFile,
-        mkdir,
-      });
-
-      await mat.run();
-
-      // First three calls should have mode 0o755
       expect(writeFile.mock.calls[0][2]).toBe(0o755);
       expect(writeFile.mock.calls[1][2]).toBe(0o755);
       expect(writeFile.mock.calls[2][2]).toBe(0o755);
-
-      // Fourth call should have no mode (only 2 arguments)
-      expect(writeFile.mock.calls[3].length).toBe(2);
     });
 
     it('should reject if writeFile rejects on the first script', async () => {
@@ -193,7 +148,6 @@ describe('HookMaterializer', () => {
       expect(writeFile.mock.calls[0][0]).toBe('/p/hooks/session-start.sh');
       expect(writeFile.mock.calls[1][0]).toBe('/p/hooks/post-tool-use.sh');
       expect(writeFile.mock.calls[2][0]).toBe('/p/hooks/stop.sh');
-      expect(writeFile.mock.calls[3][0]).toBe('/p/settings.json');
     });
   });
 });

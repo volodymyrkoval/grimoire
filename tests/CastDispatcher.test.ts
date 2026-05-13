@@ -51,7 +51,6 @@ describe('CastDispatcher', () => {
       close: closeFn,
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -78,7 +77,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -104,7 +102,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -130,7 +127,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -157,7 +153,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -186,7 +181,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -215,7 +209,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -240,7 +233,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -269,7 +261,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -298,7 +289,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -326,7 +316,6 @@ describe('CastDispatcher', () => {
       notify: vi.fn(),
       close: vi.fn(),
       castLogStore: storeStub,
-      castSettingsPath: 'test-settings.json',
     });
 
     dispatcher.dispatch({
@@ -354,7 +343,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: storeStub,
-      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -390,7 +378,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: storeStub,
-      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -420,7 +407,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: storeStub,
-      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -457,7 +443,6 @@ describe('CastDispatcher', () => {
       close: vi.fn(),
       castRunner: stub,
       castLogStore: storeStub,
-      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -479,29 +464,4 @@ describe('CastDispatcher', () => {
     expect(recordError).not.toHaveBeenCalled();
   });
 
-  it('runner.run is called with castSettingsPath from deps', () => {
-    const { stub, getInput } = makeStubRunner();
-
-    const dispatcher = new CastDispatcher({
-      notify: vi.fn(),
-      close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
-      castSettingsPath: 'test-settings.json',
-    });
-
-    dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: [],
-      followUp: '',
-      settings: baseSettings,
-      activeFilePath: 'notes/active.md',
-      executeOnNote: true,
-    });
-
-    const input = getInput();
-    expect(input.castSettingsPath).toBe('test-settings.json');
-  });
 });

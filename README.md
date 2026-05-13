@@ -188,3 +188,32 @@ Spells run via Claude Code with full tool access. To let them execute fire-and-f
 | `Bash(rm -rf *)` *(denied)* | Guard against destructive deletes |
 
 Without this file, Claude Code will prompt for confirmation on every tool call. Since spells run as background processes with no terminal attached, those prompts can't be answered — the cast will stall or fail. Expand or restrict the list to match what your spells actually need.
+
+### Cast log hooks
+
+On every plugin load, Grimoire generates three hook scripts into `.obsidian/plugins/grimoire/hooks/` inside your vault. To enable cast progress tracking, add these hooks to the same `.claude/settings.local.json` file in your vault root:
+
+```json
+{
+  "permissions": { "..." : "..." },
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": ".obsidian/plugins/grimoire/hooks/session-start.sh" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": ".obsidian/plugins/grimoire/hooks/post-tool-use.sh" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": ".obsidian/plugins/grimoire/hooks/stop.sh" }] }
+    ]
+  }
+}
+```
+
+| Hook script | What it does |
+|---|---|
+| `session-start.sh` | Writes an `in-progress` event to the cast log when Claude Code starts |
+| `post-tool-use.sh` | Captures file paths affected by each Write / Edit / MultiEdit / NotebookEdit tool call |
+| `stop.sh` | Writes the `done` event with the collected `affectedFiles` list when the session ends |
+
+Without these hooks, the cast log records only `casted` (cast submitted) and `error` stages — not the intermediate `in-progress` and final `done` stages.

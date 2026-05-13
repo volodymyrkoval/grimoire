@@ -23,7 +23,6 @@ export interface CastDispatcherDeps {
   castRunner?: CastRunner;
   spawner?: SpawnFn;
   castLogStore: CastLogStore;
-  castSettingsPath: string;
   generateId?: () => string;
 }
 
@@ -33,7 +32,6 @@ export class CastDispatcher {
   readonly #castRunner?: CastRunner;
   readonly #spawner?: SpawnFn;
   readonly #castLogStore: CastLogStore;
-  readonly #castSettingsPath: string;
   readonly #generateId: () => string;
 
   constructor(deps: CastDispatcherDeps) {
@@ -42,7 +40,6 @@ export class CastDispatcher {
     this.#castRunner = deps.castRunner;
     this.#spawner = deps.spawner;
     this.#castLogStore = deps.castLogStore;
-    this.#castSettingsPath = deps.castSettingsPath;
     this.#generateId = deps.generateId ?? (() => randomUUID());
   }
 
@@ -56,17 +53,25 @@ export class CastDispatcher {
     }
 
     const castId = this.#generateId();
-    this.#castLogStore.recordCasted({
-      castId,
-      spellPath: spell.path,
-      model,
-      effort,
-      contextNotes: [...contextNotePaths],
-      followUp,
-      executeOnNote: input.executeOnNote,
-    }).catch(console.error);
+    this.#castLogStore
+      .recordCasted({
+        castId,
+        spellPath: spell.path,
+        model,
+        effort,
+        contextNotes: [...contextNotePaths],
+        followUp,
+        executeOnNote: input.executeOnNote,
+      })
+      .catch(console.error);
 
-    const userPrompt = this.#buildUserPrompt(input.executeOnNote, settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
+    const userPrompt = this.#buildUserPrompt(
+      input.executeOnNote,
+      settings.vaultMountPath,
+      activeFilePath,
+      contextNotePaths,
+      followUp
+    );
 
     this.#notify(`Casting '${spell.name}'…`);
     this.#close();
@@ -82,7 +87,6 @@ export class CastDispatcher {
         binaryPath: settings.binaryPath,
         cliCommand: settings.cliCommand,
         castId,
-        castSettingsPath: this.#castSettingsPath,
       },
       {
         onSuccess: () => this.#notify('Spell cast'),
@@ -99,11 +103,12 @@ export class CastDispatcher {
     vaultMountPath: string,
     activeFilePath: string | null,
     contextNotePaths: readonly string[],
-    followUp: string,
+    followUp: string
   ): string {
-    let prompt = executeOnNote && activeFilePath !== null
-      ? `Execute this spell against the note at \`${vaultMountPath}/${activeFilePath}\`.`
-      : 'Proceed with the execution according to the instructions';
+    let prompt =
+      executeOnNote && activeFilePath !== null
+        ? `Execute this spell against the note at \`${vaultMountPath}/${activeFilePath}\`.`
+        : 'Proceed with the execution according to the instructions';
 
     if (contextNotePaths.length > 0) {
       prompt += `${prompt.length > 0 ? ' ' : ''}Additional context notes: ${contextNotePaths.join(', ')}.`;

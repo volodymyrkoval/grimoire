@@ -25,7 +25,7 @@ describe('GrimoirePlugin', () => {
     const OriginalMaterializer = HookMaterializerModule.HookMaterializer;
     materializerMock = vi.spyOn(HookMaterializerModule, 'HookMaterializer').mockImplementation((ports: any) => {
       const inst = new OriginalMaterializer(ports);
-      vi.spyOn(inst, 'run').mockResolvedValue('/test/vault/.obsidian/plugins/test/settings.json');
+      vi.spyOn(inst, 'run').mockResolvedValue(undefined);
       return inst;
     });
   });
@@ -296,7 +296,7 @@ describe('GrimoirePlugin', () => {
     const OriginalMaterializer = HookMaterializerModule.HookMaterializer;
     const materializerSpy = vi.spyOn(HookMaterializerModule, 'HookMaterializer').mockImplementation((ports: any) => {
       const inst = new OriginalMaterializer(ports);
-      vi.spyOn(inst, 'run').mockResolvedValue('/test/vault/.obsidian/plugins/test/settings.json');
+      vi.spyOn(inst, 'run').mockResolvedValue(undefined);
       return inst;
     });
 
@@ -313,22 +313,6 @@ describe('GrimoirePlugin', () => {
     materializerSpy.mockRestore();
   });
 
-  it('onload calls materializer.run() and stores the result as castSettingsPath', async () => {
-    const expectedPath = '/test/vault/.obsidian/plugins/test/settings.json';
-    const HookMaterializerModule = await import('../src/castLog/HookMaterializer');
-    const OriginalMaterializer = HookMaterializerModule.HookMaterializer;
-    const materializerSpy = vi.spyOn(HookMaterializerModule, 'HookMaterializer').mockImplementation((ports: any) => {
-      const inst = new OriginalMaterializer(ports);
-      vi.spyOn(inst, 'run').mockResolvedValue(expectedPath);
-      return inst;
-    });
-
-    await plugin.onload();
-
-    expect((plugin as any).castSettingsPath).toBe(expectedPath);
-
-    materializerSpy.mockRestore();
-  });
 
   it('onload constructs ScratchSweeper exactly once with getScratchDirAbs port and calls sweep()', async () => {
     const ScratchSweeperModule = await import('../src/castLog/ScratchSweeper');
@@ -345,7 +329,7 @@ describe('GrimoirePlugin', () => {
     const OriginalMaterializer = HookMaterializerModule.HookMaterializer;
     const materializerSpy = vi.spyOn(HookMaterializerModule, 'HookMaterializer').mockImplementation((ports: any) => {
       const inst = new OriginalMaterializer(ports);
-      vi.spyOn(inst, 'run').mockResolvedValue('/test/vault/.obsidian/plugins/test/settings.json');
+      vi.spyOn(inst, 'run').mockResolvedValue(undefined);
       return inst;
     });
 
@@ -361,63 +345,6 @@ describe('GrimoirePlugin', () => {
 
     sweeperSpy.mockRestore();
     materializerSpy.mockRestore();
-  });
-
-  it('ForgeImprinter constructor receives castSettingsPath from materializer.run()', async () => {
-    const expectedPath = '/test/vault/.obsidian/plugins/test/settings.json';
-
-    const HookMaterializerModule = await import('../src/castLog/HookMaterializer');
-    const OriginalMaterializer = HookMaterializerModule.HookMaterializer;
-    const materializerSpy = vi.spyOn(HookMaterializerModule, 'HookMaterializer').mockImplementation((ports: any) => {
-      const inst = new OriginalMaterializer(ports);
-      vi.spyOn(inst, 'run').mockResolvedValue(expectedPath);
-      return inst;
-    });
-
-    const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
-    const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
-    const imprintSpy = vi.spyOn(ForgeImprinterModule, 'ForgeImprinter').mockImplementation((deps: any) => {
-      return new OriginalForgeImprinter(deps);
-    });
-
-    await plugin.onload();
-
-    expect(imprintSpy).toHaveBeenCalledOnce();
-    expect(imprintSpy.mock.calls[0][0].castSettingsPath).toBe(expectedPath);
-
-    materializerSpy.mockRestore();
-    imprintSpy.mockRestore();
-  });
-
-  it('CastDispatcher constructor receives castSettingsPath from materializer.run()', async () => {
-    const expectedPath = '/test/vault/.obsidian/plugins/test/settings.json';
-
-    const HookMaterializerModule = await import('../src/castLog/HookMaterializer');
-    const OriginalMaterializer = HookMaterializerModule.HookMaterializer;
-    const materializerSpy = vi.spyOn(HookMaterializerModule, 'HookMaterializer').mockImplementation((ports: any) => {
-      const inst = new OriginalMaterializer(ports);
-      vi.spyOn(inst, 'run').mockResolvedValue(expectedPath);
-      return inst;
-    });
-
-    const CastDispatcherModule = await import('../src/cast/CastDispatcher');
-    const OriginalDispatcher = CastDispatcherModule.CastDispatcher;
-    const dispatcherSpy = vi.spyOn(CastDispatcherModule, 'CastDispatcher').mockImplementation((deps: any) => {
-      return new OriginalDispatcher(deps);
-    });
-
-    await plugin.onload();
-
-    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
-      (c: any[]) => c[0].id === 'open-popup',
-    );
-    commandCall![0].callback();
-
-    expect(dispatcherSpy).toHaveBeenCalledOnce();
-    expect(dispatcherSpy.mock.calls[0][0].castSettingsPath).toBe(expectedPath);
-
-    materializerSpy.mockRestore();
-    dispatcherSpy.mockRestore();
   });
 
   it('onload resolves even when HookMaterializer.run rejects, and plugin remains functional', async () => {

@@ -73,7 +73,6 @@ describe('CastRunner', () => {
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       callbacks
     );
@@ -101,7 +100,6 @@ describe('CastRunner', () => {
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       callbacks
     );
@@ -130,7 +128,6 @@ describe('CastRunner', () => {
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       callbacks
     );
@@ -155,7 +152,6 @@ describe('CastRunner', () => {
         binaryPath: '/opt/bin/claude',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -175,7 +171,6 @@ describe('CastRunner', () => {
         binaryPath: '',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -195,7 +190,6 @@ describe('CastRunner', () => {
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -215,7 +209,6 @@ describe('CastRunner', () => {
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
         castId: 'abc123',
-        castSettingsPath: 'test-settings.json',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -235,7 +228,6 @@ describe('CastRunner', () => {
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -255,7 +247,6 @@ describe('CastRunner', () => {
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
         castId: 'test-cast-id',
-        castSettingsPath: 'test-settings.json',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -269,26 +260,4 @@ describe('CastRunner', () => {
     expect(args).toContain('high');
   });
 
-  it('passes castSettingsPath to spawner args as --settings flag', () => {
-    const { runner, getArgs } = makeRunnerWithFakeSpawn();
-
-    runner.run(
-      {
-        metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
-        effort: null,
-        vaultMountPath: '/vault',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        castId: 'test-cast-id',
-        castSettingsPath: '/abs/settings.json',
-      },
-      { onSuccess: () => {}, onFailure: () => {} }
-    );
-
-    const args = getArgs();
-    const settingsIndex = args.indexOf('--settings');
-    expect(settingsIndex).toBeGreaterThanOrEqual(0);
-    expect(args[settingsIndex + 1]).toBe('/abs/settings.json');
-  });
 });
