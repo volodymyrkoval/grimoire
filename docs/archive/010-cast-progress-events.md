@@ -424,15 +424,15 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/castLog/hookScripts.test.ts` proves: (1) each render fn returns a string starting with `#!/bin/sh\n`; (2) each contains the gate `[ -z "$CAST_ID" ] && exit 0` on a line before any other operation; (3) each contains the supplied absolute path(s) literally; (4) `renderPostToolUseScript` contains `mkdir -p` and `>> "$SCRATCH"`; (5) `renderStopScript` contains `sort -u`, `rm -f`, and writes a `"stage":"done"` JSON; (6) `renderSettingsJson` parses as JSON and has the shape `{ hooks: { SessionStart: [{hooks:[{type:'command',command:<path>}]}], PostToolUse: [{matcher:'Write|Edit|MultiEdit|NotebookEdit', hooks:[…]}], Stop: [{hooks:[…]}] } }`.
 
 **junior-dev**
-- [ ] A1: Write failing test in `tests/castLog/hookScripts.test.ts`: `renderSessionStartScript({ logPathAbs: '/abs/log.jsonl' })` returns a string starting with `'#!/bin/sh\n'`, contains `'[ -z "$CAST_ID" ] && exit 0'`, contains `'/abs/log.jsonl'`, contains `'"stage":"in-progress"'`, and contains a `printf` ending with `>> "$LOG"`. — S, junior-dev
-- [ ] A2: Implement `renderSessionStartScript` to make A1 green. Body matches the "session-start.sh" sample in Hook-script contracts, with `<LOG_PATH_ABS>` literally substituted. — S, junior-dev
-- [ ] A3: Write failing test: `renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' })` returns a string containing `'/abs/scratch'`, contains `'mkdir -p "$SCRATCH_DIR"'`, contains `'python3 -c'`, contains `'tool_input'` and `'file_path'`, and ends with `'exit 0\n'`. — S, junior-dev
-- [ ] A4: Implement `renderPostToolUseScript` to make A3 green. — S, junior-dev
-- [ ] A5: Write failing test: `renderStopScript({ logPathAbs: '/abs/log.jsonl', scratchDirAbs: '/abs/scratch' })` returns a string containing both paths literally, contains `'sort -u'`, contains `'rm -f'`, contains `'"stage":"done"'`, and contains `'"affectedFiles":%s'` in the `printf` template. — S, junior-dev
-- [ ] A6: Implement `renderStopScript` to make A5 green. — S, junior-dev
-- [ ] A7: Write failing test: `renderSettingsJson({ sessionStartScriptAbs: '/a/ss.sh', postToolUseScriptAbs: '/a/pt.sh', stopScriptAbs: '/a/st.sh' })` returns a string; `JSON.parse(result)` equals the literal shape `{ hooks: { SessionStart: [{hooks:[{type:'command',command:'/a/ss.sh'}]}], PostToolUse: [{matcher:'Write|Edit|MultiEdit|NotebookEdit', hooks:[{type:'command',command:'/a/pt.sh'}]}], Stop: [{hooks:[{type:'command',command:'/a/st.sh'}]}] } }`. — S, junior-dev
-- [ ] A8: Implement `renderSettingsJson` to make A7 green. Use `JSON.stringify(obj, null, 2)` for readability. — S, junior-dev
-- [ ] A9: Edge-case test: paths with spaces/apostrophes in `renderSessionStartScript({ logPathAbs: "/abs path/with 'quote.jsonl" })` — the path is literally substituted; the resulting script's `LOG=` line is `LOG="/abs path/with 'quote.jsonl"`. (No escaping is applied — that's the contract; the plugin owns the data dir and the user does not control its path.) Add a one-line code comment near the substitution: `// Plugin-owned absolute paths; no shell-escaping applied by the renderer.` — S, junior-dev
+- [x] A1: Write failing test in `tests/castLog/hookScripts.test.ts`: `renderSessionStartScript({ logPathAbs: '/abs/log.jsonl' })` returns a string starting with `'#!/bin/sh\n'`, contains `'[ -z "$CAST_ID" ] && exit 0'`, contains `'/abs/log.jsonl'`, contains `'"stage":"in-progress"'`, and contains a `printf` ending with `>> "$LOG"`. — S, junior-dev
+- [x] A2: Implement `renderSessionStartScript` to make A1 green. Body matches the "session-start.sh" sample in Hook-script contracts, with `<LOG_PATH_ABS>` literally substituted. — S, junior-dev
+- [x] A3: Write failing test: `renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' })` returns a string containing `'/abs/scratch'`, contains `'mkdir -p "$SCRATCH_DIR"'`, contains `'python3 -c'`, contains `'tool_input'` and `'file_path'`, and ends with `'exit 0\n'`. — S, junior-dev
+- [x] A4: Implement `renderPostToolUseScript` to make A3 green. — S, junior-dev
+- [x] A5: Write failing test: `renderStopScript({ logPathAbs: '/abs/log.jsonl', scratchDirAbs: '/abs/scratch' })` returns a string containing both paths literally, contains `'sort -u'`, contains `'rm -f'`, contains `'"stage":"done"'`, and contains `'"affectedFiles":%s'` in the `printf` template. — S, junior-dev
+- [x] A6: Implement `renderStopScript` to make A5 green. — S, junior-dev
+- [x] A7: Write failing test: `renderSettingsJson({ sessionStartScriptAbs: '/a/ss.sh', postToolUseScriptAbs: '/a/pt.sh', stopScriptAbs: '/a/st.sh' })` returns a string; `JSON.parse(result)` equals the literal shape `{ hooks: { SessionStart: [{hooks:[{type:'command',command:'/a/ss.sh'}]}], PostToolUse: [{matcher:'Write|Edit|MultiEdit|NotebookEdit', hooks:[{type:'command',command:'/a/pt.sh'}]}], Stop: [{hooks:[{type:'command',command:'/a/st.sh'}]}] } }`. — S, junior-dev
+- [x] A8: Implement `renderSettingsJson` to make A7 green. Use `JSON.stringify(obj, null, 2)` for readability. — S, junior-dev
+- [x] A9: Edge-case test: paths with spaces/apostrophes in `renderSessionStartScript({ logPathAbs: "/abs path/with 'quote.jsonl" })` — the path is literally substituted; the resulting script's `LOG=` line is `LOG="/abs path/with 'quote.jsonl"`. (No escaping is applied — that's the contract; the plugin owns the data dir and the user does not control its path.) Add a one-line code comment near the substitution: `// Plugin-owned absolute paths; no shell-escaping applied by the renderer.` — S, junior-dev
 
 ### B. `HookMaterializer` (`castLog/HookMaterializer.ts`)
 
@@ -458,14 +458,14 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/castLog/HookMaterializer.test.ts` proves: (1) `run()` calls `mkdir(<pluginDir>/hooks)` exactly once; (2) calls `writeFile` four times — once for each of `hooks/session-start.sh`, `hooks/post-tool-use.sh`, `hooks/stop.sh`, `settings.json`, with the content from the matching renderer; (3) the three `.sh` files are written with mode `0o755`; (4) `run()` resolves to `<pluginDir>/settings.json`; (5) the `command` paths inside the settings JSON match the absolute paths of the three scripts; (6) when `writeFile` rejects, `run()` rejects (caller — main.ts — owns the swallow via fire-and-forget).
 
 **junior-dev**
-- [ ] B1: Write failing test: construct `new HookMaterializer({ getPluginDirAbs: () => '/p', getLogPathAbs: () => '/p/cast-log-local.jsonl', writeFile: vi.fn().mockResolvedValue(undefined), mkdir: vi.fn().mockResolvedValue(undefined) })`. Call `await mat.run()`. Assert: `mkdir` called once with `'/p/hooks'`; `writeFile` called 4 times with paths `'/p/hooks/session-start.sh'`, `'/p/hooks/post-tool-use.sh'`, `'/p/hooks/stop.sh'`, `'/p/settings.json'`. — S, junior-dev
-- [ ] B2: Implement `HookMaterializer.run()` to make B1 green. Steps in order: `await mkdir(hooksDir)`; render and write the three scripts (mode `0o755`); render and write `settings.json`; return its absolute path. — S, junior-dev
-- [ ] B3: Write failing test: `run()` returns `'/p/settings.json'`. — S, junior-dev (verify after B2 — should already pass).
-- [ ] B4: Write failing test: the content passed to `writeFile` for `hooks/session-start.sh` matches `renderSessionStartScript({ logPathAbs: '/p/cast-log-local.jsonl' })` byte-for-byte. Similarly for the other two scripts and `renderSettingsJson`. — S, junior-dev
-- [ ] B5: Write failing test: the three `.sh` writes pass `mode: 0o755` as the third arg to `writeFile`. Implementation note: signature must be `writeFile(path, content, mode?)` so the port can ignore mode when undefined. — S, junior-dev
-- [ ] B6: Write failing test: `writeFile` rejecting on the first script causes `run()` to reject. (Verifies callers can decide to swallow; the materialiser itself doesn't.) — S, junior-dev
-- [ ] B7: Default `writeFile`/`mkdir` ports use `fs/promises.writeFile` (with `chmod` for mode) and `fs/promises.mkdir({ recursive: true })`. Add a test that constructs without ports and (via a `vi.spyOn(fsPromises, 'writeFile')`) verifies they're invoked. (If module-mock complexity is high, accept this as a manual check and add a code comment; mirror B8's pattern from 009.) — M, junior-dev
-- [ ] B8: Edge case: `getPluginDirAbs()` returning a path with a trailing slash (`'/p/'`) still produces `'/p/hooks/session-start.sh'` — i.e. use `path.join`, not string concatenation. Assert against `vi.fn` calls. — S, junior-dev
+- [x] B1: Write failing test: construct `new HookMaterializer({ getPluginDirAbs: () => '/p', getLogPathAbs: () => '/p/cast-log-local.jsonl', writeFile: vi.fn().mockResolvedValue(undefined), mkdir: vi.fn().mockResolvedValue(undefined) })`. Call `await mat.run()`. Assert: `mkdir` called once with `'/p/hooks'`; `writeFile` called 4 times with paths `'/p/hooks/session-start.sh'`, `'/p/hooks/post-tool-use.sh'`, `'/p/hooks/stop.sh'`, `'/p/settings.json'`. — S, junior-dev
+- [x] B2: Implement `HookMaterializer.run()` to make B1 green. Steps in order: `await mkdir(hooksDir)`; render and write the three scripts (mode `0o755`); render and write `settings.json`; return its absolute path. — S, junior-dev
+- [x] B3: Write failing test: `run()` returns `'/p/settings.json'`. — S, junior-dev (verify after B2 — should already pass).
+- [x] B4: Write failing test: the content passed to `writeFile` for `hooks/session-start.sh` matches `renderSessionStartScript({ logPathAbs: '/p/cast-log-local.jsonl' })` byte-for-byte. Similarly for the other two scripts and `renderSettingsJson`. — S, junior-dev
+- [x] B5: Write failing test: the three `.sh` writes pass `mode: 0o755` as the third arg to `writeFile`. Implementation note: signature must be `writeFile(path, content, mode?)` so the port can ignore mode when undefined. — S, junior-dev
+- [x] B6: Write failing test: `writeFile` rejecting on the first script causes `run()` to reject. (Verifies callers can decide to swallow; the materialiser itself doesn't.) — S, junior-dev
+- [x] B7: Default `writeFile`/`mkdir` ports use `fs/promises.writeFile` (with `chmod` for mode) and `fs/promises.mkdir({ recursive: true })`. Add a test that constructs without ports and (via a `vi.spyOn(fsPromises, 'writeFile')`) verifies they're invoked. (If module-mock complexity is high, accept this as a manual check and add a code comment; mirror B8's pattern from 009.) — M, junior-dev
+- [x] B8: Edge case: `getPluginDirAbs()` returning a path with a trailing slash (`'/p/'`) still produces `'/p/hooks/session-start.sh'` — i.e. use `path.join`, not string concatenation. Assert against `vi.fn` calls. — S, junior-dev
 
 ### C. `ScratchSweeper` (`castLog/ScratchSweeper.ts`)
 
@@ -486,14 +486,14 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/castLog/ScratchSweeper.test.ts` proves: (1) given two files (`old.paths` mtime=0, `young.paths` mtime=now-1h), `sweep()` calls `unlink('old.paths')` exactly once and does **not** call `unlink('young.paths')`; (2) when `readdir` throws ENOENT, `sweep()` resolves without throwing and without calling `unlink`; (3) when `unlink` rejects on one file, the sweep continues to the next file; (4) `now()` defaults to `Date.now`; (5) `ttlMs` defaults to `24*60*60*1000`.
 
 **junior-dev**
-- [ ] C1: Write failing test: `sweep()` with `readdir: () => Promise.resolve(['old.paths','young.paths'])`, `stat: f => f.includes('old') ? { mtimeMs: 0 } : { mtimeMs: 1_000_000 - 60*60*1000 }`, `now: () => 1_000_000`, `ttlMs: 24*60*60*1000` — `unlink` is called once with the `old.paths` absolute path; not called for `young.paths`. — S, junior-dev
-- [ ] C2: Implement `ScratchSweeper.sweep()` to make C1 green. — S, junior-dev
-- [ ] C3: Write failing test: `readdir` rejecting with `code: 'ENOENT'` causes `sweep()` to resolve without throwing and without calling `unlink`. — S, junior-dev
-- [ ] C4: Implement the ENOENT short-circuit in `sweep()`. — S, junior-dev
-- [ ] C5: Write failing test: `unlink` rejecting on the first file does not prevent the sweep from calling `unlink` on the second qualifying file. — S, junior-dev
-- [ ] C6: Implement per-file `try/catch` (with `console.error`) around `unlink`. — S, junior-dev
-- [ ] C7: Edge-case test: empty dir (`readdir → []`) — `sweep()` resolves without calling `stat` or `unlink`. — S, junior-dev
-- [ ] C8: Edge-case test: file at boundary (`mtimeMs === now - ttlMs` exactly) is **not** deleted; `mtimeMs === now - ttlMs - 1` is deleted. Document the comparison in the implementation (`now - mtimeMs > ttlMs`). — S, junior-dev
+- [x] C1: Write failing test: `sweep()` with `readdir: () => Promise.resolve(['old.paths','young.paths'])`, `stat: f => f.includes('old') ? { mtimeMs: 0 } : { mtimeMs: 1_000_000 - 60*60*1000 }`, `now: () => 1_000_000`, `ttlMs: 24*60*60*1000` — `unlink` is called once with the `old.paths` absolute path; not called for `young.paths`. — S, junior-dev (11dd399)
+- [x] C2: Implement `ScratchSweeper.sweep()` to make C1 green. — S, junior-dev (11dd399)
+- [x] C3: Write failing test: `readdir` rejecting with `code: 'ENOENT'` causes `sweep()` to resolve without throwing and without calling `unlink`. — S, junior-dev (11dd399)
+- [x] C4: Implement the ENOENT short-circuit in `sweep()`. — S, junior-dev (11dd399)
+- [x] C5: Write failing test: `unlink` rejecting on the first file does not prevent the sweep from calling `unlink` on the second qualifying file. — S, junior-dev (11dd399)
+- [x] C6: Implement per-file `try/catch` (with `console.error`) around `unlink`. — S, junior-dev (11dd399)
+- [x] C7: Edge-case test: empty dir (`readdir → []`) — `sweep()` resolves without calling `stat` or `unlink`. — S, junior-dev (11dd399)
+- [x] C8: Edge-case test: file at boundary (`mtimeMs === now - ttlMs` exactly) is **not** deleted; `mtimeMs === now - ttlMs - 1` is deleted. Document the comparison in the implementation (`now - mtimeMs > ttlMs`). — S, junior-dev (11dd399)
 
 ### D. Shell-script integration tests (`tests/castLog/hookScripts.integration.test.ts`)
 
@@ -519,15 +519,15 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 5. `stop.sh` with `CAST_ID=abc` and no prior scratch file → log gains a `done` line with `affectedFiles:[]`.
 
 **senior-dev**
-- [ ] D1: Set up shared test helpers at the top of the file: `mkTempDir()`, `materializeScript(name, content)`, `runShell(scriptPath, { stdin?, env? })` (wrapping `spawnSync`), `readLog(logPath): CastLogEvent[]` (split by `\n`, JSON-parse each). Add `beforeEach`/`afterEach` for temp-dir lifecycle. — M, senior-dev
-- [ ] D2: Write failing test for **scenario 1** (SessionStart writes `in-progress`): materialise `session-start.sh` via real `renderSessionStartScript`, run with `CAST_ID=abc`, assert log file contains exactly one JSON line with shape `{stage:'in-progress', ts:<ISO-regex>, castId:'abc'}`. — S, senior-dev
-- [ ] D3: Write failing test for **scenario 2** (no `CAST_ID` → no-op): run the same script without `CAST_ID` in env, assert log file does not exist (or is empty), exit code 0. — S, senior-dev
-- [ ] D4: Write failing test for **scenario 3** (PostToolUse appends to scratch): materialise `post-tool-use.sh`, run with `CAST_ID=abc` and stdin `'{"tool_name":"Write","tool_input":{"file_path":"foo/bar.md"},"tool_response":{}}'`, assert: log file is empty/absent, scratch file `<scratchDir>/abc.paths` contents equal `'foo/bar.md\n'`. — S, senior-dev
-- [ ] D5: Write failing test for **scenario 4** (Stop drains scratch with dedup): pre-populate scratch file with `"a.md\nb.md\na.md\n"`, materialise and run `stop.sh` with `CAST_ID=abc`, assert: log gains one `done` line with `affectedFiles:['a.md','b.md']` (sorted, dedup), scratch file is gone. — S, senior-dev
-- [ ] D6: Write failing test for **scenario 5** (Stop with no prior tool calls): no scratch file exists, run `stop.sh` with `CAST_ID=abc`, assert: log gains one `done` line with `affectedFiles:[]`. — S, senior-dev
-- [ ] D7: Edge-case test: PostToolUse with a `file_path` containing apostrophes and unicode (`"docs/it's a test/日本.md"`) — assert scratch file content is `"docs/it's a test/日本.md\n"` (no shell-level corruption). — S, senior-dev
-- [ ] D8: Edge-case test: PostToolUse with stdin JSON whose `tool_input` has no `file_path` key (e.g. a different tool that slipped past the matcher in some Claude Code version) — assert: script exits 0, scratch file either does not exist or is empty (the empty-`FILE_PATH` branch in the script skips the `printf`). — S, senior-dev
-- [ ] D9: Edge-case test: Two concurrent `castId`s — interleave calls for `castA` and `castB` PostToolUse, then `stop.sh` for each. Assert their `done` lines have disjoint `affectedFiles` and the per-cast scratch files were both cleaned up. (Same-process sequencing; no real concurrency primitives needed — Claude Code never invokes hooks for two distinct casts in the same `sh` process.) — S, senior-dev
+- [x] D1: Set up shared test helpers at the top of the file: `mkTempDir()`, `materializeScript(name, content)`, `runShell(scriptPath, { stdin?, env? })` (wrapping `spawnSync`), `readLog(logPath): CastLogEvent[]` (split by `\n`, JSON-parse each). Add `beforeEach`/`afterEach` for temp-dir lifecycle. — M, senior-dev
+- [x] D2: Write failing test for **scenario 1** (SessionStart writes `in-progress`): materialise `session-start.sh` via real `renderSessionStartScript`, run with `CAST_ID=abc`, assert log file contains exactly one JSON line with shape `{stage:'in-progress', ts:<ISO-regex>, castId:'abc'}`. — S, senior-dev
+- [x] D3: Write failing test for **scenario 2** (no `CAST_ID` → no-op): run the same script without `CAST_ID` in env, assert log file does not exist (or is empty), exit code 0. — S, senior-dev
+- [x] D4: Write failing test for **scenario 3** (PostToolUse appends to scratch): materialise `post-tool-use.sh`, run with `CAST_ID=abc` and stdin `'{"tool_name":"Write","tool_input":{"file_path":"foo/bar.md"},"tool_response":{}}'`, assert: log file is empty/absent, scratch file `<scratchDir>/abc.paths` contents equal `'foo/bar.md\n'`. — S, senior-dev
+- [x] D5: Write failing test for **scenario 4** (Stop drains scratch with dedup): pre-populate scratch file with `"a.md\nb.md\na.md\n"`, materialise and run `stop.sh` with `CAST_ID=abc`, assert: log gains one `done` line with `affectedFiles:['a.md','b.md']` (sorted, dedup), scratch file is gone. — S, senior-dev
+- [x] D6: Write failing test for **scenario 5** (Stop with no prior tool calls): no scratch file exists, run `stop.sh` with `CAST_ID=abc`, assert: log gains one `done` line with `affectedFiles:[]`. — S, senior-dev
+- [x] D7: Edge-case test: PostToolUse with a `file_path` containing apostrophes and unicode (`"docs/it's a test/日本.md"`) — assert scratch file content is `"docs/it's a test/日本.md\n"` (no shell-level corruption). — S, senior-dev
+- [x] D8: Edge-case test: PostToolUse with stdin JSON whose `tool_input` has no `file_path` key (e.g. a different tool that slipped past the matcher in some Claude Code version) — assert: script exits 0, scratch file either does not exist or is empty (the empty-`FILE_PATH` branch in the script skips the `printf`). — S, senior-dev
+- [x] D9: Edge-case test: Two concurrent `castId`s — interleave calls for `castA` and `castB` PostToolUse, then `stop.sh` for each. Assert their `done` lines have disjoint `affectedFiles` and the per-cast scratch files were both cleaned up. (Same-process sequencing; no real concurrency primitives needed — Claude Code never invokes hooks for two distinct casts in the same `sh` process.) — S, senior-dev
 
 ### E. `CastRunner` + `buildCastArgs` settings-flag threading
 
@@ -548,12 +548,12 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/CastRunner.test.ts` and `tests/buildCastArgs.test.ts` (extended) prove: (1) `buildCastArgs({ …, castSettingsPath: '/abs/settings.json' })` returns an array containing `'--settings'` immediately followed by `'/abs/settings.json'`; (2) `runner.run({ …, castSettingsPath: '/abs/settings.json' }, callbacks)` causes the spawner to receive args containing `'--settings'` then `'/abs/settings.json'`; (3) compile fails if `castSettingsPath` is omitted.
 
 **junior-dev**
-- [ ] E1: Write failing test in `tests/buildCastArgs.test.ts`: `buildCastArgs({ metaSpell:'x', modelId:'sonnet', effort:null, vaultMountPath:'/v', castSettingsPath:'/abs/settings.json' })` returns an array where `args.indexOf('--settings')` is followed by `'/abs/settings.json'` at `index+1`. — S, junior-dev
-- [ ] E2: Implement: add `castSettingsPath: string` to `BaseCastArgsInput`; after the existing `if (input.vaultMountPath !== "")` block, append `args.push('--settings', input.castSettingsPath);` (unconditional — the value is always present from main.ts, even if empty; the runner does not enforce non-empty). — S, junior-dev
-- [ ] E3: Edge case: `castSettingsPath === ''` (degenerate; main.ts failed to materialise) — the args still contain `'--settings'` followed by `''`. Document with a one-line comment: `// --settings is always emitted; empty value lets Claude Code fall back to user settings.` — S, junior-dev
-- [ ] E4: Write failing test in `tests/CastRunner.test.ts`: `runner.run({ …, castId:'c', castSettingsPath:'/abs/settings.json' }, …)` causes the spawner to receive args containing `'--settings'` then `'/abs/settings.json'`. — S, junior-dev
-- [ ] E5: Implement: add `castSettingsPath: string` to `BaseCastRunInput`; update `getCastArgs` to forward `castSettingsPath` in the destructure (`const { binaryPath, cliCommand, castId: _castId, ...castArgsInput } = input;` already strips by listing — confirm `castSettingsPath` falls through into `castArgsInput`). — S, junior-dev
-- [ ] E6: Update every existing `CastRunner.run` / `CastRunInput` / `buildCastArgs` call site in production code (the dispatcher and imprinter will be patched in G/H; only test fixtures here) — grep for `binaryPath:` and add `castSettingsPath: 'test-settings.json'` to each input literal. — S, junior-dev
+- [x] E1: Write failing test in `tests/buildCastArgs.test.ts`: `buildCastArgs({ metaSpell:'x', modelId:'sonnet', effort:null, vaultMountPath:'/v', castSettingsPath:'/abs/settings.json' })` returns an array where `args.indexOf('--settings')` is followed by `'/abs/settings.json'` at `index+1`. — S, junior-dev
+- [x] E2: Implement: add `castSettingsPath: string` to `BaseCastArgsInput`; after the existing `if (input.vaultMountPath !== "")` block, append `args.push('--settings', input.castSettingsPath);` (unconditional — the value is always present from main.ts, even if empty; the runner does not enforce non-empty). — S, junior-dev
+- [x] E3: Edge case: `castSettingsPath === ''` (degenerate; main.ts failed to materialise) — the args still contain `'--settings'` followed by `''`. Document with a one-line comment: `// --settings is always emitted; empty value lets Claude Code fall back to user settings.` — S, junior-dev
+- [x] E4: Write failing test in `tests/CastRunner.test.ts`: `runner.run({ …, castId:'c', castSettingsPath:'/abs/settings.json' }, …)` causes the spawner to receive args containing `'--settings'` then `'/abs/settings.json'`. — S, junior-dev
+- [x] E5: Implement: add `castSettingsPath: string` to `BaseCastRunInput`; update `getCastArgs` to forward `castSettingsPath` in the destructure (`const { binaryPath, cliCommand, castId: _castId, ...castArgsInput } = input;` already strips by listing — confirm `castSettingsPath` falls through into `castArgsInput`). — S, junior-dev
+- [x] E6: Update every existing `CastRunner.run` / `CastRunInput` / `buildCastArgs` call site in production code (the dispatcher and imprinter will be patched in G/H; only test fixtures here) — grep for `binaryPath:` and add `castSettingsPath: 'test-settings.json'` to each input literal. — S, junior-dev
 
 ### F. `main.ts` wiring (materialise + sweep + thread path)
 
@@ -574,18 +574,18 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/main.test.ts` (extended) proves: (1) `onload` constructs exactly one `HookMaterializer` and calls `.run()` once; (2) `onload` constructs exactly one `ScratchSweeper` and calls `.sweep()` once; (3) the resolved settings path is stored on the plugin instance and passed to both the `ForgeImprinter` constructor and the `CastDispatcher` constructor (both receive the same string value); (4) when `HookMaterializer.run()` rejects, `onload` still resolves and the plugin remains functional (cast action is still wired) — error is logged via `console.error`; (5) when `ScratchSweeper.sweep()` rejects, `onload` still resolves.
 
 **senior-dev**
-- [ ] F1: Write failing test: `onload` invokes `new HookMaterializer(...)` exactly once. Spy on the constructor; assert the ports object contains `getPluginDirAbs: expect.any(Function)` and `getLogPathAbs: expect.any(Function)`. — M, senior-dev
-- [ ] F2: Implement: in `onload`, after `this.castLogStore = …`, instantiate `const materializer = new HookMaterializer({ getPluginDirAbs: () => path.join(this.app.vault.adapter.getBasePath(), this.manifest.dir ?? FALLBACK), getLogPathAbs: () => path.join(this.app.vault.adapter.getBasePath(), this.manifest.dir ?? FALLBACK, 'cast-log-local.jsonl') })`. Define `FALLBACK = \`${this.app.vault.configDir}/plugins/grimoire\`` as a local const. — M, senior-dev
-- [ ] F3: Write failing test: `onload` calls `materializer.run()` and stores the result on `this.castSettingsPath`. — S, senior-dev
-- [ ] F4: Implement: `try { this.castSettingsPath = await materializer.run(); } catch (e) { console.error('HookMaterializer failed', e); this.castSettingsPath = path.join(pluginDirAbs, 'settings.json'); }`. — S, senior-dev
-- [ ] F5: Write failing test: `onload` invokes `new ScratchSweeper(...)` exactly once and calls `.sweep()`. — S, senior-dev
-- [ ] F6: Implement: instantiate `const sweeper = new ScratchSweeper({ getScratchDirAbs: () => path.join(pluginDirAbs, 'cast-log-scratch') })`; call `sweeper.sweep().catch(console.error)` (fire-and-forget). — S, senior-dev
-- [ ] F7: Write failing test: the `ForgeImprinter` constructor receives `castSettingsPath` equal to the value returned by `materializer.run()`. — S, senior-dev
-- [ ] F8: Implement: pass `castSettingsPath: this.castSettingsPath` into `new ForgeImprinter({ … })`. — S, senior-dev
-- [ ] F9: Write failing test: the `CastDispatcher` constructor (inside `createDispatcher`) receives the same `castSettingsPath`. — S, senior-dev
-- [ ] F10: Implement: pass `castSettingsPath: this.castSettingsPath` into `new CastDispatcher({ … })` inside `createDispatcher`. — S, senior-dev
-- [ ] F11: Write failing test: when the injected `HookMaterializer.run` rejects, `onload` resolves and the existing "command callback constructs CommandPopup with..." test still passes (regression). Strategy: spy on the constructor, mock its `run` to reject. — S, senior-dev
-- [ ] F12: Confirm F11 passes given F4's `try/catch`. — S, senior-dev
+- [x] F1: Write failing test: `onload` invokes `new HookMaterializer(...)` exactly once. Spy on the constructor; assert the ports object contains `getPluginDirAbs: expect.any(Function)` and `getLogPathAbs: expect.any(Function)`. — M, senior-dev (8f4bc3b)
+- [x] F2: Implement: in `onload`, after `this.castLogStore = …`, instantiate `const materializer = new HookMaterializer({ getPluginDirAbs: () => path.join(this.app.vault.adapter.getBasePath(), this.manifest.dir ?? FALLBACK), getLogPathAbs: () => path.join(this.app.vault.adapter.getBasePath(), this.manifest.dir ?? FALLBACK, 'cast-log-local.jsonl') })`. Define `FALLBACK = \`${this.app.vault.configDir}/plugins/grimoire\`` as a local const. — M, senior-dev (8f4bc3b)
+- [x] F3: Write failing test: `onload` calls `materializer.run()` and stores the result on `this.castSettingsPath`. — S, senior-dev (8f4bc3b)
+- [x] F4: Implement: `try { this.castSettingsPath = await materializer.run(); } catch (e) { console.error('HookMaterializer failed', e); this.castSettingsPath = path.join(pluginDirAbs, 'settings.json'); }`. — S, senior-dev (8f4bc3b)
+- [x] F5: Write failing test: `onload` invokes `new ScratchSweeper(...)` exactly once and calls `.sweep()`. — S, senior-dev (8f4bc3b)
+- [x] F6: Implement: instantiate `const sweeper = new ScratchSweeper({ getScratchDirAbs: () => path.join(pluginDirAbs, 'cast-log-scratch') })`; call `sweeper.sweep().catch(console.error)` (fire-and-forget). — S, senior-dev (8f4bc3b)
+- [x] F7: Write failing test: the `ForgeImprinter` constructor receives `castSettingsPath` equal to the value returned by `materializer.run()`. — S, senior-dev (8f4bc3b)
+- [x] F8: Implement: pass `castSettingsPath: this.castSettingsPath` into `new ForgeImprinter({ … })`. — S, senior-dev (8f4bc3b)
+- [x] F9: Write failing test: the `CastDispatcher` constructor (inside `createDispatcher`) receives the same `castSettingsPath`. — S, senior-dev (8f4bc3b)
+- [x] F10: Implement: pass `castSettingsPath: this.castSettingsPath` into `new CastDispatcher({ … })` inside `createDispatcher`. — S, senior-dev (8f4bc3b)
+- [x] F11: Write failing test: when the injected `HookMaterializer.run` rejects, `onload` resolves and the existing "command callback constructs CommandPopup with..." test still passes (regression). Strategy: spy on the constructor, mock its `run` to reject. — S, senior-dev (8f4bc3b)
+- [x] F12: Confirm F11 passes given F4's `try/catch`. — S, senior-dev (8f4bc3b)
 
 ### G. `CastDispatcher` plumbing (`cast/CastDispatcher.ts`)
 
@@ -604,10 +604,10 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/CastDispatcher.test.ts` (extended) proves: (1) `castSettingsPath` is required in deps (compile-time guarantee); (2) every successful `dispatch` calls `runner.run` with `castSettingsPath` matching the value passed at construction; (3) existing tests (no-active-note bail, recordCasted, recordError) continue to pass with the new field.
 
 **junior-dev**
-- [ ] G1: Extend `CastDispatcherDeps` with required `castSettingsPath: string`. Fix every existing `CastDispatcher` test to pass a stub value `'test-settings.json'`. Existing tests will fail to compile — mechanical fix. — S, junior-dev
-- [ ] G2: Write failing test: a successful dispatch calls `runner.run` with `castSettingsPath: 'test-settings.json'` in the input. — S, junior-dev
-- [ ] G3: Implement: store `this.#castSettingsPath = deps.castSettingsPath` in the constructor; pass it into the `runner.run({ …, castSettingsPath: this.#castSettingsPath })` call. — S, junior-dev
-- [ ] G4: Edge-case test: when the no-active-note guard bails, `runner.run` is not called (regression — confirms G3 didn't accidentally move the runner call above the guard). — S, junior-dev
+- [x] G1: Extend `CastDispatcherDeps` with required `castSettingsPath: string`. Fix every existing `CastDispatcher` test to pass a stub value `'test-settings.json'`. Existing tests will fail to compile — mechanical fix. — S, junior-dev
+- [x] G2: Write failing test: a successful dispatch calls `runner.run` with `castSettingsPath: 'test-settings.json'` in the input. — S, junior-dev
+- [x] G3: Implement: store `this.#castSettingsPath = deps.castSettingsPath` in the constructor; pass it into the `runner.run({ …, castSettingsPath: this.#castSettingsPath })` call. — S, junior-dev
+- [x] G4: Edge-case test: when the no-active-note guard bails, `runner.run` is not called (regression — confirms G3 didn't accidentally move the runner call above the guard). — S, junior-dev
 
 ### H. `ForgeImprinter` plumbing (`forge/ForgeImprinter.ts`)
 
@@ -625,10 +625,10 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/ForgeImprinter.test.ts` (extended) proves: (1) required field on deps; (2) a valid imprint reaches `castRunner.run` with `castSettingsPath` matching the constructor value; (3) the empty-name guard short-circuits before any runner call (regression).
 
 **junior-dev**
-- [ ] H1: Extend `ForgeImprinterDeps` with required `castSettingsPath: string`. Fix every existing `ForgeImprinter` test fixture to pass `'test-settings.json'`. — S, junior-dev
-- [ ] H2: Write failing test: a valid `imprint(...)` causes `castRunner.run` to be called with `castSettingsPath: 'test-settings.json'`. — S, junior-dev
-- [ ] H3: Implement: store on the instance; pass into `runCasting`'s `castRunner.run({ …, castSettingsPath })` call. — S, junior-dev
-- [ ] H4: Edge-case test: empty-name guard — `castRunner.run` is not called (regression). — S, junior-dev
+- [x] H1: Extend `ForgeImprinterDeps` with required `castSettingsPath: string`. Fix every existing `ForgeImprinter` test fixture to pass `'test-settings.json'`. — S, junior-dev
+- [x] H2: Write failing test: a valid `imprint(...)` causes `castRunner.run` to be called with `castSettingsPath: 'test-settings.json'`. — S, junior-dev
+- [x] H3: Implement: store on the instance; pass into `runCasting`'s `castRunner.run({ …, castSettingsPath })` call. — S, junior-dev
+- [x] H4: Edge-case test: empty-name guard — `castRunner.run` is not called (regression). — S, junior-dev
 
 ### I. Remove "Progress Tracking" instructional sentence from `buildMetaSpell`
 
@@ -646,9 +646,9 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `tests/buildMetaSpell.test.ts` (extended) proves: (1) the returned meta-spell string no longer contains the substring `'Progress Tracking'`; (2) the rest of the wrapper instructions are intact (Execution Mode callout, MCP Tools section, `%%` block fences).
 
 **junior-dev**
-- [ ] I1: Write failing test in `tests/buildMetaSpell.test.ts`: `expect(buildMetaSpell({...})).not.toContain('Progress Tracking')`. — S, junior-dev
-- [ ] I2: Implement: remove the `\`## Progress Tracking\` (...)` fragment from the bullet in `buildMetaSpell.ts` step 2. Leave the surrounding `Execution Mode` and `MCP Tools` mentions intact. — S, junior-dev
-- [ ] I3: Regression test: the wrapper instructions still mention `'Execution Mode'` and `'MCP Tools'`. — S, junior-dev
+- [x] I1: Write failing test in `tests/buildMetaSpell.test.ts`: `expect(buildMetaSpell({...})).not.toContain('Progress Tracking')`. — S, junior-dev
+- [x] I2: Implement: remove the `\`## Progress Tracking\` (...)` fragment from the bullet in `buildMetaSpell.ts` step 2. Leave the surrounding `Execution Mode` and `MCP Tools` mentions intact. — S, junior-dev
+- [x] I3: Regression test: the wrapper instructions still mention `'Execution Mode'` and `'MCP Tools'`. — S, junior-dev
 
 ### J. Cleanup + lint + integration suite
 
@@ -663,9 +663,9 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 **Section-level Red criterion:** `npm run lint` exits 0; `npm test` exits 0; `npm run test:integration` exits 0; `git diff --stat` lists changes only in the files in the Components table plus their tests.
 
 **junior-dev**
-- [ ] J1: Run `npm run lint`; fix any new violations. Likely targets: `no-nodejs-modules` eslint-disable comments in `HookMaterializer.ts`, `ScratchSweeper.ts`, `hookScripts.integration.test.ts` (same convention as `store.ts`). — S, junior-dev
-- [ ] J2: Run `npm test`; confirm 0 failures, 0 unintentionally-skipped tests. Confirm the new shell-integration tests run by default (no `it.skip`). — S, junior-dev
-- [ ] J3: Run `npm run test:integration`; confirm the existing happy-dom UI integration tests still pass. They construct `CastDispatcher`/`ForgeImprinter` indirectly via `main.ts.onload`; the new `castSettingsPath` field flows through the existing wiring and should not break the harness. If a harness fixture builds the dispatcher directly, update it to pass `castSettingsPath: 'test-settings.json'`. — M, junior-dev
+- [x] J1: Run `npm run lint`; fix any new violations. Likely targets: `no-nodejs-modules` eslint-disable comments in `HookMaterializer.ts`, `ScratchSweeper.ts`, `hookScripts.integration.test.ts` (same convention as `store.ts`). — S, junior-dev
+- [x] J2: Run `npm test`; confirm 0 failures, 0 unintentionally-skipped tests. Confirm the new shell-integration tests run by default (no `it.skip`). — S, junior-dev
+- [x] J3: Run `npm run test:integration`; confirm the existing happy-dom UI integration tests still pass. They construct `CastDispatcher`/`ForgeImprinter` indirectly via `main.ts.onload`; the new `castSettingsPath` field flows through the existing wiring and should not break the harness. If a harness fixture builds the dispatcher directly, update it to pass `castSettingsPath: 'test-settings.json'`. — M, junior-dev
 
 ## Overall effort summary
 
@@ -688,3 +688,17 @@ The JSON is rendered via `JSON.stringify(obj, null, 2)` for readability and stab
 - **Plan-time Context7 verification** for hook payload shape and `--settings` flag: confirmed at plan time. Re-verify during implementation only if a fixture test fails for an unexpected reason.
 - **Mutation testing** (`/mutate`) should target `hookScripts.ts` renderers and `ScratchSweeper.sweep` after this lands.
 - **Live-spec** after `/done` should describe: the hook contract, the four files that materialise, how `affectedFiles` is captured, and the known MCP gap.
+
+### R. Review fixes (post-review remediation)
+
+**junior-dev**
+- [x] R6: In `tests/main.test.ts`, mock `HookMaterializer.run` for all existing `onload()` tests that don't already spy on it (the ~10 tests that predate Section F). Add a `beforeEach` spy on `HookMaterializerModule.HookMaterializer` that stubs `.run` to resolve with `'/test/vault/.obsidian/plugins/test/settings.json'`. Goal: eliminate 15 spurious `console.error('HookMaterializer failed')` lines per run. Pattern: mirror the existing F-section spy style already in the file. — M, junior-dev (6bd9c80)
+
+**senior-dev**
+- [x] R1: Write failing test in `tests/castLog/hookScripts.test.ts`: `renderSessionStartScript({ logPathAbs: '/path/with"quote/log.jsonl' })` contains the path literally with the double-quote preserved and does not break shell assignment syntax. Same for `renderPostToolUseScript` and `renderStopScript`. — S, senior-dev
+- [x] R2: Fix `hookScripts.ts` renderers to escape double-quotes in all path args before shell interpolation (e.g. `const safe = (p: string) => p.replace(/"/g, '\\"');`), so the rendered assignments remain syntactically valid when the path contains `"`. Make R1 green. — S, senior-dev
+- [x] R3: In `renderStopScript`, replace `|| echo "[]"` with `|| printf '%s' '[]'` to match the plan's `printf`-only contract for all shell output. — S, senior-dev
+- [x] R4: Write failing test in `tests/castLog/ScratchSweeper.test.ts`: `stat()` rejecting for the first file does not prevent `unlink()` from being called for a second qualifying file. — S, senior-dev (8ee3a96)
+- [x] R5: Fix `ScratchSweeper.sweep()`: wrap the `stat + unlink` block together in a per-file `try/catch` that logs and continues, matching the "continues on per-file failures" plan invariant. Make R4 green. — S, senior-dev (8ee3a96)
+
+reviewed @ 225abff

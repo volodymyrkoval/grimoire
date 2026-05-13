@@ -4,6 +4,7 @@ interface BaseCastArgsInput {
   modelId: string;
   effort: Effort | null;
   vaultMountPath: string;
+  castSettingsPath: string;
 }
 
 interface InlineCastArgsInput extends BaseCastArgsInput {
@@ -40,6 +41,9 @@ export function buildCastArgs(input: CastArgsInput): string[] {
   if (input.vaultMountPath !== "") {
     args.push("--add-dir", input.vaultMountPath);
   }
+
+  // --settings is always emitted; empty value lets Claude Code fall back to user settings.
+  args.push("--settings", input.castSettingsPath);
 
   return args;
 }

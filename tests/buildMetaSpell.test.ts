@@ -156,4 +156,46 @@ describe('buildMetaSpell', () => {
     });
     expect(output).toContain('[my-spell-tag]');
   });
+
+  it('does not contain Progress Tracking in the output', () => {
+    const output = buildMetaSpell({
+      description: 'test',
+      name: 'test-spell',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+      executeOnNote: true,
+    });
+    expect(output).not.toContain('Progress Tracking');
+  });
+
+  it('still contains Execution Mode callout', () => {
+    const output = buildMetaSpell({
+      description: 'test',
+      name: 'test-spell',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+      executeOnNote: true,
+    });
+    expect(output).toContain('Execution Mode');
+  });
+
+  it('still contains MCP Tools section', () => {
+    const output = buildMetaSpell({
+      description: 'test',
+      name: 'test-spell',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+      executeOnNote: true,
+    });
+    expect(output).toContain('MCP Tools');
+  });
 });

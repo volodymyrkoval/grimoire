@@ -45,7 +45,7 @@ Then execute in order:
 1. Generate a complete, actionable spell body that fulfils the description. Write it as a clear Claude Code system prompt in imperative style.
 
 2. Wrap the spell body in the standard Spell Wrapper structure — the same \`%%\` block format as this file:
-   - Opening \`%%\` block containing: \`## Execution Mode\` (with the IMMEDIATE EXECUTION — NO QUESTIONS danger callout), \`## Progress Tracking\` (with the first/last-action important callout — include verbatim; a future cast pipeline will supply CAST_ID), and \`## MCP Tools\` (prefer Obsidian MCP, fall back to VAULT_MOUNT_PATH filesystem)
+   - Opening \`%%\` block containing: \`## Execution Mode\` (with the IMMEDIATE EXECUTION — NO QUESTIONS danger callout), and \`## MCP Tools\` (prefer Obsidian MCP, fall back to VAULT_MOUNT_PATH filesystem)
    - A \`---\` separator
    - The spell body
    - A \`---\` separator

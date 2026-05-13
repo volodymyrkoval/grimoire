@@ -1,4 +1,6 @@
 import { Plugin, Notice, FileSystemAdapter } from 'obsidian';
+// eslint-disable-next-line obsidianmd/no-nodejs-modules
+import * as path from 'node:path';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
@@ -10,12 +12,15 @@ import { ForgeImprinter } from './forge/ForgeImprinter';
 import { CastRunner } from './cast/CastRunner';
 import { CastDispatcher } from './cast/CastDispatcher';
 import { CastLogStore } from './castLog/store';
+import { HookMaterializer } from './castLog/HookMaterializer';
+import { ScratchSweeper } from './castLog/ScratchSweeper';
 
 export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
   private castLogStore!: CastLogStore;
+  private castSettingsPath!: string;
 
   async onload(): Promise<void> {
     await this.initCore();
@@ -23,11 +28,32 @@ export default class GrimoirePlugin extends Plugin {
       getBasePath: () => (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
       pluginDir: this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`,
     });
+
+    const basePath = (this.app.vault.adapter as FileSystemAdapter).getBasePath();
+    const pluginDirAbs = path.join(basePath, this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`);
+
+    const materializer = new HookMaterializer({
+      getPluginDirAbs: () => pluginDirAbs,
+      getLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-local.jsonl'),
+    });
+    try {
+      this.castSettingsPath = await materializer.run();
+    } catch (e) {
+      console.error('HookMaterializer failed', e);
+      this.castSettingsPath = path.join(pluginDirAbs, 'settings.json');
+    }
+
+    const sweeper = new ScratchSweeper({
+      getScratchDirAbs: () => path.join(pluginDirAbs, 'cast-log-scratch'),
+    });
+    sweeper.sweep().catch(console.error);
+
     const sessionMap = new OptionsSessionMap();
     const imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
       castRunner: new CastRunner(),
       castLogStore: this.castLogStore,
+      castSettingsPath: this.castSettingsPath,
     });
     this.registerUI(sessionMap, imprinter);
   }
@@ -68,6 +94,7 @@ export default class GrimoirePlugin extends Plugin {
       close: () => closeRef.close(),
       castRunner: new CastRunner(),
       castLogStore: this.castLogStore,
+      castSettingsPath: this.castSettingsPath,
     });
   }
 

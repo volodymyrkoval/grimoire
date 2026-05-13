@@ -8,6 +8,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      castSettingsPath: 'test-settings.json',
     });
     expect(args).toEqual([
       '-p',
@@ -16,6 +17,8 @@ describe('buildCastArgs', () => {
       'claude-sonnet-4-5',
       '--permission-mode',
       'dontAsk',
+      '--settings',
+      'test-settings.json',
     ]);
   });
 
@@ -26,6 +29,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      castSettingsPath: 'test-settings.json',
     });
     expect(args).toEqual([
       '--system-prompt-file',
@@ -36,6 +40,8 @@ describe('buildCastArgs', () => {
       'claude-sonnet-4-5',
       '--permission-mode',
       'dontAsk',
+      '--settings',
+      'test-settings.json',
     ]);
   });
 
@@ -45,6 +51,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: 'high',
       vaultMountPath: '',
+      castSettingsPath: 'test-settings.json',
     });
     expect(args).toContain('--effort');
     expect(args).toContain('high');
@@ -56,6 +63,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      castSettingsPath: 'test-settings.json',
     });
     expect(args).not.toContain('--effort');
   });
@@ -66,6 +74,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '/vault/mount',
+      castSettingsPath: 'test-settings.json',
     });
     expect(args).toContain('--add-dir');
     expect(args).toContain('/vault/mount');
@@ -77,6 +86,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      castSettingsPath: 'test-settings.json',
     });
     expect(args).not.toContain('--add-dir');
   });
@@ -87,10 +97,37 @@ describe('buildCastArgs', () => {
       modelId: 'claude-opus-4-5',
       effort: 'xhigh',
       vaultMountPath: '/vault',
+      castSettingsPath: 'test-settings.json',
     });
     expect(args).toContain('--effort');
     expect(args).toContain('xhigh');
     expect(args).toContain('--add-dir');
     expect(args).toContain('/vault');
+  });
+
+  it('includes --settings flag with castSettingsPath', () => {
+    const args = buildCastArgs({
+      metaSpell: 'my spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '',
+      castSettingsPath: '/abs/settings.json',
+    });
+    const settingsIndex = args.indexOf('--settings');
+    expect(settingsIndex).toBeGreaterThanOrEqual(0);
+    expect(args[settingsIndex + 1]).toBe('/abs/settings.json');
+  });
+
+  it('includes --settings with empty castSettingsPath to let Claude Code fall back to user settings', () => {
+    const args = buildCastArgs({
+      metaSpell: 'my spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '',
+      castSettingsPath: '',
+    });
+    const settingsIndex = args.indexOf('--settings');
+    expect(settingsIndex).toBeGreaterThanOrEqual(0);
+    expect(args[settingsIndex + 1]).toBe('');
   });
 });

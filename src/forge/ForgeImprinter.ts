@@ -12,6 +12,7 @@ export interface ForgeImprinterDeps {
   notify: (msg: string) => void;
   castRunner: CastRunner;
   castLogStore: CastLogStore;
+  castSettingsPath: string;
   generateId?: () => string;
 }
 
@@ -19,12 +20,14 @@ export class ForgeImprinter {
   readonly #notify: (msg: string) => void;
   readonly #castRunner: CastRunner;
   readonly #castLogStore: CastLogStore;
+  readonly #castSettingsPath: string;
   readonly #generateId: () => string;
 
   constructor(deps: ForgeImprinterDeps) {
     this.#notify = deps.notify;
     this.#castRunner = deps.castRunner;
     this.#castLogStore = deps.castLogStore;
+    this.#castSettingsPath = deps.castSettingsPath;
     this.#generateId = deps.generateId ?? (() => randomUUID());
   }
 
@@ -73,6 +76,7 @@ export class ForgeImprinter {
         binaryPath: settings.binaryPath,
         cliCommand: settings.cliCommand,
         castId,
+        castSettingsPath: this.#castSettingsPath,
       },
       {
         onSuccess: () => {

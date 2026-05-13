@@ -23,6 +23,7 @@ export interface CastDispatcherDeps {
   castRunner?: CastRunner;
   spawner?: SpawnFn;
   castLogStore: CastLogStore;
+  castSettingsPath: string;
   generateId?: () => string;
 }
 
@@ -32,6 +33,7 @@ export class CastDispatcher {
   readonly #castRunner?: CastRunner;
   readonly #spawner?: SpawnFn;
   readonly #castLogStore: CastLogStore;
+  readonly #castSettingsPath: string;
   readonly #generateId: () => string;
 
   constructor(deps: CastDispatcherDeps) {
@@ -40,6 +42,7 @@ export class CastDispatcher {
     this.#castRunner = deps.castRunner;
     this.#spawner = deps.spawner;
     this.#castLogStore = deps.castLogStore;
+    this.#castSettingsPath = deps.castSettingsPath;
     this.#generateId = deps.generateId ?? (() => randomUUID());
   }
 
@@ -79,6 +82,7 @@ export class CastDispatcher {
         binaryPath: settings.binaryPath,
         cliCommand: settings.cliCommand,
         castId,
+        castSettingsPath: this.#castSettingsPath,
       },
       {
         onSuccess: () => this.#notify('Spell cast'),

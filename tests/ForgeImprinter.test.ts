@@ -40,6 +40,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       castRunner: stub,
       castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'test-settings.json',
     });
 
     imprinter.imprint(
@@ -76,6 +77,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       castRunner: stub,
       castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'test-settings.json',
     });
 
     imprinter.imprint(
@@ -110,6 +112,7 @@ describe('ForgeImprinter', () => {
       notify: vi.fn(),
       castRunner: stub,
       castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'test-settings.json',
     });
 
     imprinter.imprint(
@@ -145,6 +148,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       castRunner: stub,
       castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'test-settings.json',
     });
 
     imprinter.imprint(
@@ -180,6 +184,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       castRunner: stub,
       castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'test-settings.json',
     });
 
     imprinter.imprint(
@@ -215,6 +220,7 @@ describe('ForgeImprinter', () => {
       notify: vi.fn(),
       castRunner: stub,
       castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'test-settings.json',
     });
 
     imprinter.imprint(
@@ -255,6 +261,7 @@ describe('ForgeImprinter', () => {
       notify: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreMock,
+      castSettingsPath: 'test-settings.json',
     });
 
     imprinter.imprint(
@@ -293,6 +300,7 @@ describe('ForgeImprinter', () => {
       notify: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreMock,
+      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -338,6 +346,7 @@ describe('ForgeImprinter', () => {
       notify: vi.fn(),
       castRunner: stub,
       castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -378,6 +387,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       castRunner: stub,
       castLogStore: castLogStoreMock,
+      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -425,6 +435,7 @@ describe('ForgeImprinter', () => {
       notify: vi.fn(),
       castRunner: stub,
       castLogStore: castLogStoreMock,
+      castSettingsPath: 'test-settings.json',
       generateId: () => 'fixed-uuid',
     });
 
@@ -455,5 +466,40 @@ describe('ForgeImprinter', () => {
     expect(recordCastedFn).toHaveBeenCalledOnce();
     // recordError should never be called
     expect(recordErrorFn).not.toHaveBeenCalled();
+  });
+
+  it('castRunner.run receives castSettingsPath in its input', () => {
+    const { stub, getInput } = makeStubRunner();
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      castRunner: stub,
+      castLogStore: makeStubCastLogStore(),
+      castSettingsPath: 'my-settings.json',
+      generateId: () => 'fixed-uuid',
+    });
+
+    imprinter.imprint(
+      {
+        name: 'My Spell',
+        description: 'test',
+        model: 'claude-sonnet-4-5',
+        effort: null,
+        executeOnNote: true,
+      } as ForgeFormSnapshot,
+      {
+        vaultMountPath: '/vault',
+        spellTag: 'grimoire/spell',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        forgeOutputFolder: 'Spells/',
+        defaultModel: 'claude-sonnet-4-5',
+        defaultEffort: null,
+      } as GrimoireSettings,
+      vi.fn()
+    );
+
+    const input = getInput();
+    expect(input.castSettingsPath).toBe('my-settings.json');
   });
 });

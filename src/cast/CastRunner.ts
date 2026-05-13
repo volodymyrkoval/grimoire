@@ -10,6 +10,7 @@ interface BaseCastRunInput {
   binaryPath: string;
   cliCommand: string;
   castId: string;
+  castSettingsPath: string;
 }
 
 interface InlineCastRunInput extends BaseCastRunInput {
