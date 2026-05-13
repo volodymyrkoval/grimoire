@@ -35,7 +35,7 @@ Forge sentinel selected → CommandPopup.renderForgeSentinelDetail()
           ├── notify `Forging "<sanitised>"…`
           ├── close()                          // dismisses popup
           └── castRunner.run({ metaSpell, modelId, effort, vaultMountPath, castId, ... })
-                → CastSpawner.run({ binary, args: ["-p", metaSpell, "--model", id, ..., "--settings", castSettingsPath], env: { VAULT_MOUNT_PATH, CAST_ID }, cwd })
+                → CastSpawner.run({ binary, args: ["-p", metaSpell, "--model", id, ...], env: { VAULT_MOUNT_PATH, CAST_ID }, cwd })
                 → exit 0  → notify `Spell "<sanitised>" forged`
                 → exit !=0 / spawn error → castLogStore.recordError({ castId, message }) + notify `Forge failed: <msg>`
   → CommandPopup.exitDetail() also runs after imprintAction returns (idempotent)

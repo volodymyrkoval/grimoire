@@ -35,7 +35,7 @@ Each dispatch generates a UUID via `crypto.randomUUID`, threads it through the r
 **Out:**
 
 - `in-progress` / `done` writes — delivered by the sibling iteration `cast-progress-events` via Claude Code hook scripts, written from outside the plugin process.
-- Hook scripts, `settings.json` materialisation, settings-flag injection — same sibling iteration.
+- Hook scripts (materialised on plugin load) and the manual `.claude/settings.local.json` wiring that activates them — same sibling iteration.
 - Cast Log reader, parser, UI panel — no consumer of the JSONL file yet; deferred until the reader pitch.
 - `cast-log-remote.jsonl` — reserved name; not produced until remote casting lands.
 - Timeout-based stale detection, retention/rotation, telemetry — premature; not justified by any current use case.
