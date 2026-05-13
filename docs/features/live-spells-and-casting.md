@@ -25,7 +25,8 @@ main.ts.onload → "Open Grimoire" command callback fires:
   closeRef = { close: () => {} }
   dispatcher = new CastDispatcher({ notify: msg => new Notice(msg),
                                     close: () => closeRef.close(),
-                                    castRunner: new CastRunner() })
+                                    castRunner: new CastRunner(),
+                                    castLogStore: this.castLogStore })
   popup = new CommandPopup({ ..., castAction: spell => dispatcher.dispatch({
       spell,
       model: settings.defaultModel,
@@ -45,14 +46,17 @@ CommandPopup (Spells tab):
   → CommandPopup constructor handler: this.#castAction(spell)
   → dispatcher.dispatch(input)
       ├── if (executeOnNote && activeFilePath === null) → notify "Open a note to cast against" + close + return
+      ├── castId = generateId()                    // see cast-log-foundation
+      ├── castLogStore.recordCasted({ castId, … }) // fire-and-forget
       ├── userPrompt = "Execute this spell against the note at `<vaultMountPath>/<activeFilePath>`."
       │                (when executeOnNote=false: "Proceed with the execution according to the instructions")
       ├── notify `Casting '<spell.name>'…`
       ├── close()                                   // dismisses popup
-      └── runner.run({ systemPromptFile: `<vaultMountPath>/<spell.path>`, userPrompt, modelId, effort, ... })
+      └── runner.run({ systemPromptFile: `<vaultMountPath>/<spell.path>`, userPrompt, modelId, effort, castId, ... })
             → claude --system-prompt-file <path> -p <userPrompt> --model <id> [--effort …] [--add-dir …]
+            → env includes CAST_ID
             → exit 0  → notify "Spell cast"
-            → exit !=0 / spawn error → notify "Cast failed: <msg>"
+            → exit !=0 / spawn error → castLogStore.recordError({ castId, message }) + notify "Cast failed: <msg>"
 ```
 
 The settings closure dereferences `this.data.settings` and `this.app.workspace.getActiveFile()` on every cast — settings edits and active-file changes both take effect on the next dispatch with no popup re-open.

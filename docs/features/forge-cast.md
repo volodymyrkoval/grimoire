@@ -29,13 +29,15 @@ Forge sentinel selected → CommandPopup.renderForgeSentinelDetail()
   → imprintAction(snapshot)  // closure built in main.ts
       → ForgeImprinter.imprint(snapshot, settings, close)
           ├── sanitiseSpellName → "" ? notify "invalid" + close + return
+          ├── castId = generateId()           // see cast-log-foundation
+          ├── castLogStore.recordCasted({ castId, spellPath: "<forge>", … })   // fire-and-forget
           ├── buildMetaSpell({ ..., spellTag, forgeOutputFolder, vaultMountPath, executeOnNote })
           ├── notify `Forging "<sanitised>"…`
           ├── close()                          // dismisses popup
-          └── castRunner.run({ metaSpell, modelId, effort, vaultMountPath, ... })
-                → CastSpawner.run({ binary, args: ["-p", metaSpell, "--model", id, ...], env: { VAULT_MOUNT_PATH }, cwd })
+          └── castRunner.run({ metaSpell, modelId, effort, vaultMountPath, castId, ... })
+                → CastSpawner.run({ binary, args: ["-p", metaSpell, "--model", id, ...], env: { VAULT_MOUNT_PATH, CAST_ID }, cwd })
                 → exit 0  → notify `Spell "<sanitised>" forged`
-                → exit !=0 / spawn error → notify `Forge failed: <msg>`
+                → exit !=0 / spawn error → castLogStore.recordError({ castId, message }) + notify `Forge failed: <msg>`
   → CommandPopup.exitDetail() also runs after imprintAction returns (idempotent)
 ```
 
