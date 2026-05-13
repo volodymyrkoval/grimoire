@@ -274,4 +274,73 @@ describe('GrimoirePlugin', () => {
 
     dispatchSpy.mockRestore();
   });
+
+  it('onload invokes new CastLogStore exactly once with getBasePath and pluginDir', async () => {
+    const CastLogStoreModule = await import('../src/castLog/store');
+    const OriginalStore = CastLogStoreModule.CastLogStore;
+    const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
+      return new OriginalStore(deps);
+    });
+
+    await plugin.onload();
+
+    expect(storeSpy).toHaveBeenCalledTimes(1);
+    expect(storeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        getBasePath: expect.any(Function),
+        pluginDir: expect.any(String),
+      })
+    );
+
+    storeSpy.mockRestore();
+  });
+
+  it('ForgeImprinter constructor receives the same castLogStore instance', async () => {
+    const CastLogStoreModule = await import('../src/castLog/store');
+    const OriginalStore = CastLogStoreModule.CastLogStore;
+    const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
+      return new OriginalStore(deps);
+    });
+
+    const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
+    const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
+    const imprintSpy = vi.spyOn(ForgeImprinterModule, 'ForgeImprinter').mockImplementation((deps: any) => {
+      return new OriginalForgeImprinter(deps);
+    });
+
+    await plugin.onload();
+
+    expect(imprintSpy).toHaveBeenCalledOnce();
+    expect(imprintSpy.mock.calls[0][0].castLogStore).toBe(storeSpy.mock.results[0].value);
+
+    storeSpy.mockRestore();
+    imprintSpy.mockRestore();
+  });
+
+  it('CastDispatcher constructor receives the same castLogStore instance', async () => {
+    const CastLogStoreModule = await import('../src/castLog/store');
+    const OriginalStore = CastLogStoreModule.CastLogStore;
+    const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
+      return new OriginalStore(deps);
+    });
+
+    const CastDispatcherModule = await import('../src/cast/CastDispatcher');
+    const OriginalDispatcher = CastDispatcherModule.CastDispatcher;
+    const dispatcherSpy = vi.spyOn(CastDispatcherModule, 'CastDispatcher').mockImplementation((deps: any) => {
+      return new OriginalDispatcher(deps);
+    });
+
+    await plugin.onload();
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-popup'
+    );
+    commandCall![0].callback();
+
+    expect(dispatcherSpy).toHaveBeenCalledOnce();
+    expect(dispatcherSpy.mock.calls[0][0].castLogStore).toBe(storeSpy.mock.results[0].value);
+
+    storeSpy.mockRestore();
+    dispatcherSpy.mockRestore();
+  });
 });

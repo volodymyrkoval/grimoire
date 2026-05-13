@@ -9,6 +9,7 @@ interface BaseCastRunInput {
   vaultMountPath: string;
   binaryPath: string;
   cliCommand: string;
+  castId: string;
 }
 
 interface InlineCastRunInput extends BaseCastRunInput {
@@ -53,7 +54,8 @@ export class CastRunner {
     void this.#castSpawner.run({
       binary,
       args,
-      env: { VAULT_MOUNT_PATH: input.vaultMountPath },
+      // CAST_ID is opaque to the runner; producers guarantee uniqueness
+      env: { VAULT_MOUNT_PATH: input.vaultMountPath, CAST_ID: input.castId },
       cwd: input.vaultMountPath,
     })
       .then(this.onCastExit(callbacks))
@@ -79,7 +81,7 @@ export class CastRunner {
 
   private getCastArgs(input: CastRunInput) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { binaryPath, cliCommand, ...castArgsInput } = input;
+    const { binaryPath, cliCommand, castId: _castId, ...castArgsInput } = input;
     return buildCastArgs(castArgsInput);
   }
 

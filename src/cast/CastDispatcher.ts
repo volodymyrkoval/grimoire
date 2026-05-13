@@ -1,5 +1,8 @@
+// eslint-disable-next-line obsidianmd/no-nodejs-modules
+import { randomUUID } from 'node:crypto';
 import { type Spell } from '../domain/spells/Spell';
 import { type Effort, type GrimoireSettings } from '../domain/settings/Settings';
+import { type CastLogStore } from '../castLog/store';
 import { CastRunner } from './CastRunner';
 import { type SpawnFn } from './spawnCast';
 
@@ -19,6 +22,8 @@ export interface CastDispatcherDeps {
   close: () => void;
   castRunner?: CastRunner;
   spawner?: SpawnFn;
+  castLogStore: CastLogStore;
+  generateId?: () => string;
 }
 
 export class CastDispatcher {
@@ -26,12 +31,16 @@ export class CastDispatcher {
   readonly #close: () => void;
   readonly #castRunner?: CastRunner;
   readonly #spawner?: SpawnFn;
+  readonly #castLogStore: CastLogStore;
+  readonly #generateId: () => string;
 
   constructor(deps: CastDispatcherDeps) {
     this.#notify = deps.notify;
     this.#close = deps.close;
     this.#castRunner = deps.castRunner;
     this.#spawner = deps.spawner;
+    this.#castLogStore = deps.castLogStore;
+    this.#generateId = deps.generateId ?? (() => randomUUID());
   }
 
   dispatch(input: CastDispatchInput): void {
@@ -42,6 +51,17 @@ export class CastDispatcher {
       this.#close();
       return;
     }
+
+    const castId = this.#generateId();
+    this.#castLogStore.recordCasted({
+      castId,
+      spellPath: spell.path,
+      model,
+      effort,
+      contextNotes: [...contextNotePaths],
+      followUp,
+      executeOnNote: input.executeOnNote,
+    }).catch(console.error);
 
     const userPrompt = this.#buildUserPrompt(input.executeOnNote, settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
 
@@ -58,10 +78,14 @@ export class CastDispatcher {
         vaultMountPath: settings.vaultMountPath,
         binaryPath: settings.binaryPath,
         cliCommand: settings.cliCommand,
+        castId,
       },
       {
         onSuccess: () => this.#notify('Spell cast'),
-        onFailure: (msg) => this.#notify('Cast failed: ' + msg),
+        onFailure: (msg) => {
+          this.#castLogStore.recordError({ castId, message: msg }).catch(console.error);
+          this.#notify('Cast failed: ' + msg);
+        },
       }
     );
   }

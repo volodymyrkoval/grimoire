@@ -33,7 +33,7 @@ describe('tab navigation', () => {
     h.clickTab('spells');
 
     expect(h.activeTabId()).toBe('spells');
-    expect(h.selectedRow()?.textContent).toBe('Banishment Hex');
+    expect(h.selectedRowName()).toBe('Banishment Hex');
   });
 
 });

@@ -1,4 +1,4 @@
-import { Plugin, Notice } from 'obsidian';
+import { Plugin, Notice, FileSystemAdapter } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
@@ -9,18 +9,25 @@ import { CommandPopup } from './ui/CommandPopup';
 import { ForgeImprinter } from './forge/ForgeImprinter';
 import { CastRunner } from './cast/CastRunner';
 import { CastDispatcher } from './cast/CastDispatcher';
+import { CastLogStore } from './castLog/store';
 
 export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
+  private castLogStore!: CastLogStore;
 
   async onload(): Promise<void> {
     await this.initCore();
+    this.castLogStore = new CastLogStore({
+      getBasePath: () => (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
+      pluginDir: this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`,
+    });
     const sessionMap = new OptionsSessionMap();
     const imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
       castRunner: new CastRunner(),
+      castLogStore: this.castLogStore,
     });
     this.registerUI(sessionMap, imprinter);
   }
@@ -60,6 +67,7 @@ export default class GrimoirePlugin extends Plugin {
       notify: (msg) => { new Notice(msg); },
       close: () => closeRef.close(),
       castRunner: new CastRunner(),
+      castLogStore: this.castLogStore,
     });
   }
 

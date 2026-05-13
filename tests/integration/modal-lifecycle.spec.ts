@@ -22,7 +22,7 @@ describe('modal lifecycle', () => {
 
     expect(h.activeTabId()).toBe('spells');
     expect(h.searchInput().value).toBe('');
-    expect(h.selectedRow()?.textContent).toBe('Banishment Hex');
+    expect(h.selectedRowName()).toBe('Banishment Hex');
   });
 
   it('F6: close from search phase empties contentEl via onClose()', () => {

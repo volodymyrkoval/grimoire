@@ -7,6 +7,7 @@ export class Workspace {
 export class App {
   vault = {
     getMarkdownFiles: vi.fn<() => any[]>(() => []),
+    adapter: new FileSystemAdapter(),
   };
   metadataCache = {
     getFileCache: vi.fn<(file: any) => any>(() => null),
@@ -136,6 +137,7 @@ export function sortSearchResults(results: Array<{ match: { score: number } }>):
 
 export class Plugin {
   readonly app: App;
+  readonly manifest = { dir: '.obsidian/plugins/test' };
   loadData = vi.fn(async () => undefined);
   saveData = vi.fn(async () => {});
   addCommand = vi.fn();

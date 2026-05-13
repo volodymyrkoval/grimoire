@@ -72,6 +72,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       callbacks
     );
@@ -98,6 +99,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       callbacks
     );
@@ -125,6 +127,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       callbacks
     );
@@ -148,6 +151,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/opt/bin/claude',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -166,6 +170,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -184,11 +189,31 @@ describe('CastRunner', () => {
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
 
     expect(getOptions().env.VAULT_MOUNT_PATH).toBe('/my/vault');
+  });
+
+  it('passes CAST_ID in env to spawner', () => {
+    const { runner, getOptions } = makeRunnerWithFakeSpawn();
+
+    runner.run(
+      {
+        metaSpell: 'my spell',
+        modelId: 'claude-sonnet-4-5',
+        effort: null,
+        vaultMountPath: '/my/vault',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        castId: 'abc123',
+      },
+      { onSuccess: () => {}, onFailure: () => {} }
+    );
+
+    expect(getOptions().env.CAST_ID).toBe('abc123');
   });
 
   it('passes vaultMountPath as cwd to spawner', () => {
@@ -202,6 +227,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );
@@ -220,6 +246,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
     );

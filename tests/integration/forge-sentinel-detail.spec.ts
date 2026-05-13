@@ -81,7 +81,7 @@ describe('ForgeSentinelDetail component', () => {
     const { contentEl } = mountDetail({ onBack });
 
     const buttons = Array.from(contentEl.querySelectorAll('button'));
-    const backBtn = buttons.find((b) => b.textContent?.includes('← Back'));
+    const backBtn = buttons.find((b) => b.textContent?.includes('← back'));
     expect(backBtn).toBeTruthy();
 
     backBtn!.dispatchEvent(new Event('click'));
@@ -115,7 +115,9 @@ describe('ForgeSentinelDetail component', () => {
     // Effort row container must appear BEFORE the Submit button in the form
     const allFormChildren = Array.from(form.children);
     const effortIdx = allFormChildren.findIndex(el => el.querySelector('.grimoire-effort-row') !== null);
-    const submitIdx = allFormChildren.findIndex(el => el.matches('button[type="submit"]'));
+    const submitIdx = allFormChildren.findIndex(el =>
+      el.matches('button[type="submit"]') || el.querySelector('button[type="submit"]') !== null
+    );
     expect(effortIdx).toBeGreaterThanOrEqual(0);
     expect(effortIdx).toBeLessThan(submitIdx);
 
@@ -189,7 +191,9 @@ describe('ForgeSentinelDetail component', () => {
 
     const allChildren = Array.from(form.children);
     const effortIdx = allChildren.findIndex(el => el.querySelector?.('.grimoire-effort-row') !== null);
-    const submitIdx = allChildren.findIndex(el => el.matches?.('button[type="submit"]'));
+    const submitIdx = allChildren.findIndex(el =>
+      el.matches?.('button[type="submit"]') || el.querySelector?.('button[type="submit"]') !== null
+    );
     const eonIdx = allChildren.findIndex(el => el.querySelector?.('input[data-grimoire="execute-on-note"]') !== null);
 
     // eonCheckbox must NOT be placed between effortRow and Submit

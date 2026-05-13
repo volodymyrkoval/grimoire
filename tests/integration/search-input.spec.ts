@@ -12,7 +12,7 @@ describe('search input filtering and navigation', () => {
     h.type('protect');
 
     expect(h.visibleSpellRows().length).toBe(1);
-    expect(h.selectedRow()?.textContent).toBe('Protection Rune');
+    expect(h.selectedRowName()).toBe('Protection Rune');
   });
 
   it('F3: ArrowUp from index 0 wraps to last row; selectedRow is Refine', () => {

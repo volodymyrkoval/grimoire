@@ -280,8 +280,8 @@ interface BaseCastRunInput {
 **Section-level Red criterion:** `tests/castLog/types.test.ts` (a single type-assertion test) compiles and passes; importing `CastLogEvent` and narrowing by `stage` gives the correct variant shape with TypeScript's exhaustiveness checking.
 
 **junior-dev**
-- [ ] A1: Create `src/castLog/types.ts` exporting `CastLogStage`, `BaseEvent`, `CastedEvent`, `ErrorEvent`, `InProgressEvent`, `DoneEvent`, `CastLogEvent` (union), exactly as specified in Interfaces above. Import `Effort` from `../domain/settings/Settings`. Add `tests/castLog/types.test.ts` with one exhaustiveness check: a function `assertNever(e: never): never` and a switch on `event.stage` covering all four cases — compilation passes iff the union is exhaustive. — S, junior-dev
-- [ ] A2: Export `FORGE_SPELL_PATH = '<forge>' as const` from `src/castLog/types.ts`. Add a one-line test asserting `FORGE_SPELL_PATH === '<forge>'`. — S, junior-dev
+- [x] A1: Create `src/castLog/types.ts` exporting `CastLogStage`, `BaseEvent`, `CastedEvent`, `ErrorEvent`, `InProgressEvent`, `DoneEvent`, `CastLogEvent` (union), exactly as specified in Interfaces above. Import `Effort` from `../domain/settings/Settings`. Add `tests/castLog/types.test.ts` with one exhaustiveness check: a function `assertNever(e: never): never` and a switch on `event.stage` covering all four cases — compilation passes iff the union is exhaustive. — S, junior-dev (be382da)
+- [x] A2: Export `FORGE_SPELL_PATH = '<forge>' as const` from `src/castLog/types.ts`. Add a one-line test asserting `FORGE_SPELL_PATH === '<forge>'`. — S, junior-dev (be382da)
 
 ### B. `CastLogStore` (`castLog/store.ts`)
 
@@ -302,16 +302,16 @@ interface BaseCastRunInput {
 **Section-level Red criterion:** `tests/castLog/store.test.ts` proves: (1) `recordCasted` appends one line whose JSON parse equals the input with `stage:'casted'` and the stamped `ts`; (2) `recordError` does the same with `stage:'error'`; (3) path resolution happens lazily on first write (constructor does **not** call `getBasePath`); (4) the path passed to `appendLine` is `path.join(basePath, pluginDir, 'cast-log-local.jsonl')`; (5) the line ends with `\n`; (6) when `getBasePath` is called more than once across multiple writes, only the first call resolves (caching).
 
 **junior-dev**
-- [ ] B1: Write failing test in `tests/castLog/store.test.ts`: `recordCasted({ castId:'u1', spellPath:'s.md', model:'sonnet', effort:'medium', contextNotes:[], followUp:'', executeOnNote:true })` with stubbed `appendLine`, `getBasePath: () => '/vault'`, `pluginDir: '.obsidian/plugins/grimoire'`, `now: () => new Date('2026-01-01T00:00:00.000Z')` — assert one call to `appendLine`, path is `'/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl'`, line is `JSON.stringify({ stage:'casted', ts:'2026-01-01T00:00:00.000Z', castId:'u1', spellPath:'s.md', model:'sonnet', effort:'medium', contextNotes:[], followUp:'', executeOnNote:true }) + '\n'`. — S, junior-dev
-- [ ] B2: Implement `CastLogStore.recordCasted` to make B1 green: lazy path resolution cached in a private field, compose object with `stage:'casted'` and `ts:now().toISOString()` first (so they appear first in the line), then spread input, then `appendLine(path, JSON.stringify(event)+'\n')`. — S, junior-dev
-- [ ] B3: Write failing test: `recordError({ castId:'u1', message:'boom' })` — assert line is `JSON.stringify({ stage:'error', ts:'…', castId:'u1', message:'boom' }) + '\n'`. — S, junior-dev
-- [ ] B4: Implement `recordError` to make B3 green. — S, junior-dev
-- [ ] B5: Write failing test: constructor of `CastLogStore` does **not** invoke `getBasePath`. (Pass a spied `getBasePath = vi.fn(() => '/vault')`; `new CastLogStore({ getBasePath, pluginDir, … })`; assert `getBasePath` was not called.) — S, junior-dev
-- [ ] B6: Write failing test: two sequential `recordCasted` calls invoke `getBasePath` exactly once total (path is cached after first write). — S, junior-dev
-- [ ] B7: Confirm B5+B6 pass with the existing implementation (lazy + cached field); if not, fix the path-resolution helper. — S, junior-dev
-- [ ] B8: Write failing test: default `appendLine` (when not injected) is `fs/promises.appendFile`. Strategy: import `fs/promises` in the test, `vi.spyOn(fsPromises, 'appendFile')`, construct store without the port, call `recordCasted`, assert the spy was called with the expected path. (If module-mock complexity is high, accept this as a manual check and add a code comment instead — note the decision in the implementation commit message.) — M, junior-dev
-- [ ] B9: Default `now` is `() => new Date()` — assert with `vi.useFakeTimers().setSystemTime('2026-05-10T12:00:00.000Z')` that the stamped `ts` matches. — S, junior-dev
-- [ ] B10: Edge-case test: `recordCasted` with `followUp` and `executeOnNote` **omitted** (the forge shape) — assert the JSON line does not contain those keys. (`JSON.stringify` drops `undefined` values; ensure the implementation does not coerce them to `null` or `''`.) — S, junior-dev
+- [x] B1: Write failing test in `tests/castLog/store.test.ts`: `recordCasted({ castId:'u1', spellPath:'s.md', model:'sonnet', effort:'medium', contextNotes:[], followUp:'', executeOnNote:true })` with stubbed `appendLine`, `getBasePath: () => '/vault'`, `pluginDir: '.obsidian/plugins/grimoire'`, `now: () => new Date('2026-01-01T00:00:00.000Z')` — assert one call to `appendLine`, path is `'/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl'`, line is `JSON.stringify({ stage:'casted', ts:'2026-01-01T00:00:00.000Z', castId:'u1', spellPath:'s.md', model:'sonnet', effort:'medium', contextNotes:[], followUp:'', executeOnNote:true }) + '\n'`. — S, junior-dev (8903afd)
+- [x] B2: Implement `CastLogStore.recordCasted` to make B1 green: lazy path resolution cached in a private field, compose object with `stage:'casted'` and `ts:now().toISOString()` first (so they appear first in the line), then spread input, then `appendLine(path, JSON.stringify(event)+'\n')`. — S, junior-dev (8903afd)
+- [x] B3: Write failing test: `recordError({ castId:'u1', message:'boom' })` — assert line is `JSON.stringify({ stage:'error', ts:'…', castId:'u1', message:'boom' }) + '\n'`. — S, junior-dev (8903afd)
+- [x] B4: Implement `recordError` to make B3 green. — S, junior-dev (8903afd)
+- [x] B5: Write failing test: constructor of `CastLogStore` does **not** invoke `getBasePath`. (Pass a spied `getBasePath = vi.fn(() => '/vault')`; `new CastLogStore({ getBasePath, pluginDir, … })`; assert `getBasePath` was not called.) — S, junior-dev (8903afd)
+- [x] B6: Write failing test: two sequential `recordCasted` calls invoke `getBasePath` exactly once total (path is cached after first write). — S, junior-dev (8903afd)
+- [x] B7: Confirm B5+B6 pass with the existing implementation (lazy + cached field); if not, fix the path-resolution helper. — S, junior-dev (8903afd)
+- [x] B8: Write failing test: default `appendLine` (when not injected) is `fs/promises.appendFile`. Strategy: import `fs/promises` in the test, `vi.spyOn(fsPromises, 'appendFile')`, construct store without the port, call `recordCasted`, assert the spy was called with the expected path. (If module-mock complexity is high, accept this as a manual check and add a code comment instead — note the decision in the implementation commit message.) — M, junior-dev (8903afd)
+- [x] B9: Default `now` is `() => new Date()` — assert with `vi.useFakeTimers().setSystemTime('2026-05-10T12:00:00.000Z')` that the stamped `ts` matches. — S, junior-dev (8903afd)
+- [x] B10: Edge-case test: `recordCasted` with `followUp` and `executeOnNote` **omitted** (the forge shape) — assert the JSON line does not contain those keys. (`JSON.stringify` drops `undefined` values; ensure the implementation does not coerce them to `null` or `''`.) — S, junior-dev (8903afd)
 
 ### C. `CastDispatcher` integration (`cast/CastDispatcher.ts`)
 
@@ -334,17 +334,17 @@ interface BaseCastRunInput {
 **Section-level Red criterion:** `tests/CastDispatcher.test.ts` (extended) proves: (1) the no-active-note bail produces no `castLogStore.recordCasted` call; (2) a successful dispatch calls `recordCasted` exactly once with the expected shape; (3) `castId` from `generateId` is passed to `runner.run` input; (4) `onFailure` from the runner triggers exactly one `recordError({ castId, message })` then the existing `'Cast failed: …'` notify; (5) `onSuccess` writes nothing.
 
 **junior-dev**
-- [ ] C1: Extend `CastDispatcherDeps` with required `castLogStore: CastLogStore` and optional `generateId?: () => string`. Default `generateId` to `() => crypto.randomUUID()`. Existing tests will fail to compile — fix them by passing a `castLogStore` stub (`{ recordCasted: vi.fn(), recordError: vi.fn() } as unknown as CastLogStore`). — S, junior-dev
-- [ ] C2: Write failing test: when `activeFilePath === null && executeOnNote === true`, neither `recordCasted` nor `recordError` is called. (Extends the existing "Open a note to cast against" test.) — S, junior-dev
-- [ ] C3: Confirm C2 passes — current code path returns before any new behavior. — S, junior-dev
-- [ ] C4: Write failing test: a successful dispatch (live-cast, valid active file) calls `castLogStore.recordCasted` exactly once with `{ castId:<generated>, spellPath: spell.path, model, effort, contextNotes: [...input.contextNotePaths], followUp, executeOnNote }`. Inject `generateId: () => 'fixed-uuid'`. — S, junior-dev
-- [ ] C5: Implement: after the no-active-note guard, before the `Casting '<name>'…` notify, call `const castId = this.#generateId();` then `this.#castLogStore.recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote }).catch(console.error);`. — S, junior-dev
-- [ ] C6: Write failing test: `runner.run` is called with `castId` included in the input. — S, junior-dev
-- [ ] C7: Implement: thread `castId` into `runner.run({ …, castId }, callbacks)`. (This depends on F1 having added `castId` to `CastRunInput`.) — S, junior-dev (depends on F1)
-- [ ] C8: Write failing test: when `runner.run` invokes `onFailure('boom')`, `recordError` is called once with `{ castId:'fixed-uuid', message:'boom' }` **and** notify is still called with `'Cast failed: boom'`. — S, junior-dev
-- [ ] C9: Implement: in `dispatch`, wrap the `onFailure` callback to call `this.#castLogStore.recordError({ castId, message: msg }).catch(console.error)` before the existing notify. — S, junior-dev
-- [ ] C10: Write failing test: `onSuccess` produces **no** log write. (`recordCasted` was called once on dispatch; `recordError` was never called.) — S, junior-dev
-- [ ] C11: Confirm C10 passes (no implementation should write on success). — S, junior-dev
+- [x] C1: Extend `CastDispatcherDeps` with required `castLogStore: CastLogStore` and optional `generateId?: () => string`. Default `generateId` to `() => crypto.randomUUID()`. Existing tests will fail to compile — fix them by passing a `castLogStore` stub (`{ recordCasted: vi.fn(), recordError: vi.fn() } as unknown as CastLogStore`). — S, junior-dev (ffabce3)
+- [x] C2: Write failing test: when `activeFilePath === null && executeOnNote === true`, neither `recordCasted` nor `recordError` is called. (Extends the existing "Open a note to cast against" test.) — S, junior-dev (ffabce3)
+- [x] C3: Confirm C2 passes — current code path returns before any new behavior. — S, junior-dev (ffabce3)
+- [x] C4: Write failing test: a successful dispatch (live-cast, valid active file) calls `castLogStore.recordCasted` exactly once with `{ castId:<generated>, spellPath: spell.path, model, effort, contextNotes: [...input.contextNotePaths], followUp, executeOnNote }`. Inject `generateId: () => 'fixed-uuid'`. — S, junior-dev (ffabce3)
+- [x] C5: Implement: after the no-active-note guard, before the `Casting '<name>'…` notify, call `const castId = this.#generateId();` then `this.#castLogStore.recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote }).catch(console.error);`. — S, junior-dev (ffabce3)
+- [x] C6: Write failing test: `runner.run` is called with `castId` included in the input. — S, junior-dev (ffabce3)
+- [x] C7: Implement: thread `castId` into `runner.run({ …, castId }, callbacks)`. (This depends on F1 having added `castId` to `CastRunInput`.) — S, junior-dev (ffabce3)
+- [x] C8: Write failing test: when `runner.run` invokes `onFailure('boom')`, `recordError` is called once with `{ castId:'fixed-uuid', message:'boom' }` **and** notify is still called with `'Cast failed: boom'`. — S, junior-dev (ffabce3)
+- [x] C9: Implement: in `dispatch`, wrap the `onFailure` callback to call `this.#castLogStore.recordError({ castId, message: msg }).catch(console.error)` before the existing notify. — S, junior-dev (ffabce3)
+- [x] C10: Write failing test: `onSuccess` produces **no** log write. (`recordCasted` was called once on dispatch; `recordError` was never called.) — S, junior-dev (ffabce3)
+- [x] C11: Confirm C10 passes (no implementation should write on success). — S, junior-dev (ffabce3)
 
 ### D. `ForgeImprinter` integration (`forge/ForgeImprinter.ts`)
 
@@ -364,17 +364,17 @@ interface BaseCastRunInput {
 **Section-level Red criterion:** `tests/ForgeImprinter.test.ts` (extended) proves: (1) empty-name guard produces no log write; (2) a valid forge calls `recordCasted` exactly once with `{ castId, spellPath: '<forge>', model, effort, contextNotes: [] }` and **without** the `followUp` / `executeOnNote` keys; (3) `castId` reaches `runner.run`; (4) `onFailure` produces exactly one `recordError` then the existing `'Forge failed: …'` notify; (5) `onSuccess` writes nothing.
 
 **junior-dev**
-- [ ] D1: Extend `ForgeImprinterDeps` with required `castLogStore: CastLogStore` and optional `generateId?: () => string` (default `() => crypto.randomUUID()`). Fix existing tests to pass a stub. — S, junior-dev
-- [ ] D2: Write failing test: empty-name guard (e.g. `name: '<>'`) calls neither `recordCasted` nor `recordError`. — S, junior-dev
-- [ ] D3: Confirm D2 passes (early return guards the path). — S, junior-dev
-- [ ] D4: Write failing test: a valid imprint (`name: 'My Spell'`, valid snapshot) calls `recordCasted` exactly once. Assertion uses `expect(recordCasted).toHaveBeenCalledWith({ castId: 'fixed-uuid', spellPath: '<forge>', model: snapshot.model, effort: snapshot.effort, contextNotes: [] })` — i.e. **no** `followUp` and **no** `executeOnNote` keys. Use `toEqual` with the object literal and a separate assertion that the call argument has only those five keys (`Object.keys(callArg).sort()` deepEqual `['castId','contextNotes','effort','model','spellPath']`). — S, junior-dev
-- [ ] D5: Implement: after the empty-name guard, before the `Forging "<name>"…` notify, call `const castId = this.#generateId();` then `this.#castLogStore.recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [] }).catch(console.error);`. Import `FORGE_SPELL_PATH` from `../castLog/types`. — S, junior-dev
-- [ ] D6: Write failing test: `castRunner.run` receives `castId` in its input. (Depends on F1.) — S, junior-dev
-- [ ] D7: Implement: thread `castId` into the `runCasting` private method's `run` input. — S, junior-dev (depends on F1)
-- [ ] D8: Write failing test: `onFailure('boom')` produces `recordError({ castId:'fixed-uuid', message:'boom' })` then notify `'Forge failed: boom'`. — S, junior-dev
-- [ ] D9: Implement: wrap `onFailure` with `recordError` before the existing notify. — S, junior-dev
-- [ ] D10: Write failing test: `onSuccess` writes nothing. — S, junior-dev
-- [ ] D11: Confirm D10 passes. — S, junior-dev
+- [x] D1: Extend `ForgeImprinterDeps` with required `castLogStore: CastLogStore` and optional `generateId?: () => string` (default `() => crypto.randomUUID()`). Fix existing tests to pass a stub. — S, junior-dev (c451bc0)
+- [x] D2: Write failing test: empty-name guard (e.g. `name: '<>'`) calls neither `recordCasted` nor `recordError`. — S, junior-dev (c451bc0)
+- [x] D3: Confirm D2 passes (early return guards the path). — S, junior-dev (c451bc0)
+- [x] D4: Write failing test: a valid imprint (`name: 'My Spell'`, valid snapshot) calls `recordCasted` exactly once. Assertion uses `expect(recordCasted).toHaveBeenCalledWith({ castId: 'fixed-uuid', spellPath: '<forge>', model: snapshot.model, effort: snapshot.effort, contextNotes: [] })` — i.e. **no** `followUp` and **no** `executeOnNote` keys. Use `toEqual` with the object literal and a separate assertion that the call argument has only those five keys (`Object.keys(callArg).sort()` deepEqual `['castId','contextNotes','effort','model','spellPath']`). — S, junior-dev (c451bc0)
+- [x] D5: Implement: after the empty-name guard, before the `Forging "<name>"…` notify, call `const castId = this.#generateId();` then `this.#castLogStore.recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [] }).catch(console.error);`. Import `FORGE_SPELL_PATH` from `../castLog/types`. — S, junior-dev (c451bc0)
+- [x] D6: Write failing test: `castRunner.run` receives `castId` in its input. (Depends on F1.) — S, junior-dev (c451bc0)
+- [x] D7: Implement: thread `castId` into the `runCasting` private method's `run` input. — S, junior-dev (depends on F1) (c451bc0)
+- [x] D8: Write failing test: `onFailure('boom')` produces `recordError({ castId:'fixed-uuid', message:'boom' })` then notify `'Forge failed: boom'`. — S, junior-dev (c451bc0)
+- [x] D9: Implement: wrap `onFailure` with `recordError` before the existing notify. — S, junior-dev (c451bc0)
+- [x] D10: Write failing test: `onSuccess` writes nothing. — S, junior-dev (c451bc0)
+- [x] D11: Confirm D10 passes. — S, junior-dev (c451bc0)
 
 ### E. `main.ts` wiring
 
@@ -394,13 +394,13 @@ interface BaseCastRunInput {
 **Section-level Red criterion:** `tests/main.test.ts` (extended) proves: (1) `onload` constructs exactly one `CastLogStore` instance; (2) the same instance is passed to both `CastDispatcher` (via the spy on its constructor) and `ForgeImprinter`. No new behavior surfaces in the UI tests — the existing flows pass through unchanged.
 
 **junior-dev**
-- [ ] E1: Write failing test: `onload` invokes `new CastLogStore(...)` exactly once. Strategy: `vi.spyOn(CastLogStoreModule, 'CastLogStore')` and assert call count + that the ports passed include `getBasePath: expect.any(Function)` and `pluginDir: expect.any(String)`. — M, junior-dev
-- [ ] E2: Implement: in `onload` (or a new private method `createCastLogStore()`), instantiate `new CastLogStore({ getBasePath: () => (this.app.vault.adapter as FileSystemAdapter).getBasePath(), pluginDir: this.manifest.dir ?? '.obsidian/plugins/grimoire' })`. Hold in a `private castLogStore!: CastLogStore;` field. — S, junior-dev
-- [ ] E3: Write failing test: the `ForgeImprinter` constructor receives the same `castLogStore` instance. Strategy: spy on `ForgeImprinter` constructor; assert `mock.calls[0][0].castLogStore` is the same reference as the one passed to `CastLogStore` spy's return value. — S, junior-dev
-- [ ] E4: Implement: pass `castLogStore: this.castLogStore` into `new ForgeImprinter({ … })` in `onload`. — S, junior-dev
-- [ ] E5: Write failing test: the `CastDispatcher` constructor (inside `createDispatcher`) receives the same `castLogStore` instance. — S, junior-dev
-- [ ] E6: Implement: pass `castLogStore: this.castLogStore` into `new CastDispatcher({ … })` inside `createDispatcher`. — S, junior-dev
-- [ ] E7: Confirm `tests/main.test.ts` "settings mutation is reflected in subsequent popups" and "command callback constructs CommandPopup with..." still pass. (No code change expected; this is a regression check.) — S, junior-dev
+- [x] E1: Write failing test: `onload` invokes `new CastLogStore(...)` exactly once. Strategy: `vi.spyOn(CastLogStoreModule, 'CastLogStore')` and assert call count + that the ports passed include `getBasePath: expect.any(Function)` and `pluginDir: expect.any(String)`. — M, junior-dev (ab777b4)
+- [x] E2: Implement: in `onload` (or a new private method `createCastLogStore()`), instantiate `new CastLogStore({ getBasePath: () => (this.app.vault.adapter as FileSystemAdapter).getBasePath(), pluginDir: this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire` })`. Hold in a `private castLogStore!: CastLogStore;` field. — S, junior-dev (ab777b4)
+- [x] E3: Write failing test: the `ForgeImprinter` constructor receives the same `castLogStore` instance. Strategy: spy on `ForgeImprinter` constructor; assert `mock.calls[0][0].castLogStore` is the same reference as the one passed to `CastLogStore` spy's return value. — S, junior-dev (ab777b4)
+- [x] E4: Implement: pass `castLogStore: this.castLogStore` into `new ForgeImprinter({ … })` in `onload`. — S, junior-dev (ab777b4)
+- [x] E5: Write failing test: the `CastDispatcher` constructor (inside `createDispatcher`) receives the same `castLogStore` instance. — S, junior-dev (ab777b4)
+- [x] E6: Implement: pass `castLogStore: this.castLogStore` into `new CastDispatcher({ … })` inside `createDispatcher`. — S, junior-dev (ab777b4)
+- [x] E7: Confirm `tests/main.test.ts` "settings mutation is reflected in subsequent popups" and "command callback constructs CommandPopup with..." still pass. (No code change expected; this is a regression check.) — S, junior-dev (ab777b4)
 
 ### F. `CastRunner` env threading (`cast/CastRunner.ts`, `cast/buildCastArgs.ts`)
 
@@ -419,10 +419,10 @@ interface BaseCastRunInput {
 **Section-level Red criterion:** `tests/CastRunner.test.ts` (extended) proves: (1) `run({ …, castId: 'abc' }, …)` causes the injected spawner to receive `env: { VAULT_MOUNT_PATH: …, CAST_ID: 'abc' }`; (2) compilation fails if `castId` is omitted from `CastRunInput` (TypeScript-level guarantee, asserted via a `// @ts-expect-error` test if practical, else accepted as a compile-time check).
 
 **junior-dev**
-- [ ] F1: Write failing test in `tests/CastRunner.test.ts`: `runner.run({ systemPromptFile:'…', userPrompt:'…', modelId:'sonnet', effort:null, vaultMountPath:'/v', binaryPath:'/b', cliCommand:'claude', castId:'abc' }, callbacks)` invokes the spawner with `env` containing `{ VAULT_MOUNT_PATH:'/v', CAST_ID:'abc' }`. — S, junior-dev
-- [ ] F2: Implement: extend `BaseCastRunInput` with `castId: string`; change `env: { VAULT_MOUNT_PATH: input.vaultMountPath }` to `env: { VAULT_MOUNT_PATH: input.vaultMountPath, CAST_ID: input.castId }`. — S, junior-dev
-- [ ] F3: Fix every existing call site / test that constructs a `CastRunInput` to include `castId` (search project for `runner.run(`, `castRunner.run(`, `CastRunInput`, `metaSpell:` followed by `modelId:`). Pass a literal `'test-cast-id'` in tests; pass the real plumbed value in C/D production code. — S, junior-dev
-- [ ] F4: Edge case test: `castId: ''` (empty string) is still threaded through unchanged — runner does not validate, it transports. Document this in a one-line comment near the env-merge: `// CAST_ID is opaque to the runner; producers guarantee uniqueness`. — S, junior-dev
+- [x] F1: Write failing test in `tests/CastRunner.test.ts`: `runner.run({ systemPromptFile:'…', userPrompt:'…', modelId:'sonnet', effort:null, vaultMountPath:'/v', binaryPath:'/b', cliCommand:'claude', castId:'abc' }, callbacks)` invokes the spawner with `env` containing `{ VAULT_MOUNT_PATH:'/v', CAST_ID:'abc' }`. — S, junior-dev (814bc18)
+- [x] F2: Implement: extend `BaseCastRunInput` with `castId: string`; change `env: { VAULT_MOUNT_PATH: input.vaultMountPath }` to `env: { VAULT_MOUNT_PATH: input.vaultMountPath, CAST_ID: input.castId }`. — S, junior-dev (814bc18)
+- [x] F3: Fix every existing call site / test that constructs a `CastRunInput` to include `castId` (search project for `runner.run(`, `castRunner.run(`, `CastRunInput`, `metaSpell:` followed by `modelId:`). Pass a literal `'test-cast-id'` in tests; pass the real plumbed value in C/D production code. — S, junior-dev (814bc18)
+- [x] F4: Edge case test: `castId: ''` (empty string) is still threaded through unchanged — runner does not validate, it transports. Document this in a one-line comment near the env-merge: `// CAST_ID is opaque to the runner; producers guarantee uniqueness`. — S, junior-dev (814bc18)
 
 ### G. Cleanup + lint
 
@@ -437,9 +437,9 @@ interface BaseCastRunInput {
 **Section-level Red criterion:** `npm run lint` exits 0; `npm test` exits 0; `git diff --stat` shows changes only in the files listed in the Components table plus their corresponding tests.
 
 **junior-dev**
-- [ ] G1: Run `npm run lint`; fix any new violations introduced by sections A–F (likely none, given the codebase conventions are well-established). — S, junior-dev
-- [ ] G2: Run `npm test`; confirm 0 failures, 0 skipped tests added by this plan. — S, junior-dev
-- [ ] G3: Run `npm run test:integration`; confirm no regressions (the integration tests exercise UI flows that now pass through `recordCasted` — verify they still pass with the stubbed `castLogStore` injection or, if integration harness builds real instances, with a no-op `appendLine` port). If integration tests rely on the wired plugin, the harness may need a stub `appendLine` injected — handle in this todo. — M, junior-dev
+- [x] G1: Run `npm run lint`; fix any new violations introduced by sections A–F (likely none, given the codebase conventions are well-established). — S, junior-dev (ab777b4)
+- [x] G2: Run `npm test`; confirm 0 failures, 0 skipped tests added by this plan. — S, junior-dev (ab777b4)
+- [x] G3: Run `npm run test:integration`; confirm no regressions (the integration tests exercise UI flows that now pass through `recordCasted` — verify they still pass with the stubbed `castLogStore` injection or, if integration harness builds real instances, with a no-op `appendLine` port). If integration tests rely on the wired plugin, the harness may need a stub `appendLine` injected — handle in this todo. — M, junior-dev (ab777b4)
 
 ## Overall effort summary
 
@@ -456,3 +456,5 @@ interface BaseCastRunInput {
 - **Future Cast Log reader** consumes `cast-log-local.jsonl` (this pitch) plus `cast-log-remote.jsonl` (future). The reader's contract is the `CastLogEvent` union — already exported by `castLog/types.ts`.
 - **Mutation testing** (`/mutate`) should target `castLog/store.ts` after this lands — the JSON shape and `stage` literal are exactly the kind of mutants Stryker catches well.
 - **Live-spec** after `/done` should describe: where the log lives, how to inspect it (`cat .obsidian/plugins/grimoire/cast-log-local.jsonl`), and the contract sibling pitches will extend.
+
+reviewed @ e17856f

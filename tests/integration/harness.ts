@@ -21,6 +21,7 @@ export interface PopupHarness {
   visibleSpellRows(): HTMLElement[];
   visibleSentinelRows(): HTMLElement[];
   selectedRow(): HTMLElement | null;
+  selectedRowName(): string | null;
   activeTabId(): string;
   searchInput(): HTMLInputElement;
   isInDetail(): boolean;
@@ -109,7 +110,7 @@ export function createPopupHarness(options?: {
 
     clickBack(): void {
       const buttons = Array.from(contentEl.querySelectorAll('button'));
-      const btn = buttons.find((b) => b.textContent?.includes('← Back'));
+      const btn = buttons.find((b) => b.textContent?.includes('← back'));
       if (!btn) throw new Error('Back button not found');
       btn.dispatchEvent(new Event('click'));
     },
@@ -148,6 +149,12 @@ export function createPopupHarness(options?: {
 
     selectedRow(): HTMLElement | null {
       return contentEl.querySelector('.spells-row.is-selected, .sentinel-row.is-selected');
+    },
+
+    selectedRowName(): string | null {
+      const row = contentEl.querySelector('.spells-row.is-selected, .sentinel-row.is-selected');
+      const nameSpan = row?.querySelector('span:first-child');
+      return nameSpan?.textContent ?? null;
     },
 
     activeTabId(): string {

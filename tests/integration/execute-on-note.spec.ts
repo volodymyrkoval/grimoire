@@ -16,6 +16,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CastDispatcher } from '../../src/cast/CastDispatcher';
 import type { CastDispatchInput } from '../../src/cast/CastDispatcher';
+import type { CastLogStore } from '../../src/castLog/store';
 import { CastRunner } from '../../src/cast/CastRunner';
 import { spellPath } from '../../src/domain/spells/SpellPath';
 import type { GrimoireSettings } from '../../src/domain/settings/Settings';
@@ -60,7 +61,11 @@ describe('CastDispatcher.dispatch() — executeOnNote vertical', () => {
     close = vi.fn();
     runSpy = vi.fn();
     castRunner = { run: runSpy } as unknown as CastRunner;
-    dispatcher = new CastDispatcher({ notify, close, castRunner });
+    const castLogStore = {
+      recordCasted: vi.fn().mockResolvedValue(undefined),
+      recordError: vi.fn().mockResolvedValue(undefined),
+    } as unknown as CastLogStore;
+    dispatcher = new CastDispatcher({ notify, close, castRunner, castLogStore });
   });
 
   // ------------------------------------------------------------------ G1

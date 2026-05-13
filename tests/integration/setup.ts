@@ -14,7 +14,11 @@ declare global {
     setAttr(name: string, value: string): void;
     empty(): void;
     onClickEvent(fn: (evt: MouseEvent) => void): void;
+    hide(): void;
+    show(): void;
   }
+  // eslint-disable-next-line no-var
+  var activeDocument: Document;
 }
 
 HTMLElement.prototype.createEl = function (
@@ -101,3 +105,13 @@ HTMLElement.prototype.empty = function (): void {
 HTMLElement.prototype.onClickEvent = function (fn: (evt: MouseEvent) => void): void {
   this.addEventListener('click', fn);
 };
+
+HTMLElement.prototype.hide = function (): void {
+  this.style.display = 'none';
+};
+
+HTMLElement.prototype.show = function (): void {
+  this.style.removeProperty('display');
+};
+
+(globalThis as Record<string, unknown>).activeDocument = document;
