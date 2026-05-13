@@ -1,6 +1,6 @@
 # Cast Log Foundation
 
-> `dev/done-008` — 2026-05-13 — Lays the schema, append-only JSONL store, UUID threading, and the two plugin-owned event writers (`casted`, `error`) for the cast lifecycle. No reader, no UI, no Claude Code hooks yet.
+> `dev/done-008` — 2026-05-13 — Lays the schema, append-only JSONL store, UUID threading, and the two plugin-owned event writers (`casted`, `error`) for the cast lifecycle. No reader, no UI yet. The `in-progress` / `done` writers shipped in the sibling iteration `cast-progress-events` (`dev/done-009`).
 
 ## What it does
 
@@ -8,7 +8,7 @@ Every cast dispatched by the plugin — Spell Picker live cast or Forge imprint 
 
 Two events are written by the plugin process today. A `casted` line is written before the subprocess spawns, capturing `castId`, spell path (or the `<forge>` sentinel for forge casts), model, effort, context notes, and (live casts only) follow-up and execute-on-note. An `error` line is written when the cast fails — non-zero exit or async launch failure — carrying the same `castId` and the failure message. A dispatch blocked by an existing guard (no active note, or empty-after-sanitise name) writes nothing: those casts never reached the dispatched state.
 
-Each dispatch generates a UUID via `crypto.randomUUID`, threads it through the runner, and exports it to the spawned subprocess as the `CAST_ID` environment variable. Future Claude Code hook scripts will read `$CAST_ID` to write the matching `in-progress` / `done` lines from outside the plugin process. The discriminated-union schema covers all four lifecycle stages today; only `casted` and `error` are written by this iteration.
+Each dispatch generates a UUID via `crypto.randomUUID`, threads it through the runner, and exports it to the spawned subprocess as the `CAST_ID` environment variable. The discriminated-union schema covers all four lifecycle stages; this iteration writes `casted` and `error` only. The matching `in-progress` and `done` writers — implemented as Claude Code hook scripts that read `$CAST_ID` from outside the plugin process — ship in `cast-progress-events`.
 
 ## Design decisions
 
@@ -34,8 +34,8 @@ Each dispatch generates a UUID via `crypto.randomUUID`, threads it through the r
 
 **Out:**
 
-- `in-progress` / `done` writes — sibling pitch (Claude Code hooks), written from outside the plugin process.
-- Hook scripts, `settings.json` materialisation, settings-flag injection — same sibling pitch.
+- `in-progress` / `done` writes — delivered by the sibling iteration `cast-progress-events` via Claude Code hook scripts, written from outside the plugin process.
+- Hook scripts, `settings.json` materialisation, settings-flag injection — same sibling iteration.
 - Cast Log reader, parser, UI panel — no consumer of the JSONL file yet; deferred until the reader pitch.
 - `cast-log-remote.jsonl` — reserved name; not produced until remote casting lands.
 - Timeout-based stale detection, retention/rotation, telemetry — premature; not justified by any current use case.

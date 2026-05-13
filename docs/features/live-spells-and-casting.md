@@ -53,7 +53,7 @@ CommandPopup (Spells tab):
       ├── notify `Casting '<spell.name>'…`
       ├── close()                                   // dismisses popup
       └── runner.run({ systemPromptFile: `<vaultMountPath>/<spell.path>`, userPrompt, modelId, effort, castId, ... })
-            → claude --system-prompt-file <path> -p <userPrompt> --model <id> [--effort …] [--add-dir …]
+            → claude --system-prompt-file <path> -p <userPrompt> --model <id> [--effort …] [--add-dir …] --settings <castSettingsPath>
             → env includes CAST_ID
             → exit 0  → notify "Spell cast"
             → exit !=0 / spawn error → castLogStore.recordError({ castId, message }) + notify "Cast failed: <msg>"
