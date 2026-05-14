@@ -1,7 +1,4 @@
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import { writeFile as fsWriteFile, mkdir as fsMkdir, chmod } from 'node:fs/promises';
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import * as path from 'node:path';
+import { normalizePath, type DataAdapter } from 'obsidian';
 import {
   renderSessionStartScript,
   renderPostToolUseScript,
@@ -13,51 +10,52 @@ export interface HookMaterializerPorts {
   getLogPathAbs: () => string;
   writeFile?: (filePath: string, content: string, mode?: number) => Promise<void>;
   mkdir?: (dir: string) => Promise<void>;
+  adapter?: DataAdapter;
 }
 
 export class HookMaterializer {
+  static readonly SESSION_START_SCRIPT = 'session-start.sh';
+  static readonly POST_TOOL_USE_SCRIPT = 'post-tool-use.sh';
+  static readonly STOP_SCRIPT = 'stop.sh';
+  static readonly HOOKS_DIR = 'hooks';
+  static readonly SCRATCH_DIR = 'cast-log-scratch';
+
   readonly #ports: HookMaterializerPorts;
   readonly #writeFile: (filePath: string, content: string, mode?: number) => Promise<void>;
   readonly #mkdir: (dir: string) => Promise<void>;
+  #hooksDir: string = '';
 
   constructor(ports: HookMaterializerPorts) {
     this.#ports = ports;
-
-    // Default writeFile: write content then chmod if mode provided
-    this.#writeFile =
-      ports.writeFile ??
-      (async (filePath: string, content: string, mode?: number) => {
-        await fsWriteFile(filePath, content, 'utf-8');
-        if (mode !== undefined) await chmod(filePath, mode);
-      });
-
-    // Default mkdir: mkdir with { recursive: true }
-    this.#mkdir =
-      ports.mkdir ??
-      (async (dir: string) => {
-        await fsMkdir(dir, { recursive: true });
-      });
+    const adapter = ports.adapter;
+    this.#writeFile = ports.writeFile ?? (async (filePath, content, _mode) => {
+      await adapter!.write(filePath, content);
+    });
+    this.#mkdir = ports.mkdir ?? ((dir) => adapter!.mkdir(dir));
   }
 
   async run(): Promise<void> {
     const pluginDirAbs = this.#ports.getPluginDirAbs();
     const logPathAbs = this.#ports.getLogPathAbs();
-    const hooksDir = path.join(pluginDirAbs, 'hooks');
-    const scratchDirAbs = path.join(pluginDirAbs, 'cast-log-scratch');
+    this.#hooksDir = normalizePath(`${pluginDirAbs}/${HookMaterializer.HOOKS_DIR}`);
+    const scratchDirAbs = normalizePath(`${pluginDirAbs}/${HookMaterializer.SCRATCH_DIR}`);
 
-    // Create hooks directory
-    await this.#mkdir(hooksDir);
+    await this.#ensureHooksDir();
+    await this.#materializeScripts(logPathAbs, scratchDirAbs);
+  }
 
-    // Construct script paths
-    const sessionStartScriptAbs = path.join(hooksDir, 'session-start.sh');
-    const postToolUseScriptAbs = path.join(hooksDir, 'post-tool-use.sh');
-    const stopScriptAbs = path.join(hooksDir, 'stop.sh');
+  async #ensureHooksDir(): Promise<void> {
+    await this.#mkdir(this.#hooksDir);
+  }
 
-    // Write scripts with mode 0o755
-    await this.#writeFile(sessionStartScriptAbs, renderSessionStartScript({ logPathAbs }), 0o755);
+  async #materializeScripts(logPathAbs: string, scratchDirAbs: string): Promise<void> {
+    await this.#writeScript(HookMaterializer.SESSION_START_SCRIPT, renderSessionStartScript({ logPathAbs }));
+    await this.#writeScript(HookMaterializer.POST_TOOL_USE_SCRIPT, renderPostToolUseScript({ scratchDirAbs }));
+    await this.#writeScript(HookMaterializer.STOP_SCRIPT, renderStopScript({ logPathAbs, scratchDirAbs }));
+  }
 
-    await this.#writeFile(postToolUseScriptAbs, renderPostToolUseScript({ scratchDirAbs }), 0o755);
-
-    await this.#writeFile(stopScriptAbs, renderStopScript({ logPathAbs, scratchDirAbs }), 0o755);
+  async #writeScript(filename: string, content: string): Promise<void> {
+    const scriptPath = normalizePath(`${this.#hooksDir}/${filename}`);
+    await this.#writeFile(scriptPath, content, 0o755);
   }
 }

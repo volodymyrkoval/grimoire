@@ -10,21 +10,21 @@ export interface OptionsSessionEntry {
 }
 
 export class OptionsSessionMap {
-  private map = new Map<string, OptionsSessionEntry>();
+  #map = new Map<string, OptionsSessionEntry>();
 
   get(path: SpellPath): OptionsSessionEntry | undefined {
-    return this.map.get(path);
+    return this.#map.get(path);
   }
 
   put(path: SpellPath, entry: OptionsSessionEntry): void {
-    this.map.set(path, entry);
+    this.#map.set(path, entry);
   }
 
   delete(path: SpellPath): void {
-    this.map.delete(path);
+    this.#map.delete(path);
   }
 
   clear(): void {
-    this.map.clear();
+    this.#map.clear();
   }
 }

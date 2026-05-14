@@ -1,7 +1,4 @@
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import { readdir as fsReaddir, stat as fsStat, unlink as fsUnlink } from 'node:fs/promises';
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import * as path from 'node:path';
+import type { DataAdapter } from 'obsidian';
 
 export interface ScratchSweeperPorts {
   getScratchDirAbs: () => string;
@@ -10,6 +7,7 @@ export interface ScratchSweeperPorts {
   unlink?: (filePath: string) => Promise<void>;
   now?: () => number;
   ttlMs?: number;
+  adapter?: DataAdapter;
 }
 
 export class ScratchSweeper {
@@ -22,39 +20,58 @@ export class ScratchSweeper {
 
   constructor(ports: ScratchSweeperPorts) {
     this.#getScratchDirAbs = ports.getScratchDirAbs;
-    this.#readdir = ports.readdir ?? fsReaddir;
-    this.#stat = ports.stat ?? fsStat;
-    this.#unlink = ports.unlink ?? fsUnlink;
+    const adapter = ports.adapter;
+    this.#readdir = ports.readdir ?? (async (dir) => {
+      if (adapter && !(await adapter.exists(dir))) {
+        throw Object.assign(new Error(`ENOENT: ${dir}`), { code: 'ENOENT' });
+      }
+      const listed = await adapter!.list(dir);
+      return listed.files;
+    });
+    this.#stat = ports.stat ?? (async (filePath) => {
+      const s = await adapter!.stat(filePath);
+      if (!s) throw Object.assign(new Error(`ENOENT: ${filePath}`), { code: 'ENOENT' });
+      return { mtimeMs: s.mtime };
+    });
+    this.#unlink = ports.unlink ?? ((filePath) => adapter!.remove(filePath));
     this.#now = ports.now ?? Date.now;
     this.#ttlMs = ports.ttlMs ?? 24 * 60 * 60 * 1000;
   }
 
   async sweep(): Promise<void> {
     const scratchDir = this.#getScratchDirAbs();
+    const files = await this.#readScratchDir(scratchDir);
+    if (!files) return;
 
-    let files: string[];
+    for (const filePath of files) {
+      await this.#processFile(filePath);
+    }
+  }
+
+  async #readScratchDir(scratchDir: string): Promise<string[] | null> {
     try {
-      files = await this.#readdir(scratchDir);
+      return await this.#readdir(scratchDir);
     } catch (error) {
       const err = error as { code?: string };
       if (err.code === 'ENOENT') {
-        return;
+        return null;
       }
       throw error;
     }
+  }
 
-    const now = this.#now();
+  #isExpired(mtimeMs: number): boolean {
+    return this.#now() - mtimeMs > this.#ttlMs;
+  }
 
-    for (const file of files) {
-      const filePath = path.join(scratchDir, file);
-      try {
-        const fileStat = await this.#stat(filePath);
-        if (now - fileStat.mtimeMs > this.#ttlMs) {
-          await this.#unlink(filePath);
-        }
-      } catch (error) {
-        console.error(`Failed to process ${filePath}:`, error);
+  async #processFile(filePath: string): Promise<void> {
+    try {
+      const fileStat = await this.#stat(filePath);
+      if (this.#isExpired(fileStat.mtimeMs)) {
+        await this.#unlink(filePath);
       }
+    } catch (error) {
+      console.error(`Failed to process ${filePath}:`, error);
     }
   }
 }

@@ -38,12 +38,14 @@ export interface CommandPopupParams {
 }
 
 export class CommandPopup extends Modal {
-  private selectedIndex = 0;
+  #selectedIndex = 0;
+  // eslint-disable-next-line no-restricted-syntax -- accessed via bracket notation in tests
   private phase: "search" | "detail" = "search";
   #searchQuery = "";
+  // eslint-disable-next-line no-restricted-syntax -- accessed via bracket notation in tests
   private readonly panels: readonly TabPanel[];
-  private activePanel: TabPanel;
-  private tabBar: TabBar | null = null;
+  #activePanel: TabPanel;
+  #tabBar: TabBar | null = null;
   #kb = new KeyboardController(this.scope);
   #onDetailBack: (() => void) | null = null;
   #activeDetail: { destroy(): void } | null = null;
@@ -69,33 +71,33 @@ export class CommandPopup extends Modal {
         this.close();
       },
     });
-    this.panels = [this.createSpellsPanel(params.spellTag), castLogPanel];
-    this.activePanel = this.panels[0];
+    this.panels = [this.#createSpellsPanel(params.spellTag), castLogPanel];
+    this.#activePanel = this.panels[0];
   }
 
   onOpen(): void {
-    this.selectedIndex = 0;
+    this.#selectedIndex = 0;
     this.#searchQuery = "";
-    this.activePanel = this.panels[0];
+    this.#activePanel = this.panels[0];
     this.phase = "search";
-    this.render();
-    this.bindKeys();
+    this.#render();
+    this.#bindKeys();
   }
 
-  private bindKeys(): void {
-    this.#kb.bind([], "ArrowDown", () => { this.move(1); return true; });
-    this.#kb.bind([], "ArrowUp", () => { this.move(-1); return true; });
-    this.#kb.bind([], "Enter", () => { this.confirm(); return true; });
+  #bindKeys(): void {
+    this.#kb.bind([], "ArrowDown", () => { this.#move(1); return true; });
+    this.#kb.bind([], "ArrowUp", () => { this.#move(-1); return true; });
+    this.#kb.bind([], "Enter", () => { this.#confirm(); return true; });
     this.#kb.bind([], "Tab", () => {
       if (this.phase === "detail") return false;
-      const next = (this.panels.indexOf(this.activePanel) + 1) % this.panels.length;
-      this.switchTab(this.panels[next]);
+      const next = (this.panels.indexOf(this.#activePanel) + 1) % this.panels.length;
+      this.#switchTab(this.panels[next]);
       return true;
     });
     this.#kb.bind([], "ArrowRight", () => {
       if (this.phase !== "search") return false;
-      if (this.activePanel !== this.panels[0]) return false;
-      (this.panels[0] as SpellsPanel).openOptions(this.selectedIndex);
+      if (this.#activePanel !== this.panels[0]) return false;
+      (this.panels[0] as SpellsPanel).openOptions(this.#selectedIndex);
       return true;
     });
   }
@@ -117,75 +119,75 @@ export class CommandPopup extends Modal {
     this.contentEl.empty();
   }
 
-  private render(): void {
+  #render(): void {
     this.contentEl.empty();
-    this.tabBar = this.createTabBar();
-    this.renderSearch();
+    this.#tabBar = this.#createTabBar();
+    this.#renderSearch();
   }
 
-  private createTabBar(): TabBar {
+  #createTabBar(): TabBar {
     return new TabBar(
       this.contentEl,
       this.panels.map((p) => p.id),
-      this.activePanel.id,
+      this.#activePanel.id,
       this.phase === "detail",
       (id) => {
         const panel = this.panels.find((p) => p.id === id);
-        if (panel) this.switchTab(panel);
+        if (panel) this.#switchTab(panel);
       }
     );
   }
 
-  private createSpellsPanel(spellTag: string): SpellsPanel {
+  #createSpellsPanel(spellTag: string): SpellsPanel {
     const panel = new SpellsPanel(this.app, spellTag);
     panel.setHasOverride((path) => this.#overrides.has(path));
     panel.events.on("cast", (spell) => this.#castAction(spell));
-    panel.events.on("sentinel", (sentinel) => this.renderSentinelDetail(sentinel));
-    panel.events.on("open-options", (spell) => this.renderOptionsPanel(spell));
+    panel.events.on("sentinel", (sentinel) => this.#renderSentinelDetail(sentinel));
+    panel.events.on("open-options", (spell) => this.#renderOptionsPanel(spell));
     return panel;
   }
 
-  private renderSearch(): void {
+  #renderSearch(): void {
     this.phase = "search";
-    this.reattachTabBar();
-    this.mountSearchInput();
+    this.#reattachTabBar();
+    this.#mountSearchInput();
   }
 
-  private reattachTabBar(): void {
-    const barEl = this.tabBar?.el;
+  #reattachTabBar(): void {
+    const barEl = this.#tabBar?.el;
     this.contentEl.empty();
     if (barEl) this.contentEl.appendChild(barEl);
   }
 
-  private mountSearchInput(): void {
-    new SearchInput(this.contentEl, this.activePanel, this.#searchQuery, this.selectedIndex, (query, idx) => {
+  #mountSearchInput(): void {
+    new SearchInput(this.contentEl, this.#activePanel, this.#searchQuery, this.#selectedIndex, (query, idx) => {
       this.#searchQuery = query;
-      this.selectedIndex = idx;
+      this.#selectedIndex = idx;
     });
   }
 
-  private exitDetail(): void {
+  #exitDetail(): void {
     this.#onDetailBack = null;
     this.#activeDetail?.destroy();
     this.#activeDetail = null;
     this.#kb.resume();
-    this.renderSearch();
+    this.#renderSearch();
   }
 
-  private renderSentinelDetail(sentinel: Sentinel): void {
+  #renderSentinelDetail(sentinel: Sentinel): void {
     this.phase = "detail";
-    this.reattachTabBar();
+    this.#reattachTabBar();
 
     if (sentinel.kind === "forge") {
-      this.renderForgeSentinelDetail();
+      this.#renderForgeSentinelDetail();
     } else {
-      this.renderGenericSentinelDetail(sentinel);
+      this.#renderGenericSentinelDetail(sentinel);
     }
   }
 
-  private renderForgeSentinelDetail(): void {
+  #renderForgeSentinelDetail(): void {
     this.#kb.suspend();
-    const exit = () => this.exitDetail();
+    const exit = () => this.#exitDetail();
     this.#activeDetail = new ForgeSentinelDetail({
       contentEl: this.contentEl,
       scope: this.scope,
@@ -201,11 +203,11 @@ export class CommandPopup extends Modal {
     this.#onDetailBack = exit;
   }
 
-  private renderOptionsPanel(spell: Spell): void {
+  #renderOptionsPanel(spell: Spell): void {
     this.phase = "detail";
-    this.reattachTabBar();
+    this.#reattachTabBar();
     this.#kb.suspend();
-    const exit = () => this.exitDetail();
+    const exit = () => this.#exitDetail();
     this.#activeDetail = new SpellOptionsDetail({
       contentEl: this.contentEl,
       scope: this.scope,
@@ -222,10 +224,10 @@ export class CommandPopup extends Modal {
     this.#onDetailBack = exit;
   }
 
-  private renderGenericSentinelDetail(sentinel: Sentinel): void {
+  #renderGenericSentinelDetail(sentinel: Sentinel): void {
     const exit = (): void => {
       this.#onDetailBack = null;
-      this.renderSearch();
+      this.#renderSearch();
     };
     this.#onDetailBack = exit;
     this.contentEl.createEl("h2", { text: sentinel.name });
@@ -234,30 +236,30 @@ export class CommandPopup extends Modal {
     back.onClickEvent(exit);
   }
 
-  private move(delta: number): void {
-    if (this.phase !== "search" || this.activePanel.length === 0) return;
+  #move(delta: number): void {
+    if (this.phase !== "search" || this.#activePanel.length === 0) return;
 
-    const prev = this.selectedIndex;
-    this.selectedIndex = this.activePanel.move(delta, this.selectedIndex);
-    this.activePanel.updateSelection(prev, this.selectedIndex);
+    const prev = this.#selectedIndex;
+    this.#selectedIndex = this.#activePanel.move(delta, this.#selectedIndex);
+    this.#activePanel.updateSelection(prev, this.#selectedIndex);
   }
 
-  private confirm(): void {
+  #confirm(): void {
     if (this.phase !== "search") return;
-    this.activePanel.confirm(this.selectedIndex);
+    this.#activePanel.confirm(this.#selectedIndex);
   }
 
-  private switchTab(panel: TabPanel): void {
+  #switchTab(panel: TabPanel): void {
     // Tear down the outgoing panel before swapping — otherwise re-entering it
     // (Spells → Logs → Spells) re-runs mount() on a panel that's still
     // holding live coordinators (e.g. CastLogPanel re-starting an already-
     // started VaultRefreshCoordinator).
-    this.activePanel.unmount?.();
-    this.activePanel = panel;
+    this.#activePanel.unmount?.();
+    this.#activePanel = panel;
     this.phase = "search";
     this.#searchQuery = "";
-    this.selectedIndex = 0;
+    this.#selectedIndex = 0;
     panel.reset();
-    this.render();
+    this.#render();
   }
 }

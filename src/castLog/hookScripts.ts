@@ -1,5 +1,6 @@
 const shellEscape = (p: string) => p.replace(/"/g, '\\"');
 
+// Generates shell script that logs session start event with timestamp and cast ID
 export function renderSessionStartScript(args: { logPathAbs: string }): string {
   const { logPathAbs } = args;
   return `#!/bin/sh
@@ -12,6 +13,7 @@ printf '{"stage":"in-progress","ts":"%s","castId":"%s"}\\n' "$TS" "$CAST_ID" >> 
 `;
 }
 
+// Generates shell script that captures file paths from tool execution events for later processing
 export function renderPostToolUseScript(args: { scratchDirAbs: string }): string {
   const { scratchDirAbs } = args;
   return `#!/bin/sh
@@ -29,6 +31,7 @@ exit 0
 `;
 }
 
+// Generates shell script that logs session end with deduplicated affected files collected during execution
 export function renderStopScript(args: { logPathAbs: string; scratchDirAbs: string }): string {
   const { logPathAbs, scratchDirAbs } = args;
   return `#!/bin/sh

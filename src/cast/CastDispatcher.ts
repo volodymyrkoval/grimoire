@@ -1,5 +1,3 @@
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import { randomUUID } from 'node:crypto';
 import { type Spell } from '../domain/spells/Spell';
 import { type Effort, type GrimoireSettings } from '../domain/settings/Settings';
 import { type CastLogStore } from '../castLog/store';
@@ -40,7 +38,7 @@ export class CastDispatcher {
     this.#castRunner = deps.castRunner;
     this.#spawner = deps.spawner;
     this.#castLogStore = deps.castLogStore;
-    this.#generateId = deps.generateId ?? (() => randomUUID());
+    this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
   }
 
   dispatch(input: CastDispatchInput): void {
@@ -52,18 +50,7 @@ export class CastDispatcher {
       return;
     }
 
-    const castId = this.#generateId();
-    this.#castLogStore
-      .recordCasted({
-        castId,
-        spellPath: spell.path,
-        model,
-        effort,
-        contextNotes: [...contextNotePaths],
-        followUp,
-        executeOnNote: input.executeOnNote,
-      })
-      .catch(console.error);
+    const castId = this.#recordCast(spell, input, model, effort);
 
     const userPrompt = this.#buildUserPrompt(
       input.executeOnNote,
@@ -96,6 +83,27 @@ export class CastDispatcher {
         },
       }
     );
+  }
+
+  #recordCast(
+    spell: Spell,
+    input: CastDispatchInput,
+    model: string,
+    effort: Effort | null
+  ) {
+    const castId = this.#generateId();
+    this.#castLogStore
+      .recordCasted({
+        castId,
+        spellPath: spell.path,
+        model,
+        effort,
+        contextNotes: [...input.contextNotePaths],
+        followUp: input.followUp,
+        executeOnNote: input.executeOnNote,
+      })
+      .catch(console.error);
+    return castId;
   }
 
   #buildUserPrompt(

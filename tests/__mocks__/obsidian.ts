@@ -7,12 +7,25 @@ export class Workspace {
   openLinkText = vi.fn<(path: string, source: string, newLeaf?: boolean) => void>();
 }
 
+function makeDataAdapterMock() {
+  return {
+    exists: vi.fn<(path: string) => Promise<boolean>>().mockResolvedValue(false),
+    list: vi.fn<(path: string) => Promise<{ files: string[]; folders: string[] }>>().mockResolvedValue({ files: [], folders: [] }),
+    stat: vi.fn<(path: string) => Promise<{ type: string; ctime: number; mtime: number; size: number } | null>>().mockResolvedValue(null),
+    read: vi.fn<(path: string) => Promise<string>>().mockResolvedValue(''),
+    write: vi.fn<(path: string, data: string) => Promise<void>>().mockResolvedValue(undefined),
+    remove: vi.fn<(path: string) => Promise<void>>().mockResolvedValue(undefined),
+    mkdir: vi.fn<(path: string) => Promise<void>>().mockResolvedValue(undefined),
+    getBasePath: vi.fn(() => '/test/vault'),
+  };
+}
+
 export class App {
   private vaultModifySubscribers = new Map<EventRef, (file: { path: string }) => void>();
 
   vault = {
     getMarkdownFiles: vi.fn<() => any[]>(() => []),
-    adapter: new FileSystemAdapter(),
+    adapter: makeDataAdapterMock(),
     on: vi.fn((event: string, cb: (file: { path: string }) => void): EventRef => {
       if (event === 'modify') {
         const ref: EventRef = {};
@@ -341,4 +354,18 @@ export const Platform = { isDesktop: true };
 
 export class FileSystemAdapter {
   getBasePath = vi.fn(() => '/test/vault');
+}
+
+export interface DataAdapter {
+  exists(normalizedPath: string): Promise<boolean>;
+  list(normalizedPath: string): Promise<{ files: string[]; folders: string[] }>;
+  stat(normalizedPath: string): Promise<{ type: string; ctime: number; mtime: number; size: number } | null>;
+  read(normalizedPath: string): Promise<string>;
+  write(normalizedPath: string, data: string): Promise<void>;
+  remove(normalizedPath: string): Promise<void>;
+  mkdir(normalizedPath: string): Promise<void>;
+}
+
+export function normalizePath(path: string): string {
+  return path.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
 }

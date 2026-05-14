@@ -14,7 +14,7 @@ describe('ScratchSweeper', () => {
       // young.paths: mtime is recent enough that now - mtimeMs <= ttlMs
       return Promise.resolve({ mtimeMs: now - 60 * 60 * 1000 });
     });
-    const readdirFn = vi.fn().mockResolvedValue(['old.paths', 'young.paths']);
+    const readdirFn = vi.fn().mockResolvedValue(['/scratch/old.paths', '/scratch/young.paths']);
 
     const sweeper = new ScratchSweeper({
       getScratchDirAbs: () => '/scratch',
@@ -65,7 +65,7 @@ describe('ScratchSweeper', () => {
       .mockRejectedValueOnce(unlinkError)
       .mockResolvedValueOnce(undefined);
 
-    const readdirFn = vi.fn().mockResolvedValue(['file1.paths', 'file2.paths']);
+    const readdirFn = vi.fn().mockResolvedValue(['/scratch/file1.paths', '/scratch/file2.paths']);
 
     const sweeper = new ScratchSweeper({
       getScratchDirAbs: () => '/scratch',
@@ -114,7 +114,7 @@ describe('ScratchSweeper', () => {
     const now = 1_000_000;
     const unlinkFn = vi.fn().mockResolvedValue(undefined);
     const statFn = vi.fn().mockResolvedValue({ mtimeMs: now - ttlMs });
-    const readdirFn = vi.fn().mockResolvedValue(['boundary.paths']);
+    const readdirFn = vi.fn().mockResolvedValue(['/scratch/boundary.paths']);
 
     const sweeper = new ScratchSweeper({
       getScratchDirAbs: () => '/scratch',
@@ -142,7 +142,7 @@ describe('ScratchSweeper', () => {
       .mockResolvedValueOnce({ mtimeMs: now - ttlMs - 1 });
 
     const unlinkFn = vi.fn().mockResolvedValue(undefined);
-    const readdirFn = vi.fn().mockResolvedValue(['file1.paths', 'file2.paths']);
+    const readdirFn = vi.fn().mockResolvedValue(['/scratch/file1.paths', '/scratch/file2.paths']);
 
     const sweeper = new ScratchSweeper({
       getScratchDirAbs: () => '/scratch',
@@ -168,7 +168,7 @@ describe('ScratchSweeper', () => {
     const now = 1_000_000;
     const unlinkFn = vi.fn().mockResolvedValue(undefined);
     const statFn = vi.fn().mockResolvedValue({ mtimeMs: now - ttlMs - 1 });
-    const readdirFn = vi.fn().mockResolvedValue(['past.paths']);
+    const readdirFn = vi.fn().mockResolvedValue(['/scratch/past.paths']);
 
     const sweeper = new ScratchSweeper({
       getScratchDirAbs: () => '/scratch',

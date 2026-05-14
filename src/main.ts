@@ -1,6 +1,4 @@
-import { Plugin, Notice, FileSystemAdapter } from 'obsidian';
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import * as path from 'node:path';
+import { Plugin, Notice, normalizePath } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
@@ -24,23 +22,25 @@ export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
-  private castLogStore!: CastLogStore;
-  private pluginDirAbs!: string;
+  #castLogStore!: CastLogStore;
+  #pluginDir!: string;
 
   async onload(): Promise<void> {
-    await this.initCore();
-    const basePath = (this.app.vault.adapter as FileSystemAdapter).getBasePath();
-    this.pluginDirAbs = path.join(basePath, this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`);
-    const pluginDirAbs = this.pluginDirAbs;
+    await this.#initCore();
+    const adapter = this.app.vault.adapter;
+    this.#pluginDir = this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`;
+    const pluginDir = this.#pluginDir;
 
-    this.castLogStore = new CastLogStore({
-      getLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-local.jsonl'),
-      getRemoteLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-remote.jsonl'),
+    this.#castLogStore = new CastLogStore({
+      adapter,
+      getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-local.jsonl`),
+      getRemoteLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
     });
 
     const materializer = new HookMaterializer({
-      getPluginDirAbs: () => pluginDirAbs,
-      getLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-local.jsonl'),
+      adapter,
+      getPluginDirAbs: () => pluginDir,
+      getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-local.jsonl`),
     });
     try {
       await materializer.run();
@@ -49,7 +49,8 @@ export default class GrimoirePlugin extends Plugin {
     }
 
     const sweeper = new ScratchSweeper({
-      getScratchDirAbs: () => path.join(pluginDirAbs, 'cast-log-scratch'),
+      adapter,
+      getScratchDirAbs: () => normalizePath(`${pluginDir}/cast-log-scratch`),
     });
     sweeper.sweep().catch(console.error);
 
@@ -57,9 +58,9 @@ export default class GrimoirePlugin extends Plugin {
     const imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
       castRunner: new CastRunner(),
-      castLogStore: this.castLogStore,
+      castLogStore: this.#castLogStore,
     });
-    this.registerUI(sessionMap, imprinter);
+    this.#registerUI(sessionMap, imprinter);
   }
 
   onunload(): void {
@@ -68,58 +69,58 @@ export default class GrimoirePlugin extends Plugin {
 
   save(): void { this.saver.schedule(); }
 
-  private async initCore(): Promise<void> {
+  async #initCore(): Promise<void> {
     this.data = hydrate(await this.loadData(), this.app);
     this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
     this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
   }
 
-  private registerUI(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
+  #registerUI(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
     this.addSettingTab(new GrimoireSettingTab(this.app, this));
     this.addCommand({
       id: 'open-popup',
       name: 'Open spell browser',
-      callback: () => this.openCommandPopup(sessionMap, imprinter),
+      callback: () => this.#openCommandPopup(sessionMap, imprinter),
     });
   }
 
-  private openCommandPopup(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
+  #openCommandPopup(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
     // close is captured by reference — popup and dispatcher are assigned before either close can fire.
     const closeRef = { close: () => {} };
-    const dispatcher = this.createDispatcher(closeRef);
-    const popup = this.createCommandPopup(sessionMap, imprinter, dispatcher, closeRef);
+    const dispatcher = this.#createDispatcher(closeRef);
+    const popup = this.#createCommandPopup(sessionMap, imprinter, dispatcher, closeRef);
     closeRef.close = () => popup.close();
     popup.open();
   }
 
-  private createDispatcher(closeRef: { close: () => void }): CastDispatcher {
+  #createDispatcher(closeRef: { close: () => void }): CastDispatcher {
     return new CastDispatcher({
       notify: (msg) => { new Notice(msg); },
       close: () => closeRef.close(),
       castRunner: new CastRunner(),
-      castLogStore: this.castLogStore,
+      castLogStore: this.#castLogStore,
     });
   }
 
-  private createCommandPopup(
+  #createCommandPopup(
     sessionMap: OptionsSessionMap,
     imprinter: ForgeImprinter,
     dispatcher: CastDispatcher,
     closeRef: { close: () => void },
   ): CommandPopup {
-    const pluginDirAbs = this.pluginDirAbs;
-    const manifestDir = this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`;
+    const pluginDir = this.#pluginDir;
     const castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'> = {
-      source: new CastLogSource({ reader: this.castLogStore, foldEvents }),
+      source: new CastLogSource({ reader: this.#castLogStore, foldEvents }),
       refresh: new VaultRefreshCoordinator({
+        adapter: this.app.vault.adapter,
         vault: this.app.vault,
         watchedVaultPaths: [
-          `${manifestDir}/cast-log-local.jsonl`,
-          `${manifestDir}/cast-log-remote.jsonl`,
+          normalizePath(`${pluginDir}/cast-log-local.jsonl`),
+          normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
         ],
         watchedAbsPaths: [
-          path.join(pluginDirAbs, 'cast-log-local.jsonl'),
-          path.join(pluginDirAbs, 'cast-log-remote.jsonl'),
+          normalizePath(`${pluginDir}/cast-log-local.jsonl`),
+          normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
         ],
         pollIntervalMs: 1500,
         debounceMs: 50,

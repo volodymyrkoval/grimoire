@@ -32,6 +32,17 @@ export default [
         { "argsIgnorePattern": "^_" }
       ],
       "obsidianmd/sample-names": "off",
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "MethodDefinition[accessibility='private']",
+          "message": "Use # private fields instead of the 'private' keyword.",
+        },
+        {
+          "selector": "PropertyDefinition[accessibility='private']",
+          "message": "Use # private fields instead of the 'private' keyword.",
+        },
+      ],
     },
   },
 ];

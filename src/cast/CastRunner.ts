@@ -39,13 +39,13 @@ export class CastRunner {
   }
 
   run(input: CastRunInput, callbacks: CastRunCallbacks): void {
-    const binary = this.getPathToBinary(input);
-    const args = this.getCastArgs(input);
+    const binary = this.#getPathToBinary(input);
+    const args = this.#getCastArgs(input);
 
-    this.spawnCast(binary, args, input, callbacks);
+    this.#spawnCast(binary, args, input, callbacks);
   }
 
-  private spawnCast(
+  #spawnCast(
     binary: string,
     args: string[],
     input: CastRunInput,
@@ -59,11 +59,11 @@ export class CastRunner {
         env: { VAULT_MOUNT_PATH: input.vaultMountPath, CAST_ID: input.castId },
         cwd: input.vaultMountPath,
       })
-      .then(this.onCastExit(callbacks))
-      .catch(this.onCastError(callbacks));
+      .then(this.#onCastExit(callbacks))
+      .catch(this.#onCastError(callbacks));
   }
 
-  private onCastExit(callbacks: CastRunCallbacks) {
+  #onCastExit(callbacks: CastRunCallbacks) {
     return ({ code, stderrTail, error }: CastExitInfo) => {
       if (code === 0) {
         callbacks.onSuccess();
@@ -73,20 +73,20 @@ export class CastRunner {
     };
   }
 
-  private onCastError(callbacks: CastRunCallbacks) {
+  #onCastError(callbacks: CastRunCallbacks) {
     return (err: Error) => {
       console.error(err);
       callbacks.onFailure(err.message);
     };
   }
 
-  private getCastArgs(input: CastRunInput) {
+  #getCastArgs(input: CastRunInput) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { binaryPath, cliCommand, castId: _castId, ...castArgsInput } = input;
     return buildCastArgs(castArgsInput);
   }
 
-  private getPathToBinary(input: CastRunInput) {
+  #getPathToBinary(input: CastRunInput) {
     return resolveCliBinary({
       binaryPath: input.binaryPath,
       cliCommand: input.cliCommand,

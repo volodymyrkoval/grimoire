@@ -3,8 +3,7 @@
 // Sync spawner throws reject the promise; async spawn errors (ENOENT, EACCES) resolve
 // with `{ code: null, error, stderrTail }` so callers can branch on the resolved shape.
 
-// eslint-disable-next-line obsidianmd/no-nodejs-modules -- plugin is desktop-only; child_process is the cast mechanism
-import { spawn as nodeSpawn } from "child_process";
+import { Platform } from "obsidian";
 
 export interface CastSpawnConfig {
   binary: string;
@@ -51,14 +50,17 @@ interface StderrBuffer {
 }
 
 export class CastSpawner {
-  constructor(private readonly ports?: CastSpawnPorts) {}
+  readonly #ports: CastSpawnPorts | undefined;
 
-  run(config: CastSpawnConfig): Promise<CastExitInfo> {
+  constructor(ports?: CastSpawnPorts) {
+    this.#ports = ports;
+  }
+
+  async run(config: CastSpawnConfig): Promise<CastExitInfo> {
+    const spawner = this.#ports?.spawner ?? await this.#loadSpawner();
+    const options = this.#getOptions(config);
+
     return new Promise<CastExitInfo>((resolve, reject) => {
-      const spawner = this.getSpawner();
-
-      const options = this.getOptions(config);
-
       let child: SpawnedProcess;
       try {
         child = spawner(config.binary, config.args, options);
@@ -74,11 +76,19 @@ export class CastSpawner {
         resolve(info);
       };
 
-      this.listenToForgingProcess(child, safeResolve);
+      this.#listenToForgingProcess(child, safeResolve);
     });
   }
 
-  private listenToForgingProcess(
+  async #loadSpawner(): Promise<SpawnFn> {
+    if (!Platform.isDesktop) {
+      throw new Error("CastSpawner requires a desktop environment");
+    }
+    const { spawn } = await import("child_process");
+    return spawn as unknown as SpawnFn;
+  }
+
+  #listenToForgingProcess(
     child: SpawnedProcess,
     safeResolve: (info: CastExitInfo) => void
   ) {
@@ -90,16 +100,12 @@ export class CastSpawner {
       stderrFull.message += chunk.toString();
     });
 
-    child.on("exit", this.handleForgingProcessExit(stderrFull, safeResolve));
+    child.on("exit", this.#handleForgingProcessExit(stderrFull, safeResolve));
 
-    child.on("error", this.handleForgingProcessError(stderrFull, safeResolve));
+    child.on("error", this.#handleForgingProcessError(stderrFull, safeResolve));
   }
 
-  private getSpawner() {
-    return this.ports?.spawner ?? (nodeSpawn as unknown as SpawnFn);
-  }
-
-  private getOptions(config: CastSpawnConfig) {
+  #getOptions(config: CastSpawnConfig) {
     const mergedEnv: Record<string, string | undefined> = {
       ...process.env,
       ...config.env,
@@ -111,7 +117,7 @@ export class CastSpawner {
     };
   }
 
-  private handleForgingProcessError(
+  #handleForgingProcessError(
     stderrFull: StderrBuffer,
     safeResolve: (info: CastExitInfo) => void
   ) {
@@ -124,7 +130,7 @@ export class CastSpawner {
     };
   }
 
-  private handleForgingProcessExit(
+  #handleForgingProcessExit(
     stderrFull: StderrBuffer,
     safeResolve: (info: CastExitInfo) => void
   ) {

@@ -16,15 +16,17 @@ const SENTINELS: readonly Sentinel[] = [
 export class SpellsPanel implements TabPanel {
   readonly id = "spells";
   readonly events = new TypedEmitter<SpellEvents>();
-  private readonly allSpells: readonly Spell[];
+  readonly #allSpells: readonly Spell[];
+  // eslint-disable-next-line no-restricted-syntax -- accessed via bracket notation in tests
   private filteredSpells: Spell[];
+  // eslint-disable-next-line no-restricted-syntax -- accessed via bracket notation in tests
   private spellList: SpellList | null = null;
   #hasOverride: (path: SpellPath) => boolean = () => false;
   #lastSelectedIndex: number = 0;
 
   constructor(app: App, tag: string) {
-    this.allSpells = getSpells(app, tag);
-    this.filteredSpells = [...this.allSpells];
+    this.#allSpells = getSpells(app, tag);
+    this.filteredSpells = [...this.#allSpells];
   }
 
   mount(container: HTMLElement, hasOverride?: (path: SpellPath) => boolean): void {
@@ -37,9 +39,9 @@ export class SpellsPanel implements TabPanel {
   }
 
   filter(query: string): number {
-    const results = fuzzyFilter(this.allSpells, SENTINELS, query);
+    const results = fuzzyFilter(this.#allSpells, SENTINELS, query);
     this.filteredSpells = results.filter((item): item is Spell => !isSentinel(item));
-    const initialIndex = this.sentinelFocusIndex(query);
+    const initialIndex = this.#sentinelFocusIndex(query);
     this.#lastSelectedIndex = initialIndex;
     this.spellList?.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
     return initialIndex;
@@ -76,7 +78,7 @@ export class SpellsPanel implements TabPanel {
   }
 
   reset(): void {
-    this.filteredSpells = [...this.allSpells];
+    this.filteredSpells = [...this.#allSpells];
   }
 
   setHasOverride(predicate: (path: SpellPath) => boolean): void {
@@ -87,7 +89,7 @@ export class SpellsPanel implements TabPanel {
     this.spellList?.render(this.filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
   }
 
-  private sentinelFocusIndex(query: string): number {
+  #sentinelFocusIndex(query: string): number {
     if (!query || this.filteredSpells.length > 0) return 0;
     const idx = SENTINELS.findIndex((s) =>
       s.name.toLowerCase().includes(query)

@@ -8,14 +8,14 @@ import { durationMs } from '../../castLog/format/durationMs';
 
 export class CastLogRow {
   readonly el: HTMLElement;
-  private record: CastRecord;
-  private startedSpan: HTMLElement;
-  private durationSpan: HTMLElement;
-  private statusBadgeSpan: HTMLElement;
-  private nameSpan: HTMLElement;
-  private modelBadgeSpan: HTMLElement;
-  private bodyEl: HTMLElement;
-  private readonly onOpenLink: (path: string) => void;
+  #record: CastRecord;
+  #startedSpan: HTMLElement;
+  #durationSpan: HTMLElement;
+  #statusBadgeSpan: HTMLElement;
+  #nameSpan: HTMLElement;
+  #modelBadgeSpan: HTMLElement;
+  #bodyEl: HTMLElement;
+  readonly #onOpenLink: (path: string) => void;
 
   constructor(
     container: HTMLElement,
@@ -25,8 +25,8 @@ export class CastLogRow {
     onToggle: () => void,
     onOpenLink: (path: string) => void
   ) {
-    this.record = record;
-    this.onOpenLink = onOpenLink;
+    this.#record = record;
+    this.#onOpenLink = onOpenLink;
     this.el = container.createDiv({ cls: 'cast-log-row' });
     if (expanded) {
       this.el.addClass('is-expanded');
@@ -38,67 +38,67 @@ export class CastLogRow {
 
     // Display name
     const displayName = resolveDisplayName(record);
-    this.nameSpan = header.createSpan({ cls: 'cast-log-display-name', text: displayName });
-    this.nameSpan.title = displayName;
+    this.#nameSpan = header.createSpan({ cls: 'cast-log-display-name', text: displayName });
+    this.#nameSpan.title = displayName;
 
     // Model + effort badge
     const modelText = record.effort ? `${record.model} ${record.effort}` : record.model;
-    this.modelBadgeSpan = header.createSpan({ cls: 'cast-log-model-badge', text: modelText });
+    this.#modelBadgeSpan = header.createSpan({ cls: 'cast-log-model-badge', text: modelText });
 
     // Relative time span (started)
-    this.startedSpan = header.createSpan({
+    this.#startedSpan = header.createSpan({
       cls: 'cast-log-started',
       text: formatRelativeTime(new Date(record.castedTs), now),
     });
 
     // Duration span
     const ms = durationMs(record, now);
-    this.durationSpan = header.createSpan({
+    this.#durationSpan = header.createSpan({
       cls: 'cast-log-duration',
       text: formatDuration(ms),
     });
 
     // Status badge
     const { label, cls } = statusBadge(record.status);
-    this.statusBadgeSpan = header.createSpan({
+    this.#statusBadgeSpan = header.createSpan({
       cls: `cast-log-status-badge ${cls}`,
       text: label,
     });
 
     // Body (collapsible)
-    this.bodyEl = this.el.createDiv({ cls: 'cast-log-row-body' });
-    this.renderBody(record);
+    this.#bodyEl = this.el.createDiv({ cls: 'cast-log-row-body' });
+    this.#renderBody(record);
   }
 
   get castId(): string {
-    return this.record.castId;
+    return this.#record.castId;
   }
 
   /** Called by CastLogList when the same castId receives an updated record. */
   update(record: CastRecord, expanded: boolean, now: Date): void {
-    this.record = record;
+    this.#record = record;
 
     // Update header spans
     const displayName = resolveDisplayName(record);
-    this.nameSpan.textContent = displayName;
-    this.nameSpan.title = displayName;
+    this.#nameSpan.textContent = displayName;
+    this.#nameSpan.title = displayName;
 
     const modelText = record.effort ? `${record.model} ${record.effort}` : record.model;
-    this.modelBadgeSpan.textContent = modelText;
+    this.#modelBadgeSpan.textContent = modelText;
 
-    this.startedSpan.textContent = formatRelativeTime(new Date(record.castedTs), now);
+    this.#startedSpan.textContent = formatRelativeTime(new Date(record.castedTs), now);
 
     const ms = durationMs(record, now);
-    this.durationSpan.textContent = formatDuration(ms);
+    this.#durationSpan.textContent = formatDuration(ms);
 
     // Re-render status badge
     const { label, cls } = statusBadge(record.status);
-    this.statusBadgeSpan.textContent = label;
-    this.statusBadgeSpan.className = `cast-log-status-badge ${cls}`;
+    this.#statusBadgeSpan.textContent = label;
+    this.#statusBadgeSpan.className = `cast-log-status-badge ${cls}`;
 
     // Re-render body
-    this.bodyEl.empty();
-    this.renderBody(record);
+    this.#bodyEl.empty();
+    this.#renderBody(record);
 
     // Update expanded state
     if (expanded) {
@@ -110,17 +110,17 @@ export class CastLogRow {
 
   repaintTimes(now: Date): void {
     // Update relative time span (always — cast time is always relevant)
-    this.startedSpan.textContent = formatRelativeTime(new Date(this.record.castedTs), now);
+    this.#startedSpan.textContent = formatRelativeTime(new Date(this.#record.castedTs), now);
 
     // Update duration only for in-flight rows — completed rows have a fixed duration
-    if (!this.record.endedTs) {
-      const ms = durationMs(this.record, now);
-      this.durationSpan.textContent = formatDuration(ms);
+    if (!this.#record.endedTs) {
+      const ms = durationMs(this.#record, now);
+      this.#durationSpan.textContent = formatDuration(ms);
     }
   }
 
-  private renderBody(record: CastRecord): void {
-    const body = this.bodyEl;
+  #renderBody(record: CastRecord): void {
+    const body = this.#bodyEl;
 
     // Cast ID (monospace, selectable) with label
     const castIdRow = body.createDiv({ cls: 'cast-log-field-row' });
@@ -138,7 +138,7 @@ export class CastLogRow {
         link.href = '#';
         link.addEventListener('click', (e) => {
           e.preventDefault();
-          this.onOpenLink(notePath);
+          this.#onOpenLink(notePath);
         });
       }
     }
@@ -153,7 +153,7 @@ export class CastLogRow {
         link.href = '#';
         link.addEventListener('click', (e) => {
           e.preventDefault();
-          this.onOpenLink(filePath);
+          this.#onOpenLink(filePath);
         });
       }
     }

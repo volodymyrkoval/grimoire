@@ -1,5 +1,3 @@
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import { randomUUID } from 'node:crypto';
 import { GrimoireSettings } from '../domain/settings/Settings';
 import { CastRunner } from '../cast/CastRunner';
 import { CastLogStore } from '../castLog/store';
@@ -25,7 +23,7 @@ export class ForgeImprinter {
     this.#notify = deps.notify;
     this.#castRunner = deps.castRunner;
     this.#castLogStore = deps.castLogStore;
-    this.#generateId = deps.generateId ?? (() => randomUUID());
+    this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
   }
 
   imprint(snapshot: ForgeFormSnapshot, settings: GrimoireSettings, close: () => void): void {
@@ -36,26 +34,17 @@ export class ForgeImprinter {
       return;
     }
 
-    const castId = this.#generateId();
-    this.#castLogStore
-      .recordCasted({
-        castId,
-        spellPath: FORGE_SPELL_PATH,
-        model: snapshot.model,
-        effort: snapshot.effort,
-        contextNotes: [],
-      })
-      .catch(console.error);
+    const castId = this.#recordCast(snapshot);
 
-    const metaSpell = this.getMetaSpell(snapshot, sanitised, settings);
+    const metaSpell = this.#getMetaSpell(snapshot, sanitised, settings);
 
     this.#notify(`Forging "${sanitised}"…`);
     close();
 
-    this.runCasting(metaSpell, snapshot, settings, sanitised, castId);
+    this.#runCasting(metaSpell, snapshot, settings, sanitised, castId);
   }
 
-  private runCasting(
+  #runCasting(
     metaSpell: string,
     snapshot: ForgeFormSnapshot,
     settings: GrimoireSettings,
@@ -84,7 +73,22 @@ export class ForgeImprinter {
     );
   }
 
-  private getMetaSpell(snapshot: ForgeFormSnapshot, sanitised: string, settings: GrimoireSettings) {
+  #recordCast(snapshot: ForgeFormSnapshot) {
+    const castId = this.#generateId();
+    this.#castLogStore
+      .recordCasted({
+        castId,
+        spellPath: FORGE_SPELL_PATH,
+        model: snapshot.model,
+        effort: snapshot.effort,
+        contextNotes: [],
+      })
+      .catch(console.error);
+
+    return castId;
+  }
+
+  #getMetaSpell(snapshot: ForgeFormSnapshot, sanitised: string, settings: GrimoireSettings) {
     return buildMetaSpell({
       description: snapshot.description,
       name: sanitised,

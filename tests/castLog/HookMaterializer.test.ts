@@ -114,9 +114,9 @@ describe('HookMaterializer', () => {
     });
 
     it('should use default writeFile and mkdir when not provided', async () => {
-      // Note: default ports use fs/promises.writeFile+chmod and fs/promises.mkdir.
-      // This test verifies the code path exists by constructing without ports.
-      // In a real scenario, fs.promises would be called; here we confirm
+      // Note: default ports use DataAdapter.write and DataAdapter.mkdir.
+      // This test verifies the code path exists by constructing without IO ports.
+      // In a real scenario, the adapter would be called; here we confirm
       // the implementation sets up defaults correctly by checking constructor behavior.
 
       const mat = new HookMaterializer({

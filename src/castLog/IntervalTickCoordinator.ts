@@ -1,42 +1,41 @@
-/* eslint-disable obsidianmd/prefer-active-doc */
 import { TickCoordinator } from './TickCoordinator';
 
 interface IntervalTickCoordinatorOptions {
   intervalMs: number;
-  setInterval?: typeof globalThis.setInterval;
-  clearInterval?: typeof globalThis.clearInterval;
+  setInterval?: typeof activeWindow.setInterval;
+  clearInterval?: typeof activeWindow.clearInterval;
 }
 
 export class IntervalTickCoordinator implements TickCoordinator {
-  private intervalMs: number;
-  private setInterval: typeof globalThis.setInterval;
-  private clearInterval: typeof globalThis.clearInterval;
-  private handle: number | null = null;
+  #intervalMs: number;
+  #setInterval: typeof activeWindow.setInterval;
+  #clearInterval: typeof activeWindow.clearInterval;
+  #handle: ReturnType<typeof activeWindow.setInterval> | null = null;
 
   constructor(options: IntervalTickCoordinatorOptions) {
-    this.intervalMs = options.intervalMs;
-    this.setInterval = (options.setInterval ?? globalThis.setInterval.bind(globalThis)) as typeof globalThis.setInterval;
-    this.clearInterval = (options.clearInterval ?? globalThis.clearInterval.bind(globalThis)) as typeof globalThis.clearInterval;
+    this.#intervalMs = options.intervalMs;
+    this.#setInterval = (options.setInterval ?? activeWindow.setInterval.bind(activeWindow)) as typeof activeWindow.setInterval;
+    this.#clearInterval = (options.clearInterval ?? activeWindow.clearInterval.bind(activeWindow)) as typeof activeWindow.clearInterval;
   }
 
   start(onTick: () => void): void {
-    if (this.handle !== null) {
+    if (this.#handle !== null) {
       throw new Error('TickCoordinator already started');
     }
 
-    this.handle = this.setInterval(() => {
+    this.#handle = this.#setInterval(() => {
       try {
         onTick();
       } catch {
         // Swallow callback errors; the interval continues
       }
-    }, this.intervalMs);
+    }, this.#intervalMs);
   }
 
   stop(): void {
-    if (this.handle !== null) {
-      this.clearInterval(this.handle);
-      this.handle = null;
+    if (this.#handle !== null) {
+      this.#clearInterval(this.#handle);
+      this.#handle = null;
     }
   }
 }

@@ -30,62 +30,66 @@ export interface CastLogPanelDeps {
 export class CastLogPanel implements TabPanel {
   readonly id = 'logs';
 
-  private list?: CastLogList;
-  private records: CastRecord[] = [];
-  private expandedIds = new Set<string>();
-  private disposed = false;
+  #list?: CastLogList;
+  #records: CastRecord[] = [];
+  #expandedIds = new Set<string>();
+  #disposed = false;
+  // eslint-disable-next-line no-restricted-syntax -- accessed via bracket notation in tests
+  private deps: CastLogPanelDeps;
 
-  constructor(private deps: CastLogPanelDeps) {}
+  constructor(deps: CastLogPanelDeps) {
+    this.deps = deps;
+  }
 
   mount(container: HTMLElement): void {
-    this.disposed = false;
+    this.#disposed = false;
 
     // Create the list component
-    this.list = new CastLogList(container, this.deps.openLink);
+    this.#list = new CastLogList(container, this.deps.openLink);
 
     // Load records and render
     void this.deps.source.load().then((records) => {
-      if (this.disposed) return;
-      this.records = records;
-      this.renderList();
+      if (this.#disposed) return;
+      this.#records = records;
+      this.#renderList();
     });
 
     // Start refresh coordinator
-    this.deps.refresh.start(() => this.reload());
+    this.deps.refresh.start(() => this.#reload());
 
     // Start tick coordinator
     this.deps.tick.start(() => {
-      if (!this.disposed) {
-        this.list?.repaintTimes(this.deps.now());
+      if (!this.#disposed) {
+        this.#list?.repaintTimes(this.deps.now());
       }
     });
   }
 
-  private renderList(): void {
-    this.list?.render(this.records, this.expandedIds, this.deps.now(), (castId) =>
-      this.handleToggle(castId)
+  #renderList(): void {
+    this.#list?.render(this.#records, this.#expandedIds, this.deps.now(), (castId) =>
+      this.#handleToggle(castId)
     );
   }
 
-  private handleToggle(castId: string): void {
-    if (this.expandedIds.has(castId)) {
-      this.expandedIds.delete(castId);
+  #handleToggle(castId: string): void {
+    if (this.#expandedIds.has(castId)) {
+      this.#expandedIds.delete(castId);
     } else {
-      this.expandedIds.add(castId);
+      this.#expandedIds.add(castId);
     }
-    this.renderList();
+    this.#renderList();
   }
 
-  private reload(): void {
+  #reload(): void {
     void this.deps.source.load().then((records) => {
-      if (this.disposed) return;
-      this.records = records;
-      this.renderList();
+      if (this.#disposed) return;
+      this.#records = records;
+      this.#renderList();
     });
   }
 
   unmount(): void {
-    this.disposed = true;
+    this.#disposed = true;
     this.deps.refresh.stop();
     this.deps.tick.stop();
   }

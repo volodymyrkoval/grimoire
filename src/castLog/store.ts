@@ -1,5 +1,4 @@
-// eslint-disable-next-line obsidianmd/no-nodejs-modules
-import { appendFile, readFile as fsReadFile } from 'node:fs/promises';
+import type { DataAdapter } from 'obsidian';
 import type { CastedEvent, ErrorEvent, CastLogEvent } from './types';
 
 export interface CastLogStorePorts {
@@ -8,6 +7,7 @@ export interface CastLogStorePorts {
   appendLine?: (filePath: string, line: string) => Promise<void>;
   readFile?: (path: string, encoding: 'utf-8') => Promise<string>;
   now?: () => Date;
+  adapter?: DataAdapter;
 }
 
 export type RecordCastedInput = Omit<CastedEvent, 'stage' | 'ts'>;
@@ -22,8 +22,17 @@ export class CastLogStore {
   constructor(ports: CastLogStorePorts) {
     this.#ports = ports;
     this.#now = ports.now ?? (() => new Date());
-    this.#appendLine = ports.appendLine ?? ((filePath, line) => appendFile(filePath, line));
-    this.#readFile = ports.readFile ?? ((path, encoding) => fsReadFile(path, encoding));
+    const adapter = ports.adapter;
+    this.#appendLine = ports.appendLine ?? (async (filePath, line) => {
+      const existing = adapter && (await adapter.exists(filePath)) ? await adapter.read(filePath) : '';
+      await adapter!.write(filePath, existing + line);
+    });
+    this.#readFile = ports.readFile ?? (async (filePath, _) => {
+      if (adapter && !(await adapter.exists(filePath))) {
+        throw Object.assign(new Error(`ENOENT: ${filePath}`), { code: 'ENOENT' });
+      }
+      return adapter!.read(filePath);
+    });
   }
 
   async recordCasted(input: RecordCastedInput): Promise<void> {

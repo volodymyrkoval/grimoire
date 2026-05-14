@@ -10,14 +10,14 @@ export class SearchInput {
     initialSelectedIndex: number,
     onFilter: FilterCallback
   ) {
-    const input = this.createInput(container, panel, initialQuery);
+    const input = this.#createInput(container, panel, initialQuery);
     panel.mount(container);
-    this.restoreSelection(panel, initialSelectedIndex);
-    this.applyInitialFilter(panel, initialQuery, initialSelectedIndex, onFilter);
-    this.bindInputHandler(input, panel, onFilter);
+    this.#restoreSelection(panel, initialSelectedIndex);
+    this.#applyInitialFilter(panel, initialQuery, initialSelectedIndex, onFilter);
+    this.#bindInputHandler(input, panel, onFilter);
   }
 
-  private createInput(container: HTMLElement, panel: TabPanel, initialQuery: string): HTMLInputElement {
+  #createInput(container: HTMLElement, panel: TabPanel, initialQuery: string): HTMLInputElement {
     const input = container.createEl("input", { type: "text", cls: "grimoire-search-input" });
     input.placeholder = `Search ${panel.id}…`;
     input.value = initialQuery;
@@ -25,13 +25,13 @@ export class SearchInput {
     return input;
   }
 
-  private restoreSelection(panel: TabPanel, selectedIndex: number): void {
+  #restoreSelection(panel: TabPanel, selectedIndex: number): void {
     if (selectedIndex !== 0) {
       panel.updateSelection(0, selectedIndex);
     }
   }
 
-  private applyInitialFilter(
+  #applyInitialFilter(
     panel: TabPanel,
     initialQuery: string,
     initialSelectedIndex: number,
@@ -39,11 +39,11 @@ export class SearchInput {
   ): void {
     if (!initialQuery) return;
     panel.filter(initialQuery);
-    this.restoreSelection(panel, initialSelectedIndex);
+    this.#restoreSelection(panel, initialSelectedIndex);
     onFilter(initialQuery, initialSelectedIndex);
   }
 
-  private bindInputHandler(input: HTMLInputElement, panel: TabPanel, onFilter: FilterCallback): void {
+  #bindInputHandler(input: HTMLInputElement, panel: TabPanel, onFilter: FilterCallback): void {
     input.oninput = () => {
       const query = input.value.toLowerCase();
       onFilter(query, panel.filter(query));

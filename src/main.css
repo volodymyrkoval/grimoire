@@ -1,4 +1,8 @@
 /* Grimoire plugin styles */
+.spells-list--hover-reset {
+    pointer-events: none;
+}
+
 .spells-row {
     display: flex;
     justify-content: space-between;
