@@ -45,6 +45,11 @@ npm run arch:check      # architecture fitness check
 - Real-Obsidian end-to-end tests would still require a running vault (out of scope)
 - `/done` runs the integration suite via `.claude/integration-test-cmd`; pre-commit and stop-guard do not
 
+## Linting rules
+
+- Never disable `obsidianmd/*` ESLint rules with `eslint-disable`. Fix the code to satisfy them instead.
+  - `no-manual-html-headings` → use `new Setting(el).setName('…').setHeading()` instead of `createEl('h3', …)`
+
 ## Next steps
 
 - `npm install` to fetch dependencies

@@ -31,9 +31,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
   }
 
   #renderAdvancedSection(): void {
-    this.containerEl.createEl('hr');
-    // eslint-disable-next-line obsidianmd/settings-tab/no-manual-html-headings
-    this.containerEl.createEl('h3', { text: 'Advanced' });
+    new Setting(this.containerEl).setName('Advanced').setHeading();
     const s = this.#plugin.data.settings;
     this.#addToggleField(
       'Remote execution',
