@@ -15,8 +15,8 @@ export class IntervalTickCoordinator implements TickCoordinator {
 
   constructor(options: IntervalTickCoordinatorOptions) {
     this.intervalMs = options.intervalMs;
-    this.setInterval = options.setInterval || globalThis.setInterval;
-    this.clearInterval = options.clearInterval || globalThis.clearInterval;
+    this.setInterval = (options.setInterval ?? globalThis.setInterval.bind(globalThis)) as typeof globalThis.setInterval;
+    this.clearInterval = (options.clearInterval ?? globalThis.clearInterval.bind(globalThis)) as typeof globalThis.clearInterval;
   }
 
   start(onTick: () => void): void {
