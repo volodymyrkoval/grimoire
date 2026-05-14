@@ -6,6 +6,7 @@ import type { Scope } from 'obsidian';
 import type { Effort } from '../../src/domain/settings/Settings';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
+import type { CastLogPanelDeps } from '../../src/ui/tabs/CastLogPanel';
 
 export interface PopupHarness {
   modal: CommandPopup;
@@ -25,6 +26,15 @@ export interface PopupHarness {
   activeTabId(): string;
   searchInput(): HTMLInputElement;
   isInDetail(): boolean;
+}
+
+function makeFakeCastLogPanelDeps(): Omit<CastLogPanelDeps, 'openLink'> {
+  return {
+    source: { load: vi.fn().mockResolvedValue([]) },
+    refresh: { start: vi.fn(), stop: vi.fn() },
+    tick: { start: vi.fn(), stop: vi.fn() },
+    now: () => new Date(),
+  };
 }
 
 export function createPopupHarness(options?: {
@@ -61,7 +71,7 @@ export function createPopupHarness(options?: {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction, defaults, overrides, sessionMap, optionsCastAction });
+  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction, defaults, overrides, sessionMap, castLogPanelDeps: makeFakeCastLogPanelDeps(), optionsCastAction });
   modal.open();
   const { contentEl } = modal;
 

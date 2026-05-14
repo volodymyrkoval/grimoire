@@ -7,6 +7,7 @@ import * as FSDModule from '../src/ui/components/ForgeSentinelDetail';
 import * as OptionsPanelModule from '../src/ui/options/OptionsPanel';
 import { SpellOverrideStore } from '../src/domain/settings/SpellOverrideStore';
 import { OptionsSessionMap } from '../src/ui/options/OptionsSessionMap';
+import type { CastLogPanelDeps } from '../src/ui/tabs/CastLogPanel';
 
 // EffortRow uses document.createElement — not available in the unit test environment
 vi.mock('../src/ui/widgets/EffortRow', () => ({
@@ -59,6 +60,15 @@ function makeStubOverrides() {
   });
 }
 
+function makeFakeCastLogPanelDeps(): Omit<CastLogPanelDeps, 'openLink'> {
+  return {
+    source: { load: vi.fn().mockResolvedValue([]) },
+    refresh: { start: vi.fn(), stop: vi.fn() },
+    tick: { start: vi.fn(), stop: vi.fn() },
+    now: () => new Date(),
+  };
+}
+
 function makePopup(optionsCastAction?: OptionsCastAction) {
   return new CommandPopup({
     app: makeApp(),
@@ -68,6 +78,7 @@ function makePopup(optionsCastAction?: OptionsCastAction) {
     defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
     overrides: makeStubOverrides(),
     sessionMap: new OptionsSessionMap(),
+    castLogPanelDeps: makeFakeCastLogPanelDeps(),
     optionsCastAction: optionsCastAction ?? vi.fn(),
   });
 }
@@ -222,22 +233,6 @@ describe('CommandPopup ArrowRight — open options', () => {
 
     expect(openOptionsSpy).not.toHaveBeenCalled();
   });
-
-  it('ArrowRight in search phase on logs tab is a no-op', () => {
-    const popup = makePopup();
-    const { dispatch } = installFakeScope(popup as any);
-    popup.onOpen();
-
-    // Switch to logs tab (panels[1])
-    const logsPanel = (popup as any).panels[1];
-    (popup as any).switchTab(logsPanel);
-
-    const spellsPanel = (popup as any).panels[0];
-    const openOptionsSpy = vi.spyOn(spellsPanel, 'openOptions');
-    dispatch('ArrowRight');
-
-    expect(openOptionsSpy).not.toHaveBeenCalled();
-  });
 });
 
 describe('CommandPopup open-options event → renderOptionsPanel', () => {
@@ -275,6 +270,88 @@ describe('CommandPopup open-options event → renderOptionsPanel', () => {
   });
 });
 
+describe('CommandPopup switchTab lifecycle', () => {
+  it('unmounts the outgoing panel before activating the next one', () => {
+    // Regression: switching Spells → Logs → Spells used to call CastLogPanel.mount()
+    // a second time without unmounting first, which re-started the
+    // VaultRefreshCoordinator and threw "already started". switchTab must
+    // unmount the currently active panel before swapping.
+    const popup = makePopup();
+    const { dispatch } = installFakeScope(popup as any);
+    popup.onOpen();
+
+    const panels = (popup as any).panels as any[];
+    const logsPanel = panels.find((p: any) => p.id === 'logs');
+    const unmountSpy = vi.spyOn(logsPanel, 'unmount');
+
+    // Spells (active) → Logs (Tab #1) — logs.mount runs, no unmount expected on spells (no method)
+    dispatch('Tab');
+    expect(unmountSpy).not.toHaveBeenCalled();
+
+    // Logs (active) → Spells (Tab #2) — logs.unmount must be called before switching
+    dispatch('Tab');
+    expect(unmountSpy).toHaveBeenCalledOnce();
+  });
+});
+
+describe('CommandPopup G2 — CastLogPanel wiring', () => {
+  it('panels array contains a CastLogPanel with id "logs" as the second panel', () => {
+    const popup = makePopup();
+    const panels = (popup as any).panels as any[];
+    expect(panels).toHaveLength(2);
+    expect(panels[1].id).toBe('logs');
+  });
+
+  it('onClose calls unmount() on panels that implement it', () => {
+    const fakeDeps = makeFakeCastLogPanelDeps();
+    const popup = new CommandPopup({
+      app: makeApp(),
+      spellTag: 'spell',
+      imprintAction: vi.fn(),
+      castAction: vi.fn(),
+      defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+      overrides: makeStubOverrides(),
+      sessionMap: new OptionsSessionMap(),
+      castLogPanelDeps: fakeDeps,
+      optionsCastAction: vi.fn(),
+    });
+
+    const panels = (popup as any).panels as any[];
+    const logsPanel = panels.find((p: any) => p.id === 'logs');
+    const unmountSpy = vi.spyOn(logsPanel, 'unmount');
+
+    popup.onClose();
+
+    expect(unmountSpy).toHaveBeenCalledOnce();
+  });
+
+  it('CastLogPanel openLink calls workspace.openLinkText and then closes the popup', () => {
+    const app = makeApp();
+    const popup = new CommandPopup({
+      app,
+      spellTag: 'spell',
+      imprintAction: vi.fn(),
+      castAction: vi.fn(),
+      defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+      overrides: makeStubOverrides(),
+      sessionMap: new OptionsSessionMap(),
+      castLogPanelDeps: makeFakeCastLogPanelDeps(),
+      optionsCastAction: vi.fn(),
+    });
+
+    const panels = (popup as any).panels as any[];
+    const logsPanel = panels.find((p: any) => p.id === 'logs');
+    // Access the openLink fn stored in the panel's deps
+    const openLink: (path: string) => void = logsPanel.deps.openLink;
+
+    const closeSpy = vi.spyOn(popup, 'close').mockImplementation(() => {});
+    openLink('Notes/result.md');
+
+    expect(app.workspace.openLinkText).toHaveBeenCalledWith('Notes/result.md', '', false);
+    expect(closeSpy).toHaveBeenCalledOnce();
+  });
+});
+
 describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
   it('spellsPanel hasOverride predicate delegates to overrides.has()', () => {
     const stubOverrides = makeStubOverrides();
@@ -286,6 +363,7 @@ describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
       defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
       overrides: stubOverrides,
       sessionMap: new OptionsSessionMap(),
+      castLogPanelDeps: makeFakeCastLogPanelDeps(),
       optionsCastAction: vi.fn(),
     });
 

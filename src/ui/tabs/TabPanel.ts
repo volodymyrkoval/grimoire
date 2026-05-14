@@ -8,4 +8,6 @@ export interface TabPanel {
   updateSelection(prev: number, next: number): void;
   readonly length: number;
   reset(): void;
+  /** Optional teardown — called by CommandPopup.onClose to stop coordinators. */
+  unmount?(): void;
 }

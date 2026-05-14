@@ -6,7 +6,8 @@ import { SearchInput } from "./components/SearchInput";
 import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
 import type { TabPanel } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
-import { LogsPanel } from "./tabs/LogsPanel";
+import { CastLogPanel } from "./tabs/CastLogPanel";
+import type { CastLogPanelDeps } from "./tabs/CastLogPanel";
 import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
 import type { Effort } from "../domain/settings/Settings";
 import { SUPPORTED_MODELS } from "../domain/settings/Settings";
@@ -32,6 +33,7 @@ export interface CommandPopupParams {
   defaults: FormDefaults;
   overrides: SpellOverrideStore;
   sessionMap: OptionsSessionMap;
+  castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'>;
   optionsCastAction: OptionsCastAction;
 }
 
@@ -60,7 +62,14 @@ export class CommandPopup extends Modal {
     this.#overrides = params.overrides;
     this.#sessionMap = params.sessionMap;
     this.#optionsCastAction = params.optionsCastAction;
-    this.panels = [this.createSpellsPanel(params.spellTag), new LogsPanel()];
+    const castLogPanel = new CastLogPanel({
+      ...params.castLogPanelDeps,
+      openLink: (path) => {
+        void this.app.workspace.openLinkText(path, '', false);
+        this.close();
+      },
+    });
+    this.panels = [this.createSpellsPanel(params.spellTag), castLogPanel];
     this.activePanel = this.panels[0];
   }
 
@@ -104,6 +113,7 @@ export class CommandPopup extends Modal {
   }
 
   onClose(): void {
+    this.panels.forEach((p) => p.unmount?.());
     this.contentEl.empty();
   }
 
@@ -238,6 +248,11 @@ export class CommandPopup extends Modal {
   }
 
   private switchTab(panel: TabPanel): void {
+    // Tear down the outgoing panel before swapping — otherwise re-entering it
+    // (Spells → Logs → Spells) re-runs mount() on a panel that's still
+    // holding live coordinators (e.g. CastLogPanel re-starting an already-
+    // started VaultRefreshCoordinator).
+    this.activePanel.unmount?.();
     this.activePanel = panel;
     this.phase = "search";
     this.#searchQuery = "";

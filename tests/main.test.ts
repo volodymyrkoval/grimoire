@@ -416,6 +416,51 @@ describe('GrimoirePlugin', () => {
     imprintSpy.mockRestore();
   });
 
+  it('command callback passes castLogPanelDeps to CommandPopup with source, refresh, tick, and now', async () => {
+    await plugin.onload();
+
+    const CommandPopupModule = await import('../src/ui/CommandPopup');
+    const popupSpy = vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function() {
+      return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
+    } as any);
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-popup'
+    );
+    commandCall![0].callback();
+
+    expect(popupSpy).toHaveBeenCalledOnce();
+    const params = popupSpy.mock.calls[0][0] as any;
+    expect(params.castLogPanelDeps).toBeDefined();
+    expect(typeof params.castLogPanelDeps.source?.load).toBe('function');
+    expect(typeof params.castLogPanelDeps.refresh?.start).toBe('function');
+    expect(typeof params.castLogPanelDeps.refresh?.stop).toBe('function');
+    expect(typeof params.castLogPanelDeps.tick?.start).toBe('function');
+    expect(typeof params.castLogPanelDeps.tick?.stop).toBe('function');
+    expect(typeof params.castLogPanelDeps.now).toBe('function');
+
+    popupSpy.mockRestore();
+  });
+
+  it('CastLogStore receives getRemoteLogPathAbs port on construction', async () => {
+    const CastLogStoreModule = await import('../src/castLog/store');
+    const OriginalStore = CastLogStoreModule.CastLogStore;
+    const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
+      return new OriginalStore(deps);
+    });
+
+    await plugin.onload();
+
+    expect(storeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        getLogPathAbs: expect.any(Function),
+        getRemoteLogPathAbs: expect.any(Function),
+      })
+    );
+
+    storeSpy.mockRestore();
+  });
+
   it('CastDispatcher constructor receives the same castLogStore instance', async () => {
     const CastLogStoreModule = await import('../src/castLog/store');
     const OriginalStore = CastLogStoreModule.CastLogStore;

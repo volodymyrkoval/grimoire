@@ -14,20 +14,28 @@ import { CastDispatcher } from './cast/CastDispatcher';
 import { CastLogStore } from './castLog/store';
 import { HookMaterializer } from './castLog/HookMaterializer';
 import { ScratchSweeper } from './castLog/ScratchSweeper';
+import { CastLogSource } from './castLog/CastLogSource';
+import { VaultRefreshCoordinator } from './castLog/VaultRefreshCoordinator';
+import { IntervalTickCoordinator } from './castLog/IntervalTickCoordinator';
+import { foldEvents } from './castLog/foldEvents';
+import type { CastLogPanelDeps } from './ui/tabs/CastLogPanel';
 
 export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
   private castLogStore!: CastLogStore;
+  private pluginDirAbs!: string;
 
   async onload(): Promise<void> {
     await this.initCore();
     const basePath = (this.app.vault.adapter as FileSystemAdapter).getBasePath();
-    const pluginDirAbs = path.join(basePath, this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`);
+    this.pluginDirAbs = path.join(basePath, this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`);
+    const pluginDirAbs = this.pluginDirAbs;
 
     this.castLogStore = new CastLogStore({
       getLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-local.jsonl'),
+      getRemoteLogPathAbs: () => path.join(pluginDirAbs, 'cast-log-remote.jsonl'),
     });
 
     const materializer = new HookMaterializer({
@@ -99,6 +107,28 @@ export default class GrimoirePlugin extends Plugin {
     dispatcher: CastDispatcher,
     closeRef: { close: () => void },
   ): CommandPopup {
+    const pluginDirAbs = this.pluginDirAbs;
+    const manifestDir = this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`;
+    const castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'> = {
+      source: new CastLogSource({ reader: this.castLogStore, foldEvents }),
+      refresh: new VaultRefreshCoordinator({
+        vault: this.app.vault,
+        watchedVaultPaths: [
+          `${manifestDir}/cast-log-local.jsonl`,
+          `${manifestDir}/cast-log-remote.jsonl`,
+        ],
+        watchedAbsPaths: [
+          path.join(pluginDirAbs, 'cast-log-local.jsonl'),
+          path.join(pluginDirAbs, 'cast-log-remote.jsonl'),
+        ],
+        pollIntervalMs: 1500,
+        debounceMs: 50,
+        settlingWindowMs: 3000,
+      }),
+      tick: new IntervalTickCoordinator({ intervalMs: 1000 }),
+      now: () => new Date(),
+    };
+
     return new CommandPopup({
       app: this.app,
       spellTag: this.data.settings.spellTag,
@@ -116,6 +146,7 @@ export default class GrimoirePlugin extends Plugin {
       defaults: { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
       overrides: this.overrides,
       sessionMap,
+      castLogPanelDeps,
       optionsCastAction: (spell, snap) => dispatcher.dispatch({
         spell,
         model: snap.model,

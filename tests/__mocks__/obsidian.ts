@@ -1,13 +1,34 @@
 import { vi } from 'vitest';
 
+export type EventRef = object;
+
 export class Workspace {
   getActiveFile = vi.fn<() => any>(() => null);
+  openLinkText = vi.fn<(path: string, source: string, newLeaf?: boolean) => void>();
 }
 
 export class App {
+  private vaultModifySubscribers = new Map<EventRef, (file: { path: string }) => void>();
+
   vault = {
     getMarkdownFiles: vi.fn<() => any[]>(() => []),
     adapter: new FileSystemAdapter(),
+    on: vi.fn((event: string, cb: (file: { path: string }) => void): EventRef => {
+      if (event === 'modify') {
+        const ref: EventRef = {};
+        this.vaultModifySubscribers.set(ref, cb);
+        return ref;
+      }
+      return {};
+    }),
+    offref: vi.fn((ref: EventRef): void => {
+      this.vaultModifySubscribers.delete(ref);
+    }),
+    __fireModify: (path: string): void => {
+      for (const cb of this.vaultModifySubscribers.values()) {
+        cb({ path });
+      }
+    },
   };
   metadataCache = {
     getFileCache: vi.fn<(file: any) => any>(() => null),

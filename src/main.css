@@ -256,3 +256,114 @@
     background: var(--interactive-accent) !important;
     color: var(--text-on-accent) !important;
 }
+
+/* CastLogPanel */
+.cast-log-header {
+    font-size: var(--font-ui-small);
+    color: var(--text-muted);
+    padding: 4px 8px;
+    margin-bottom: 4px;
+}
+
+.cast-log-header.is-hidden {
+    display: none;
+}
+
+.cast-log-row {
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cast-log-row:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.cast-log-row-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cast-log-display-name {
+    flex: 1;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cast-log-model-badge,
+.cast-log-started,
+.cast-log-duration {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.cast-log-status-badge {
+    font-size: var(--font-ui-smaller);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.cast-log-status-badge.is-success { color: var(--color-green); }
+.cast-log-status-badge.is-failure { color: var(--color-red); }
+.cast-log-status-badge.is-neutral { color: var(--text-muted); }
+
+.cast-log-row-body {
+    display: none;
+    padding: 6px 0 2px;
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+}
+
+.cast-log-row.is-expanded .cast-log-row-body {
+    display: block;
+}
+
+.cast-log-castid {
+    display: block;
+    user-select: text;
+    font-size: var(--font-ui-smaller);
+    color: var(--text-faint);
+    margin-bottom: 4px;
+}
+
+.cast-log-context-notes,
+.cast-log-affected-files {
+    margin-bottom: 2px;
+}
+
+.cast-log-context-notes a,
+.cast-log-affected-files a {
+    color: var(--link-color);
+    text-decoration: none;
+    font-size: var(--font-ui-smaller);
+}
+
+.cast-log-context-notes a:hover,
+.cast-log-affected-files a:hover {
+    text-decoration: underline;
+}
+
+.cast-log-follow-up,
+.cast-log-execute-on-note {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-muted);
+}
+
+.cast-log-field-row {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    margin-bottom: 2px;
+}
+
+.cast-log-field-label {
+    font-size: var(--font-ui-smaller);
+    color: var(--text-faint);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
