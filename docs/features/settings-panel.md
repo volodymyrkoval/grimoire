@@ -1,10 +1,10 @@
 # Settings Panel
 
-> `dev/done-002` — 2026-05-05 — Adds an Obsidian Settings tab for the seven `GrimoireSettings` fields, wires the plugin to own its hydrated data and a debounced saver, and backfills unit tests across the previously untested PoC modules.
+> `dev/done-002` — 2026-05-05 — Adds an Obsidian Settings tab for the seven `GrimoireSettings` fields, wires the plugin to own its hydrated data and a debounced saver, and backfills unit tests across the previously untested PoC modules. *(The tab gained an `Advanced` section with six more fields in `dev/done-011`; see `remote-casting-setup`.)*
 
 ## What it does
 
-Users can now open **Settings → Community plugins → Grimoire** and edit the plugin's seven configuration fields: spell tag, CLI command, binary path, forge output folder, vault mount path, default model, and default effort. Edits write through to the in-memory settings object on every keystroke and persist to disk through a 500 ms debounced saver. The plugin flushes any pending write on unload, so closing Obsidian never loses a change.
+Users can now open **Settings → Community plugins → Grimoire** and edit the plugin's seven core configuration fields: spell tag, CLI command, binary path, forge output folder, vault mount path, default model, and default effort. Edits write through to the in-memory settings object on every keystroke and persist to disk through a 500 ms debounced saver. The plugin flushes any pending write on unload, so closing Obsidian never loses a change.
 
 The default-effort row is conditional: when the selected model has no effort options (Haiku), the segmented control disappears; when the model has options (Sonnet, Opus), it re-appears with that model's effort levels. The Command Popup also now reads the user-configured spell tag instead of a hardcoded literal, so changing "Spell tag" in settings immediately changes which vault notes the popup considers spells.
 
@@ -12,7 +12,7 @@ Alongside the visible feature, the iteration backfilled characterisation tests a
 
 ## Design decisions
 
-- **No reactive framework, no row abstraction.** Settings rows write directly to `plugin.data.settings.<field>` and call `plugin.save()`. With seven fields and six near-identical text rows, a Strategy or store layer would be speculative generality.
+- **No reactive framework, no row abstraction.** Settings rows write directly to `plugin.data.settings.<field>` and call `plugin.save()`. With seven fields and six near-identical text rows at this iteration, a Strategy or store layer would be speculative generality.
 - **One `EffortRow` instance, mounted once and reused via `update()`.** The widget already encodes its own four mount/unmount cases; recreating it on every model change would discard that logic and churn DOM identity.
 - **Persistence is debounced in exactly one place — the plugin's `DebouncedSaver`.** Rows never call `saveData` directly; they call `plugin.save()`, which schedules. Typing a field never produces multiple writes inside the debounce window.
 - **`onunload` flush is the only hard persistence guarantee.** Matches the existing `DebouncedSaver` contract; no other event triggers an immediate write.
