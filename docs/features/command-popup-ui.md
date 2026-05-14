@@ -93,4 +93,4 @@ Tab → switchTab(next panel) → clears #searchQuery, selectedIndex=0, panel.re
 | Panel | `id` | Content | `confirm(index)` | Notes |
 |---|---|---|---|---|
 | `SpellsPanel` | `spells` | Vault-scanned spells (via `getSpells(app, spellTag)`) + 2 sentinels (Forge, Refine) | spell → `cast` event; sentinel → `sentinel` event | Sentinels always appended after filtered spells. Rows render an override dot when `hasOverride(spell.path)` and a `↵ cast · → options` keyboard hint span. |
-| `LogsPanel` | `logs` | Hardcoded logs | `toggleExpand(index)` | No sentinel rows; selection always resets to 0 after filter |
+| `CastLogPanel` | `logs` | Live folded view of `cast-log-local.jsonl` + `cast-log-remote.jsonl` (see `cast-log-panel`) | `confirm`/`move` are no-ops — keyboard navigation is intentionally absent | Owns refresh + tick coordinators; popup calls `panel.unmount()` from `onClose` |

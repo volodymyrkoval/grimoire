@@ -38,6 +38,10 @@ Subsequent iterations have grown the suite under `tests/integration/` to cover t
 - `execute-on-note.spec.ts` — end-to-end vertical: scanned spell with `executeOnNote: false` casts with no active note (006)
 - `spell-options-detail-execute-on-note.spec.ts` — `SpellOptionsDetail` seeds form state from `spell.executeOnNote` (006)
 - `settings-panel.spec.ts` — settings tab seam (002)
+- `cast-log-panel.spec.ts` — Logs tab mount, refresh, tick, link-click, expansion preservation (010)
+- `cast-log-refresh.spec.ts` — vault-modify subscription, debounce, watched-path filter (010)
+- `cast-log-source.spec.ts` — reader-to-folded-records seam (010)
+- `CastLogRow.spec.ts` — row header layout, expansion body, link-click forwarding (010)
 
 **Out:**
 
@@ -45,7 +49,7 @@ Subsequent iterations have grown the suite under `tests/integration/` to cover t
 - Mutation-testing the new tests — separate cycle, different concern.
 - Real-Obsidian end-to-end tests — would require a running vault, far outside this iteration's budget.
 - Visual / CSS / layout assertions beyond class-list state (`is-selected`, `is-active`, `is-disabled`, `is-expanded`) — visual regression is a separate tooling concern.
-- LogsPanel internals beyond what the popup integration already reaches — no second use case yet.
+- Mtime-poll fallback path of `VaultRefreshCoordinator` — unit-tested directly; integration-testing real `fs.stat` is fiddly and out of proportion to the value.
 
 ## Relationship to existing system
 

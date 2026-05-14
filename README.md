@@ -122,7 +122,7 @@ Set your spell tag, Claude Code binary path, default model and effort level, For
 
 ## What's not there yet
 
-- **Cast Log** — a live-updating record of every cast with status, expandable output, filter, and delete. See what's running, what finished, what errored.
+- **Cast Log filter and delete** — the Logs tab now lists every cast live with status, duration, and expandable detail (see `docs/features/cast-log-panel.md`), but a query input and row-level deletion are still pending.
 - **Refine Note** — a built-in spell that rewrites or expands your active note. Supports inline `@cast` directives for surgical edits without leaving the editor.
 - **Remote casting** — run spells from mobile or any HTTP client through a lightweight HTTP proxy. No local Claude Code required on the casting device.
 - Per-spell override indicators, status bar, re-cast from log, scheduled casting.
