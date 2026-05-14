@@ -50,6 +50,12 @@ export class SpellOptionsDetail {
         binaryPath: '',
         forgeOutputFolder: '',
         vaultMountPath: '',
+        executionMode: 'local',
+        portalHost: '',
+        portalPort: '',
+        portalPath: '',
+        portalAuthUser: '',
+        portalAuthPassword: '',
       },
       models: params.models,
     });

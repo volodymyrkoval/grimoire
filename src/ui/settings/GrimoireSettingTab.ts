@@ -46,6 +46,41 @@ export class GrimoireSettingTab extends PluginSettingTab {
         this.#plugin.save();
       },
     });
+
+    this.#renderAdvancedSection();
+  }
+
+  #addToggleField(label: string, get: () => boolean, set: (v: boolean) => void, desc?: string): void {
+    const s = new Setting(this.containerEl).setName(label);
+    if (desc) s.setDesc(desc);
+    s.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#plugin.save(); }));
+  }
+
+  #addPasswordField(label: string, getValue: () => string, setValue: (v: string) => void): void {
+    new Setting(this.containerEl)
+      .setName(label)
+      .addText(t => {
+        t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); });
+        t.inputEl.type = 'password';
+      });
+  }
+
+  #renderAdvancedSection(): void {
+    this.containerEl.createEl('hr');
+    // eslint-disable-next-line obsidianmd/settings-tab/no-manual-html-headings
+    this.containerEl.createEl('h3', { text: 'Advanced' });
+    const s = this.#plugin.data.settings;
+    this.#addToggleField(
+      'Remote execution',
+      () => this.#plugin.data.settings.executionMode === 'remote',
+      v => { this.#plugin.data.settings.executionMode = v ? 'remote' : 'local'; },
+      'Send spells to a portal server instead of running them locally.',
+    );
+    this.#addTextField('Portal host',      () => s.portalHost,         v => { s.portalHost = v; });
+    this.#addTextField('Portal port',      () => s.portalPort,         v => { s.portalPort = v; });
+    this.#addTextField('Portal path',      () => s.portalPath,         v => { s.portalPath = v; });
+    this.#addTextField('Auth user',        () => s.portalAuthUser,     v => { s.portalAuthUser = v; });
+    this.#addPasswordField('Auth password',() => s.portalAuthPassword, v => { s.portalAuthPassword = v; });
   }
 
   #addTextField(label: string, getValue: () => string, setValue: (v: string) => void): void {

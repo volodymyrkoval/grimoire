@@ -292,6 +292,43 @@ class DropdownComponent {
   }
 }
 
+class ToggleComponent {
+  private onChangeHandler: ((value: boolean) => void) | null = null;
+  readonly toggleEl: HTMLInputElement | any;
+
+  constructor(containerEl: HTMLElement | any) {
+    if (typeof document !== 'undefined') {
+      this.toggleEl = document.createElement('input') as HTMLInputElement;
+      this.toggleEl.type = 'checkbox';
+      containerEl.appendChild(this.toggleEl);
+      (this.toggleEl as any).__triggerChange = this.__triggerChange.bind(this);
+    } else {
+      this.toggleEl = createMockElement();
+    }
+  }
+
+  setValue(value: boolean): this {
+    if (typeof document !== 'undefined') {
+      this.toggleEl.checked = value;
+    }
+    return this;
+  }
+
+  onChange(handler: (value: boolean) => void): this {
+    this.onChangeHandler = handler;
+    return this;
+  }
+
+  __triggerChange(value: boolean): void {
+    if (typeof document !== 'undefined') {
+      this.toggleEl.checked = value;
+    }
+    if (this.onChangeHandler) {
+      this.onChangeHandler(value);
+    }
+  }
+}
+
 export class Setting {
   readonly settingEl: HTMLElement | any;
   readonly controlEl: HTMLElement | any;
@@ -339,6 +376,12 @@ export class Setting {
   addDropdown(callback: (component: DropdownComponent) => void): this {
     const dropdownComponent = new DropdownComponent(this.controlEl);
     callback(dropdownComponent);
+    return this;
+  }
+
+  addToggle(callback: (component: ToggleComponent) => void): this {
+    const toggleComponent = new ToggleComponent(this.controlEl);
+    callback(toggleComponent);
     return this;
   }
 }

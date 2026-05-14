@@ -226,7 +226,7 @@ No new error paths. Specifically:
 
 **junior-dev**
 
-- [ ] A1: Add `executionMode: ExecutionMode` and the five `portal*: string` fields to `GrimoireSettings` in `src/domain/settings/Settings.ts`. Export `type ExecutionMode = 'local' | 'remote'`. Extend `DEFAULT_SETTINGS` with `executionMode: 'local'` and `''` for each portal field. Order matches Interfaces section. — S, junior-dev
+- [x] A1: Add `executionMode: ExecutionMode` and the five `portal*: string` fields to `GrimoireSettings` in `src/domain/settings/Settings.ts`. Export `type ExecutionMode = 'local' | 'remote'`. Extend `DEFAULT_SETTINGS` with `executionMode: 'local'` and `''` for each portal field. Order matches Interfaces section. — S, junior-dev (d749093)
 
 ### B. Persistence — hydrate coverage
 
@@ -241,9 +241,9 @@ No new error paths. Specifically:
 
 **junior-dev**
 
-- [ ] B1: Add hydrate test case (h): `hydrate(undefined, app)` defaults all six new fields per `DEFAULT_SETTINGS`. — S, junior-dev
-- [ ] B2: Add hydrate test case (i): saved blob with all six new fields populated round-trips unmodified. — S, junior-dev
-- [ ] B3: Add hydrate test case (j): partial saved blob (only `portalHost`) leaves the other five new fields at defaults. — S, junior-dev
+- [x] B1: Add hydrate test case (h): `hydrate(undefined, app)` defaults all six new fields per `DEFAULT_SETTINGS`. — S, junior-dev (890a2c7)
+- [x] B2: Add hydrate test case (i): saved blob with all six new fields populated round-trips unmodified. — S, junior-dev (890a2c7)
+- [x] B3: Add hydrate test case (j): partial saved blob (only `portalHost`) leaves the other five new fields at defaults. — S, junior-dev (890a2c7)
 
 ### C. Obsidian mock — `addToggle` shim
 
@@ -257,7 +257,7 @@ No new error paths. Specifically:
 
 **junior-dev**
 
-- [ ] C1: Add `ToggleComponent` class to `tests/__mocks__/obsidian.ts` (constructor takes `containerEl`; methods `setValue(boolean): this`, `onChange(handler): this`, `__triggerChange(boolean): void`; dual-environment branch matching `TextComponent`). Add `Setting.addToggle(callback)` that constructs the component into `this.controlEl` and invokes the callback. — S, junior-dev
+- [x] C1: Add `ToggleComponent` class to `tests/__mocks__/obsidian.ts` (constructor takes `containerEl`; methods `setValue(boolean): this`, `onChange(handler): this`, `__triggerChange(boolean): void`; dual-environment branch matching `TextComponent`). Add `Setting.addToggle(callback)` that constructs the component into `this.controlEl` and invokes the callback. — S, junior-dev (fad0c82)
 
 ### D. Settings tab seam — integration tests (Red) and implementation (Green)
 
@@ -280,16 +280,16 @@ No new error paths. Specifically:
 
 **ui-integration-tester**
 
-- [ ] D0: Update `tests/integration/settings-panel.spec.ts`: replace the `childElementCount === 14` assertion with `=== 28` and add assertions for toggle write-through, password input `type === 'password'`, each Advanced field's write-through (host/port/path/user/password), and DOM order (`<hr>` and `<h3 class?=... textContent="Advanced">` appear between the 7th existing Setting and the 1st Advanced Setting). — M, ui-integration-tester
+- [x] D0: Update `tests/integration/settings-panel.spec.ts`: replace the `childElementCount === 14` assertion with `=== 28` and add assertions for toggle write-through, password input `type === 'password'`, each Advanced field's write-through (host/port/path/user/password), and DOM order (`<hr>` and `<h3 class?=... textContent="Advanced">` appear between the 7th existing Setting and the 1st Advanced Setting). — M, ui-integration-tester (ba9234a)
 
 **junior-dev**
 
-- [ ] D1: Add `#addToggleField(label, get, set)` private helper to `GrimoireSettingTab` mirroring `#addTextField`'s shape (new `Setting`, `.setName(label)`, `.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#plugin.save(); }))`). — S, junior-dev
-- [ ] D2: Add `#addPasswordField(label, get, set)` private helper. Same as `#addTextField` but inside the `addText` callback, set `t.inputEl.type = 'password'` after wiring value/onChange. — S, junior-dev
-- [ ] D3: In `display()`, render the toggle row first via `#addToggleField('Execution mode', () => settings.executionMode === 'remote', v => { settings.executionMode = v ? 'remote' : 'local'; })`. Keep the existing seven rows immediately after, unchanged. — S, junior-dev
-- [ ] D4: Add `#renderAdvancedSection()` private method that appends, in order: `this.containerEl.createEl('hr')`, `this.containerEl.createEl('h3', { text: 'Advanced' })`, then five rows via `#addTextField` (host, port, path, auth user) and `#addPasswordField` (auth password). — S, junior-dev
-- [ ] D5: Call `this.#renderAdvancedSection()` at the end of `display()`, after the effort row. — S, junior-dev
-- [ ] D6: Confirm `npm run lint` + `npm test` + `npm run test:integration` all pass. No source changes outside `src/domain/settings/Settings.ts`, `src/ui/settings/GrimoireSettingTab.ts`, `tests/__mocks__/obsidian.ts`, `tests/persistence.test.ts`, `tests/integration/settings-panel.spec.ts`. — S, junior-dev
+- [x] D1: Add `#addToggleField(label, get, set)` private helper to `GrimoireSettingTab` mirroring `#addTextField`'s shape (new `Setting`, `.setName(label)`, `.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#plugin.save(); }))`). — S, junior-dev (d8904c0)
+- [x] D2: Add `#addPasswordField(label, get, set)` private helper. Same as `#addTextField` but inside the `addText` callback, set `t.inputEl.type = 'password'` after wiring value/onChange. — S, junior-dev (d8904c0)
+- [x] D3: In `display()`, render the toggle row first via `#addToggleField('Execution mode', () => settings.executionMode === 'remote', v => { settings.executionMode = v ? 'remote' : 'local'; })`. Keep the existing seven rows immediately after, unchanged. — S, junior-dev (d8904c0)
+- [x] D4: Add `#renderAdvancedSection()` private method that appends, in order: `this.containerEl.createEl('hr')`, `this.containerEl.createEl('h3', { text: 'Advanced' })`, then five rows via `#addTextField` (host, port, path, auth user) and `#addPasswordField` (auth password). — S, junior-dev (d8904c0)
+- [x] D5: Call `this.#renderAdvancedSection()` at the end of `display()`, after the effort row. — S, junior-dev (d8904c0)
+- [x] D6: Confirm `npm run lint` + `npm test` + `npm run test:integration` all pass. No source changes outside `src/domain/settings/Settings.ts`, `src/ui/settings/GrimoireSettingTab.ts`, `tests/__mocks__/obsidian.ts`, `tests/persistence.test.ts`, `tests/integration/settings-panel.spec.ts`. — S, junior-dev (d8904c0)
 
 ### E. Read-API smoke — pin downstream-readability
 
@@ -303,7 +303,7 @@ No new error paths. Specifically:
 
 **junior-dev**
 
-- [ ] E1: Append a hydrate test case to `tests/persistence.test.ts`: `expect(result.settings).toEqual(expect.objectContaining({ executionMode: 'local', portalHost: '', portalPort: '', portalPath: '', portalAuthUser: '', portalAuthPassword: '' }))`. — S, junior-dev
+- [x] E1: Append a hydrate test case to `tests/persistence.test.ts`: `expect(result.settings).toEqual(expect.objectContaining({ executionMode: 'local', portalHost: '', portalPort: '', portalPath: '', portalAuthUser: '', portalAuthPassword: '' }))`. — S, junior-dev (1dd6e58)
 
 ## Overall effort
 
@@ -325,3 +325,5 @@ The plan is dominated by junior-dev work because every design question (field sh
 ## Next
 
 First todo: **A1** — extend `GrimoireSettings` and `DEFAULT_SETTINGS` per Interfaces. Handoff to junior-dev via `/implement`.
+
+reviewed @ 5d29b92

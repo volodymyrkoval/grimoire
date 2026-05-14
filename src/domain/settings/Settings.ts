@@ -1,5 +1,7 @@
 export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
+export type ExecutionMode = 'local' | 'remote';
+
 export interface GrimoireSettings {
   spellTag: string;
   cliCommand: string;
@@ -8,6 +10,12 @@ export interface GrimoireSettings {
   vaultMountPath: string;
   defaultModel: string;
   defaultEffort: Effort | null;
+  executionMode: ExecutionMode;
+  portalHost: string;
+  portalPort: string;
+  portalPath: string;
+  portalAuthUser: string;
+  portalAuthPassword: string;
 }
 
 export interface SpellOverride {
@@ -28,6 +36,12 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
   vaultMountPath: '',
   defaultModel: 'claude-sonnet-4-5',
   defaultEffort: 'medium',
+  executionMode: 'local',
+  portalHost: '',
+  portalPort: '',
+  portalPath: '',
+  portalAuthUser: '',
+  portalAuthPassword: '',
 };
 
 export interface SupportedModel {

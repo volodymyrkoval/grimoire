@@ -84,4 +84,58 @@ describe('persistence.hydrate', () => {
 
     expect(result.spellOverrides).toEqual(overrides);
   });
+
+  it('(h) hydrate(undefined) defaults all six new remote-casting fields', () => {
+    const result = hydrate(undefined, app);
+    expect(result.settings.executionMode).toBe('local');
+    expect(result.settings.portalHost).toBe('');
+    expect(result.settings.portalPort).toBe('');
+    expect(result.settings.portalPath).toBe('');
+    expect(result.settings.portalAuthUser).toBe('');
+    expect(result.settings.portalAuthPassword).toBe('');
+  });
+
+  it('(i) saved blob with all six new fields round-trips unmodified', () => {
+    const saved = {
+      settings: {
+        executionMode: 'remote' as const,
+        portalHost: 'host.example',
+        portalPort: '8080',
+        portalPath: '/grimoire',
+        portalAuthUser: 'user',
+        portalAuthPassword: 'secret',
+      },
+    };
+    const result = hydrate(saved, app);
+    expect(result.settings.executionMode).toBe('remote');
+    expect(result.settings.portalHost).toBe('host.example');
+    expect(result.settings.portalPort).toBe('8080');
+    expect(result.settings.portalPath).toBe('/grimoire');
+    expect(result.settings.portalAuthUser).toBe('user');
+    expect(result.settings.portalAuthPassword).toBe('secret');
+  });
+
+  it('(j) partial saved blob (only portalHost) leaves other new fields at defaults', () => {
+    const saved = { settings: { portalHost: 'partial.host' } };
+    const result = hydrate(saved, app);
+    expect(result.settings.portalHost).toBe('partial.host');
+    expect(result.settings.executionMode).toBe('local');
+    expect(result.settings.portalPort).toBe('');
+    expect(result.settings.portalPath).toBe('');
+    expect(result.settings.portalAuthUser).toBe('');
+    expect(result.settings.portalAuthPassword).toBe('');
+  });
+
+  // read-API name-lock: verifies field names are stable across refactors (distinct from per-field default assertions in (h))
+  it('(k) hydrate(undefined) exposes all six new remote-casting fields with stable typed names', () => {
+    const result = hydrate(undefined, app);
+    expect(result.settings).toEqual(expect.objectContaining({
+      executionMode: 'local',
+      portalHost: '',
+      portalPort: '',
+      portalPath: '',
+      portalAuthUser: '',
+      portalAuthPassword: '',
+    }));
+  });
 });

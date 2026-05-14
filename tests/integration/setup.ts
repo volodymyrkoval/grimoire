@@ -115,3 +115,4 @@ HTMLElement.prototype.show = function (): void {
 };
 
 (globalThis as Record<string, unknown>).activeDocument = document;
+(globalThis as Record<string, unknown>).activeWindow = window;
