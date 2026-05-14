@@ -13,6 +13,10 @@ export interface CastLogStorePorts {
 export type RecordCastedInput = Omit<CastedEvent, 'stage' | 'ts'>;
 export type RecordErrorInput = Omit<ErrorEvent, 'stage' | 'ts'>;
 
+export interface RecordOptions {
+  readonly remote?: boolean;
+}
+
 export class CastLogStore {
   readonly #ports: CastLogStorePorts;
   readonly #now: () => Date;
@@ -35,22 +39,34 @@ export class CastLogStore {
     });
   }
 
-  async recordCasted(input: RecordCastedInput): Promise<void> {
+  async recordCasted(input: RecordCastedInput, opts?: RecordOptions): Promise<void> {
     const event = {
       stage: 'casted' as const,
       ts: this.#now().toISOString(),
       ...input,
     };
-    await this.#appendLine(this.#ports.getLogPathAbs(), JSON.stringify(event) + '\n');
+    const path = this.#getTargetPath(opts);
+    await this.#appendLine(path, JSON.stringify(event) + '\n');
   }
 
-  async recordError(input: RecordErrorInput): Promise<void> {
+  async recordError(input: RecordErrorInput, opts?: RecordOptions): Promise<void> {
     const event = {
       stage: 'error' as const,
       ts: this.#now().toISOString(),
       ...input,
     };
-    await this.#appendLine(this.#ports.getLogPathAbs(), JSON.stringify(event) + '\n');
+    const path = this.#getTargetPath(opts);
+    await this.#appendLine(path, JSON.stringify(event) + '\n');
+  }
+
+  #getTargetPath(opts?: RecordOptions): string {
+    if (opts?.remote === true) {
+      if (!this.#ports.getRemoteLogPathAbs) {
+        throw new Error('CastLogStore: remote write requested but getRemoteLogPathAbs is not configured');
+      }
+      return this.#ports.getRemoteLogPathAbs();
+    }
+    return this.#ports.getLogPathAbs();
   }
 
   async readAll(): Promise<CastLogEvent[]> {

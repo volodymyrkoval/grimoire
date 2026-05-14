@@ -15,6 +15,7 @@ export interface CastedEvent extends BaseEvent {
   readonly contextNotes: readonly string[];
   readonly followUp?: string;
   readonly executeOnNote?: boolean;
+  readonly portalCastId?: string;
 }
 
 export interface ErrorEvent extends BaseEvent {

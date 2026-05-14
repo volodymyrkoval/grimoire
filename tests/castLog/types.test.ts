@@ -75,4 +75,28 @@ describe('CastLogEvent', () => {
     };
     expect(handleEvent(event)).toBe('casted');
   });
+
+  it('CastedEvent accepts portalCastId as optional', () => {
+    const withId: CastedEvent = {
+      castId: 'c1',
+      ts: '2025-01-01T00:00:00Z',
+      stage: 'casted',
+      spellPath: '/spell.md',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotes: [],
+      portalCastId: 'srv-1',
+    };
+    const withoutId: CastedEvent = {
+      castId: 'c2',
+      ts: '2025-01-01T00:00:00Z',
+      stage: 'casted',
+      spellPath: '/spell.md',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotes: [],
+    };
+    expect(withId.portalCastId).toBe('srv-1');
+    expect(withoutId.portalCastId).toBeUndefined();
+  });
 });

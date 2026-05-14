@@ -9,4 +9,5 @@ styles.css
 data.json
 hooks/
 cast-log-local.jsonl
+cast-log-remote.jsonl
 cast-log-scratch/

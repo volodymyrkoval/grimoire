@@ -175,4 +175,9 @@ describe('GrimoireSettingTab seam', () => {
     expect(hrIndex).toBe(14);
     expect(h3Index).toBe(15);
   });
+
+  it('Portal host row has description text', () => {
+    const containerText = tab.containerEl.textContent ?? '';
+    expect(containerText).toContain('Hostname or full URL. Defaults to HTTPS unless http:// is prefixed.');
+  });
 });

@@ -28,6 +28,7 @@
     "dependency-cruiser": "^16.2.1",
     "esbuild": "^0.20.2",
     "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-obsidianmd": "^0.2.9",
     "happy-dom": "^20.9.0",
     "obsidian": "latest",

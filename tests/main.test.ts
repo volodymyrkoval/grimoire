@@ -487,4 +487,70 @@ describe('GrimoirePlugin', () => {
     storeSpy.mockRestore();
     dispatcherSpy.mockRestore();
   });
+
+  it('ForgeImprinter constructor receives a RemoteCastTransport instance', async () => {
+    const RemoteCastTransportModule = await import('../src/cast/RemoteCastTransport');
+
+    const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
+    const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
+    const imprintSpy = vi.spyOn(ForgeImprinterModule, 'ForgeImprinter').mockImplementation((deps: any) => {
+      return new OriginalForgeImprinter(deps);
+    });
+
+    await plugin.onload();
+
+    expect(imprintSpy).toHaveBeenCalledOnce();
+    expect(imprintSpy.mock.calls[0][0].remoteTransport).toBeInstanceOf(RemoteCastTransportModule.RemoteCastTransport);
+
+    imprintSpy.mockRestore();
+  });
+
+  it('RemoteCastTransport constructor receives requestUrlFn from obsidian', async () => {
+    const RemoteCastTransportModule = await import('../src/cast/RemoteCastTransport');
+    const OriginalTransport = RemoteCastTransportModule.RemoteCastTransport;
+    const transportSpy = vi.spyOn(RemoteCastTransportModule, 'RemoteCastTransport').mockImplementation((deps: any) => {
+      return new OriginalTransport(deps);
+    });
+
+    await plugin.onload();
+
+    expect(transportSpy).toHaveBeenCalledOnce();
+    // Production wiring explicitly passes requestUrl from obsidian
+    const callArg = transportSpy.mock.calls[0][0];
+    expect(callArg?.requestUrlFn).toBeDefined();
+    expect(typeof callArg?.requestUrlFn).toBe('function');
+
+    transportSpy.mockRestore();
+  });
+
+  it('CastDispatcher constructor receives the same RemoteCastTransport instance', async () => {
+    const RemoteCastTransportModule = await import('../src/cast/RemoteCastTransport');
+
+    const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
+    const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
+    const imprintSpy = vi.spyOn(ForgeImprinterModule, 'ForgeImprinter').mockImplementation((deps: any) => {
+      return new OriginalForgeImprinter(deps);
+    });
+
+    const CastDispatcherModule = await import('../src/cast/CastDispatcher');
+    const OriginalDispatcher = CastDispatcherModule.CastDispatcher;
+    const dispatcherSpy = vi.spyOn(CastDispatcherModule, 'CastDispatcher').mockImplementation((deps: any) => {
+      return new OriginalDispatcher(deps);
+    });
+
+    await plugin.onload();
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-popup'
+    );
+    commandCall![0].callback();
+
+    expect(dispatcherSpy).toHaveBeenCalledOnce();
+    expect(imprintSpy).toHaveBeenCalledOnce();
+    expect(dispatcherSpy.mock.calls[0][0].remoteTransport).toBeInstanceOf(RemoteCastTransportModule.RemoteCastTransport);
+    expect(dispatcherSpy.mock.calls[0][0].remoteTransport).toBe(imprintSpy.mock.calls[0][0].remoteTransport);
+
+    imprintSpy.mockRestore();
+    dispatcherSpy.mockRestore();
+  });
 });

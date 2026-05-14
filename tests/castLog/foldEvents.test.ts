@@ -283,4 +283,98 @@ describe('foldEvents', () => {
       affectedFiles: ['output.md'],
     });
   });
+
+  it('single casted event with portalCastId propagates to record', () => {
+    const castedEvent: CastedEvent = {
+      castId: 'cast-1',
+      ts: '2025-05-14T10:00:00Z',
+      stage: 'casted',
+      spellPath: 'Spells/MySpell.md',
+      model: 'gpt-4o',
+      effort: null,
+      contextNotes: [],
+      portalCastId: 'srv-abc',
+    };
+
+    const result = foldEvents([castedEvent]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      castId: 'cast-1',
+      portalCastId: 'srv-abc',
+    });
+  });
+
+  it('seed casted event is not processed twice when reduce runs over remaining events only', () => {
+    // Regression: processCastGroup used to reduce over all events including the seed.
+    // The seed is found by find(); remaining events are reduced separately.
+    // When the seed has a portalCastId and the second (bare) event arrives first in the array,
+    // double-processing the seed in reduce would call updateRecordWithEvent on it again —
+    // re-applying portalCastId (idempotent) then the bare event (no-op). Still correct.
+    // The fix ensures the seed is excluded from the reduce so future logic changes cannot
+    // accidentally double-apply seed-level fields.
+    const castedBare: CastedEvent = {
+      castId: 'cast-1',
+      ts: '2025-05-14T10:00:00Z',
+      stage: 'casted',
+      spellPath: 'Spells/MySpell.md',
+      model: 'gpt-4o',
+      effort: null,
+      contextNotes: [],
+    };
+
+    const castedWithId: CastedEvent = {
+      castId: 'cast-1',
+      ts: '2025-05-14T10:00:01Z',
+      stage: 'casted',
+      spellPath: 'Spells/MySpell.md',
+      model: 'gpt-4o',
+      effort: null,
+      contextNotes: [],
+      portalCastId: 'srv-xyz',
+    };
+
+    // seed = castedBare (first found by find); remaining = [castedWithId]
+    // reduce over remaining sets portalCastId from castedWithId
+    const result = foldEvents([castedBare, castedWithId]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      castId: 'cast-1',
+      portalCastId: 'srv-xyz',
+    });
+  });
+
+  it('later casted event with portalCastId overwrites earlier one', () => {
+    const castedEvent1: CastedEvent = {
+      castId: 'cast-1',
+      ts: '2025-05-14T10:00:00Z',
+      stage: 'casted',
+      spellPath: 'Spells/MySpell.md',
+      model: 'gpt-4o',
+      effort: null,
+      contextNotes: [],
+    };
+
+    const castedEvent2: CastedEvent = {
+      castId: 'cast-1',
+      ts: '2025-05-14T10:00:01Z',
+      stage: 'casted',
+      spellPath: 'Spells/MySpell.md',
+      model: 'gpt-4o',
+      effort: null,
+      contextNotes: [],
+      portalCastId: 'srv-patch',
+    };
+
+    const result = foldEvents([castedEvent1, castedEvent2]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      castId: 'cast-1',
+      portalCastId: 'srv-patch',
+      spellPath: 'Spells/MySpell.md',
+      model: 'gpt-4o',
+    });
+  });
 });

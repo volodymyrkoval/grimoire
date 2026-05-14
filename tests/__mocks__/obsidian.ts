@@ -367,6 +367,26 @@ export class Setting {
     return this;
   }
 
+  setHeading(): this {
+    if (typeof document !== 'undefined') {
+      const parent = this.settingEl.parentElement;
+      if (parent) {
+        // Mirror real Obsidian: insert <hr> before settingEl, then an <h3> with the heading text
+        const hr = document.createElement('hr');
+        parent.insertBefore(hr, this.settingEl);
+        const h3 = document.createElement('h3');
+        h3.textContent = this.settingEl.textContent ?? '';
+        parent.insertBefore(h3, this.settingEl);
+        // Remove the original settingEl and controlEl — heading has no control
+        parent.removeChild(this.settingEl);
+        if (this.controlEl.parentElement) {
+          parent.removeChild(this.controlEl);
+        }
+      }
+    }
+    return this;
+  }
+
   addText(callback: (component: TextComponent) => void): this {
     const textComponent = new TextComponent(this.controlEl);
     callback(textComponent);
@@ -412,3 +432,21 @@ export interface DataAdapter {
 export function normalizePath(path: string): string {
   return path.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
 }
+
+export const requestUrl = vi.fn(async () => {
+  throw new Error('requestUrl not mocked');
+});
+
+export type RequestUrlParam = {
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  throw?: boolean;
+};
+
+export type RequestUrlResponse = {
+  status: number;
+  text: string;
+  json: unknown;
+};

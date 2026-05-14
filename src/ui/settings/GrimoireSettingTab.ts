@@ -39,7 +39,8 @@ export class GrimoireSettingTab extends PluginSettingTab {
       v => { this.#plugin.data.settings.executionMode = v ? 'remote' : 'local'; },
       'Send spells to a portal server instead of running them locally.',
     );
-    this.#addTextField('Portal host',      () => s.portalHost,         v => { s.portalHost = v; });
+    this.#addTextField('Portal host',      () => s.portalHost,         v => { s.portalHost = v; },
+      'Hostname or full URL. Defaults to HTTPS unless http:// is prefixed.');
     this.#addTextField('Portal port',      () => s.portalPort,         v => { s.portalPort = v; });
     this.#addTextField('Portal path',      () => s.portalPath,         v => { s.portalPath = v; });
     this.#addTextField('Auth user',        () => s.portalAuthUser,     v => { s.portalAuthUser = v; });
@@ -74,10 +75,10 @@ export class GrimoireSettingTab extends PluginSettingTab {
     });
   }
 
-  #addTextField(label: string, getValue: () => string, setValue: (v: string) => void): void {
-    new Setting(this.containerEl)
-      .setName(label)
-      .addText(t => t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); }));
+  #addTextField(label: string, getValue: () => string, setValue: (v: string) => void, desc?: string): void {
+    const s = new Setting(this.containerEl).setName(label);
+    if (desc) s.setDesc(desc);
+    s.addText(t => t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); }));
   }
 
   #addToggleField(label: string, get: () => boolean, set: (v: boolean) => void, desc?: string): void {

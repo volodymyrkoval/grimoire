@@ -2,8 +2,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CastDispatcher } from '../src/cast/CastDispatcher';
 import type { CastLogStore } from '../src/castLog/store';
 import { CastRunner, CastRunCallbacks } from '../src/cast/CastRunner';
+import { RemoteCastTransport } from '../src/cast/RemoteCastTransport';
 import { GrimoireSettings } from '../src/domain/settings/Settings';
 import { Spell } from '../src/domain/spells/Spell';
+
+function makeStubTransport() {
+  let capturedInput: any;
+  let capturedCallbacks: any;
+  const stub = {
+    run: vi.fn((input: any, callbacks: any) => {
+      capturedInput = input;
+      capturedCallbacks = callbacks;
+    }),
+  } as unknown as RemoteCastTransport;
+  return {
+    stub,
+    getInput: () => capturedInput,
+    getCallbacks: () => capturedCallbacks,
+  };
+}
 
 function makeStubRunner() {
   let capturedInput: any;
@@ -31,6 +48,12 @@ const baseSettings: GrimoireSettings = {
   forgeOutputFolder: 'Spells/',
   defaultModel: 'claude-sonnet-4-5',
   defaultEffort: null,
+  executionMode: 'local',
+  portalHost: '',
+  portalPort: '',
+  portalPath: '',
+  portalAuthUser: '',
+  portalAuthPassword: '',
 };
 
 describe('CastDispatcher', () => {
@@ -462,6 +485,224 @@ describe('CastDispatcher', () => {
 
     expect(recordCasted).toHaveBeenCalledTimes(1); // only from dispatch, not from onSuccess
     expect(recordError).not.toHaveBeenCalled();
+  });
+
+  // ── E3: remote dispatch branch ──────────────────────────────────────────────
+
+  it('remote happy path: records, notifies, closes, and invokes transport with correct input', () => {
+    const notifyFn = vi.fn();
+    const closeFn = vi.fn();
+    const recordCasted = vi.fn().mockResolvedValue(undefined);
+    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
+    const { stub: transportStub, getInput: getTransportInput } = makeStubTransport();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: closeFn,
+      remoteTransport: transportStub,
+      castLogStore: storeStub,
+      generateId: () => 'fixed-id',
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Summoning Circle' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(recordCasted).toHaveBeenCalledWith(
+      expect.objectContaining({ castId: 'fixed-id', spellPath: 'spells/test.md' }),
+      { remote: true }
+    );
+    expect(notifyFn).toHaveBeenCalledWith("Casting 'Summoning Circle' on portal…");
+    expect(closeFn).toHaveBeenCalledTimes(1);
+    const transportInput = getTransportInput();
+    expect(transportInput).toMatchObject({ castId: 'fixed-id', spellPath: 'spells/test.md', portalHost: 'portal.example.com' });
+  });
+
+  it('remote onAccepted: writes a second recordCasted with portalCastId', () => {
+    const recordCasted = vi.fn().mockResolvedValue(undefined);
+    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
+    const { stub: transportStub, getCallbacks: getTransportCallbacks } = makeStubTransport();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      remoteTransport: transportStub,
+      castLogStore: storeStub,
+      generateId: () => 'fixed-id',
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Summoning Circle' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    const callbacks = getTransportCallbacks();
+    callbacks.onAccepted({ portalCastId: 'srv-1' });
+
+    expect(recordCasted).toHaveBeenCalledTimes(2);
+    expect(recordCasted).toHaveBeenLastCalledWith(
+      expect.objectContaining({ castId: 'fixed-id', spellPath: 'spells/test.md', portalCastId: 'srv-1' }),
+      { remote: true }
+    );
+  });
+
+  it('remote onFailure: writes recordError and notifies with the failure message', () => {
+    const notifyFn = vi.fn();
+    const recordError = vi.fn().mockResolvedValue(undefined);
+    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError } as unknown as CastLogStore;
+    const { stub: transportStub, getCallbacks: getTransportCallbacks } = makeStubTransport();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: vi.fn(),
+      remoteTransport: transportStub,
+      castLogStore: storeStub,
+      generateId: () => 'fixed-id',
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Summoning Circle' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    const callbacks = getTransportCallbacks();
+    callbacks.onFailure('Portal request timed out.');
+
+    expect(recordError).toHaveBeenCalledWith({ castId: 'fixed-id', message: 'Portal request timed out.' }, { remote: true });
+    expect(notifyFn).toHaveBeenCalledWith('Portal request timed out.');
+  });
+
+  it('unknown executionMode falls through to local branch (runner.run is called)', () => {
+    const { stub: runner } = makeStubRunner();
+    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError: vi.fn() } as unknown as CastLogStore;
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      castRunner: runner,
+      castLogStore: storeStub,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'unknown-mode' as any },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(runner.run).toHaveBeenCalled();
+  });
+
+  // ── E2: pre-dispatch guard ────────────────────────────────────────────────
+
+  it('pre-dispatch guard: remote + empty portalHost notifies and does not record or close', () => {
+    const notifyFn = vi.fn();
+    const closeFn = vi.fn();
+    const recordCasted = vi.fn().mockResolvedValue(undefined);
+    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
+    const { stub: transportStub } = makeStubTransport();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: closeFn,
+      remoteTransport: transportStub,
+      castLogStore: storeStub,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: '' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
+    expect(recordCasted).not.toHaveBeenCalled();
+    expect(closeFn).not.toHaveBeenCalled();
+    expect((transportStub as any).run).not.toHaveBeenCalled();
+  });
+
+  it('remote with no remoteTransport in deps calls onFailure with a sensible message instead of throwing', () => {
+    const notifyFn = vi.fn();
+    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError: vi.fn().mockResolvedValue(undefined) } as unknown as CastLogStore;
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: vi.fn(),
+      // remoteTransport intentionally omitted
+      castLogStore: storeStub,
+    });
+
+    expect(() => dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
+      activeFilePath: null,
+      executeOnNote: false,
+    })).not.toThrow();
+
+    expect(notifyFn).toHaveBeenCalledWith(expect.stringContaining('not configured'));
+  });
+
+  it('pre-dispatch guard: remote + whitespace-only portalHost notifies and does not record or close', () => {
+    const notifyFn = vi.fn();
+    const closeFn = vi.fn();
+    const recordCasted = vi.fn().mockResolvedValue(undefined);
+    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
+    const { stub: transportStub } = makeStubTransport();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: closeFn,
+      remoteTransport: transportStub,
+      castLogStore: storeStub,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: '   ' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
+    expect(recordCasted).not.toHaveBeenCalled();
+    expect(closeFn).not.toHaveBeenCalled();
+    expect((transportStub as any).run).not.toHaveBeenCalled();
   });
 
 });

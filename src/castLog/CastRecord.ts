@@ -16,4 +16,5 @@ export interface CastRecord {
   readonly startedTs?: string;       // ISO — from in-progress event
   readonly endedTs?: string;         // ISO — from done/error event
   readonly errorMessage?: string;
+  readonly portalCastId?: string;
 }

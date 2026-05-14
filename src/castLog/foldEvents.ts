@@ -15,6 +15,7 @@ function combineCastedRecord(castId: string, castedEvent: CastedEvent): CastReco
     ...(castedEvent.executeOnNote !== undefined && {
       executeOnNote: castedEvent.executeOnNote,
     }),
+    ...(castedEvent.portalCastId && { portalCastId: castedEvent.portalCastId }),
   };
 }
 
@@ -61,6 +62,9 @@ function updateRecordWithEvent(
   event: CastLogEvent,
 ): CastRecord {
   if (event.stage === 'casted') {
+    if (event.portalCastId !== undefined) {
+      return { ...record, portalCastId: event.portalCastId };
+    }
     return record;
   }
 
@@ -91,7 +95,9 @@ function processCastGroup(
 
   const record = combineCastedRecord(castId, castedEvent);
 
-  return groupEvents.reduce(updateRecordWithEvent, record);
+  // Reduce over the remaining events only — the seed is already applied above.
+  const remainingEvents = groupEvents.filter((e) => e !== castedEvent);
+  return remainingEvents.reduce(updateRecordWithEvent, record);
 }
 
 function groupRelatedEvent(events: CastLogEvent[]) {

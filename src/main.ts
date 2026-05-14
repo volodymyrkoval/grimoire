@@ -1,4 +1,4 @@
-import { Plugin, Notice, normalizePath } from 'obsidian';
+import { Plugin, Notice, normalizePath, requestUrl } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
@@ -9,6 +9,7 @@ import { CommandPopup } from './ui/CommandPopup';
 import { ForgeImprinter } from './forge/ForgeImprinter';
 import { CastRunner } from './cast/CastRunner';
 import { CastDispatcher } from './cast/CastDispatcher';
+import { RemoteCastTransport } from './cast/RemoteCastTransport';
 import { CastLogStore } from './castLog/store';
 import { HookMaterializer } from './castLog/HookMaterializer';
 import { ScratchSweeper } from './castLog/ScratchSweeper';
@@ -23,6 +24,7 @@ export default class GrimoirePlugin extends Plugin {
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
   #castLogStore!: CastLogStore;
+  #remoteTransport!: RemoteCastTransport;
   #pluginDir!: string;
 
   async onload(): Promise<void> {
@@ -36,6 +38,8 @@ export default class GrimoirePlugin extends Plugin {
       getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-local.jsonl`),
       getRemoteLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
     });
+
+    this.#remoteTransport = new RemoteCastTransport({ requestUrlFn: requestUrl });
 
     const materializer = new HookMaterializer({
       adapter,
@@ -58,6 +62,7 @@ export default class GrimoirePlugin extends Plugin {
     const imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
       castRunner: new CastRunner(),
+      remoteTransport: this.#remoteTransport,
       castLogStore: this.#castLogStore,
     });
     this.#registerUI(sessionMap, imprinter);
@@ -98,6 +103,7 @@ export default class GrimoirePlugin extends Plugin {
       notify: (msg) => { new Notice(msg); },
       close: () => closeRef.close(),
       castRunner: new CastRunner(),
+      remoteTransport: this.#remoteTransport,
       castLogStore: this.#castLogStore,
     });
   }

@@ -430,9 +430,9 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **junior-dev**
 
-- [ ] A1: Add optional `readonly portalCastId?: string` to `CastedEvent` in `src/castLog/types.ts` and to `CastRecord` in `src/castLog/CastRecord.ts`. — S, junior-dev
-- [ ] A2: Extend `foldEvents.ts` so that when a `casted` event is the first one seen, `portalCastId` (if present) is set on the record; when a later `casted` event with the same `castId` is seen, only its `portalCastId` field overwrites the existing record's value (other casted fields stay frozen from the first event). Add unit test cases (ii) and (iii) above. — M, junior-dev
-- [ ] A3: Append one case to `tests/castLog/types.test.ts` pinning that `portalCastId` is optional (compile-only: assign a `CastedEvent` literal both with and without it). — S, junior-dev
+- [x] A1: Add optional `readonly portalCastId?: string` to `CastedEvent` in `src/castLog/types.ts` and to `CastRecord` in `src/castLog/CastRecord.ts`. — S, junior-dev
+- [x] A2: Extend `foldEvents.ts` so that when a `casted` event is the first one seen, `portalCastId` (if present) is set on the record; when a later `casted` event with the same `castId` is seen, only its `portalCastId` field overwrites the existing record's value (other casted fields stay frozen from the first event). Add unit test cases (ii) and (iii) above. — M, junior-dev
+- [x] A3: Append one case to `tests/castLog/types.test.ts` pinning that `portalCastId` is optional (compile-only: assign a `CastedEvent` literal both with and without it). — S, junior-dev
 
 ### B. `CastLogStore` remote-write flag
 
@@ -447,8 +447,8 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **junior-dev**
 
-- [ ] B1: Extend `RecordCastedInput` to allow optional `portalCastId` (already covered if it derives from `CastedEvent`; verify and add an explicit test if not). Extend `recordCasted(input, opts?: { remote?: boolean })`: when `opts?.remote === true`, append to `getRemoteLogPathAbs()`; otherwise to `getLogPathAbs()`. If `opts.remote === true` and `getRemoteLogPathAbs` is undefined, reject with `Error('CastLogStore: remote write requested but getRemoteLogPathAbs is not configured')`. Extend `recordError` symmetrically. — M, junior-dev
-- [ ] B2: Add the three new test cases listed in the Red criterion to `tests/castLog/store.test.ts`. — S, junior-dev
+- [x] B1: Extend `RecordCastedInput` to allow optional `portalCastId` (already covered if it derives from `CastedEvent`; verify and add an explicit test if not). Extend `recordCasted(input, opts?: { remote?: boolean })`: when `opts?.remote === true`, append to `getRemoteLogPathAbs()`; otherwise to `getLogPathAbs()`. If `opts.remote === true` and `getRemoteLogPathAbs` is undefined, reject with `Error('CastLogStore: remote write requested but getRemoteLogPathAbs is not configured')`. Extend `recordError` symmetrically. — M, junior-dev
+- [x] B2: Add the three new test cases listed in the Red criterion to `tests/castLog/store.test.ts`. — S, junior-dev
 
 ### C. Pure portal helpers — `parsePortalScheme`, `buildPortalUrl`, `buildBasicAuthHeader`, `buildPortalRequestBody`, `mapPortalError`
 
@@ -473,11 +473,11 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **junior-dev**
 
-- [ ] C1: Implement `parsePortalScheme` per signature + pinned cases. Create `tests/cast/portal/parsePortalScheme.test.ts`. — S, junior-dev
-- [ ] C2: Implement `buildPortalUrl` per signature + pinned cases. Create `tests/cast/portal/buildPortalUrl.test.ts`. — S, junior-dev
-- [ ] C3: Implement `buildBasicAuthHeader` per signature + pinned cases (use `btoa` when defined, else `Buffer.from`). Create `tests/cast/portal/buildBasicAuthHeader.test.ts`. — S, junior-dev
-- [ ] C4: Implement `buildPortalRequestBody` per signature + pinned cases. Create `tests/cast/portal/buildPortalRequestBody.test.ts`. — S, junior-dev
-- [ ] C5: Implement `mapPortalError` per the five-message catalog. Create `tests/cast/portal/mapPortalError.test.ts` with one case per reachable shape, body-truncation case, and empty-body-fallback case. Notice strings tested verbatim. — M, junior-dev
+- [x] C1: Implement `parsePortalScheme` per signature + pinned cases. Create `tests/cast/portal/parsePortalScheme.test.ts`. — S, junior-dev
+- [x] C2: Implement `buildPortalUrl` per signature + pinned cases. Create `tests/cast/portal/buildPortalUrl.test.ts`. — S, junior-dev
+- [x] C3: Implement `buildBasicAuthHeader` per signature + pinned cases (use `btoa` when defined, else `Buffer.from`). Create `tests/cast/portal/buildBasicAuthHeader.test.ts`. — S, junior-dev
+- [x] C4: Implement `buildPortalRequestBody` per signature + pinned cases. Create `tests/cast/portal/buildPortalRequestBody.test.ts`. — S, junior-dev
+- [x] C5: Implement `mapPortalError` per the five-message catalog. Create `tests/cast/portal/mapPortalError.test.ts` with one case per reachable shape, body-truncation case, and empty-body-fallback case. Notice strings tested verbatim. — M, junior-dev
 
 ### D. `RemoteCastTransport` — compose, race, callback
 
@@ -509,7 +509,7 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **senior-dev**
 
-- [ ] D1: Implement `RemoteCastTransport` per the Interfaces signature and Red criterion. Use `vi.useFakeTimers` and an injected `requestUrlFn` stub to drive each branch. The timeout case requires racing a real `setTimeout` against the (never-resolving) request promise — verify the race resolves the timer arm without leaking the timer (clear it in the success path). — L, senior-dev
+- [x] D1: Implement `RemoteCastTransport` per the Interfaces signature and Red criterion. Use `vi.useFakeTimers` and an injected `requestUrlFn` stub to drive each branch. The timeout case requires racing a real `setTimeout` against the (never-resolving) request promise — verify the race resolves the timer arm without leaking the timer (clear it in the success path). — L, senior-dev (8df146d)
 
 ### E. `CastDispatcher` remote branch + pre-dispatch guard
 
@@ -543,10 +543,10 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **senior-dev**
 
-- [ ] E1: Add `remoteTransport?: RemoteCastTransport` to `CastDispatcherDeps` and the class. Read `settings.executionMode` once at the top of `dispatch()`. — S, senior-dev
-- [ ] E2: Implement the pre-dispatch guard (empty / whitespace-only host). Add the two guard test cases. — S, senior-dev
-- [ ] E3: Implement the remote branch in `dispatch()`: build `RemoteCastInput` from the dispatch input + settings, write the bare `recordCasted({ ..., }, { remote: true })`, notify, close, invoke `remoteTransport.run(...)`. Wire `onAccepted` to write the patch `recordCasted` and `onFailure` to write `recordError` + notify. Add the four happy/error-path test cases. — M, senior-dev
-- [ ] E4: Confirm all existing `tests/CastDispatcher.test.ts` cases still pass without modification (local branch unchanged). If any existing case has to be touched to keep the type system happy (e.g. `baseSettings` needs the new fields), update only the test fixture, not the asserted behaviour. — S, senior-dev
+- [x] E1: Add `remoteTransport?: RemoteCastTransport` to `CastDispatcherDeps` and the class. Read `settings.executionMode` once at the top of `dispatch()`. — S, senior-dev (81325f1)
+- [x] E2: Implement the pre-dispatch guard (empty / whitespace-only host). Add the two guard test cases. — S, senior-dev (81325f1)
+- [x] E3: Implement the remote branch in `dispatch()`: build `RemoteCastInput` from the dispatch input + settings, write the bare `recordCasted({ ..., }, { remote: true })`, notify, close, invoke `remoteTransport.run(...)`. Wire `onAccepted` to write the patch `recordCasted` and `onFailure` to write `recordError` + notify. Add the four happy/error-path test cases. — M, senior-dev (81325f1)
+- [x] E4: Confirm all existing `tests/CastDispatcher.test.ts` cases still pass without modification (local branch unchanged). If any existing case has to be touched to keep the type system happy (e.g. `baseSettings` needs the new fields), update only the test fixture, not the asserted behaviour. — S, senior-dev (81325f1)
 
 ### F. `ForgeImprinter` remote branch (forge invariant)
 
@@ -577,13 +577,13 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **senior-dev**
 
-- [ ] F1: Add `remoteTransport?: RemoteCastTransport` to `ForgeImprinterDeps` and the class. Read `settings.executionMode` at the top of `imprint()`. — S, senior-dev
-- [ ] F2: Implement the pre-dispatch guard and the remote branch, threading the meta-spell into `RemoteCastInput.userPrompt` and `<forge>` into `RemoteCastInput.spellPath`. Wire `onAccepted` and `onFailure` callbacks to remote-flagged log writes. Add unit-test cases per the Red criterion. — M, senior-dev
-- [ ] F3: Confirm existing `tests/ForgeImprinter.test.ts` local-branch cases continue to pass. — S, senior-dev
+- [x] F1: Add `remoteTransport?: RemoteCastTransport` to `ForgeImprinterDeps` and the class. Read `settings.executionMode` at the top of `imprint()`. — S, senior-dev (5e509bb)
+- [x] F2: Implement the pre-dispatch guard and the remote branch, threading the meta-spell into `RemoteCastInput.userPrompt` and `<forge>` into `RemoteCastInput.spellPath`. Wire `onAccepted` and `onFailure` callbacks to remote-flagged log writes. Add unit-test cases per the Red criterion. — M, senior-dev (5bd0827)
+- [x] F3: Confirm existing `tests/ForgeImprinter.test.ts` local-branch cases continue to pass. — S, senior-dev (5bd0827)
 
 **ui-integration-tester**
 
-- [ ] F4: New integration test `tests/integration/remote-forge.spec.ts` driving the forge dialog's Imprint button through the `ForgeImprinter` (with mocked `requestUrl` on the remote case and mocked `CastRunner` on the local case), pinning the branch behaviour end-to-end. — M, ui-integration-tester
+- [x] F4: New integration test `tests/integration/remote-forge.spec.ts` driving the forge dialog's Imprint button through the `ForgeImprinter` (with mocked `requestUrl` on the remote case and mocked `CastRunner` on the local case), pinning the branch behaviour end-to-end. — M, ui-integration-tester
 
 ### G. Live-cast integration test
 
@@ -606,7 +606,7 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **ui-integration-tester**
 
-- [ ] G1: New integration test `tests/integration/remote-cast.spec.ts` per the Red criterion. Uses the harness pattern from existing integration tests. — M, ui-integration-tester
+- [x] G1: New integration test `tests/integration/remote-cast.spec.ts` per the Red criterion. Uses the harness pattern from existing integration tests. — M, ui-integration-tester
 
 ### H. `obsidian` mock — `requestUrl` shim + wiring + settings description
 
@@ -635,12 +635,12 @@ Per the planner contract: this is a Medium/Complex plan with UI touch, but the U
 
 **junior-dev**
 
-- [ ] H1: Add `requestUrl` export to `tests/__mocks__/obsidian.ts` as a `vi.fn()` default-rejecting. Export `RequestUrlParam` and `RequestUrlResponse` types (or `any` shims if structural typing in tests is sufficient — match the existing mock's posture). — S, junior-dev
-- [ ] H2: Extend `GrimoireSettingTab.#addTextField` with an optional `desc?: string` parameter. Pass the documented description string for the Portal host row. — S, junior-dev
-- [ ] H3: Append one assertion to `tests/integration/settings-panel.spec.ts`: the Portal host row's settingEl contains the documented description text. — S, junior-dev
-- [ ] H4: In `src/main.ts`, construct a `new RemoteCastTransport()` and pass it as `remoteTransport` into both `new CastDispatcher({ ... })` and `new ForgeImprinter({ ... })`. — S, junior-dev
-- [ ] H5: Add one case to `tests/main.test.ts` pinning that `RemoteCastTransport` is constructed and threaded into both `CastDispatcher` and `ForgeImprinter` (mirror the existing `castLogStore` wiring assertion pattern). — M, junior-dev
-- [ ] H6: Confirm `npm run lint`, `npm test`, `npm run test:integration`, `npm run build`, and `npm run arch:check` all pass. — S, junior-dev
+- [x] H1: Add `requestUrl` export to `tests/__mocks__/obsidian.ts` as a `vi.fn()` default-rejecting. Export `RequestUrlParam` and `RequestUrlResponse` types (or `any` shims if structural typing in tests is sufficient — match the existing mock's posture). — S, junior-dev
+- [x] H2: Extend `GrimoireSettingTab.#addTextField` with an optional `desc?: string` parameter. Pass the documented description string for the Portal host row. — S, junior-dev
+- [x] H3: Append one assertion to `tests/integration/settings-panel.spec.ts`: the Portal host row's settingEl contains the documented description text. — S, junior-dev
+- [x] H4: In `src/main.ts`, construct a `new RemoteCastTransport()` and pass it as `remoteTransport` into both `new CastDispatcher({ ... })` and `new ForgeImprinter({ ... })`. — S, junior-dev
+- [x] H5: Add one case to `tests/main.test.ts` pinning that `RemoteCastTransport` is constructed and threaded into both `CastDispatcher` and `ForgeImprinter` (mirror the existing `castLogStore` wiring assertion pattern). — M, junior-dev
+- [x] H6: Confirm `npm run lint`, `npm test`, `npm run test:integration`, `npm run build`, and `npm run arch:check` all pass. — S, junior-dev
 
 ## Overall effort
 
@@ -662,3 +662,5 @@ The plan is dominated by junior-dev work because the design questions (interface
 ## Next
 
 First todo: **A1** — add the optional `portalCastId` field to `CastedEvent` and `CastRecord`. Handoff to junior-dev via `/implement`.
+
+reviewed @ 55228f3
