@@ -13,56 +13,21 @@ export class GrimoireSettingTab extends PluginSettingTab {
 
   display(): void {
     this.containerEl.empty();
-
-    const effortRow = new EffortRow();
-
-    this.#addTextField('Spell tag',          () => this.#plugin.data.settings.spellTag,          v => { this.#plugin.data.settings.spellTag = v; });
-    this.#addTextField('CLI command',        () => this.#plugin.data.settings.cliCommand,        v => { this.#plugin.data.settings.cliCommand = v; });
-    this.#addTextField('Binary path',        () => this.#plugin.data.settings.binaryPath,        v => { this.#plugin.data.settings.binaryPath = v; });
-    this.#addTextField('Forge output folder',() => this.#plugin.data.settings.forgeOutputFolder, v => { this.#plugin.data.settings.forgeOutputFolder = v; });
-    this.#addTextField('Vault mount path',   () => this.#plugin.data.settings.vaultMountPath,    v => { this.#plugin.data.settings.vaultMountPath = v; });
-
-    // Row 6 — defaultModel (dropdown)
-    const modelSetting = new Setting(this.containerEl).setName('Default model');
-    modelSetting.addDropdown(d => {
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- addOption return is not a real Promise
-      SUPPORTED_MODELS.forEach(m => d.addOption(m.id, m.label));
-      d.setValue(this.#plugin.data.settings.defaultModel);
-      d.onChange(modelId => {
-        this.#plugin.data.settings.defaultModel = modelId;
-        effortRow.update(modelId, this.#plugin.data.settings.defaultEffort);
-        this.#plugin.save();
-      });
-    });
-
-    // Row 7 — defaultEffort (EffortRow)
-    const effortSetting = new Setting(this.containerEl).setName('Default effort');
-    effortRow.mount(effortSetting.controlEl, {
-      models: SUPPORTED_MODELS,
-      modelId: this.#plugin.data.settings.defaultModel,
-      effort: this.#plugin.data.settings.defaultEffort,
-      onChange: effort => {
-        this.#plugin.data.settings.defaultEffort = effort;
-        this.#plugin.save();
-      },
-    });
-
+    this.#renderGeneralSection();
     this.#renderAdvancedSection();
   }
 
-  #addToggleField(label: string, get: () => boolean, set: (v: boolean) => void, desc?: string): void {
-    const s = new Setting(this.containerEl).setName(label);
-    if (desc) s.setDesc(desc);
-    s.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#plugin.save(); }));
-  }
+  #renderGeneralSection(): void {
+    const s = this.#plugin.data.settings;
+    this.#addTextField('Spell tag',          () => s.spellTag,          v => { s.spellTag = v; });
+    this.#addTextField('CLI command',        () => s.cliCommand,        v => { s.cliCommand = v; });
+    this.#addTextField('Binary path',        () => s.binaryPath,        v => { s.binaryPath = v; });
+    this.#addTextField('Forge output folder',() => s.forgeOutputFolder, v => { s.forgeOutputFolder = v; });
+    this.#addTextField('Vault mount path',   () => s.vaultMountPath,    v => { s.vaultMountPath = v; });
 
-  #addPasswordField(label: string, getValue: () => string, setValue: (v: string) => void): void {
-    new Setting(this.containerEl)
-      .setName(label)
-      .addText(t => {
-        t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); });
-        t.inputEl.type = 'password';
-      });
+    const effortRow = new EffortRow();
+    this.#addModelField(effortRow);
+    this.#addEffortField(effortRow);
   }
 
   #renderAdvancedSection(): void {
@@ -83,9 +48,52 @@ export class GrimoireSettingTab extends PluginSettingTab {
     this.#addPasswordField('Auth password',() => s.portalAuthPassword, v => { s.portalAuthPassword = v; });
   }
 
+  #addModelField(effortRow: EffortRow): void {
+    const s = this.#plugin.data.settings;
+    new Setting(this.containerEl).setName('Default model').addDropdown(d => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- addOption return is not a real Promise
+      SUPPORTED_MODELS.forEach(m => d.addOption(m.id, m.label));
+      d.setValue(s.defaultModel);
+      d.onChange(modelId => {
+        s.defaultModel = modelId;
+        effortRow.update(modelId, s.defaultEffort);
+        this.#plugin.save();
+      });
+    });
+  }
+
+  #addEffortField(effortRow: EffortRow): void {
+    const s = this.#plugin.data.settings;
+    const setting = new Setting(this.containerEl).setName('Default effort');
+    effortRow.mount(setting.controlEl, {
+      models: SUPPORTED_MODELS,
+      modelId: s.defaultModel,
+      effort: s.defaultEffort,
+      onChange: effort => {
+        s.defaultEffort = effort;
+        this.#plugin.save();
+      },
+    });
+  }
+
   #addTextField(label: string, getValue: () => string, setValue: (v: string) => void): void {
     new Setting(this.containerEl)
       .setName(label)
       .addText(t => t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); }));
+  }
+
+  #addToggleField(label: string, get: () => boolean, set: (v: boolean) => void, desc?: string): void {
+    const s = new Setting(this.containerEl).setName(label);
+    if (desc) s.setDesc(desc);
+    s.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#plugin.save(); }));
+  }
+
+  #addPasswordField(label: string, getValue: () => string, setValue: (v: string) => void): void {
+    new Setting(this.containerEl)
+      .setName(label)
+      .addText(t => {
+        t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); });
+        t.inputEl.type = 'password';
+      });
   }
 }
