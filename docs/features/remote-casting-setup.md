@@ -1,12 +1,12 @@
 # Remote Casting Setup
 
-> `dev/done-011` — 2026-05-14 — Adds the settings surface for remote casting — one execution-mode toggle plus five portal connection fields — and pins them as a read-API. No dispatch wiring; nothing yet reads these fields outside the settings tab.
+> `dev/done-011` — 2026-05-14 — Adds the settings surface for remote casting — one execution-mode toggle plus five portal connection fields — and pins them as a read-API. No dispatch wiring at the time of this iteration; dispatch landed in `dev/done-012` (see `remote-casting`).
 
 ## What it does
 
 The Grimoire settings tab grows an **Advanced** section, separated from the existing rows by a horizontal rule and an `Advanced` heading. Inside it sits a **Remote execution** toggle and five text fields describing a portal endpoint: host, port, path, auth user, and auth password. The password row is masked (`input type="password"`). Every control writes through to `plugin.data.settings.*` and persists via the existing debounced saver — exactly like the seven original rows.
 
-Nothing else changes for the user. Casting still runs locally regardless of the toggle's position; no HTTP request is built, no connectivity is checked, no field affects spell execution. The iteration's purpose is to lay the persisted shape and the read API so a follow-up iteration can consume them.
+At the time of this iteration, nothing else changed for the user — casting still ran locally regardless of the toggle's position, and the fields were a read-only API. The follow-up `remote-casting` iteration (`dev/done-012`) wired the toggle to a portal-dispatch path.
 
 ## Design decisions
 

@@ -74,7 +74,7 @@ flowchart LR
 
     Spells -->|"scanned at popup open"| Popup
     CP -->|local| CC["Claude Code"]
-    CP -.->|"remote — coming soon"| PS["Portal Service"]
+    CP -->|remote| PS["Portal Service"]
     CC -->|"reads notes\npatches / creates files"| Vault
     CC -->|"filesystem · web · MCP"| API(["Claude API"])
     PS -.->|remote vault copy| API
@@ -84,7 +84,7 @@ When you open the popup and pick a spell, the plugin builds a `claude -p` invoca
 
 Claude Code does the rest — reads your vault, calls MCP servers, fetches URLs, writes files back. Everything a Claude Code session can do from the command line, triggered from a keystroke inside Obsidian.
 
-For now, casting runs locally: Claude Code must be installed on the same machine as Obsidian. Remote casting — so spells can be triggered from mobile or any HTTP client — is the next planned step, roughly equivalent to rebuilding the VPS bridge as a first-class feature.
+Casting runs locally by default: Claude Code must be installed on the same machine as Obsidian. Remote casting is also wired — flipping **Settings → Grimoire → Advanced → Remote execution** routes dispatches as HTTPS POSTs to a configured portal service instead of spawning Claude Code locally. The portal service itself (the receiving end) is a separate concern, roughly equivalent to a first-class version of the VPS bridge described above.
 
 ---
 
@@ -124,7 +124,7 @@ Set your spell tag, Claude Code binary path, default model and effort level, For
 
 - **Cast Log filter and delete** — the Logs tab now lists every cast live with status, duration, and expandable detail (see `docs/features/cast-log-panel.md`), but a query input and row-level deletion are still pending.
 - **Refine Note** — a built-in spell that rewrites or expands your active note. Supports inline `@cast` directives for surgical edits without leaving the editor.
-- **Remote casting** — run spells from mobile or any HTTP client through a lightweight HTTP proxy. No local Claude Code required on the casting device.
+- **Portal service** — the receiving end for remote casting. The plugin already dispatches to a configured portal when **Remote execution** is on, but the portal binary itself (and the mobile / HTTP-client UX that talks to it) is a separate project.
 - Per-spell override indicators, status bar, re-cast from log, scheduled casting.
 
 ---
@@ -135,7 +135,7 @@ Set your spell tag, Claude Code binary path, default model and effort level, For
 - **Claude Code** — the `claude` CLI, installed and reachable from your system PATH (or configured via Binary path in settings)
 - An active Anthropic API key
 
-> Mobile is not supported yet. Remote casting (coming soon) will be the path to casting from mobile.
+> Mobile is not supported yet. Remote casting (now wired in the plugin; portal service pending) will be the path to casting from mobile.
 
 ---
 
