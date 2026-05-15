@@ -231,10 +231,10 @@ describe('CommandPopup ArrowRight — open options', () => {
     const { dispatch } = installFakeScope(popup as any);
     popup.onOpen();
 
-    // Force detail phase directly without triggering ForgeSentinelDetail
-    (popup as any).phase = 'detail';
-
+    // Enter detail phase via a forge sentinel event (ForgeSentinelDetail is mocked)
     const spellsPanel = (popup as any).panels[0];
+    spellsPanel.events.emit('sentinel', { kind: 'forge', name: 'Test Forge' });
+
     const openOptionsSpy = vi.spyOn(spellsPanel, 'openOptions');
     dispatch('ArrowRight');
 
@@ -273,7 +273,7 @@ describe('CommandPopup open-options event → renderOptionsPanel', () => {
     const spellsPanel = (popup as any).panels[0];
     spellsPanel.events.emit('open-options', STUB_SPELLS[0]);
 
-    expect((popup as any).phase).toBe('detail');
+    expect((popup as any).currentPhase.kind).toBe('detail');
   });
 });
 

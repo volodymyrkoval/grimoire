@@ -11,9 +11,9 @@ function mountDetail(callbacks: {
   const contentEl = document.createElement('div');
   document.body.appendChild(contentEl);
   const scope = new Scope();
-  const detail = new ForgeSentinelDetail({
+  const detail = new ForgeSentinelDetail(scope);
+  detail.render({
     contentEl,
-    scope,
     callbacks: {
       onBack: callbacks.onBack ?? vi.fn(),
       onSubmit: callbacks.onSubmit ?? vi.fn(),
@@ -93,9 +93,9 @@ describe('ForgeSentinelDetail component', () => {
     const contentEl = document.createElement('div');
     document.body.appendChild(contentEl);
     const scope = new Scope();
-    const detail = new ForgeSentinelDetail({
+    const detail = new ForgeSentinelDetail(scope);
+    detail.render({
       contentEl,
-      scope,
       callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
       defaults: { defaultModel: 'claude-haiku-4-5', defaultEffort: null },
     });
@@ -177,9 +177,9 @@ describe('ForgeSentinelDetail component', () => {
     const contentEl = document.createElement('div');
     document.body.appendChild(contentEl);
     const scope = new Scope();
-    const detail = new ForgeSentinelDetail({
+    const detail = new ForgeSentinelDetail(scope);
+    detail.render({
       contentEl,
-      scope,
       callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
       defaults: { defaultModel: 'claude-haiku-4-5', defaultEffort: null },
     });

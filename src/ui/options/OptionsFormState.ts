@@ -1,4 +1,6 @@
 import { Effort, SupportedModel } from "../../domain/settings/Settings";
+import type { FormDefaults } from "../../domain/settings/FormDefaults";
+import type { Spell } from "../../domain/spells/Spell";
 
 export interface OptionsFormSnapshot {
   model: string;
@@ -6,6 +8,19 @@ export interface OptionsFormSnapshot {
   contextNotePaths: readonly string[];
   followUp: string;
   executeOnNote: boolean;
+}
+
+export function optionsFormSnapshotFromDefaults(
+  defaults: FormDefaults,
+  spell: Pick<Spell, "executeOnNote">,
+): OptionsFormSnapshot {
+  return {
+    model: defaults.defaultModel,
+    effort: defaults.defaultEffort,
+    contextNotePaths: [],
+    followUp: "",
+    executeOnNote: spell.executeOnNote,
+  };
 }
 
 export class OptionsFormState {

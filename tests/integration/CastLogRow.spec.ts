@@ -19,7 +19,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       expect(body).toBeTruthy();
@@ -45,7 +46,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       // Should NOT contain a "Context notes:" label or the dash
@@ -66,7 +68,8 @@ describe('CastLogRow', () => {
       };
 
       const openLink = vi.fn();
-      new CastLogRow(container, record, true, NOW, () => {}, openLink);
+      const row = new CastLogRow(container, record, openLink);
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       const notesRow = body.querySelector('.cast-log-context-notes-row');
@@ -93,7 +96,8 @@ describe('CastLogRow', () => {
       };
 
       const openLink = vi.fn();
-      new CastLogRow(container, record, true, NOW, () => {}, openLink);
+      const row = new CastLogRow(container, record, openLink);
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       const filesRow = body.querySelector('.cast-log-affected-files-row');
@@ -118,7 +122,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       expect(body.textContent).not.toContain('Affected files:');
@@ -137,7 +142,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       const followUpRow = body.querySelector('.cast-log-follow-up-row');
@@ -163,7 +169,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       expect(body.textContent).not.toContain('Follow-up:');
@@ -183,7 +190,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       expect(body.textContent).not.toContain('Follow-up:');
@@ -202,7 +210,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       const executeRow = body.querySelector('.cast-log-execute-on-note-row');
@@ -228,7 +237,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       expect(body.textContent).not.toContain('Runs on note:');
@@ -248,7 +258,8 @@ describe('CastLogRow', () => {
         castedTs: NOW.toISOString(),
       };
 
-      new CastLogRow(container, record, true, NOW, () => {}, () => {});
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       expect(body.textContent).not.toContain('Runs on note:');

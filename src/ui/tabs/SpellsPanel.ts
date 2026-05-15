@@ -36,7 +36,6 @@ export class SpellsPanel implements NavigablePanel {
 
   #initSpellList(container: HTMLElement): void {
     this.#spellList = new SpellList(container, this.events, [...SENTINELS]);
-    this.#lastSelectedIndex = 0;
     this.#spellList.render(this.#filteredSpells, this.#lastSelectedIndex, this.#hasOverride);
   }
 
@@ -81,6 +80,7 @@ export class SpellsPanel implements NavigablePanel {
 
   reset(): void {
     this.#filteredSpells = [...this.#allSpells];
+    this.#lastSelectedIndex = 0;
   }
 
   setHasOverride(predicate: (path: SpellPath) => boolean): void {

@@ -20,12 +20,15 @@ describe('tab navigation', () => {
     expect(h.activeTabId()).toBe('spells');
   });
 
-  it('B2: clickTab logs switches activeTabId to logs and clears search input after typing', () => {
+  it('B2: clickTab logs switches activeTabId to logs without search input', () => {
     h.type('circle');
     h.clickTab('logs');
 
     expect(h.activeTabId()).toBe('logs');
-    expect(h.searchInput().value).toBe('');
+    // Logs tab has no search input, so we cannot call h.searchInput()
+    // Verify we're on the logs tab by checking for the cast-log-list element
+    const castLogList = h.contentEl.querySelector('.cast-log-list');
+    expect(castLogList).not.toBeNull();
   });
 
   it('B3: clickTab logs then clickTab spells returns to Spells with first spell selected', () => {

@@ -37,7 +37,8 @@ describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
       frontmatter: { tags: ['spell'] },
     });
 
-    const detail = new SpellOptionsDetail({
+    const detail = new SpellOptionsDetail();
+    detail.render({
       contentEl,
       scope: { register: vi.fn(), unregister: vi.fn() } as any,
       spell,
@@ -93,7 +94,8 @@ describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
       frontmatter: { tags: ['spell'] },
     });
 
-    const detail = new SpellOptionsDetail({
+    const detail = new SpellOptionsDetail();
+    detail.render({
       contentEl,
       scope: { register: vi.fn(), unregister: vi.fn() } as any,
       spell,
@@ -142,7 +144,8 @@ describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
       frontmatter: { tags: ['spell'] },
     });
 
-    const detail = new SpellOptionsDetail({
+    const detail = new SpellOptionsDetail();
+    detail.render({
       contentEl,
       scope: { register: vi.fn(), unregister: vi.fn() } as any,
       spell,
