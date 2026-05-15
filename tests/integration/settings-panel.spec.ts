@@ -180,4 +180,16 @@ describe('GrimoireSettingTab seam', () => {
     const containerText = tab.containerEl.textContent ?? '';
     expect(containerText).toContain('Hostname or full URL. Defaults to HTTPS unless http:// is prefixed.');
   });
+
+  it('editing a text field triggers the onSettingsSaved callback after each save', () => {
+    const onSettingsSaved = vi.fn();
+    const tabWithCallback = new GrimoireSettingTab(plugin.app, plugin, onSettingsSaved);
+    tabWithCallback.display();
+
+    onSettingsSaved.mockClear();
+    const textInputs = tabWithCallback.containerEl.querySelectorAll('input[type="text"]');
+    (textInputs[0] as any).__triggerChange('#newTag');
+
+    expect(onSettingsSaved).toHaveBeenCalledTimes(1);
+  });
 });

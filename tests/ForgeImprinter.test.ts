@@ -4,6 +4,12 @@ import { GrimoireSettings } from '../src/domain/settings/Settings';
 import { ForgeFormSnapshot } from '../src/forge/ForgeFormSnapshot';
 import type { CastInput, CastCallbacks } from '../src/cast/Caster';
 import type { CastLogWriter } from '../src/castLog/CastLogWriter';
+import { buildForgeUserPrompt } from '../src/forge/buildForgeUserPrompt';
+
+// Canonical forge paths used in all test instances.
+const FORGE_ABS = '/vault/.obsidian/plugins/grimoire/forge.md';
+const FORGE_VAULT_REL = '.obsidian/plugins/grimoire/forge.md';
+const forgeSpellPaths = () => ({ absForCaster: FORGE_ABS, vaultRelForPortal: FORGE_VAULT_REL });
 
 function makeStubCaster() {
   let capturedInput: CastInput | undefined;
@@ -64,6 +70,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -92,6 +99,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -111,13 +119,14 @@ describe('ForgeImprinter', () => {
     expect(stubCaster.castFn).toHaveBeenCalled();
   });
 
-  it('passes metaSpell to caster with name and description in userPrompt', () => {
+  it('passes small per-cast userPrompt (not the full meta-spell) with name and description', () => {
     const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -133,8 +142,66 @@ describe('ForgeImprinter', () => {
     );
 
     const input = stubCaster.getInput();
-    expect(input.userPrompt).toContain('- **Name (already sanitised):** Test Spell');
-    expect(input.userPrompt).toContain('- **Description:** A test spell');
+    const expectedPrompt = buildForgeUserPrompt({
+      description: 'A test spell',
+      name: 'Test Spell',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      executeOnNote: true,
+    });
+    expect(input.userPrompt).toBe(expectedPrompt);
+    // Specifically does NOT contain system-prompt content
+    expect(input.userPrompt).not.toContain('Execution Mode');
+  });
+
+  it('caster.cast receives systemPromptFile pointing at the absolute forge path', () => {
+    const stubCaster = makeStubCaster();
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
+      forgeSpellPaths,
+    });
+
+    imprinter.imprint(
+      {
+        name: 'My Spell',
+        description: 'test',
+        model: 'claude-sonnet-4-5',
+        effort: null,
+        executeOnNote: false,
+      } as ForgeFormSnapshot,
+      localBaseSettings,
+      vi.fn()
+    );
+
+    expect(stubCaster.getInput().systemPromptFile).toBe(FORGE_ABS);
+  });
+
+  it('caster.cast receives spellPath set to the vault-relative forge path', () => {
+    const stubCaster = makeStubCaster();
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
+      forgeSpellPaths,
+    });
+
+    imprinter.imprint(
+      {
+        name: 'My Spell',
+        description: 'test',
+        model: 'claude-sonnet-4-5',
+        effort: null,
+        executeOnNote: false,
+      } as ForgeFormSnapshot,
+      localBaseSettings,
+      vi.fn()
+    );
+
+    expect(stubCaster.getInput().spellPath).toBe(FORGE_VAULT_REL);
   });
 
   it('calls onAccepted callback with success toast for local mode', () => {
@@ -145,6 +212,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -172,6 +240,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -191,13 +260,14 @@ describe('ForgeImprinter', () => {
     expect(notifyFn).toHaveBeenCalledWith('Forge failed: boom');
   });
 
-  it('threads executeOnNote: false into metaSpell', () => {
+  it('threads executeOnNote: false into userPrompt via buildForgeUserPrompt', () => {
     const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -213,7 +283,7 @@ describe('ForgeImprinter', () => {
     );
 
     const input = stubCaster.getInput();
-    expect(input.userPrompt).toContain('grimoire-execute-on-note: false');
+    expect(input.userPrompt).toContain('**Execute on note:** false');
   });
 
   it('empty-name guard calls neither recordCasted nor recordError', () => {
@@ -224,6 +294,7 @@ describe('ForgeImprinter', () => {
       notify: vi.fn(),
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -242,7 +313,7 @@ describe('ForgeImprinter', () => {
     expect(logWriter.recordError).not.toHaveBeenCalled();
   });
 
-  it('valid imprint calls recordCasted once with correct shape (forge variant)', () => {
+  it('valid imprint calls recordCasted once with forge sentinel (not the file path)', () => {
     const logWriter = makeLogWriterStub();
     const stubCaster = makeStubCaster();
 
@@ -251,6 +322,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
+      forgeSpellPaths,
     });
 
     const snapshot = {
@@ -283,6 +355,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
       generateId: () => 'fixed-uuid',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -310,6 +383,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -343,6 +417,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -371,6 +446,7 @@ describe('ForgeImprinter', () => {
       notify: notifyFn,
       caster: stubCaster.thunk,
       logWriter: makeLogWriterStub,
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -401,6 +477,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -433,6 +510,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -464,6 +542,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -493,6 +572,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -526,6 +606,7 @@ describe('ForgeImprinter', () => {
       caster: stubCaster.thunk,
       logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -555,6 +636,7 @@ describe('ForgeImprinter', () => {
       caster: thunk,
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
+      forgeSpellPaths,
     });
 
     imprinter.imprint(
@@ -579,6 +661,7 @@ describe('ForgeImprinter', () => {
       caster: caster2.thunk,
       logWriter: () => logWriter2,
       generateId: () => 'id2',
+      forgeSpellPaths,
     });
     imprinter2.imprint(
       { name: 'X', description: 'd', model: 'claude-sonnet-4-5', effort: null, executeOnNote: false },
@@ -587,31 +670,6 @@ describe('ForgeImprinter', () => {
     );
     caster2.getCallbacks().onAccepted({});
     expect(logWriter2.recordCasted).toHaveBeenCalledTimes(1);
-  });
-
-  it('caster.cast receives spellPath: undefined — forge has no spell file', () => {
-    const stubCaster = makeStubCaster();
-
-    const imprinter = new ForgeImprinter({
-      notify: vi.fn(),
-      caster: stubCaster.thunk,
-      logWriter: makeLogWriterStub,
-      generateId: () => 'forge-id',
-    });
-
-    imprinter.imprint(
-      {
-        name: 'My Spell',
-        description: 'test',
-        model: 'claude-sonnet-4-5',
-        effort: null,
-        executeOnNote: false,
-      } as ForgeFormSnapshot,
-      localBaseSettings,
-      vi.fn()
-    );
-
-    expect(stubCaster.getInput().spellPath).toBeUndefined();
   });
 
   it('uses logWriter resolved at imprint time, not construction time', () => {
@@ -624,6 +682,7 @@ describe('ForgeImprinter', () => {
       caster: makeStubCaster().thunk,
       logWriter: () => mutableSettings.executionMode === 'remote' ? remoteWriter : localWriter,
       generateId: () => 'id',
+      forgeSpellPaths,
     });
 
     const snapshot: ForgeFormSnapshot = {

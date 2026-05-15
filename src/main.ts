@@ -23,7 +23,7 @@ export default class GrimoirePlugin extends Plugin {
     const paths = this.#buildPaths();
     const castLog = await this.#initCastLog(paths);
     const popupModule = this.#buildPopupModule(castLog, paths);
-    this.#registerUI(popupModule);
+    this.#registerUI(castLog, popupModule);
   }
 
   async #loadPluginData(): Promise<void> {
@@ -43,6 +43,11 @@ export default class GrimoirePlugin extends Plugin {
     const castLog = new CastLogModule({
       app: this.app,
       paths,
+      getSettings: () => ({
+        spellTag: this.data.settings.spellTag,
+        forgeOutputFolder: this.data.settings.forgeOutputFolder,
+        vaultMountPath: this.data.settings.vaultMountPath,
+      }),
     });
     await castLog.initStartupMaintenance();
     return castLog;
@@ -55,11 +60,17 @@ export default class GrimoirePlugin extends Plugin {
       overrides: this.overrides,
       castLog,
       getAgentHooksDirAbs: () => `${this.data.settings.vaultMountPath}/${paths.agentHooksDirAbs()}`,
+      forgeSpellPaths: () => ({
+        absForCaster: `${this.data.settings.vaultMountPath}/${paths.forgeSpellPathVaultRel()}`,
+        vaultRelForPortal: paths.forgeSpellPathVaultRel(),
+      }),
     });
   }
 
-  #registerUI(popupModule: PopupModule): void {
-    this.addSettingTab(new GrimoireSettingTab(this.app, this));
+  #registerUI(castLog: CastLogModule, popupModule: PopupModule): void {
+    this.addSettingTab(new GrimoireSettingTab(this.app, this, () => {
+      castLog.materializeForge().catch(console.error);
+    }));
     popupModule.register(this);
   }
 

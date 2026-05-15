@@ -93,4 +93,40 @@ describe('buildCastArgs', () => {
     expect(args).toContain('--add-dir');
     expect(args).toContain('/vault');
   });
+
+  it('forge-shaped: systemPromptFile is forge.md, userPrompt is small per-cast block', () => {
+    // Regression guard: after forge-spell-materialization refactor, forge casts
+    // pass systemPromptFile pointing at the vault-relative forge.md path, with a small
+    // per-cast userPrompt. This test asserts the argv order is correct:
+    // --system-prompt-file <path> -p <block>  (not reversed or mangled).
+    const forgePath = '/vault/.obsidian/plugins/grimoire/forge.md';
+    const forgeUserPrompt =
+      'name: My Spell\ndescription: Does things\nmodel: claude-sonnet-4-5\neffort: medium\nexecuteOnNote: false';
+
+    const args = buildCastArgs({
+      systemPromptFile: forgePath,
+      userPrompt: forgeUserPrompt,
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '/vault',
+    });
+
+    // Assert order: --system-prompt-file comes before the path, then -p, then the prompt.
+    const systemPromptIdx = args.indexOf('--system-prompt-file');
+    const pathIdx = args.indexOf(forgePath);
+    const pIdx = args.indexOf('-p');
+    const promptIdx = args.indexOf(forgeUserPrompt);
+
+    expect(systemPromptIdx).toBeGreaterThanOrEqual(0);
+    expect(pathIdx).toBeGreaterThanOrEqual(0);
+    expect(pIdx).toBeGreaterThanOrEqual(0);
+    expect(promptIdx).toBeGreaterThanOrEqual(0);
+    expect(systemPromptIdx).toBeLessThan(pathIdx);
+    expect(pathIdx).toBeLessThan(pIdx);
+    expect(pIdx).toBeLessThan(promptIdx);
+
+    // Also verify the final output includes --add-dir for the vault.
+    expect(args).toContain('--add-dir');
+    expect(args).toContain('/vault');
+  });
 });

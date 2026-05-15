@@ -9,11 +9,19 @@ import { EffortRow } from '../widgets/EffortRow';
  */
 export class GrimoireSettingTab extends PluginSettingTab {
   readonly #plugin: { app: App; data: GrimoireData; save(): void };
+  readonly #onSettingsSaved: () => void;
 
-  constructor(app: App, plugin: { app: App; data: GrimoireData; save(): void }) {
+  constructor(app: App, plugin: { app: App; data: GrimoireData; save(): void }, onSettingsSaved?: () => void) {
     // plugin satisfies PluginSettingTab structurally; 'as any' bridges the nominal Obsidian Plugin type
     super(app, plugin as unknown as import('obsidian').Plugin);
     this.#plugin = plugin;
+    this.#onSettingsSaved = onSettingsSaved ?? (() => {});
+  }
+
+  /** Saves plugin data and fires the onSettingsSaved callback (fire-and-forget). */
+  #save(): void {
+    this.#plugin.save();
+    this.#onSettingsSaved();
   }
 
   display(): void {
@@ -61,7 +69,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
       d.onChange(modelId => {
         s.defaultModel = modelId;
         effortRow.update(modelId, s.defaultEffort);
-        this.#plugin.save();
+        this.#save();
       });
     });
   }
@@ -75,7 +83,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
       effort: s.defaultEffort,
       onChange: effort => {
         s.defaultEffort = effort;
-        this.#plugin.save();
+        this.#save();
       },
     });
   }
@@ -83,20 +91,20 @@ export class GrimoireSettingTab extends PluginSettingTab {
   #addTextField(label: string, getValue: () => string, setValue: (v: string) => void, desc?: string): void {
     const s = new Setting(this.containerEl).setName(label);
     if (desc) s.setDesc(desc);
-    s.addText(t => t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); }));
+    s.addText(t => t.setValue(getValue()).onChange(v => { setValue(v); this.#save(); }));
   }
 
   #addToggleField(label: string, get: () => boolean, set: (v: boolean) => void, desc?: string): void {
     const s = new Setting(this.containerEl).setName(label);
     if (desc) s.setDesc(desc);
-    s.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#plugin.save(); }));
+    s.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#save(); }));
   }
 
   #addPasswordField(label: string, getValue: () => string, setValue: (v: string) => void): void {
     new Setting(this.containerEl)
       .setName(label)
       .addText(t => {
-        t.setValue(getValue()).onChange(v => { setValue(v); this.#plugin.save(); });
+        t.setValue(getValue()).onChange(v => { setValue(v); this.#save(); });
         t.inputEl.type = 'password';
       });
   }

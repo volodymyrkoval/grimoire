@@ -13,6 +13,10 @@ import { CommandPopup } from '../../src/ui/CommandPopup';
 import type { ImprintAction, FormDefaults } from '../../src/ui/CommandPopup';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
+import { ForgeImprinter } from '../../src/forge/ForgeImprinter';
+import { createCaster } from '../../src/cast/createCaster';
+import { CastRunner } from '../../src/cast/local/CastRunner';
+import type { GrimoireSettings } from '../../src/domain/settings/Settings';
 
 // ─── local harness ────────────────────────────────────────────────────────────
 // D5 will update the shared harness.ts; until then this file wires the popup
@@ -182,5 +186,49 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
 
     // Modal's contentEl is still attached — popup was NOT fully closed
     expect(h.contentEl.isConnected).toBe(true);
+  });
+
+  it('C4 — systemPromptFile flows through CastRunner when real ForgeImprinter wired as imprintAction', () => {
+    // This asserts the full popup → form → ForgeImprinter → CastRunner path carries
+    // systemPromptFile pointing at the materialized forge.md (not undefined or the old inline prompt).
+    const forgePath = '/vault/.obsidian/plugins/grimoire/forge.md';
+    const forgeVaultRel = '.obsidian/plugins/grimoire/forge.md';
+    const localSettings: GrimoireSettings = {
+      vaultMountPath: '/vault',
+      spellTag: 'grimoire/spell',
+      binaryPath: '/usr/bin/claude',
+      cliCommand: 'claude',
+      forgeOutputFolder: 'Spells/',
+      defaultModel: 'claude-sonnet-4-5',
+      defaultEffort: null,
+      executionMode: 'local',
+      portalHost: '',
+      portalPort: '',
+      portalPath: '',
+      portalAuthUser: '',
+      portalAuthPassword: '',
+    };
+
+    const runSpy = vi.spyOn(CastRunner.prototype, 'run').mockImplementation(() => {});
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: () => createCaster(localSettings),
+      logWriter: () => ({ recordCasted: vi.fn().mockResolvedValue(undefined), recordError: vi.fn().mockResolvedValue(undefined) }),
+      forgeSpellPaths: () => ({ absForCaster: forgePath, vaultRelForPortal: forgeVaultRel }),
+    });
+
+    const realImprintAction: ImprintAction = (snapshot) =>
+      imprinter.imprint(snapshot, localSettings, vi.fn());
+
+    const h = createHarnessWithAction(realImprintAction);
+    h.navigateToForge();
+    h.submitForm({ name: 'Flow Spell', description: 'test flow', model: 'claude-sonnet-4-5', effort: 'medium' });
+
+    expect(runSpy).toHaveBeenCalledOnce();
+    const [runInput] = runSpy.mock.calls[0];
+    expect((runInput as any).systemPromptFile).toBe(forgePath);
+
+    runSpy.mockRestore();
   });
 });

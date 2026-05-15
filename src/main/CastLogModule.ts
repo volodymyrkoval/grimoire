@@ -3,6 +3,7 @@ import type { App } from 'obsidian';
 import type { CastLogWriter } from '../castLog/CastLogWriter';
 import { CastLogStore } from '../castLog/store';
 import { HookMaterializer } from '../castLog/HookMaterializer';
+import { ForgeMaterializer } from '../forge/ForgeMaterializer';
 import { ScratchSweeper } from '../castLog/ScratchSweeper';
 import { CastLogSource } from '../castLog/CastLogSource';
 import { VaultRefreshCoordinator } from '../castLog/VaultRefreshCoordinator';
@@ -10,6 +11,7 @@ import { IntervalTickCoordinator } from '../castLog/IntervalTickCoordinator';
 import { foldEvents } from '../castLog/foldEvents';
 import type { PluginPaths } from '../infra/PluginPaths';
 import type { CastLogPanelDeps } from '../ui/tabs/CastLogPanel';
+import type { ForgeSystemPromptInput } from '../forge/forgeTemplate';
 
 type MaterializerPorts = {
   adapter: DataAdapter;
@@ -21,6 +23,12 @@ type MaterializerPorts = {
 type SweeperPorts = {
   adapter: DataAdapter;
   getScratchDirAbs: () => string;
+};
+
+type ForgeMaterializerPorts = {
+  getForgePathAbs: () => string;
+  getSettings: () => ForgeSystemPromptInput;
+  adapter?: DataAdapter;
 };
 
 /**
@@ -35,17 +43,23 @@ export class CastLogModule {
   readonly #pluginCastLogStore: CastLogStore;
   readonly #materializerFactory: (ports: MaterializerPorts) => { run(): Promise<void> };
   readonly #sweeperFactory: (ports: SweeperPorts) => { sweep(): Promise<void> };
+  readonly #forgeMaterializerFactory: (ports: ForgeMaterializerPorts) => { run(): Promise<void> };
+  readonly #getSettings: () => ForgeSystemPromptInput;
 
   constructor(deps: {
     app: App;
     paths: PluginPaths;
     materializerFactory?: (ports: MaterializerPorts) => { run(): Promise<void> };
     sweeperFactory?: (ports: SweeperPorts) => { sweep(): Promise<void> };
+    forgeMaterializerFactory?: (ports: ForgeMaterializerPorts) => { run(): Promise<void> };
+    getSettings?: () => ForgeSystemPromptInput;
   }) {
     this.#app = deps.app;
     this.#paths = deps.paths;
     this.#materializerFactory = deps.materializerFactory ?? ((ports) => new HookMaterializer(ports));
     this.#sweeperFactory = deps.sweeperFactory ?? ((ports) => new ScratchSweeper(ports));
+    this.#forgeMaterializerFactory = deps.forgeMaterializerFactory ?? ((ports) => new ForgeMaterializer(ports));
+    this.#getSettings = deps.getSettings ?? (() => ({ spellTag: '', forgeOutputFolder: '', vaultMountPath: '' }));
 
     const adapter = this.#app.vault.adapter;
 
@@ -90,7 +104,7 @@ export class CastLogModule {
     };
   }
 
-  /** Runs startup tasks: materializes remote hook scripts, sweeps stale scratch files. */
+  /** Runs startup tasks: materializes remote hook scripts, forge spell file, and sweeps stale scratch files. */
   async initStartupMaintenance(): Promise<void> {
     const adapter = this.#app.vault.adapter;
 
@@ -107,10 +121,33 @@ export class CastLogModule {
       console.error('HookMaterializer (remote) failed', e);
     }
 
+    const forgeMaterializer = this.#forgeMaterializerFactory({
+      adapter,
+      getForgePathAbs: () => this.#paths.forgeSpellPathPluginRel(),
+      getSettings: this.#getSettings,
+    });
+
+    try {
+      await forgeMaterializer.run();
+    } catch (e) {
+      console.error('ForgeMaterializer failed', e);
+    }
+
     const sweeper = this.#sweeperFactory({
       adapter,
       getScratchDirAbs: () => this.#paths.scratchDir(),
     });
     sweeper.sweep().catch(console.error);
+  }
+
+  /** Re-materializes the forge spell file with current settings. Fire-and-forget safe. */
+  materializeForge(): Promise<void> {
+    const adapter = this.#app.vault.adapter;
+    const forgeMaterializer = this.#forgeMaterializerFactory({
+      adapter,
+      getForgePathAbs: () => this.#paths.forgeSpellPathPluginRel(),
+      getSettings: this.#getSettings,
+    });
+    return forgeMaterializer.run();
   }
 }

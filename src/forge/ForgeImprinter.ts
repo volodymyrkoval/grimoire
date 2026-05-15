@@ -1,7 +1,7 @@
 import { GrimoireSettings } from '../domain/settings/Settings';
 import { FORGE_SPELL_PATH } from '../castLog/types';
 import { sanitiseSpellName } from './sanitiseSpellName';
-import { buildMetaSpell } from './buildMetaSpell';
+import { buildForgeUserPrompt } from './buildForgeUserPrompt';
 import { ForgeFormSnapshot } from './ForgeFormSnapshot';
 import type { Caster } from '../execution/Caster';
 import type { CastLogWriter } from '../castLog/CastLogWriter';
@@ -11,23 +11,28 @@ export interface ForgeImprinterDeps {
   notify: (msg: string) => void;
   caster: () => Caster;
   logWriter: () => CastLogWriter;
+  /** Returns the materialized forge spell paths: absolute for the local caster, vault-relative for the portal. */
+  forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   generateId?: () => string;
 }
 
 /**
- * Orchestrates spell forging: validates input, builds the forge meta-spell, logs the cast, and dispatches execution.
+ * Orchestrates spell forging: validates input, builds the per-cast user prompt, logs the cast, and dispatches execution.
  * Handles both local and remote execution modes, with appropriate user notifications.
+ * System-prompt content lives in the materialized forge.md file; the user prompt carries only the five per-cast values.
  */
 export class ForgeImprinter {
   readonly #notify: (msg: string) => void;
   readonly #caster: () => Caster;
   readonly #logWriter: () => CastLogWriter;
+  readonly #forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   readonly #generateId: () => string;
 
   constructor(deps: ForgeImprinterDeps) {
     this.#notify = deps.notify;
     this.#caster = deps.caster;
     this.#logWriter = deps.logWriter;
+    this.#forgeSpellPaths = deps.forgeSpellPaths;
     this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
   }
 
@@ -52,14 +57,11 @@ export class ForgeImprinter {
     }
 
     const castId = this.#generateId();
-    const metaSpell = buildMetaSpell({
+    const userPrompt = buildForgeUserPrompt({
       description: snapshot.description,
       name: sanitised,
       model: snapshot.model,
       effort: snapshot.effort,
-      spellTag: settings.spellTag,
-      forgeOutputFolder: settings.forgeOutputFolder,
-      vaultMountPath: settings.vaultMountPath,
       executeOnNote: snapshot.executeOnNote,
     });
 
@@ -71,14 +73,16 @@ export class ForgeImprinter {
     this.#notify(noticeText);
     close();
 
+    const paths = this.#forgeSpellPaths();
     const caster = this.#caster();
     caster.cast(
       {
         castId,
+        spellPath: paths.vaultRelForPortal,
         modelId: snapshot.model,
         effort: snapshot.effort,
-        userPrompt: metaSpell,
-        systemPromptFile: undefined,
+        userPrompt,
+        systemPromptFile: paths.absForCaster,
         vaultMountPath: settings.vaultMountPath,
       },
       {

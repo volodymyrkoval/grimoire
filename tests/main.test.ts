@@ -525,6 +525,47 @@ describe('GrimoirePlugin', () => {
     dispatcherSpy.mockRestore();
   });
 
+  it('onload constructs ForgeMaterializer exactly once and awaits its run()', async () => {
+    const ForgeMaterializerModule = await import('../src/forge/ForgeMaterializer');
+    const OriginalForgeMaterializer = ForgeMaterializerModule.ForgeMaterializer;
+    let capturedRunSpy: ReturnType<typeof vi.fn> | undefined;
+    const forgeMaterializerSpy = vi.spyOn(ForgeMaterializerModule, 'ForgeMaterializer').mockImplementation((ports: any) => {
+      const inst = new OriginalForgeMaterializer(ports);
+      capturedRunSpy = vi.spyOn(inst, 'run').mockResolvedValue(undefined);
+      return inst;
+    });
+
+    await plugin.onload();
+
+    expect(forgeMaterializerSpy).toHaveBeenCalledTimes(1);
+    expect(capturedRunSpy).toHaveBeenCalledTimes(1);
+
+    forgeMaterializerSpy.mockRestore();
+  });
+
+  it('ForgeImprinter constructor receives forgeSpellPaths thunk returning paths derived from vaultMountPath and PluginPaths', async () => {
+    const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
+    const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
+    const imprintSpy = vi.spyOn(ForgeImprinterModule, 'ForgeImprinter').mockImplementation((deps: any) => {
+      return new OriginalForgeImprinter(deps);
+    });
+
+    await plugin.onload();
+
+    expect(imprintSpy).toHaveBeenCalledOnce();
+    const deps = imprintSpy.mock.calls[0][0] as any;
+    expect(typeof deps.forgeSpellPaths).toBe('function');
+
+    const forgePaths = deps.forgeSpellPaths();
+    const { PluginPaths } = await import('../src/infra/PluginPaths');
+    // manifest.dir is '.obsidian/plugins/test' in the mock Plugin
+    const pluginPaths = new PluginPaths((plugin as any).manifest.dir);
+    expect(forgePaths.vaultRelForPortal).toBe(pluginPaths.forgeSpellPathVaultRel());
+    expect(forgePaths.absForCaster).toContain(pluginPaths.forgeSpellPathVaultRel());
+
+    imprintSpy.mockRestore();
+  });
+
   it('CastDispatcher and ForgeImprinter caster thunks invoke createCaster with current settings', async () => {
     const createCasterModule = await import('../src/cast/createCaster');
     const createCasterSpy = vi.spyOn(createCasterModule, 'createCaster');

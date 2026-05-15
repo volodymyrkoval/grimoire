@@ -38,4 +38,20 @@ export class PluginPaths {
   agentHooksDirAbs(): string {
     return normalizePath(`${this.#pluginDir}/agent-hooks`);
   }
+
+  /**
+   * Returns the forge spell path relative to the plugin directory root.
+   * To obtain the OS-level absolute path, prepend `vaultMountPath`.
+   */
+  forgeSpellPathPluginRel(): string {
+    return normalizePath(`${this.#pluginDir}/forge.md`);
+  }
+
+  /**
+   * Returns the forge spell path expressed relative to the vault root,
+   * suitable for sending to the portal as `spellPath`.
+   */
+  forgeSpellPathVaultRel(): string {
+    return normalizePath(`${this.#pluginDir}/forge.md`);
+  }
 }

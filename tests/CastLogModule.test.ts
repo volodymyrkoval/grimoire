@@ -2,6 +2,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { App } from 'obsidian';
 import { CastLogModule } from '../src/main/CastLogModule';
 import { PluginPaths } from '../src/infra/PluginPaths';
+import type { ForgeSystemPromptInput } from '../src/forge/forgeTemplate';
 
 vi.mock('../src/domain/settings/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
@@ -101,6 +102,49 @@ describe('CastLogModule', () => {
     });
 
     await expect(module.initStartupMaintenance()).resolves.toBeUndefined();
+  });
+
+  it('initStartupMaintenance invokes forgeMaterializerFactory once and awaits its run()', async () => {
+    const forgeRunMock = vi.fn().mockResolvedValue(undefined);
+    const forgeMaterializerFactorySpy = vi.fn(() => ({ run: forgeRunMock }));
+    const getSettings = vi.fn<[], ForgeSystemPromptInput>(() => ({
+      spellTag: '#spell',
+      forgeOutputFolder: 'Spells',
+      vaultMountPath: '/vault',
+    }));
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
+      forgeMaterializerFactory: forgeMaterializerFactorySpy,
+      getSettings,
+    });
+
+    await module.initStartupMaintenance();
+
+    expect(forgeMaterializerFactorySpy).toHaveBeenCalledTimes(1);
+    expect(forgeRunMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejection in the forge materializer is caught and logged, plugin still loads', async () => {
+    const forgeRunMock = vi.fn().mockRejectedValue(new Error('forge disk full'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
+      forgeMaterializerFactory: () => ({ run: forgeRunMock }),
+      getSettings: () => ({ spellTag: '#spell', forgeOutputFolder: 'Spells', vaultMountPath: '/vault' }),
+    });
+
+    await expect(module.initStartupMaintenance()).resolves.toBeUndefined();
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('ForgeMaterializer'), expect.any(Error));
+
+    consoleSpy.mockRestore();
   });
 
 });

@@ -28,6 +28,7 @@ export class PopupModule {
     overrides: SpellOverrideStore;
     castLog: CastLogModule;
     getAgentHooksDirAbs: () => string;
+    forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   }) {
     this.#app = deps.app;
     this.#getData = deps.getData;
@@ -40,6 +41,7 @@ export class PopupModule {
       notify: (msg) => { new Notice(msg); },
       caster: () => createCaster(this.#getData().settings, this.#getAgentHooksDirAbs()),
       logWriter: () => this.#castLog.activeLogStore(),
+      forgeSpellPaths: deps.forgeSpellPaths,
     });
   }
 
