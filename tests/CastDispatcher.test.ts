@@ -755,4 +755,79 @@ describe('CastDispatcher', () => {
     expect(remoteWriter.recordCasted).toHaveBeenCalledTimes(1);
     expect(localWriter.recordCasted).not.toHaveBeenCalled();
   });
+
+  it('local: systemPromptFilePath overrides default systemPromptFile path', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: baseSettings,
+      activeFilePath: null,
+      executeOnNote: false,
+      systemPromptFilePath: '/vault/plugin/refine.md',
+    });
+
+    expect(casterStub.getInput().systemPromptFile).toBe('/vault/plugin/refine.md');
+  });
+
+  it('local: systemPromptFilePath overrides spellPath in CastInput', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: baseSettings,
+      activeFilePath: null,
+      executeOnNote: false,
+      systemPromptFilePath: '/vault/plugin/refine.md',
+    });
+
+    expect(casterStub.getInput().spellPath).toBe('/vault/plugin/refine.md');
+  });
+
+  it('omitting systemPromptFilePath uses standard spell.path for systemPromptFile (regression)', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: baseSettings,
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(casterStub.getInput().systemPromptFile).toBe('/vault/spells/test.md');
+    expect(casterStub.getInput().spellPath).toBe('spells/test.md');
+  });
 });

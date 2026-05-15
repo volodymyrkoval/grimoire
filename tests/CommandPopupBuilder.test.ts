@@ -63,6 +63,10 @@ describe('CommandPopupBuilder', () => {
       return castDispatcherMock;
     });
 
+    const mockPaths = {
+      refineSpellPathVaultRel: vi.fn(() => '.obsidian/plugins/grimoire/refine.md'),
+    } as any;
+
     const builder = new CommandPopupBuilder({
       app,
       plugin: pluginData as any,
@@ -70,6 +74,7 @@ describe('CommandPopupBuilder', () => {
       sessionMap,
       castLogPanelDeps,
       createDispatcher,
+      paths: mockPaths,
     });
 
     vi.clearAllMocks();

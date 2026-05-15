@@ -1,6 +1,10 @@
 import { Effort, SupportedModel } from "../../domain/settings/Settings";
 import type { FormDefaults } from "../../domain/settings/FormDefaults";
 import type { Spell } from "../../domain/spells/Spell";
+import { REFINE_SENTINEL_PATH } from "../../domain/spells/Spell";
+import { resolveSpellOptions } from "../../domain/settings/spellOptionsResolver";
+import type { SpellOverrideStore } from "../../domain/settings/SpellOverrideStore";
+import type { OptionsSessionMap } from "./OptionsSessionMap";
 
 export interface OptionsFormSnapshot {
   model: string;
@@ -24,6 +28,50 @@ export function optionsFormSnapshotFromDefaults(
     contextNotePaths: [],
     followUp: "",
     executeOnNote: spell.executeOnNote,
+  };
+}
+
+/**
+ * Creates an initial form snapshot for the Refine sentinel from defaults, overrides, and session state.
+ * Resolves Refine-specific options (model, effort) from overrides and defaults,
+ * pulls context notes and follow-up from the session map, and forces executeOnNote to true.
+ */
+export function optionsFormSnapshotFromRefineDefaults(
+  defaults: FormDefaults,
+  overrides: SpellOverrideStore,
+  sessionMap: OptionsSessionMap,
+  models: readonly SupportedModel[],
+): OptionsFormSnapshot {
+  const resolved = resolveSpellOptions({
+    spellPath: REFINE_SENTINEL_PATH,
+    session: sessionMap,
+    overrides,
+    settings: {
+      defaultModel: defaults.defaultModel,
+      defaultEffort: defaults.defaultEffort,
+      spellTag: '',
+      cliCommand: '',
+      binaryPath: '',
+      forgeOutputFolder: '',
+      vaultMountPath: '',
+      executionMode: 'local',
+      portalHost: '',
+      portalPort: '',
+      portalPath: '',
+      portalAuthUser: '',
+      portalAuthPassword: '',
+    },
+    models,
+  });
+
+  const sessionEntry = sessionMap.get(REFINE_SENTINEL_PATH);
+
+  return {
+    model: resolved.model,
+    effort: resolved.effort,
+    contextNotePaths: sessionEntry?.contextNotePaths ?? [],
+    followUp: sessionEntry?.followUp ?? '',
+    executeOnNote: true,
   };
 }
 

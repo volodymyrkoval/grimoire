@@ -30,11 +30,13 @@ interface MountResult {
 function mountPanel(overrides?: Partial<{
   model: string;
   effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+  showExecuteOnNote: boolean;
 }>): MountResult {
   const contentEl = document.createElement('div');
   const scope = new Scope();
   const model = overrides?.model ?? 'claude-sonnet-4-5';
   const effort = overrides?.effort !== undefined ? overrides.effort : 'medium';
+  const showExecuteOnNote = overrides?.showExecuteOnNote !== false;
 
   const formState = new OptionsFormState({
     model,
@@ -66,6 +68,7 @@ function mountPanel(overrides?: Partial<{
     onCast,
     onOverrideChanged,
     onBack,
+    showExecuteOnNote,
   });
 
   return {
@@ -210,5 +213,12 @@ describe('OptionsPanel — per-control wiring', () => {
     (scope as any).dispatch('Enter', ['Mod']);
 
     expect(onCast).toHaveBeenCalledOnce();
+  });
+
+  it('showExecuteOnNote: false hides executeOnNote checkbox', () => {
+    const { contentEl } = mountPanel({ showExecuteOnNote: false });
+
+    const executeOnNoteCheckbox = contentEl.querySelector('input[data-grimoire="execute-on-note"]');
+    expect(executeOnNoteCheckbox).toBeNull();
   });
 });

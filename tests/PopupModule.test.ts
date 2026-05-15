@@ -36,12 +36,22 @@ describe('PopupModule', () => {
 
   const HOOKS_DIR = '/vault/.obsidian/plugins/grimoire/agent-hooks';
 
+  const makePaths = () => ({
+    refineSpellPathVaultRel: vi.fn(() => '.obsidian/plugins/grimoire/refine.md'),
+    agentHooksDirAbs: vi.fn(() => '.obsidian/plugins/grimoire/agent-hooks'),
+  } as any);
+
   const makeModuleDeps = (settings: ReturnType<typeof makeSettings>, overrides: any, castLog: any) => ({
     app,
     getData: () => ({ settings, spellOverrides: {} }),
     overrides,
     castLog,
     getAgentHooksDirAbs: () => HOOKS_DIR,
+    forgeSpellPaths: () => ({
+      absForCaster: '/vault/.obsidian/plugins/grimoire/forge.md',
+      vaultRelForPortal: '.obsidian/plugins/grimoire/forge.md',
+    }),
+    paths: makePaths(),
   });
 
   beforeEach(() => {

@@ -75,6 +75,7 @@ function makePopup(castAction?: CastAction) {
     spellTag: 'spell',
     imprintAction: vi.fn(),
     castAction: castAction ?? vi.fn(),
+    refineCastAction: vi.fn(),
     defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
     overrides: makeStubOverrides(),
     sessionMap: new OptionsSessionMap(),

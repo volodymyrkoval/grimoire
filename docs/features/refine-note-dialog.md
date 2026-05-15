@@ -8,7 +8,9 @@ In the Spells tab of the Command Popup, the Refine sentinel row now advertises t
 
 Persistence flows through the existing `SpellOverrideStore`: toggling "Set as default" stores model + effort under a reserved synthetic path so re-opening Refine pre-fills with the user's last default. Re-opening within the same Obsidian session also restores last-cast values via the existing session map.
 
-Activation closes the popup. `Enter` on the Refine row dismisses the modal directly. Cast (button click or `Cmd/Ctrl+Enter`) from inside the Refine options panel also fully dismisses the modal — it does not dispatch a cast, write a cast record, generate a `castId`, or invoke Claude Code. The dismissal is the only side effect on the cast surface this iteration.
+Activation closes the popup. In this iteration only, `Enter` on the Refine row dismisses the modal directly (no cast dispatch). Cast (button click or `Cmd/Ctrl+Enter`) from inside the Refine options panel also fully dismisses the modal without dispatching a cast, writing a cast record, generating a `castId`, or invoking Claude Code. The dismissal is the only side effect on the cast surface this iteration — both paths are no-ops at the dispatch level.
+
+**Since 019 (refine-cast):** `Enter` on the Refine row and Cast/Mod+Enter inside the Refine OptionsPanel now dispatch a Refine cast against the active note (with a `Notice` if no active note is open) instead of merely dismissing the modal. See `refine-cast.md`.
 
 ## Design decisions
 
@@ -26,7 +28,7 @@ Activation closes the popup. `Enter` on the Refine row dismisses the modal direc
 - `ArrowRight` on Refine → `RefineOptionsDetail` → same `OptionsPanel` form.
 - Per-Refine `model` / `effort` override persistence keyed on the synthetic path.
 - `Enter` on Refine and Cast/`Cmd+Enter` from inside Refine options → modal fully dismissed.
-- Two new no-payload `SpellEvents` (`open-refine-options`, `dismiss-refine`).
+- Two new no-payload `SpellEvents` (`open-refine-options`, `refine-cast`). (Note: `refine-cast` was initially named `dismiss-refine` but was renamed in 019-refine-cast to better reflect its behavior.)
 - Deletion of the now-unreachable `#renderGenericSentinelDetail` path.
 
 **Out:**

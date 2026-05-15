@@ -199,7 +199,7 @@ describe('SpellsPanel.confirm', () => {
     expect(spy).toHaveBeenCalledWith('sentinel', expect.objectContaining({ kind: 'forge', name: 'Forge' }));
   });
 
-  it('Refine sentinel index (11) emits dismiss-refine', () => {
+  it('Refine sentinel index (11) emits refine-cast', () => {
     const panel = makePanel();
     panel.filter('');
     const spy = vi.spyOn(panel.events, 'emit');
@@ -207,7 +207,7 @@ describe('SpellsPanel.confirm', () => {
     panel.confirm(DEFAULT_TEST_SPELLS.length + 1); // index 11 is Refine
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith('dismiss-refine');
+    expect(spy).toHaveBeenCalledWith('refine-cast');
   });
 });
 

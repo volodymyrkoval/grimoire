@@ -50,8 +50,10 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
   });
 
   // ------------------------------------------------------------------ D5-2
-  it('Cast inside Refine options panel fully closes the modal (super.close() bypasses override)', () => {
-    const h = createPopupHarness();
+  it('Cast inside Refine options panel invokes refineCastAction with snapshot and closes modal', () => {
+    // Create spy that calls dismiss() after capturing the snapshot
+    const refineCastSpy = vi.fn((snap) => h.modal.dismiss());
+    const h = createPopupHarness({ refineCastAction: refineCastSpy });
 
     navigateToRefine(h);
     h.pressKey('ArrowRight');
@@ -62,7 +64,19 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
     // Submit the form — triggers the onCast callback
     form.dispatchEvent(new Event('submit'));
 
-    // Modal must be fully removed from the DOM (super.close() ran)
+    // refineCastAction must have been called exactly once with a snapshot
+    expect(refineCastSpy).toHaveBeenCalledOnce();
+    expect(refineCastSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: expect.any(String),
+        effort: expect.any(String),
+        contextNotePaths: expect.any(Array),
+        followUp: expect.any(String),
+        executeOnNote: expect.any(Boolean),
+      })
+    );
+
+    // Modal must be fully removed from the DOM
     expect(h.modal.containerEl.parentElement).toBeNull();
   });
 
@@ -88,12 +102,26 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
     expect(h.searchInput()).not.toBeNull();
   });
 
-  // ------------------------------------------------------------------ D5-4
-  it('Enter on Refine sentinel (no panel open) fully closes the modal', () => {
-    const h = createPopupHarness();
+  // ------------------------------------------------------------------ D5-4 (D6 in Section D plan)
+  it('Enter on Refine sentinel (no panel open) invokes refineCastAction with resolved-defaults snapshot and closes modal', () => {
+    // Create spy that calls dismiss() to close the modal after capturing the snapshot
+    const refineCastSpy = vi.fn((snap) => h.modal.dismiss());
+    const h = createPopupHarness({ refineCastAction: refineCastSpy });
 
     navigateToRefine(h);
     h.pressKey('Enter');
+
+    // refineCastAction must have been called exactly once with a valid snapshot
+    expect(refineCastSpy).toHaveBeenCalledOnce();
+    expect(refineCastSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: expect.any(String),
+        effort: expect.any(String),
+        contextNotePaths: expect.any(Array),
+        followUp: expect.any(String),
+        executeOnNote: expect.any(Boolean),
+      })
+    );
 
     // Modal must be fully removed from the DOM
     expect(h.modal.containerEl.parentElement).toBeNull();
@@ -184,5 +212,20 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
     const checkboxLabel = form2.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
     expect(checkboxLabel).not.toBeNull();
     expect(checkboxLabel.style.display).toBe('none');
+  });
+
+  // ------------------------------------------------------------------ C6
+  it('executeOnNote checkbox is absent from Refine OptionsPanel DOM', () => {
+    const h = createPopupHarness();
+
+    navigateToRefine(h);
+    h.pressKey('ArrowRight');
+
+    const form = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
+    expect(form).not.toBeNull();
+
+    // executeOnNote checkbox must not exist in Refine panel
+    const executeOnNoteCheckbox = form.querySelector('input[data-grimoire="execute-on-note"]');
+    expect(executeOnNoteCheckbox).toBeNull();
   });
 });

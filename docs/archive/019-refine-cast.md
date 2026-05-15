@@ -18,7 +18,7 @@ Small. Spell casting and Forge cast already establish the casting primitives —
 
 When the user presses Enter on the Refine sentinel in the Spell Picker — whether directly from the spell list or after configuring options in the dialog — the plugin spawns a cast that targets the currently active note. The cast travels the same pipeline as a spell cast or a forge cast: `castId` minted, initial record written via the active `CastLogWriter`, Claude Code invoked with the spell, status transitioning `casted → in-progress → done` (or `error`) under the existing rules. The Cast Log surfaces the entry exactly as it would for any other cast. Model, effort, and context notes come from the persisted Refine defaults — or the in-dialog overrides if the user opened and adjusted the options panel — using the synthetic-key persistence wired in the previous phase (`REFINE_SENTINEL_PATH = '<grimoire-sentinel:refine>'`).
 
-The Refine prompt body lives in plugin source as a hardcoded function (`renderRefinePrompt()` in `src/refine/refinePrompt.ts`), parallel to Forge's `renderForgeSystemPrompt`. It is not a vault file in this iteration. The canonical content reference is `brain/Grimoire - Refine Note Spell`; the actual string lives next to the code.
+The Refine prompt body is materialized as `refine.md` in the plugin directory on plugin load, mirroring the `forge.md` pattern from iteration 018. `renderRefineSystemPrompt()` in `src/refine/refineTemplate.ts` returns the static body string; `RefineMaterializer` writes it to `<pluginDir>/refine.md` via `DataAdapter` during `CastLogModule.initStartupMaintenance`. The canonical content reference is `brain/Grimoire - Refine Note Spell`; the actual string lives in `refineTemplate.ts`.
 
 Two guards bound the trigger. First, Refine requires an active note. If no markdown file is open in the workspace when Enter fires on the sentinel, the cast does not start: an Obsidian `Notice` reports the failure (`"Refine needs an open note"`) and the picker stays open. The guard applies whether Enter fires from the list or from inside the configured dialog. Second, the prompt itself short-circuits the no-instruction case. If the active note contains no `@cast` lines and the follow-up textarea is empty, the prompt instructs Claude Code to read the note, observe that nothing has been requested, and exit without modifying any file. This is a property of the prompt, not the plugin — the cast runs to completion in the log, but the note is untouched.
 
@@ -50,12 +50,12 @@ The pitch enumerates the load-bearing edge cases; no `AskUserQuestion` round was
 - **`@cast` lines present AND follow-up present** → both apply: `@cast` lines drive local edits; follow-up is the global instruction across the note. The prompt enumerates both.
 - **Follow-up present, no `@cast` lines** → follow-up applied to the whole note as a global instruction.
 - **`activeFilePath` changes between Enter and cast-arg-build** → cast carries the path resolved *at the moment the guard fired* (i.e. the builder captures `app.workspace.getActiveFile()?.path` once, before constructing the dispatch input). Subsequent workspace changes do not race the cast.
-- **Refine cast invoked from dialog with `executeOnNote: false` in snapshot** → ignored. Refine always targets the active note semantically. The dispatch input is constructed with `executeOnNote: true` regardless of the snapshot. The checkbox in the Refine OptionsPanel stays visible (we do not hide it in this iteration — see Open questions); its toggle persists into session map but the cast trigger overrides.
+- **Refine cast invoked from dialog with `executeOnNote: false` in snapshot** → ignored. Refine always targets the active note semantically. The dispatch input is constructed with `executeOnNote: true` regardless of the snapshot. The `executeOnNote` checkbox in the Refine OptionsPanel is hidden — Refine always targets the active note so showing it would be misleading. `OptionsPanel.render()` gets a `showExecuteOnNote` flag; `RefineOptionsDetail` passes `false`.
 - **`@cast` line removal under failure** → if the cast errors mid-execution, the note may have partial `@cast` line removals. Prompt instructs Claude Code to remove lines only after acting; partial failure is left as-is (no rollback). Documented behavior, not a bug.
 - **Refine cast against a note still being saved** → out of scope; the plugin trusts Obsidian's filesystem consistency for the read path. Same as spell-cast today.
 - **Remote mode + empty `portalHost`** → existing `CastDispatcher` guard fires; popup stays open per current behavior. Refine inherits this without change.
 - **Concurrent Refine triggers** → each invocation mints its own `castId` and spawns independently. No locking. Same as forge.
-- **Refine prompt body must stay under 30 lines** to keep the inline-mode `userPrompt` payload reasonable. Migration to a materialized `refine.md` (mirroring 018 forge-spell-materialization) is documented as a future seam — Technical notes.
+- **Refine prompt body is materialized to `refine.md`** (mirroring 018 forge-spell-materialization). The `systemPromptFile` path is passed explicitly via `CastDispatchInput.systemPromptFilePath`, overriding the default `vaultMountPath/spell.path` computation.
 
 ## Proposed solution (overview)
 
@@ -63,9 +63,9 @@ Six sections, outside-in, sequenced to make each section's Red criterion indepen
 
 1. **Section A — Refine prompt body + new cast-log sentinel.** Pure functions and constants. `renderRefinePrompt()`, `buildRefineUserPrompt(input)`, `REFINE_SPELL_PATH = '<refine>'` in `castLog/types.ts`, and the synthetic Refine `Spell` factory for the dispatcher (`refineCastSpell(): Spell`). `displayName.ts` extended to recognize `<refine>` as "Refine". No UI, no wiring — all unit-test territory.
 
-2. **Section B — Extend `CastDispatchInput` with optional inline system-prompt prepend.** Add `systemPromptInline?: string` to `CastDispatchInput`. `CastDispatcher.dispatch` prepends `${systemPromptInline}\n\n` to the user prompt when set. Behavior unchanged when omitted — existing spell-cast and forge-cast call sites pass nothing.
+2. **Section B — Materialize `refine.md` + extend `PluginPaths` + wire `RefineMaterializer`.** Parallel to the forge materialization pattern: `RefineMaterializer` writes `refine.md` via `DataAdapter`; `PluginPaths` gains `refineSpellPathPluginRel()` / `refineSpellPathVaultRel()`; `CastLogModule.initStartupMaintenance` runs the materializer on startup. `CastDispatchInput` gains `systemPromptFilePath?: string` — an explicit path override that replaces the `vaultMountPath/spell.path` computation when set. No inline prompt prepend.
 
-3. **Section C — Builder-layer `refineCastAction` orchestration.** Extend `CommandPopupBuilder` and `CommandPopupParams` with a new `refineCastAction: (snapshot: OptionsFormSnapshot) => void` callback. Builder constructs the dispatch input: resolves active note (guard → `Notice` + bail-out if missing); builds the synthetic Refine `Spell`; builds the Refine system-prompt body via `renderRefinePrompt()`; calls `dispatcher.dispatch(...)` with `systemPromptInline` set and `executeOnNote: true`. The dispatcher's existing pipeline (record + notify + close + caster.cast) handles the rest.
+3. **Section C — Builder-layer `refineCastAction` orchestration.** Extend `CommandPopupBuilder` and `CommandPopupParams` with a new `refineCastAction: (snapshot: OptionsFormSnapshot) => void` callback. Builder constructs the dispatch input: resolves active note (guard → `Notice` + bail-out if missing); builds the synthetic Refine `Spell`; passes `systemPromptFilePath: paths.refineSpellPathVaultRel()` so the dispatcher uses the materialized `refine.md` as system-prompt file; calls `dispatcher.dispatch(...)` with `executeOnNote: true`. Also hides the `executeOnNote` checkbox via `RefineOptionsDetail`. The dispatcher's existing pipeline (record + notify + close + caster.cast) handles the rest.
 
 4. **Section D — Wire the two Refine triggers in `CommandPopup`.** Rename the `dismiss-refine` event to `refine-cast` in `SpellEvents` (the name now describes what it does: triggers a Refine cast, no longer merely dismisses). `SpellsPanel.confirm(refineIndex)` emits the renamed event. `CommandPopup`'s `panel.events.on('refine-cast', ...)` handler builds a default snapshot (mirroring the spell-list Enter snapshot: defaults + executeOnNote=true) and calls `refineCastAction(snapshot)`. `RefineOptionsDetail.onCast(snapshot)` (the dialog path) now also calls `refineCastAction(snapshot)`. Both paths converge.
 
@@ -77,38 +77,39 @@ Six sections, outside-in, sequenced to make each section's Red criterion indepen
 
 | Component | Location | Responsibility | Status |
 |---|---|---|---|
-| `renderRefinePrompt` | `src/refine/refinePrompt.ts` (NEW) | Pure fn `(): string`. Returns the hardcoded Refine system-prompt body. No inputs in this iteration — content is fully static, no per-settings substitution. | NEW |
-| `buildRefineUserPrompt` | `src/refine/buildRefineUserPrompt.ts` (NEW) | Pure fn `(input: RefineUserPromptInput) => string` returning the per-cast preamble. Inputs: `activeFilePath: string`, `vaultMountPath: string`, `contextNotePaths: readonly string[]`, `followUp: string`. **Note:** this duplicates `CastDispatcher.#buildUserPrompt`'s output shape — if we go with `systemPromptInline` (Key design decision §2), this function is unnecessary and the existing dispatcher per-cast prompt is reused verbatim. See §2; if §2 lands as planned, this file is NOT created. Documented here to make the alternative visible. **Decision: not created. The dispatcher's existing per-cast prompt is reused.** | DEFERRED — alternative path; not created |
+| `renderRefineSystemPrompt` | `src/refine/refineTemplate.ts` (NEW) | Pure fn `(): string`. Returns the hardcoded Refine system-prompt body. Parallel to `renderForgeSystemPrompt` in `src/forge/forgeTemplate.ts`. No inputs — content is fully static, no per-settings substitution. | NEW |
+| `RefineMaterializer` | `src/refine/RefineMaterializer.ts` (NEW) | Parallel to `ForgeMaterializer`. Ports: `getRefinePathAbs()`, optional `writeFile`/`mkdir`/`adapter`. `run()` writes `renderRefineSystemPrompt()` to the refine path. | NEW |
+| `PluginPaths` | `src/infra/PluginPaths.ts` (EXT) | Add `refineSpellPathPluginRel(): string` and `refineSpellPathVaultRel(): string` immediately after the forge equivalents. Both return `normalizePath(${pluginDir}/refine.md)`. | MODIFIED |
+| `CastLogModule` | `src/main/CastLogModule.ts` (EXT) | Wire `RefineMaterializer` in `initStartupMaintenance` (same try/catch pattern as forge). Add `#refineMaterializerFactory` field; default to `new RefineMaterializer(ports)`. No new public re-materialize method (prompt is static; no settings-dependent re-generation). | MODIFIED |
 | `REFINE_SPELL_PATH` | `src/castLog/types.ts` (EXT) | New `'<refine>' as const`. Cast-log sentinel mirroring `FORGE_SPELL_PATH`. Distinct from `REFINE_SENTINEL_PATH` (override key, in `src/domain/spells/Spell.ts`). | NEW |
 | `refineCastSpell` | `src/refine/refineCastSpell.ts` (NEW) | Factory `(): Spell` returning `{ name: 'Refine', path: spellPath(REFINE_SPELL_PATH), executeOnNote: true }`. Used by the dispatch input builder so `recordCasted({ spellPath: '<refine>' })` writes the right sentinel and the dispatcher's standard pipeline works unchanged. | NEW |
 | `resolveDisplayName` | `src/castLog/format/displayName.ts` (EXT) | Recognize `<refine>` and return `'Refine'`. Mirror the `<forge>` branch (no `affectedFiles` decoration for Refine in this iteration — Refine modifies the active note, not the spell file; affectedFiles handling deferred). | MODIFIED |
-| `CastDispatchInput` | `src/cast/CastDispatcher.ts` (EXT) | Add `readonly systemPromptInline?: string`. When present, `#buildUserPrompt`'s output is prepended with `${systemPromptInline}\n\n`. Behavior with field omitted is unchanged. | MODIFIED |
-| `CastDispatcher.dispatch` | `src/cast/CastDispatcher.ts` | Read `input.systemPromptInline` and prepend if set. Single conditional, ~3 LOC. No new branches in caster invocation or guard logic. | MODIFIED |
+| `CastDispatchInput` | `src/cast/CastDispatcher.ts` (EXT) | Add `readonly systemPromptFilePath?: string`. When present, use it directly as `systemPromptFile` (local) and `spellPath` (remote) instead of computing from `spell.path`. `userPrompt` construction is unchanged. Behavior with field omitted is unchanged. | MODIFIED |
+| `CastDispatcher.dispatch` | `src/cast/CastDispatcher.ts` | Read `input.systemPromptFilePath`. Change `systemPromptFile` to `isRemote ? undefined : (input.systemPromptFilePath ?? \`${vaultMountPath}/${spell.path}\`)`. Change `CastInput.spellPath` to `input.systemPromptFilePath ?? spell.path` for remote. Single conditional, ~2 LOC change. | MODIFIED |
 | `SpellEvents` | `src/domain/spells/SpellEvents.ts` | Rename `"dismiss-refine": void` → `"refine-cast": void`. **Breaking change inside the plugin** — all emit sites and listeners updated. The name now matches behavior. | MODIFIED |
 | `SpellsPanel.confirm` | `src/ui/tabs/SpellsPanel.ts` | Emit `'refine-cast'` instead of `'dismiss-refine'` when the Refine sentinel is confirmed. One-line change. | MODIFIED |
 | `CommandPopup` | `src/ui/CommandPopup.ts` | (a) `panel.events.on('refine-cast', ...)`: build default snapshot from `formDefaults` + `executeOnNote: true`, then call `refineCastAction(snapshot)`. (b) `#renderRefineOptionsPanel`: replace `onCast: () => this.dismiss()` with `onCast: (snap) => this.#refineCastAction(snap)`. Add `refineCastAction: RefineCastAction` to `CommandPopupParams` and `#refineCastAction` private field. The `dismiss()` method remains (called by `refineCastAction` indirectly via popup close in the dispatcher flow). | MODIFIED |
 | `CommandPopupParams` | `src/ui/CommandPopup.ts` | Add `refineCastAction: RefineCastAction` field. Type: `export type RefineCastAction = (snapshot: OptionsFormSnapshot) => void;`. | MODIFIED |
-| `CommandPopupBuilder` | `src/ui/popup/CommandPopupBuilder.ts` | Construct the `refineCastAction` closure: (i) read active file via `this.#deps.app.workspace.getActiveFile()`; if null or non-md, `new Notice('Refine needs an open note')` and return; (ii) build dispatch input: spell = `refineCastSpell()`, `executeOnNote: true`, `systemPromptInline: renderRefinePrompt()`, plus snapshot fields + `settings: this.#deps.plugin.data.settings`; (iii) call `dispatcher.dispatch(...)`. | MODIFIED |
+| `CommandPopupBuilder` | `src/ui/popup/CommandPopupBuilder.ts` | Construct the `refineCastAction` closure: (i) read active file; if null or non-md, `Notice` + `return`; (ii) build dispatch input with `spell: refineCastSpell()`, `executeOnNote: true`, `systemPromptFilePath: this.#deps.paths.refineSpellPathVaultRel()`, plus snapshot fields + settings; (iii) call `dispatcher.dispatch(...)` then `popup.dismiss()`. Add `paths: PluginPaths` to `CommandPopupBuilderDeps`. | MODIFIED |
+| `OptionsPanel` | `src/ui/options/OptionsPanel.ts` (EXT) | Add `showExecuteOnNote?: boolean` to `OptionsPanelDeps` (default `true`). When `false`, `#buildFormControls` skips `#buildExecuteOnNoteCheckbox` + `#bindExecuteOnNote`; `#bindReset` skips the checkbox DOM update. | MODIFIED |
+| `RefineOptionsDetail` | `src/ui/components/RefineOptionsDetail.ts` (EXT) | Pass `showExecuteOnNote: false` to `OptionsPanel.render()`. | MODIFIED |
 | `PopupModule` | `src/main/PopupModule.ts` | Pass `refineCastAction` builder-equivalent into `CommandPopupBuilder`; otherwise unchanged. (Detail: the wiring happens inside `CommandPopupBuilder.build()` since `Notice` and `dispatcher` are both already available there. `PopupModule` does not gain new fields.) | UNCHANGED — touched only as a sanity grep |
 | `RefineOptionsDetail` | `src/ui/components/RefineOptionsDetail.ts` | UNCHANGED in shape. The `onCast` callback semantics shift (from "dismiss only" to "trigger Refine cast"), but the type signature `(snapshot: OptionsFormSnapshot) => void` is unchanged. Only the call site in `CommandPopup.#renderRefineOptionsPanel` is updated. | UNCHANGED |
 | `OptionsPanel` / `OptionsFormState` / `OptionsSessionMap` / `SpellOverrideStore` | (existing) | UNCHANGED. Refine inherits the panel UI and snapshot semantics unchanged. | UNCHANGED |
 
 ## Interfaces
 
-### Refine prompt body (verbatim shape)
+### Refine prompt body (materialized, verbatim shape)
 
 ```ts
-// src/refine/refinePrompt.ts
+// src/refine/refineTemplate.ts
 /**
- * Returns the hardcoded Refine system-prompt body sent as an inline prepend on the
- * dispatch user-prompt. Static text — no settings or per-cast substitutions in this
- * iteration. Canonical content reference: brain/Grimoire - Refine Note Spell.
- *
- * Future migration: if this body grows beyond ~30 lines, mirror the forge-spell-
- * materialization pattern — render once to <pluginDir>/refine.md on plugin onload,
- * pass via systemPromptFile + spellPath instead of inline.
+ * Returns the hardcoded Refine system-prompt body. Written to <pluginDir>/refine.md by
+ * RefineMaterializer on plugin load. Parallel to renderForgeSystemPrompt in forgeTemplate.ts.
+ * Static text — no settings or per-cast substitutions.
+ * Canonical content reference: brain/Grimoire - Refine Note Spell.
  */
-export function renderRefinePrompt(): string;
+export function renderRefineSystemPrompt(): string;
 ```
 
 The function returns a string covering, in order:
@@ -166,28 +167,31 @@ export interface CastDispatchInput {
   activeFilePath: string | null;
   executeOnNote: boolean;
   /**
-   * Optional inline system-prompt prepended to the dispatcher-built user prompt.
-   * When present, the final caster input's userPrompt is `${systemPromptInline}\n\n${perCastPrompt}`.
-   * Used by Refine cast (which has no materialized system-prompt file in this iteration).
-   * Live spells and forge cast leave this undefined and rely on systemPromptFile semantics.
+   * Optional explicit system-prompt file path. When present, used directly as
+   * `systemPromptFile` (local) and as `spellPath` (remote, so the portal reads
+   * the file from the vault). Overrides the default `vaultMountPath/spell.path`
+   * computation. Used by Refine cast (where spell.path is the cast-log sentinel
+   * `<refine>`, not a real vault path). Live spells and forge cast leave this
+   * undefined and use the standard computation.
    */
-  readonly systemPromptInline?: string;
+  readonly systemPromptFilePath?: string;
 }
 ```
 
 Implementation inside `dispatch`:
 
 ```ts
-const perCastPrompt = this.#buildUserPrompt(...);
-const userPrompt = input.systemPromptInline !== undefined
-  ? `${input.systemPromptInline}\n\n${perCastPrompt}`
-  : perCastPrompt;
-// ... pass userPrompt into caster.cast(...)
+// userPrompt construction: unchanged from today
+const userPrompt = this.#buildUserPrompt(...);
+
+// systemPromptFile: use explicit path if provided, else compute from spell.path
+systemPromptFile: isRemote ? undefined : (input.systemPromptFilePath ?? `${settings.vaultMountPath}/${spell.path}`),
+
+// spellPath on CastInput (remote): use explicit path if provided (portal reads the file there)
+spellPath: input.systemPromptFilePath ?? spell.path,
 ```
 
-When `systemPromptInline` is set, the dispatcher does NOT also set `systemPromptFile` on the `CastInput` passed to `caster.cast` — Refine is inline-mode. For live spell-cast (which today builds `systemPromptFile = vaultMountPath/spell.path`), the inline field is omitted, behavior unchanged.
-
-The dispatcher decides `systemPromptFile` as follows: `systemPromptFile = isRemote || systemPromptInline !== undefined ? undefined : ${vaultMountPath}/${spell.path}`. (Today's logic is `isRemote ? undefined : ${vaultMountPath}/${spell.path}` — the new clause adds an `|| systemPromptInline !== undefined`.)
+When `systemPromptFilePath` is set, no change to `userPrompt` — the refine.md file carries the system prompt, so the per-cast user prompt is just the active note target + follow-up (same format as a regular spell cast). `spell.path` = `<refine>` sentinel still flows to `recordCasted` (via the existing `spellPath: spell.path` line in `dispatch`) — the cast-log correctly shows `<refine>` regardless.
 
 ### `SpellEvents` rename
 
@@ -310,7 +314,7 @@ The `settings` stub shape mirrors `RefineOptionsDetail.#resolveOptions` (which a
 // src/ui/popup/CommandPopupBuilder.ts (added closure)
 import { Notice } from 'obsidian';
 import { refineCastSpell } from '../../refine/refineCastSpell';
-import { renderRefinePrompt } from '../../refine/refinePrompt';
+// renderRefineSystemPrompt NOT imported here — the materialized refine.md is referenced by path
 
 // inside build(), alongside imprintAction and castAction closures:
 const refineCastAction: RefineCastAction = (snapshot) => {
@@ -327,11 +331,14 @@ const refineCastAction: RefineCastAction = (snapshot) => {
     followUp: snapshot.followUp,
     settings: this.#deps.plugin.data.settings,
     activeFilePath: activeFile.path,
-    executeOnNote: true,           // overrides snapshot — Refine always targets active note
-    systemPromptInline: renderRefinePrompt(),
+    executeOnNote: true,           // Refine always targets active note; snapshot value ignored
+    systemPromptFilePath: this.#deps.paths.refineSpellPathVaultRel(),
   });
+  popup.dismiss();
 };
 ```
+
+`CommandPopupBuilderDeps` gains `paths: PluginPaths` — the builder needs it to resolve the refine.md vault-relative path. `PopupModule` already has `PluginPaths`; it passes `this.#paths` into the builder.
 
 The `Notice` import is added to `CommandPopupBuilder.ts`. `PopupModule.ts` already imports `Notice`; the builder taking the same dep is consistent.
 
@@ -352,28 +359,27 @@ User: focus Refine sentinel row → Enter
         activeFile = app.workspace.getActiveFile()
         activeFile === null || ext !== 'md' ? new Notice('Refine needs an open note'); return
         dispatcher.dispatch({
-          spell: refineCastSpell(),             // path = '<refine>'
+          spell: refineCastSpell(),             // spell.path = '<refine>' (cast-log sentinel)
           executeOnNote: true,
           activeFilePath: activeFile.path,
-          systemPromptInline: renderRefinePrompt(),
+          systemPromptFilePath: paths.refineSpellPathVaultRel(),   // → systemPromptFile for local cast
           ...snapshot fields,
         })
+        popup.dismiss()                          // full close; idempotent after dispatcher.close()
   → CastDispatcher.dispatch:
         executeOnNote && activeFilePath === null guard: passes (path is non-null)
         executionMode === 'remote' && portalHost.trim() === '' guard: passes (local)
         castId = generateId()
-        perCastPrompt = #buildUserPrompt(true, vaultMountPath, activeFilePath, contextNotes, followUp)
-                      = 'Execute this spell against `<vault>/<active>`. Follow-up: …'  (if any)
-        userPrompt = `${systemPromptInline}\n\n${perCastPrompt}`
+        userPrompt = #buildUserPrompt(true, vaultMountPath, activeFilePath, contextNotes, followUp)
+                   = 'Execute this spell against `<vault>/<active>`. Follow-up: …'  (unchanged)
         logWriter.recordCasted({ castId, spellPath: '<refine>', model, effort, contextNotes, followUp, executeOnNote: true })
         notify('Casting \'Refine\'…')
-        close()                                  // popup dismisses (popup.close() routes through phase override
-                                                 // but we're in search phase → super.close())
+        close()
         caster.cast({ castId, modelId: model, effort,
                       userPrompt,
-                      systemPromptFile: undefined,    // inline mode
+                      systemPromptFile: systemPromptFilePath,   // refine.md absolute path (local)
                       vaultMountPath,
-                      spellPath: '<refine>',          // synthetic; remote ignores; cast-log already wrote
+                      spellPath: '<refine>',          // cast-log sentinel; portal path resolved via systemPromptFilePath
                     }, { onAccepted, onFailure })
   → LocalCaster: spawn claude with -p "<userPrompt>" --model … --effort …
   → on exit 0: onAccepted({}) → notify('Spell cast'); no second recordCasted (no jobId)
@@ -466,23 +472,22 @@ User: focus Refine → Enter (no active note in workspace)
 
 Cut:
 - No `RefineImprinter` class — `CastDispatcher.dispatch` accepts the Refine shape with one new optional field.
-- No `RefineMaterializer` — the prompt is static text, sent inline.
-- No new event family — rename existing `dismiss-refine` to `refine-cast`; semantics carry the diff, not a parallel event.
 - No `buildRefineUserPrompt` separate function — the dispatcher's existing `#buildUserPrompt` produces exactly the per-cast preamble Refine needs.
 - No mode detection, no `@cast` parsing, no inline marker styling in plugin (no-gos).
 
 Keep:
-- `renderRefinePrompt()` pure function (necessary — owns the prompt body).
+- `renderRefineSystemPrompt()` pure function in `refineTemplate.ts` (necessary — owns the prompt body; written to `refine.md` by `RefineMaterializer`).
+- `RefineMaterializer` (necessary — materialization pattern mirrors forge; file is inspectable in vault).
 - `REFINE_SPELL_PATH` constant + display-name branch (necessary — cast-log row identity).
-- `refineCastSpell()` factory (necessary — gives the dispatcher a `Spell` with the right `path`).
-- `CastDispatchInput.systemPromptInline` field (necessary — minimal extension point).
+- `refineCastSpell()` factory (necessary — gives the dispatcher a `Spell` with the sentinel `path`).
+- `CastDispatchInput.systemPromptFilePath` field (necessary — explicit path override so the sentinel `<refine>` doesn't reach `systemPromptFile`).
 - `optionsFormSnapshotFromRefineDefaults` helper (necessary — list-Enter snapshot must respect persisted defaults per pitch).
 
 ### Extensibility
 
 The seams that future iterations will reach for:
-- **Custom Refine Script** (rabbit hole, no-go for now): replace `renderRefinePrompt()` with `resolveRefinePromptSource(settings, vault)` returning either the built-in or a user-authored file's contents. One-method swap; the call site in `CommandPopupBuilder.refineCastAction` stays identical.
-- **Materialize Refine to `refine.md`** if the inline payload becomes too large for remote casts: introduce `RefineMaterializer`, `forgeSpellPathPluginRel`-equivalent on `PluginPaths`, wire into `CastLogModule.initStartupMaintenance`. The dispatcher call site changes from `systemPromptInline: renderRefinePrompt()` to `systemPromptFile/spellPath` pair — the same kind of swap forge made in 018.
+- **Custom Refine Script** (rabbit hole, no-go for now): replace `renderRefineSystemPrompt()` with `resolveRefinePromptSource(settings, vault)` returning either the built-in or a user-authored file's contents; `RefineMaterializer.run()` writes whichever. One-method swap; the `CommandPopupBuilder.refineCastAction` call site is unchanged.
+- **Settings-dependent Refine prompt**: add a settings arg to `renderRefineSystemPrompt()` and add `materializeRefine(): Promise<void>` to `CastLogModule` (mirroring `materializeForge()`). Wire the call into the settings-save handler.
 - **Autonomous Generate/Expand modes** (rabbit hole, no-go for now): add a `RefineMode` enum to `RefineCastAction`'s snapshot or pass through the OptionsPanel; the prompt body branches; the active-note guard relaxes for Generate.
 - **`@cast` directive parsing in the plugin** (no-go for now): add a preprocess step in `refineCastAction` that scans the active note before invoking the dispatcher. The dispatcher itself does not change.
 
@@ -500,13 +505,13 @@ The plan does not pre-build any of these seams. It does keep them cheap to add: 
 
 4. **The list-Enter snapshot defaults question.** Pitch says "persisted Refine defaults …". If the list-Enter path bypasses `SpellOverrideStore`, persisted defaults are silently ignored. **Mitigated:** `optionsFormSnapshotFromRefineDefaults` resolves via the same cascade (session → override → settings) used by `RefineOptionsDetail`. Tested at A6 + integration test E1 with override pre-loaded.
 
-5. **`executeOnNote` from the snapshot is overridden to `true` in the dispatch input.** If the user toggles the checkbox to false in the Refine OptionsPanel (which is still visible — 017 didn't hide it), they may expect their preference to be respected. **Documented behavior, not a bug.** The pitch enforces "Refine requires an active note"; `executeOnNote: false` is incoherent for Refine. Documented in Edge cases + Open questions. Future iteration may hide the checkbox for Refine.
+5. **`executeOnNote` from the snapshot is overridden to `true` in the dispatch input, and the checkbox is hidden.** `OptionsPanel.render()` gains `showExecuteOnNote?: boolean`; `RefineOptionsDetail` passes `false`. No misleading UI — `executeOnNote: false` is incoherent for Refine.
 
-6. **Inline `userPrompt` payload over remote = repeating the 018 problem.** The Refine prompt body sits on top of every remote Refine cast. **Acknowledged trade-off** (Technical notes). Bounded: Refine prompt is shorter than forge's was; Refine is invoked less often than spell-cast; future iteration migrates to `refine.md` materialization with a one-method swap.
+6. **Materialized `refine.md` resolves the remote-cast concern.** The portal receives `systemPromptFilePath` as `spellPath` (a real vault-relative path to `refine.md`), which it can read. This matches forge's remote pattern. No inline payload size concern.
 
 7. **The dispatcher's `close()` runs in detail phase, exits to search.** After a dialog-Cast Refine, the popup would stay open by default (matching spell-cast UX). The pitch contract from 017 is "fully dismisses the modal." **Mitigated:** `refineCastAction` calls `popup.dismiss()` after `dispatcher.dispatch` returns. `dismiss()` is idempotent and bypasses the close-override. Documented in Key design decisions §3.
 
-8. **`CastDispatchInput.systemPromptInline` is a new optional field on a hot interface.** Risk: future call sites forget to set it for Refine-like shapes. **Mitigated:** there is exactly one call site that sets it (the Refine builder closure); spell-cast and forge-cast call sites are unchanged. The field is optional; absence is the safe default.
+8. **`CastDispatchInput.systemPromptFilePath` is a new optional field on a hot interface.** Risk: future call sites set it incorrectly. **Mitigated:** there is exactly one call site that sets it (the Refine builder closure); spell-cast and forge-cast call sites are unchanged. The field is optional; absence is the safe default (existing `vaultMountPath/spell.path` computation).
 
 9. **`refineCastSpell()` is a synthetic `Spell` whose `path` is the cast-log sentinel `<refine>`, not a real vault path.** If a future dispatcher branch tried to resolve `spell.path` against the vault (e.g. to read frontmatter), it would fail. **Mitigated:** the dispatcher never reads anything from `spell.path` beyond logging it via `recordCasted({ spellPath: spell.path })` and passing it through to `CastInput.spellPath` (for remote, where the portal looks it up). For Refine + remote, the portal would try to look up `<refine>` and fail. **Open question — see Open questions.**
 
@@ -531,18 +536,18 @@ Friction points kept low:
 | Concern | Decision |
 |---|---|
 | Active-note guard placement | Builder layer, before dispatcher (Devil's advocate #1). |
-| Prompt delivery: inline vs materialized | Inline, with a documented migration seam (Devil's advocate #6, Minimalist). |
+| Prompt delivery: inline vs materialized | **Materialized** to `refine.md` via `RefineMaterializer` (mirrors forge pattern from 018). |
 | Snapshot defaults for list-Enter | Resolve via override-cascade keyed on `REFINE_SENTINEL_PATH` (User-advocate, Devil's advocate #4). |
-| `executeOnNote` override | Forced to `true` in dispatch input; checkbox not hidden this iteration (Devil's advocate #5). |
+| `executeOnNote` override | Forced to `true`; **checkbox hidden** in `RefineOptionsDetail` (Devil's advocate #5 resolved). |
 | Popup dismissal after cast | Always full-dismiss via `popup.dismiss()` after dispatch returns (Devil's advocate #7, 017's contract). |
 | Cast-log sentinel `<refine>` vs override-key `<grimoire-sentinel:refine>` | Stay separate; two namespaces (Minimalist, all). |
 | `refineCastSpell().path = '<refine>'` over the wire for remote | Open question — see Open questions. |
 
 ## Key design decisions
 
-1. **`CastDispatchInput` gains one optional field, not a new method.** `systemPromptInline?: string` is the minimal extension that preserves the shared casting primitive (pitch rabbit hole: "do not invent a new casting primitive for Refine"). Live spells and forge-cast omit the field; behavior unchanged. The dispatcher's `dispatch` method has one new conditional (~3 LOC) and one new branch in `systemPromptFile` selection (~1 LOC). Tested at B3 (unit) + E1 (integration).
+1. **`CastDispatchInput` gains one optional field, not a new method.** `systemPromptFilePath?: string` is the minimal extension that preserves the shared casting primitive (pitch rabbit hole: "do not invent a new casting primitive for Refine"). Live spells and forge-cast omit the field; behavior unchanged. The dispatcher's `dispatch` method changes `systemPromptFile` selection by ~2 LOC. Tested at B4 (unit) + E1 (integration).
 
-2. **Refine prompt is sent inline via `userPrompt`, not materialized to a file.** Two reasons: (a) pitch says "lives next to the code"; (b) the prompt is static — no settings or per-cast substitution — so file-on-disk gains nothing over an inline string. The trade-off (Refine prompt traverses the wire on every remote Refine cast) is acknowledged in Technical notes and Devil's advocate #6. The migration seam is one call-site swap in `CommandPopupBuilder.refineCastAction`.
+2. **Refine prompt is materialized to `refine.md`, mirroring the forge pattern from 018.** `RefineMaterializer` writes it on plugin load via `CastLogModule.initStartupMaintenance`. The file is inspectable in the vault. `CommandPopupBuilder.refineCastAction` passes its vault-relative path via `systemPromptFilePath`; the dispatcher uses it as `systemPromptFile` for local casts and as `spellPath` for remote (portal reads the file from the vault). The cast-log sentinel `<refine>` comes from `spell.path`, unaffected.
 
 3. **`popup.dismiss()` after `dispatcher.dispatch()` is how Refine cast fully closes the modal.** The dispatcher's `close = popup.close()` is route-through-override. For Refine's "always fully dismiss" contract (017 carryover), `refineCastAction` calls `popup.dismiss()` (= `super.close()`) immediately after `dispatcher.dispatch` returns. `dismiss()` is idempotent — calling it after the dispatcher's `close()` has already ran is safe (`super.close()` checks `containerEl.parentElement`).
 
@@ -552,11 +557,11 @@ Friction points kept low:
 
 6. **`SpellEvents.dismiss-refine` renamed to `refine-cast`.** The event name now describes what it does: triggers a Refine cast. Renaming is a small, search-able diff; leaving the name `dismiss-refine` while it actually fires a cast would invite confusion. Two emit sites and two listen sites, all updated in scope (Section D).
 
-7. **`executeOnNote: true` is forced for Refine, regardless of snapshot.** The user can toggle the checkbox in the Refine OptionsPanel (it stays visible — 017 didn't hide it), but the toggle is ignored by the dispatch input. The pitch enforces "Refine requires an active note" universally; `executeOnNote: false` for Refine is incoherent. The checkbox visibility is left for a future cleanup iteration to address.
+7. **`executeOnNote: true` is forced for Refine, and the checkbox is hidden in this iteration.** The dispatch input always uses `executeOnNote: true`; the snapshot's checkbox value is ignored. `OptionsPanel.render()` gains `showExecuteOnNote?: boolean` (default `true`); `RefineOptionsDetail` passes `false`. Hiding it now rather than deferring avoids shipping misleading UI when we know `executeOnNote: false` is incoherent for Refine.
 
 8. **`optionsFormSnapshotFromRefineDefaults` is a new helper that mirrors `RefineOptionsDetail`'s resolver call.** The list-Enter path consults `SpellOverrideStore` + `OptionsSessionMap` (via `resolveSpellOptions` keyed on `REFINE_SENTINEL_PATH`) so persisted defaults take effect, per the pitch. A future cleanup may extract a shared `resolveRefineOptions` from `RefineOptionsDetail.#resolveOptions` and this helper — out of scope here.
 
-9. **The dispatcher's `systemPromptFile` is omitted when `systemPromptInline` is set.** Mutually exclusive: one or the other, never both. Local CLI args for Refine: `-p <userPrompt with prepended Refine body>` only — no `--system-prompt-file`. Documented in B3 unit test.
+9. **The dispatcher's `systemPromptFile` is sourced from `systemPromptFilePath` when set, overriding the `vaultMountPath/spell.path` computation.** For Refine, `spell.path = '<refine>'` (sentinel), so the default computation would produce a nonsense path. The explicit `systemPromptFilePath` produces the correct path to `refine.md`. Documented in B4 unit test.
 
 10. **`Notice` import lives in `CommandPopupBuilder`, not in `CommandPopup`.** The popup is structural UI; the builder is the composition root for the popup + dependency wiring. `PopupModule` already imports `Notice` (for the dispatcher's `notify` callback). The builder taking the same dep is consistent and keeps `CommandPopup` free of `Notice`.
 
@@ -573,7 +578,7 @@ Friction points kept low:
 | **State pattern** for Refine cast lifecycle (`casted → in-progress → done`) | **Already implemented** at the cast-log layer (`foldEvents` in `castLog/`); Refine inherits unchanged. |
 | **Decorator** around the dispatcher to add the Refine guard | **Rejected** — the guard is one `if` statement before the dispatcher call. A decorator class would invert the dependency direction (dispatcher would not know about its decorator) but add a class for a 3-line gain. YAGNI. |
 | **Builder** for `CastDispatchInput` | **Rejected** — the input shape is already a plain object with named fields. A builder adds a fluent API for no concrete win; the Refine call site constructs it once. |
-| **Materializer** (mirroring `ForgeMaterializer`) | **Considered + rejected** — the Refine prompt is static text. Per Devil's advocate #6 and Key design decision §2, inline mode wins on simplicity; the materializer pattern is the documented future migration. |
+| **Materializer** (mirroring `ForgeMaterializer`) | **Adopted** — `RefineMaterializer` writes `refine.md` on plugin load. File is inspectable in vault; remote cast works via vault path. Parallel to forge-spell-materialization (018). |
 | **Repository** for Refine override persistence | **Already applied** — `SpellOverrideStore` indexed by `SpellPath` keys (including `REFINE_SENTINEL_PATH`). Refine inherits unchanged. |
 
 Patterns deliberately not invoked: Visitor (no traversal hierarchy), Chain of Responsibility (no chain), Mediator (no central coordinator beyond the existing `CommandPopupBuilder`).
@@ -585,7 +590,7 @@ Patterns deliberately not invoked: Visitor (no traversal hierarchy), Chain of Re
   - `refineCastSpell`: changes only if the synthetic-spell shape for Refine changes (e.g. if `Spell` interface grows a required field).
   - `REFINE_SPELL_PATH` constant: changes only if the cast-log sentinel string changes.
   - `optionsFormSnapshotFromRefineDefaults`: changes only if the snapshot-resolution rule for the list-Enter path changes.
-  - `CastDispatchInput.systemPromptInline` field: changes only if the inline-system-prompt-prepend semantics change.
+  - `CastDispatchInput.systemPromptFilePath` field: changes only if the explicit-path-override semantics change.
   - `CommandPopupBuilder.refineCastAction`: changes only if the Refine cast orchestration (guard → dispatch → dismiss) changes.
   Yes for each.
 
@@ -613,7 +618,7 @@ Patterns deliberately not invoked: Visitor (no traversal hierarchy), Chain of Re
   - `refineCastSpell()`: assert returned shape `{ name: 'Refine', path: '<refine>', executeOnNote: true }`.
   - `REFINE_SPELL_PATH`: equality assertion.
   - `optionsFormSnapshotFromRefineDefaults`: pre-load `SpellOverrideStore` with a Refine override; assert returned snapshot reflects it; pre-load nothing → returned snapshot reflects `FormDefaults`.
-  - `CastDispatchInput.systemPromptInline`: unit test on `CastDispatcher.dispatch` — when set, the caster's `CastInput.userPrompt` starts with the inline string; when unset, behaves identically to today.
+  - `CastDispatchInput.systemPromptFilePath`: unit test on `CastDispatcher.dispatch` — when set, the caster's `CastInput.systemPromptFile` equals the provided path; when unset, behaves identically to today.
   - `CommandPopupBuilder.refineCastAction`: integration test — Enter on Refine with active note dispatches with the right shape; without active note shows Notice and does not dispatch.
 
 - **Q: Is there any temporal coupling?**
@@ -624,20 +629,16 @@ Patterns deliberately not invoked: Visitor (no traversal hierarchy), Chain of Re
 - **Q: Could we cut any of this and still ship?**
   - `optionsFormSnapshotFromRefineDefaults` could be inlined into the popup's `refine-cast` event handler. Extracting it lets the helper be unit-tested in isolation and creates a single function-name to grep. Worth keeping.
   - `refineCastSpell()` could be inlined into the builder's `refineCastAction`. Same reasoning: testable, greppable.
-  - `CastDispatchInput.systemPromptInline` is the bare minimum extension; cannot cut.
+  - `CastDispatchInput.systemPromptFilePath` is the bare minimum extension; cannot cut.
   - The `<refine>` cast-log sentinel cannot be cut — without it, Refine rows would appear in the cast log as `<refine>` (or whatever raw path string), not `Refine`.
 
 ## Technical notes
 
 ### Open questions (planner cannot resolve from pitch alone)
 
-1. **Remote Refine + `spellPath` over the wire.** `RemoteCaster` passes `input.spellPath` to `RemoteCastTransport`, which sends it to the portal. For Refine, `input.spellPath` would be `<refine>` (the cast-log sentinel) — the portal would attempt to look this up as a vault path and fail. **Resolution paths:**
-   - **(a)** `CastDispatcher.dispatch` passes `undefined` for `spellPath` when `systemPromptInline` is set, regardless of `spell.path`. This makes remote-Refine an inline-mode cast (no spell-file lookup). The portal already supports optional `spellPath`. ✓
-   - **(b)** Materialize `refine.md` like forge.md and pass a real path. Bigger scope; deferred.
-   - **(c)** Hard-block remote Refine in this iteration; show a Notice "Refine is local-only".
-   - **Decision: (a)** — the dispatcher omits `spellPath` from `CastInput` when `systemPromptInline` is set. Documented in B3 unit test ("when systemPromptInline is set, caster receives `spellPath: undefined`"). Verified against `src/execution/Caster.ts:6` ("Spell file path — omitted for inline casts such as forge meta-spells") — the optional-spellPath pattern is already in place from cast-unification (014) and was the pre-018 forge behavior.
+1. **Remote Refine + `spellPath` over the wire.** With `systemPromptFilePath` set to `refineSpellPathVaultRel()`, the dispatcher passes this path as `CastInput.spellPath` for remote (parallel to forge post-018). The portal reads `refine.md` from the vault at that path. The cast-log sentinel `<refine>` comes from `spell.path` in `recordCasted` (unchanged). **Resolution: handled** — materialization resolves the remote concern cleanly.
 
-2. **Hiding the `executeOnNote` checkbox in the Refine OptionsPanel.** Pitch is silent; 017 left it visible as a placeholder. With 019 forcing `executeOnNote: true` in the dispatch input regardless of the checkbox state, the checkbox is now misleading UI. **Defer to a future iteration** — modifying `RefineOptionsDetail` to hide the checkbox is a separable polish change; doing it in 019 broadens the diff. Documented as an out-of-scope future item.
+2. **`executeOnNote` checkbox in the Refine OptionsPanel.** **Resolved: hidden in this iteration.** `OptionsPanel.render()` gains `showExecuteOnNote?: boolean`; `RefineOptionsDetail` passes `false`. Checkbox DOM elements not rendered when `false`; `#bindReset` skips the checkbox update. Shipping misleading UI is avoided.
 
 3. **Cast Log row affordances for Refine entries.** Pitch: "No re-cast affordance on Refine entries in the Cast Log. The existing log behaviour applies unchanged." Existing `CastLogRow` has special handling for `FORGE_SPELL_PATH` (`record.spellPath === FORGE_SPELL_PATH || record.executeOnNote !== true) return`). For Refine, `record.executeOnNote === true` and `record.spellPath === REFINE_SPELL_PATH`. The current `CastLogRow` line 196 logic would (a) skip the special path for `<forge>` (not Refine's path), and (b) not skip the executeOnNote branch (Refine has it true). **Verify in section A** that Refine entries render correctly without modification — if `CastLogRow` requires a Refine branch to render the cast-log entry sensibly, that's an additional A-section todo. Today's behavior likely Just Works because the function returns early for `executeOnNote !== true || spellPath === FORGE_SPELL_PATH`; for Refine (`executeOnNote: true`, `spellPath: <refine>`), execution continues to the live-spell branch, which would try to resolve a vault file at `<refine>` — and fail to find one. **Pre-emptive todo (A4):** extend the early-return in `CastLogRow` line 196 to also skip when `spellPath === REFINE_SPELL_PATH`. Document in A4.
 
@@ -648,29 +649,27 @@ Patterns deliberately not invoked: Visitor (no traversal hierarchy), Chain of Re
 
 ### Test strategy
 
-- **Unit tests:** `renderRefinePrompt` (substring invariants), `refineCastSpell` (shape), `REFINE_SPELL_PATH` (equality), `resolveDisplayName` for `<refine>` (returns `'Refine'`), `optionsFormSnapshotFromRefineDefaults` (override-cascade behavior), `CastDispatcher.dispatch` with `systemPromptInline` set (prepend + `systemPromptFile === undefined` + `spellPath === undefined` to the caster).
+- **Unit tests:** `renderRefineSystemPrompt` (substring invariants), `RefineMaterializer` (writes correct path + content), `refineCastSpell` (shape), `REFINE_SPELL_PATH` (equality), `resolveDisplayName` for `<refine>` (returns `'Refine'`), `optionsFormSnapshotFromRefineDefaults` (override-cascade behavior), `CastDispatcher.dispatch` with `systemPromptFilePath` set (`systemPromptFile` equals the provided path; `spellPath` on CastInput equals provided path for remote).
 - **Integration tests:** new `tests/integration/refine-cast.spec.ts` covering the four primary paths (list-Enter happy, list-Enter no-note, dialog-Cast happy, dialog-Cast no-note). Existing `tests/integration/refine-options-panel.spec.ts` D5-2 and D5-4 rewritten in scope.
 - **No mutation testing pass** triggered in scope; the iteration's quality gate is `npm test` + `npm run test:integration` + `npm run lint`.
 
 ### Migration & ordering
 
 1. Section A lands first — pure additions (prompt body, sentinel constant, factory, display-name branch). Zero cross-cutting changes.
-2. Section B — additive `CastDispatchInput` field; existing dispatcher tests stay green.
+2. Section B — `PluginPaths` extension + `RefineMaterializer` + `CastLogModule` wiring; additive `CastDispatchInput.systemPromptFilePath` field; existing dispatcher tests stay green.
 3. Section C — `CommandPopupBuilder` and `CommandPopupParams` extension; existing tests need the new param added with a `vi.fn()` default in the harness.
 4. Section D — event rename + popup wiring; the rename ripples to `SpellsPanel` emit, `CommandPopup` listen, and `tests/SpellsPanel.test.ts` + `tests/integration/refine-options-panel.spec.ts`.
 5. Section E — integration tests; the new spec is green; the rewritten D5-2 / D5-4 are green.
 6. Section F — live-specs.
 
-### Future-migration seam
+### Future-extension seams
 
-If the inline-`userPrompt` approach (Key design decision §2) becomes a bottleneck (remote payload size, prompt body growing), migrate to materialization:
-- Add `src/refine/RefineMaterializer.ts` (mirrors `ForgeMaterializer`).
-- Add `PluginPaths.refineSpellPathVaultRel()` / `refineSpellPathAbs()`.
-- Wire into `CastLogModule.initStartupMaintenance` and `materializeRefine()` (mirroring forge's `materializeForge()`).
-- Swap `systemPromptInline: renderRefinePrompt()` for `systemPromptFile: paths.refineSpellPathAbs` + `spellPath: paths.refineSpellPathVaultRel` in `CommandPopupBuilder.refineCastAction`.
-- Remove `CastDispatchInput.systemPromptInline` once no remaining call sites use it.
+If Refine prompt becomes settings-dependent (e.g., user-configurable instructions):
+- Add settings arg to `renderRefineSystemPrompt()`.
+- Add `materializeRefine(): Promise<void>` to `CastLogModule` (mirroring `materializeForge()`).
+- Wire re-materialization into the settings-save handler (same place `materializeForge()` is called).
 
-Total migration footprint: ~80 LOC across 4 files + tests. Not in scope here.
+One-call-site swap per concern; no structural changes needed.
 
 ---
 
@@ -680,18 +679,18 @@ Total migration footprint: ~80 LOC across 4 files + tests. Not in scope here.
 
 #### Section briefing
 
-**What this section produces:** four new files and three extensions. Files: `src/refine/refinePrompt.ts` (pure `renderRefinePrompt(): string`), `src/refine/refineCastSpell.ts` (factory `refineCastSpell(): Spell`), and unit-test files `tests/refine/refinePrompt.test.ts` + `tests/refine/refineCastSpell.test.ts`. Extensions: `REFINE_SPELL_PATH` added to `src/castLog/types.ts`; `resolveDisplayName` recognizes `<refine>` in `src/castLog/format/displayName.ts`; `CastLogRow.ts` line 196 early-return adds the Refine sentinel.
+**What this section produces:** four new files and three extensions. Files: `src/refine/refineTemplate.ts` (pure `renderRefineSystemPrompt(): string`), `src/refine/refineCastSpell.ts` (factory `refineCastSpell(): Spell`), and unit-test files `tests/refine/refineTemplate.test.ts` + `tests/refine/refineCastSpell.test.ts`. Extensions: `REFINE_SPELL_PATH` added to `src/castLog/types.ts`; `resolveDisplayName` recognizes `<refine>` in `src/castLog/format/displayName.ts`; `CastLogRow.ts` line 196 early-return adds the Refine sentinel.
 
-**Design context the executor needs upfront:** see Interfaces → `REFINE_SPELL_PATH` and `refineCastSpell`. See Key design decisions §4 (two separate namespaces — cast-log sentinel `<refine>` vs override-storage `<grimoire-sentinel:refine>`) and §7 (Refine `executeOnNote: true` is the synthetic spell's invariant). The Refine prompt body content's canonical reference is `brain/Grimoire - Refine Note Spell` — use `mcp__obsidian-mcp-tools__get_vault_file` with the path `Grimoire - Refine Note Spell.md` (or `Grimoire - Refine Note Spell` — try both) to fetch verbatim wording for the body. The function `renderRefinePrompt()` returns a static string with the four sections in order: (1) Execution Mode IMMEDIATE EXECUTION callout; (2) MCP Tools (Obsidian MCP first, filesystem fallback via VAULT_MOUNT_PATH); (3) Refine workflow (read note → if `@cast` lines: act + remove; if follow-up: apply globally; if neither: exit no-op); (4) Output rule (write back to the active note path given in the user prompt).
+**Design context the executor needs upfront:** see Interfaces → `REFINE_SPELL_PATH` and `refineCastSpell`. See Key design decisions §4 (two separate namespaces — cast-log sentinel `<refine>` vs override-storage `<grimoire-sentinel:refine>`) and §7 (Refine `executeOnNote: true` is the synthetic spell's invariant). The Refine prompt body content's canonical reference is `brain/Grimoire - Refine Note Spell` — use `mcp__obsidian-mcp-tools__get_vault_file` with the path `brain/Grimoire - Refine Note Spell.md` to fetch verbatim wording for the body. The function `renderRefineSystemPrompt()` returns a static string with the four sections in order: (1) Execution Mode IMMEDIATE EXECUTION callout; (2) MCP Tools (Obsidian MCP first, filesystem fallback via VAULT_MOUNT_PATH); (3) Refine workflow (read note → if `@cast` lines: act + remove; if follow-up: apply globally; if neither: exit no-op); (4) Output rule (write back to the active note path given in the user prompt).
 
 **Cross-section couplings:**
-- A1 (refinePrompt.ts) is consumed by C2 (`CommandPopupBuilder.refineCastAction`) which calls `renderRefinePrompt()`.
+- A1 (refineTemplate.ts) is consumed by B2 (`RefineMaterializer` imports `renderRefineSystemPrompt`).
 - A2 (`REFINE_SPELL_PATH`) is consumed by A3 (`refineCastSpell` uses it as the path), A5 (`resolveDisplayName` branches on it), A6 (`CastLogRow` early-return checks it).
 - A3 (`refineCastSpell`) is consumed by C2 (builder constructs the dispatch input with it).
 - No coupling outward to B/D/E/F.
 
 **Section-level Red criterion:**
-- `tests/refine/refinePrompt.test.ts` asserts `renderRefinePrompt()` returns a non-empty string containing each of: `IMMEDIATE EXECUTION`, `MCP Tools`, `VAULT_MOUNT_PATH`, `@cast`, `follow-up` (case-insensitive search), and an instruction phrase covering the no-instruction exit case (e.g. `nothing has been requested` or `exit without modifying`). The exact wording is dev-agent's call, sourced from `brain/Grimoire - Refine Note Spell`. Test asserts on stable substrings, not full-string snapshot.
+- `tests/refine/refineTemplate.test.ts` asserts `renderRefineSystemPrompt()` returns a non-empty string containing each of: `IMMEDIATE EXECUTION`, `MCP Tools`, `VAULT_MOUNT_PATH`, `@cast`, `follow-up` (case-insensitive search), and an instruction phrase covering the no-instruction exit case (e.g. `nothing has been requested` or `exit without modifying`). Exact wording sourced from `brain/Grimoire - Refine Note Spell`. Asserts on stable substrings, not full-string snapshot.
 - `tests/refine/refineCastSpell.test.ts` asserts: `refineCastSpell()` returns `{ name: 'Refine', path: spellPath('<refine>'), executeOnNote: true }`; two consecutive calls return objects with `===`-equal `path` (constant identity).
 - `tests/castLog/types.test.ts` (extend or create) asserts `REFINE_SPELL_PATH === '<refine>'`.
 - `tests/castLog/format/displayName.test.ts` (extend) — a `CastRecord` with `spellPath: '<refine>'` returns `'Refine'`; with `spellPath: '<refine>'` AND `affectedFiles: ['x.md']` still returns `'Refine'` (no file-decoration for Refine in this iteration, mirroring the documented decision in Components).
@@ -699,50 +698,50 @@ Total migration footprint: ~80 LOC across 4 files + tests. Not in scope here.
 - `npm test` green; `npm run lint` green.
 
 **junior-dev**
-- [ ] A1: create `src/refine/refinePrompt.ts` exporting `renderRefinePrompt(): string`. Fetch the canonical body content from `brain/Grimoire - Refine Note Spell` via `mcp__obsidian-mcp-tools__get_vault_file`. Render the body in the four-section order (Execution Mode → MCP Tools → Refine workflow → Output rule) per the Section briefing. Add a top-of-file JSDoc noting: (a) canonical content reference; (b) future migration seam (mirror forge-spell-materialization if the body grows beyond ~30 lines or becomes settings-dependent). — M, junior-dev
-- [ ] A2: in `src/castLog/types.ts`, after the existing `FORGE_SPELL_PATH` line (line 57), add `export const REFINE_SPELL_PATH = '<refine>' as const;` with a one-line JSDoc mirroring `FORGE_SPELL_PATH`'s ("Sentinel spell path for casts originating from the Refine sentinel (not a live spell)."). — S, junior-dev
-- [ ] A3: create `src/refine/refineCastSpell.ts` exporting `refineCastSpell(): Spell` per Interfaces. Imports: `spellPath` from `../domain/spells/SpellPath`, `REFINE_SPELL_PATH` from `../castLog/types`, `type Spell` from `../domain/spells/Spell`. Body returns `{ name: 'Refine', path: spellPath(REFINE_SPELL_PATH), executeOnNote: true }`. JSDoc explains the synthetic-spell role for routing through `CastDispatcher`. — S, junior-dev
-- [ ] A4: create `tests/refine/refinePrompt.test.ts` and `tests/refine/refineCastSpell.test.ts` per the Red criterion above. — S, junior-dev
-- [ ] A5: extend `src/castLog/format/displayName.ts` — add an `if (record.spellPath === REFINE_SPELL_PATH) return 'Refine';` branch immediately after the existing `FORGE_SPELL_PATH` branch (line 20). Update `tests/castLog/format/displayName.test.ts` with the two new assertions (with and without `affectedFiles`). — S, junior-dev
-- [ ] A6: extend `src/ui/components/CastLogRow.ts` line 196 — change `if (record.spellPath === FORGE_SPELL_PATH || record.executeOnNote !== true) return;` to `if (record.spellPath === FORGE_SPELL_PATH || record.spellPath === REFINE_SPELL_PATH || record.executeOnNote !== true) return;`. Imports add `REFINE_SPELL_PATH` from `../../castLog/types`. Update `tests/CastLogRow.test.ts` with a Refine assertion mirroring the existing Forge one. — S, junior-dev
+- [x] A1: create `src/refine/refineTemplate.ts` exporting `renderRefineSystemPrompt(): string`. Fetch the canonical body content from `brain/Grimoire - Refine Note Spell` via `mcp__obsidian-mcp-tools__get_vault_file`. Render the body in the four-section order (Execution Mode → MCP Tools → Refine workflow → Output rule) per the Section briefing. Add a top-of-file JSDoc noting: (a) canonical content reference `brain/Grimoire - Refine Note Spell`; (b) parallel to `renderForgeSystemPrompt` in `forgeTemplate.ts`. — M, junior-dev
+- [x] A2: in `src/castLog/types.ts`, after the existing `FORGE_SPELL_PATH` line (line 57), add `export const REFINE_SPELL_PATH = '<refine>' as const;` with a one-line JSDoc mirroring `FORGE_SPELL_PATH`'s ("Sentinel spell path for casts originating from the Refine sentinel (not a live spell)."). — S, junior-dev
+- [x] A3: create `src/refine/refineCastSpell.ts` exporting `refineCastSpell(): Spell` per Interfaces. Imports: `spellPath` from `../domain/spells/SpellPath`, `REFINE_SPELL_PATH` from `../castLog/types`, `type Spell` from `../domain/spells/Spell`. Body returns `{ name: 'Refine', path: spellPath(REFINE_SPELL_PATH), executeOnNote: true }`. JSDoc explains the synthetic-spell role for routing through `CastDispatcher`. — S, junior-dev
+- [x] A4: create `tests/refine/refineTemplate.test.ts` (was `refinePrompt.test.ts`) and `tests/refine/refineCastSpell.test.ts` per the Red criterion above. — S, junior-dev
+- [x] A5: extend `src/castLog/format/displayName.ts` — add an `if (record.spellPath === REFINE_SPELL_PATH) return 'Refine';` branch immediately after the existing `FORGE_SPELL_PATH` branch (line 20). Update `tests/castLog/format/displayName.test.ts` with the two new assertions (with and without `affectedFiles`). — S, junior-dev
+- [x] A6: extend `src/ui/components/CastLogRow.ts` line 196 — change `if (record.spellPath === FORGE_SPELL_PATH || record.executeOnNote !== true) return;` to `if (record.spellPath === FORGE_SPELL_PATH || record.spellPath === REFINE_SPELL_PATH || record.executeOnNote !== true) return;`. Imports add `REFINE_SPELL_PATH` from `../../castLog/types`. Update `tests/CastLogRow.test.ts` with a Refine assertion mirroring the existing Forge one. — S, junior-dev
 
-### B. Extend `CastDispatchInput` with `systemPromptInline`
+### B. Materialize `refine.md` — `PluginPaths` + `RefineMaterializer` + `CastLogModule` + `CastDispatchInput.systemPromptFilePath`
 
 #### Section briefing
 
-**What this section produces:** modified `src/cast/CastDispatcher.ts` — `CastDispatchInput` gains optional `readonly systemPromptInline?: string;`. `dispatch()` reads the field, prepends `${systemPromptInline}\n\n` to the per-cast prompt, and omits both `systemPromptFile` AND `spellPath` from the `CastInput` passed to `caster.cast` when `systemPromptInline` is set. Existing spell-cast and forge-cast paths leave the field undefined and behave identically to today.
+**What this section produces:** (a) `src/infra/PluginPaths.ts` extended with `refineSpellPathPluginRel()` and `refineSpellPathVaultRel()`. (b) New `src/refine/RefineMaterializer.ts` (parallel to `ForgeMaterializer`) — writes `renderRefineSystemPrompt()` content to `<pluginDir>/refine.md` via `DataAdapter`. (c) `src/main/CastLogModule.ts` extended to wire `RefineMaterializer` in `initStartupMaintenance` (same try/catch pattern as forge). (d) `src/cast/CastDispatcher.ts` — `CastDispatchInput` gains `readonly systemPromptFilePath?: string`; dispatcher uses it directly as `systemPromptFile` (local) and as `CastInput.spellPath` (remote, so the portal reads the file from the vault). Tests for `RefineMaterializer` and the dispatcher changes.
 
-**Design context the executor needs upfront:** see Interfaces → `CastDispatchInput` extension. Key design decisions §1 (one optional field, not a new method), §9 (`systemPromptFile` and `spellPath` are both omitted when `systemPromptInline` is set — mutually exclusive inline mode). Open question §1 (remote Refine path: dispatcher omits `spellPath` when `systemPromptInline` is set; verified consistent with `src/execution/Caster.ts:6`). Read `src/cast/CastDispatcher.ts` lines 71–106 — that's the exact span to modify.
+**Design context the executor needs upfront:** see Interfaces → `CastDispatchInput` extension and Components. Key design decisions §1, §2, §9. Read `src/forge/ForgeMaterializer.ts` and `src/main/CastLogModule.ts` lines 28–153 — both are direct parallels. `PluginPaths` forge methods are at lines 46–55; add the Refine equivalents immediately after. `initStartupMaintenance` forge block is at lines 124–134; add the Refine block immediately after (before the sweeper). `CastDispatcher.dispatch` changes ~2 LOC: `systemPromptFile` line 89 and `spellPath` on `CastInput` (line 85).
 
 Existing dispatcher logic (line 89):
 ```ts
 systemPromptFile: isRemote ? undefined : `${settings.vaultMountPath}/${spell.path}`,
+spellPath: spell.path,
 ```
 becomes:
 ```ts
-const useInline = input.systemPromptInline !== undefined;
-// ...
-userPrompt: useInline ? `${input.systemPromptInline}\n\n${userPromptBase}` : userPromptBase,
-systemPromptFile: useInline || isRemote ? undefined : `${settings.vaultMountPath}/${spell.path}`,
-spellPath: useInline ? undefined : spell.path,
+systemPromptFile: isRemote ? undefined : (input.systemPromptFilePath ?? `${settings.vaultMountPath}/${spell.path}`),
+spellPath: input.systemPromptFilePath ?? spell.path,
 ```
 
+`userPrompt` construction is unchanged — the refine.md file carries the system prompt, so the per-cast user prompt is just the active note target + follow-up (same as a regular spell cast).
+
 **Cross-section couplings:**
-- B depends on A2 (`REFINE_SPELL_PATH`) only via the conceptual model — B doesn't import the constant directly; the dispatcher is path-agnostic.
-- B is a prerequisite for C (the builder's `refineCastAction` calls `dispatcher.dispatch` with `systemPromptInline` set).
-- B's existing-test impact: `tests/CastDispatcher.test.ts` must continue to pass without modification — the new field is optional. `tests/CommandPopupBuilder.test.ts` (if extant) and `tests/integration/spell-cast.spec.ts` should also be unaffected (they don't set the new field).
+- B1 (PluginPaths) consumed by C5 (builder passes `this.#deps.paths.refineSpellPathVaultRel()`).
+- B2 (RefineMaterializer) consumed by B3 (CastLogModule wiring).
+- B4 (CastDispatchInput.systemPromptFilePath + dispatcher change) consumed by C5 (builder passes the field).
+- Existing dispatcher tests stay green — `systemPromptFilePath` is optional; existing call sites omit it.
 
 **Section-level Red criterion:**
-- `tests/CastDispatcher.test.ts` (extend) adds three new test cases:
-  - (a) `dispatch` called with `systemPromptInline: 'SYS_BODY'` and a normal spell: the caster's received `CastInput.userPrompt` starts with `'SYS_BODY\n\n'` and contains the existing per-cast preamble after.
-  - (b) Same call: `CastInput.systemPromptFile === undefined` AND `CastInput.spellPath === undefined`.
-  - (c) `dispatch` called WITHOUT `systemPromptInline`: `CastInput.userPrompt` does NOT start with `\n\n` (no spurious prepend); `CastInput.systemPromptFile === '<vault>/<path>'` for local; `CastInput.spellPath === spell.path`. (This is a regression-pin on existing behavior.)
+- `tests/refine/RefineMaterializer.test.ts`: (a) `run()` calls `writeFile` with path from `getRefinePathAbs()` and content from `renderRefineSystemPrompt()`; (b) `run()` calls `mkdir` on the parent dir before writing; (c) calling `run()` twice writes same content twice (idempotent).
+- `tests/CastDispatcher.test.ts` (extend): (a) `dispatch` called with `systemPromptFilePath: '/vault/plugin/refine.md'` (local): `CastInput.systemPromptFile === '/vault/plugin/refine.md'`; (b) same call: `CastInput.spellPath === '/vault/plugin/refine.md'`; (c) `dispatch` WITHOUT `systemPromptFilePath`: `CastInput.systemPromptFile === '<vault>/<path>'` and `CastInput.spellPath === spell.path` (regression pin).
 - `npm test` green.
 
-**senior-dev**
-- [ ] B1: in `src/cast/CastDispatcher.ts`, add `readonly systemPromptInline?: string;` to `CastDispatchInput` interface with a JSDoc per Interfaces. — S, senior-dev
-- [ ] B2: in `src/cast/CastDispatcher.ts` `dispatch()` body, introduce `const useInline = input.systemPromptInline !== undefined;`. After building `userPrompt` via `#buildUserPrompt`, conditionally prepend: `const finalUserPrompt = useInline ? \`${input.systemPromptInline}\\n\\n${userPrompt}\` : userPrompt;`. Pass `finalUserPrompt` into the `caster.cast` `CastInput`. Change `systemPromptFile` to `useInline || isRemote ? undefined : \`${settings.vaultMountPath}/${spell.path}\``. Change `spellPath` on the `CastInput` to `useInline ? undefined : spell.path`. — M, senior-dev
-- [ ] B3: extend `tests/CastDispatcher.test.ts` with the three test cases in the Red criterion above. — M, senior-dev
+**junior-dev**
+- [x] B1: extend `src/infra/PluginPaths.ts` — add `refineSpellPathPluginRel(): string` and `refineSpellPathVaultRel(): string` immediately after `forgeSpellPathVaultRel()` (line 55). Both return `normalizePath(\`${this.#pluginDir}/refine.md\`)`. JSDoc parallel to the forge equivalents. — S, junior-dev
+- [x] B2: create `src/refine/RefineMaterializer.ts` parallel to `src/forge/ForgeMaterializer.ts`. Interface `RefineMaterializerPorts` with `getRefinePathAbs(): string`, optional `writeFile: (path, content) => Promise<void>`, `mkdir: (dir) => Promise<void>`, `adapter?: DataAdapter`. Class `RefineMaterializer` with same constructor guard (requires adapter or explicit ports). `run()`: normalize path, extract parent dir, `mkdir(parent)`, write `renderRefineSystemPrompt()` content. JSDoc parallel to `ForgeMaterializer`'s. Import `renderRefineSystemPrompt` from `./refineTemplate`. — M, junior-dev
+- [x] B3: extend `src/main/CastLogModule.ts` to wire `RefineMaterializer`. Add `type RefineMaterializerPorts` and `#refineMaterializerFactory` field (parallel to `#forgeMaterializerFactory`). Constructor default: `new RefineMaterializer(ports)`. In `initStartupMaintenance`, add a `refineMaterializer.run()` block immediately after the forge block (same try/catch + `console.error('RefineMaterializer failed', e)`). No new public re-materialize method (prompt is static). — M, junior-dev
+- [x] B4: in `src/cast/CastDispatcher.ts`, add `readonly systemPromptFilePath?: string;` to `CastDispatchInput` with JSDoc per Interfaces. In `dispatch()`, change `systemPromptFile` line to `isRemote ? undefined : (input.systemPromptFilePath ?? \`${settings.vaultMountPath}/${spell.path}\`)`. Change `CastInput.spellPath` to `input.systemPromptFilePath ?? spell.path`. Create `tests/refine/RefineMaterializer.test.ts` + extend `tests/CastDispatcher.test.ts` with the three test cases in the Red criterion. — M, junior-dev
 
 ### C. Builder-layer `refineCastAction` orchestration
 
@@ -771,13 +770,14 @@ The new helper `optionsFormSnapshotFromRefineDefaults` lives in `src/ui/options/
 - `npm test` green; `npm run lint` green; `npm run test:integration` green (existing integration tests continue to pass with the new default).
 
 **junior-dev**
-- [ ] C1: in `src/ui/CommandPopup.ts`, add `export type RefineCastAction = (snapshot: OptionsFormSnapshot) => void;` near the other action-type exports. Add `refineCastAction: RefineCastAction` to `CommandPopupParams`. Add `readonly #refineCastAction: RefineCastAction;` field. In the constructor, assign `this.#refineCastAction = params.refineCastAction;`. No wiring of `#refineCastAction` to events or `RefineOptionsDetail` yet — that's D. — S, junior-dev
-- [ ] C2: in `src/ui/options/OptionsFormState.ts`, add `optionsFormSnapshotFromRefineDefaults` per Interfaces. Import `REFINE_SENTINEL_PATH` from `../../domain/spells/Spell`, `resolveSpellOptions` from `../../domain/settings/spellOptionsResolver`, and types as needed. The function body mirrors `RefineOptionsDetail.#resolveOptions` + `#buildFormState` — copy the resolver call (with the same empty-`settings`-stub keyed on `REFINE_SENTINEL_PATH`) and the session-map lookup. Return the snapshot with `executeOnNote: true`. — M, junior-dev
-- [ ] C3: create `tests/refine/optionsFormSnapshotFromRefineDefaults.test.ts` covering the four assertions in the Red criterion. Use the same `SUPPORTED_MODELS` import as the production code; pre-load `SpellOverrideStore` and `OptionsSessionMap` per case. — M, junior-dev
-- [ ] C4: extend `tests/integration/harness.ts` `createPopupHarness` to accept optional `refineCastAction?: RefineCastAction` and pass it (default `vi.fn()`) into the `CommandPopup` construction. Add the type import at the top. — S, junior-dev
+- [x] C1: in `src/ui/CommandPopup.ts`, add `export type RefineCastAction = (snapshot: OptionsFormSnapshot) => void;` near the other action-type exports. Add `refineCastAction: RefineCastAction` to `CommandPopupParams`. Add `readonly #refineCastAction: RefineCastAction;` field. In the constructor, assign `this.#refineCastAction = params.refineCastAction;`. No wiring of `#refineCastAction` to events or `RefineOptionsDetail` yet — that's D. — S, junior-dev
+- [x] C2: in `src/ui/options/OptionsFormState.ts`, add `optionsFormSnapshotFromRefineDefaults` per Interfaces. Import `REFINE_SENTINEL_PATH` from `../../domain/spells/Spell`, `resolveSpellOptions` from `../../domain/settings/spellOptionsResolver`, and types as needed. The function body mirrors `RefineOptionsDetail.#resolveOptions` + `#buildFormState` — copy the resolver call (with the same empty-`settings`-stub keyed on `REFINE_SENTINEL_PATH`) and the session-map lookup. Return the snapshot with `executeOnNote: true`. — M, junior-dev
+- [x] C3: create `tests/refine/optionsFormSnapshotFromRefineDefaults.test.ts` covering the four assertions in the Red criterion. Use the same `SUPPORTED_MODELS` import as the production code; pre-load `SpellOverrideStore` and `OptionsSessionMap` per case. — M, junior-dev
+- [x] C4: extend `tests/integration/harness.ts` `createPopupHarness` to accept optional `refineCastAction?: RefineCastAction` and pass it (default `vi.fn()`) into the `CommandPopup` construction. Add the type import at the top. — S, junior-dev
 
 **senior-dev**
-- [ ] C5: in `src/ui/popup/CommandPopupBuilder.ts`, add a `refineCastAction` closure inside `build()` immediately before the `dispatcher` is constructed (the existing `let popup; popup = new CommandPopup({...})` pattern stays — the closure references both `popup` and `dispatcher` via closure capture, both of which are in scope by the time the closure fires at runtime). Closure body per Interfaces: active-note guard via `app.workspace.getActiveFile()` (check both `null` and `extension !== 'md'`); if guard fails, `new Notice('Refine needs an open note')` and `return`; else build dispatch input with `spell: refineCastSpell()`, `executeOnNote: true`, `systemPromptInline: renderRefinePrompt()`, and `activeFilePath: activeFile.path`, plus the snapshot's model/effort/contextNotePaths/followUp + `settings: this.#deps.plugin.data.settings`; call `dispatcher.dispatch(input)`; call `popup.dismiss()`. Pass `refineCastAction` into the `CommandPopup({...})` constructor params. Imports added: `Notice` from `obsidian`, `refineCastSpell` from `../../refine/refineCastSpell`, `renderRefinePrompt` from `../../refine/refinePrompt`. — M, senior-dev
+- [x] C5: in `src/ui/popup/CommandPopupBuilder.ts`, add a `refineCastAction` closure inside `build()` (same pattern as `castAction`). Closure body: active-note guard via `app.workspace.getActiveFile()` (check `null` and `extension !== 'md'`); if guard fails, `new Notice('Refine needs an open note')` and `return`; else build dispatch input with `spell: refineCastSpell()`, `executeOnNote: true`, `systemPromptFilePath: this.#deps.paths.refineSpellPathVaultRel()`, `activeFilePath: activeFile.path`, plus snapshot fields + `settings: this.#deps.plugin.data.settings`; call `dispatcher.dispatch(input)` then `popup.dismiss()`. Add `paths: PluginPaths` to `CommandPopupBuilderDeps` and import it. Pass `refineCastAction` into `CommandPopup({...})` constructor. Imports added: `Notice` from `obsidian`, `refineCastSpell` from `../../refine/refineCastSpell`, `PluginPaths` from `../../infra/PluginPaths`. — M, senior-dev (4da7021)
+- [x] C6: add `showExecuteOnNote?: boolean` (default `true`) to `OptionsPanelDeps` in `src/ui/options/OptionsPanel.ts`. In `#buildFormControls`, gate `#buildExecuteOnNoteCheckbox` and `#bindExecuteOnNote` behind `deps.showExecuteOnNote !== false`. In `#bindReset`, skip `eonCheckbox.checked = initialExecuteOnNote` when the checkbox was not rendered (pass `null` sentinel or guard on the same flag). In `src/ui/components/RefineOptionsDetail.ts` `#createPanel`, pass `showExecuteOnNote: false` to `panel.render(...)`. Update `tests/integration/refine-options-panel.spec.ts` to assert the checkbox is absent from the DOM in Refine OptionsPanel tests. Update `tests/OptionsPanel.test.ts` (if extant) with one case covering `showExecuteOnNote: false`. — M, junior-dev
 
 ### D. Wire two Refine triggers in `CommandPopup`; rename `dismiss-refine` → `refine-cast`
 
@@ -802,13 +802,13 @@ The new helper `optionsFormSnapshotFromRefineDefaults` lives in `src/ui/options/
 - `npm test` green; `npm run test:integration` green.
 
 **junior-dev**
-- [ ] D1: in `src/domain/spells/SpellEvents.ts`, rename `"dismiss-refine": void;` to `"refine-cast": void;` (preserve the surrounding JSDoc; update it to "fired when the Refine sentinel is confirmed and a cast should be dispatched"). — S, junior-dev
-- [ ] D2: in `src/ui/tabs/SpellsPanel.ts` `confirm()`, change `this.events.emit("dismiss-refine")` to `this.events.emit("refine-cast")`. Update the JSDoc for the method to reflect the new semantics ("triggers a Refine cast"). Update `tests/SpellsPanel.test.ts` accordingly. — S, junior-dev
-- [ ] D3: in `src/ui/CommandPopup.ts` `#createSpellsPanel`, replace `panel.events.on("dismiss-refine", () => this.close());` with `panel.events.on("refine-cast", () => { const snapshot = optionsFormSnapshotFromRefineDefaults(this.#formDefaults, this.#overrides, this.#sessionMap, SUPPORTED_MODELS); this.#refineCastAction(snapshot); });`. Imports add `optionsFormSnapshotFromRefineDefaults` from `./options/OptionsFormState`. — S, junior-dev
-- [ ] D4: in `src/ui/CommandPopup.ts` `#renderRefineOptionsPanel`, replace `onCast: () => this.dismiss(),` with `onCast: (snap) => this.#refineCastAction(snap),`. — S, junior-dev
-- [ ] D5: update `tests/integration/refine-options-panel.spec.ts` D5-2 to assert: form submit invokes the harness's `refineCastAction` `vi.fn()` once with the OptionsPanel's snapshot AND the modal `containerEl.parentElement` is `null` (modal fully closed by the `popup.dismiss()` inside `refineCastAction`). For this to work, the harness's `refineCastAction` must actually be wired to a function that closes the popup — in this test, set `refineCastAction: vi.fn(() => h.modal.dismiss())` so the assertion is exercised. Alternatively, accept that the harness's default `vi.fn()` does not close the modal, and split the assertion: assert the `refineCastAction` was called (the contract) and separately assert that when `refineCastAction` calls `popup.dismiss()`, the modal closes (the popup's contract). Pick one approach; document in the test file's preamble. — S, junior-dev
-- [ ] D6: update `tests/integration/refine-options-panel.spec.ts` D5-4 to assert: with an active markdown note in the workspace mock, pressing Enter on the Refine sentinel invokes the harness's `refineCastAction` `vi.fn()` once with the resolved-defaults snapshot. Defer the "modal fully closed" assertion to the same conditional logic as D5 — if the harness's mock closes via `popup.dismiss()`, assert it; else assert the call only. (The "no active note" branch is in Section E.) — S, junior-dev
-- [ ] D7: grep-assert: `grep -rn "dismiss-refine" src/ tests/` returns nothing. Document in commit body. — S, junior-dev
+- [x] D1: in `src/domain/spells/SpellEvents.ts`, rename `"dismiss-refine": void;` to `"refine-cast": void;` (preserve the surrounding JSDoc; update it to "fired when the Refine sentinel is confirmed and a cast should be dispatched"). — S, junior-dev
+- [x] D2: in `src/ui/tabs/SpellsPanel.ts` `confirm()`, change `this.events.emit("dismiss-refine")` to `this.events.emit("refine-cast")`. Update the JSDoc for the method to reflect the new semantics ("triggers a Refine cast"). Update `tests/SpellsPanel.test.ts` accordingly. — S, junior-dev
+- [x] D3: in `src/ui/CommandPopup.ts` `#createSpellsPanel`, replace `panel.events.on("dismiss-refine", () => this.close());` with `panel.events.on("refine-cast", () => { const snapshot = optionsFormSnapshotFromRefineDefaults(this.#formDefaults, this.#overrides, this.#sessionMap, SUPPORTED_MODELS); this.#refineCastAction(snapshot); });`. Imports add `optionsFormSnapshotFromRefineDefaults` from `./options/OptionsFormState`. — S, junior-dev
+- [x] D4: in `src/ui/CommandPopup.ts` `#renderRefineOptionsPanel`, replace `onCast: () => this.dismiss(),` with `onCast: (snap) => this.#refineCastAction(snap),`. — S, junior-dev
+- [x] D5: update `tests/integration/refine-options-panel.spec.ts` D5-2 to assert: form submit invokes the harness's `refineCastAction` `vi.fn()` once with the OptionsPanel's snapshot AND the modal `containerEl.parentElement` is `null` (modal fully closed by the `popup.dismiss()` inside `refineCastAction`). For this to work, the harness's `refineCastAction` must actually be wired to a function that closes the popup — in this test, set `refineCastAction: vi.fn(() => h.modal.dismiss())` so the assertion is exercised. Alternatively, accept that the harness's default `vi.fn()` does not close the modal, and split the assertion: assert the `refineCastAction` was called (the contract) and separately assert that when `refineCastAction` calls `popup.dismiss()`, the modal closes (the popup's contract). Pick one approach; document in the test file's preamble. — S, junior-dev
+- [x] D6: update `tests/integration/refine-options-panel.spec.ts` D5-4 to assert: with an active markdown note in the workspace mock, pressing Enter on the Refine sentinel invokes the harness's `refineCastAction` `vi.fn()` once with the resolved-defaults snapshot. Defer the "modal fully closed" assertion to the same conditional logic as D5 — if the harness's mock closes via `popup.dismiss()`, assert it; else assert the call only. (The "no active note" branch is in Section E.) — S, junior-dev
+- [x] D7: grep-assert: `grep -rn "dismiss-refine" src/ tests/` returns nothing. Document in commit body. — S, junior-dev
 
 ### E. Integration tests: new `refine-cast.spec.ts` at the two seams
 
@@ -826,10 +826,10 @@ The new helper `optionsFormSnapshotFromRefineDefaults` lives in `src/ui/options/
 **Section-level Red criterion:**
 
 `tests/integration/refine-cast.spec.ts` covers:
-1. **List-Enter happy path with active markdown note.** Pre-condition: `app.workspace.getActiveFile()` returns `{ path: 'notes/today.md', extension: 'md' }`; settings.executionMode = 'local'; `vi.spyOn(CastRunner.prototype, 'run')`. Navigate to Refine sentinel (ArrowUp from index 0 wraps to 11). Press Enter. Assert: `CastRunner.run` called once; the `CastRunInput.userPrompt` STARTS WITH the Refine prompt body (assert via `toContain('IMMEDIATE EXECUTION')` or similar substring); the `userPrompt` ALSO CONTAINS `Execute this spell against \`<vault>/notes/today.md\``; `CastRunInput` has no `systemPromptFile` (inline mode); the cast-log writer's `recordCasted` was called once with `spellPath: '<refine>'`; the modal's `containerEl.parentElement === null` (fully closed).
+1. **List-Enter happy path with active markdown note.** Pre-condition: `app.workspace.getActiveFile()` returns `{ path: 'notes/today.md', extension: 'md' }`; settings.executionMode = 'local'; `vi.spyOn(CastRunner.prototype, 'run')`. Navigate to Refine sentinel (ArrowUp from index 0 wraps to 11). Press Enter. Assert: `CastRunner.run` called once; `CastRunInput.systemPromptFile` ends with `'refine.md'` (materialized path); `CastRunInput.userPrompt` CONTAINS `Execute this spell against \`<vault>/notes/today.md\``; cast-log writer's `recordCasted` called once with `spellPath: '<refine>'`; modal's `containerEl.parentElement === null` (fully closed).
 2. **List-Enter no-active-note guard.** Pre-condition: `app.workspace.getActiveFile()` returns `null`. Press Enter on Refine. Assert: `Notice` was constructed with `'Refine needs an open note'` (check `Notice.instances[Notice.instances.length - 1].message`); `CastRunner.run` NOT called; `recordCasted` NOT called; modal stays open (`containerEl.parentElement !== null`); still in search phase.
 3. **List-Enter non-markdown-active-file guard.** Pre-condition: `app.workspace.getActiveFile()` returns `{ path: 'image.png', extension: 'png' }`. Press Enter on Refine. Assert: same as case 2.
-4. **Dialog-Cast happy path with active markdown note.** Pre-condition: same as case 1. Navigate to Refine; press ArrowRight; verify options panel is mounted; submit the form (form submit event). Assert: `CastRunner.run` called once; `userPrompt` starts with the Refine prompt body; `recordCasted` called with `spellPath: '<refine>'`; modal fully closed.
+4. **Dialog-Cast happy path with active markdown note.** Pre-condition: same as case 1. Navigate to Refine; press ArrowRight; verify options panel is mounted (no `executeOnNote` checkbox in DOM — assert `queryByDataset('grimoire', 'execute-on-note')` is null); submit the form. Assert: `CastRunner.run` called once; `CastRunInput.systemPromptFile` ends with `'refine.md'`; `recordCasted` called with `spellPath: '<refine>'`; modal fully closed.
 5. **Dialog-Cast no-active-note guard.** Pre-condition: same as case 2. Navigate to Refine → ArrowRight → submit form. Assert: `Notice('Refine needs an open note')`; `CastRunner.run` NOT called; modal still open (the options panel may or may not still be visible — assert only on the cast-not-fired contract).
 6. **List-Enter override persistence — happy path.** Pre-condition: case 1 setup + pre-load `SpellOverrideStore` with `REFINE_SENTINEL_PATH → {model: 'claude-opus-4', effort: 'high'}`. Press Enter on Refine. Assert: `CastRunner.run`'s input has `modelId: 'claude-opus-4'` and `effort: 'high'` — proving the list-Enter snapshot consulted the override store.
 7. **Refine cast-log row displays as `Refine`.** Pre-condition: case 1 setup, plus a fake `recordCasted` writer captures the call. After the cast runs, simulate a cast-log read via `resolveDisplayName` on the captured record; assert returned string is `'Refine'`.
@@ -837,10 +837,10 @@ The new helper `optionsFormSnapshotFromRefineDefaults` lives in `src/ui/options/
 `npm run test:integration` green.
 
 **ui-integration-tester**
-- [ ] E1: write `tests/integration/refine-cast.spec.ts` containing the seven test cases above. Use the `createPopupHarness` to construct the popup BUT replace the harness's default `refineCastAction: vi.fn()` with a real builder-style closure — either (a) construct the `CommandPopupBuilder` directly for these tests (recommended; mirrors how `forge-cast.spec.ts` works for the end-to-end builder path) OR (b) inline-construct a `refineCastAction` that mirrors the builder closure verbatim. Document the choice in the test file's preamble. Use `vi.spyOn(CastRunner.prototype, 'run')` to capture the cast input. Use `Notice.instances` (set up via `beforeEach(() => { Notice.instances.length = 0; })`) to assert Notice contents. For the `recordCasted` assertion, inject a stubbed `CastLogWriter` (`{ recordCasted: vi.fn(), recordError: vi.fn() }`) via the harness or builder. — M, ui-integration-tester
+- [x] E1: write `tests/integration/refine-cast.spec.ts` containing the seven test cases above. Use the `createPopupHarness` to construct the popup BUT replace the harness's default `refineCastAction: vi.fn()` with a real builder-style closure — either (a) construct the `CommandPopupBuilder` directly for these tests (recommended; mirrors how `forge-cast.spec.ts` works for the end-to-end builder path) OR (b) inline-construct a `refineCastAction` that mirrors the builder closure verbatim. Document the choice in the test file's preamble. Use `vi.spyOn(CastRunner.prototype, 'run')` to capture the cast input. Use `Notice.instances` (set up via `beforeEach(() => { Notice.instances.length = 0; })`) to assert Notice contents. For the `recordCasted` assertion, inject a stubbed `CastLogWriter` (`{ recordCasted: vi.fn(), recordError: vi.fn() }`) via the harness or builder. — M, ui-integration-tester
 
 **junior-dev**
-- [ ] E2: read `tests/__mocks__/obsidian.ts`. If `App.workspace.getActiveFile` returns a shape lacking `extension`, extend the mock to return `{ path, extension }` (extracting `extension` from the path's basename — `.split('.').pop()`). Add a setter on the mock (e.g. `setActiveFile(fileOrNull)`) so tests can configure pre-conditions inline. If the mock already supports this shape, the todo is a no-op — mark done with a one-line commit message noting verification. — S, junior-dev
+- [x] E2: read `tests/__mocks__/obsidian.ts`. If `App.workspace.getActiveFile` returns a shape lacking `extension`, extend the mock to return `{ path, extension }` (extracting `extension` from the path's basename — `.split('.').pop()`). Add a setter on the mock (e.g. `setActiveFile(fileOrNull)`) so tests can configure pre-conditions inline. If the mock already supports this shape, the todo is a no-op — mark done with a one-line commit message noting verification. — S, junior-dev (d8c605c)
 
 ### F. Live-specs and drift sweep
 
@@ -861,35 +861,35 @@ The new helper `optionsFormSnapshotFromRefineDefaults` lives in `src/ui/options/
 - `npm run lint` clean (Markdown files unaffected by ESLint but the lint command should not regress).
 
 **junior-dev**
-- [ ] F1: create `docs/features/refine-cast.md` per the `feature-doc-rubric` shape, mirroring `docs/features/forge-spell-materialization.md`. Sections: header with `dev/done-019`, "What it does", "Design decisions" (link to this plan's Key design decisions), "Scope (in/out)", "Relationship to existing system" (extends `cast-unification`, mirrors `forge-cast`, reuses `refine-note-dialog` from 017), "Behavior changes" (Enter on Refine row now casts; Cast inside Refine OptionsPanel now casts; new `<refine>` cast-log sentinel; no-active-note Notice). Cap at ~100 lines. — M, junior-dev
-- [ ] F2: update `docs/features/refine-note-dialog.md` "Behavior changes" section. Add an addendum after the existing paragraphs: "**Since 019 (refine-cast):** `Enter` on the Refine row and Cast/Mod+Enter inside the Refine OptionsPanel now dispatch a Refine cast against the active note (with a `Notice` if no active note is open) instead of merely dismissing the modal. See `refine-cast.md`." — S, junior-dev
-- [ ] F3: update `docs/features/command-popup-ui.md` — if the "User-facing behavior" table has a row "`Enter` on Refine sentinel | Close the popup (no detail, no cast)" (per 017's E2 todo), change it to "`Enter` on Refine sentinel | Dispatch a Refine cast against the active note; `Notice` if no active note open". Add a row for "Cast/Mod+Enter inside Refine OptionsPanel | Dispatch a Refine cast (same as Enter on row); fully closes the modal afterward". Update the state-diagram code block if present: the Refine sentinel transition now reads `Enter on Refine sentinel → refineCastAction()`. — S, junior-dev
-- [ ] F4: update `docs/features/cast-log-foundation.md` — if it enumerates cast-log sentinels (search for `FORGE_SPELL_PATH` or `<forge>`), add `<refine>` to the same list with a one-line description ("Sentinel for casts originating from the Refine sentinel"). If the file does not enumerate sentinels, skip this todo — mark done with a one-line commit message noting the verification. — S, junior-dev
+- [x] F1: create `docs/features/refine-cast.md` per the `feature-doc-rubric` shape, mirroring `docs/features/forge-spell-materialization.md`. Sections: header with `dev/done-019`, "What it does", "Design decisions" (link to this plan's Key design decisions), "Scope (in/out)", "Relationship to existing system" (extends `cast-unification`, mirrors `forge-cast`, reuses `refine-note-dialog` from 017), "Behavior changes" (Enter on Refine row now casts; Cast inside Refine OptionsPanel now casts; new `<refine>` cast-log sentinel; no-active-note Notice). Cap at ~100 lines. — M, junior-dev
+- [x] F2: update `docs/features/refine-note-dialog.md` "Behavior changes" section. Add an addendum after the existing paragraphs: "**Since 019 (refine-cast):** `Enter` on the Refine row and Cast/Mod+Enter inside the Refine OptionsPanel now dispatch a Refine cast against the active note (with a `Notice` if no active note is open) instead of merely dismissing the modal. See `refine-cast.md`." — S, junior-dev
+- [x] F3: update `docs/features/command-popup-ui.md` — if the "User-facing behavior" table has a row "`Enter` on Refine sentinel | Close the popup (no detail, no cast)" (per 017's E2 todo), change it to "`Enter` on Refine sentinel | Dispatch a Refine cast against the active note; `Notice` if no active note open". Add a row for "Cast/Mod+Enter inside Refine OptionsPanel | Dispatch a Refine cast (same as Enter on row); fully closes the modal afterward". Update the state-diagram code block if present: the Refine sentinel transition now reads `Enter on Refine sentinel → refineCastAction()`. — S, junior-dev
+- [x] F4: update `docs/features/cast-log-foundation.md` — if it enumerates cast-log sentinels (search for `FORGE_SPELL_PATH` or `<forge>`), add `<refine>` to the same list with a one-line description ("Sentinel for casts originating from the Refine sentinel"). If the file does not enumerate sentinels, skip this todo — mark done with a one-line commit message noting the verification. — S, junior-dev
 
 ## Overall effort summary
 
-- **Total todos:** 25
+- **Total todos:** 27
   - A: 6 (5S, 1M)
-  - B: 3 (1S, 2M)
-  - C: 5 (2S, 3M)
+  - B: 4 (4M) — PluginPaths + RefineMaterializer + CastLogModule wiring + dispatcher field + tests
+  - C: 6 (2S, 4M) — added C6 (hide executeOnNote checkbox)
   - D: 7 (7S)
   - E: 2 (1M, 1S)
   - F: 4 (1M, 3S)
 
-- **By size:** S × 19, M × 6, L × 0
-- **By tier:** junior-dev × 22, senior-dev × 2, ui-integration-tester × 1, lead-dev × 0
+- **By size:** S × 16, M × 11, L × 0
+- **By tier:** junior-dev × 23, senior-dev × 2, ui-integration-tester × 1, lead-dev × 0
 
 **Why this tier distribution:**
 - Most todos describe an already-decided change (file, location, signature, test contract) — junior-dev territory.
-- Two senior-dev todos: **B2** (modifying `CastDispatcher.dispatch` — a hot, integration-critical method that affects every cast path; the change is small but the judgment call about `systemPromptFile` and `spellPath` mutual exclusivity carries risk if mis-implemented), and **C5** (the `CommandPopupBuilder.refineCastAction` closure — coordinates the active-note guard, dispatch input construction, and popup dismissal; one of the few non-trivial composition points).
-- One **ui-integration-tester** todo (**E1**) writing the failing red integration test for the whole pipeline at the popup + builder + dispatcher seam. This is the section's Red criterion owner.
+- Two senior-dev todos: **B4** (modifying `CastDispatcher.dispatch` and wiring dispatcher tests — a hot, integration-critical method; small change but judgment call on `systemPromptFilePath` semantics carries risk if mis-implemented), and **C5** (the `CommandPopupBuilder.refineCastAction` closure — coordinates the active-note guard, dispatch input construction with the new field, and popup dismissal).
+- One **ui-integration-tester** todo (**E1**) writing the failing red integration test for the whole pipeline at the popup + builder + dispatcher seam.
 - No lead-dev: the design questions are closed in this plan, no concurrency/perf, no unknown root cause.
 
 ## Dispatch
 
 Section order: A → B → C → D → E → F.
 
-Within Section C, dispatch order is **junior-dev (C1–C4)** → **senior-dev (C5)**: junior lands the type, helper, and harness extension; senior lands the builder closure that consumes them.
+Within Section C, dispatch order is **junior-dev (C1–C4, C6)** → **senior-dev (C5)**: junior lands the type, helper, harness extension, and hide-checkbox change; senior lands the builder closure that consumes them.
 
 Section E groups: **ui-integration-tester (E1)** first owns the section Red criterion → **junior-dev (E2)** lands the mock extension if needed (note: E2 may need to land *before* E1 if the mock is required to make E1 testable — the executor will read `tests/__mocks__/obsidian.ts` first and decide order; either way, both must be green before F).
 
@@ -903,19 +903,19 @@ All other sections are single-tier.
 
 3. **The Refine prompt's no-instruction-exit behavior is a prompt property, not testable in plugin tests.** Mitigation: substring assertion in A4 verifies the prompt contains the no-instruction-exit instruction; end-to-end verification requires running Claude Code against a note (out of scope). Document in F1.
 
-4. **Remote-mode Refine sends an inline `userPrompt` ~30 lines long over the wire on every cast.** Acknowledged trade-off; documented future migration in Technical notes. Not a blocker.
+4. **`RefineMaterializer.run()` failure at startup.** Plugin load continues even if the materializer fails (try/catch pattern mirroring forge). Risk: `refine.md` missing → cast will fail to resolve `systemPromptFile`. **Mitigated:** same behavior as forge if its materializer fails; `console.error` surfaces the issue; the file is written on every startup, so a transient failure self-heals.
 
-5. **`executeOnNote: true` override silently ignores the OptionsPanel checkbox toggle for Refine.** UX risk: a user who toggles the checkbox off and clicks Cast expects executeOnNote=false to apply, but the dispatch input forces true. Documented as Open question §2; defer the checkbox-hiding fix to a future iteration.
+5. **`OptionsPanel` `showExecuteOnNote: false` skips checkbox DOM — `#bindReset` must not reference a missing checkbox.** Pass a `null`-ish sentinel or gate the reset logic behind the same flag. **Mitigated:** C6 todo is explicit about this; the pattern is a simple `if` guard.
 
 6. **`SpellEvents.dismiss-refine` rename is breaking inside the plugin.** Two emit sites, two listen sites, plus tests. Mitigation: D2 + D3 + D4 + D5 + D6 land in one section; D7 grep-asserts no straggler.
 
-7. **The `refineCastSpell().path = '<refine>'` is a synthetic that the `RemoteCaster` would pass to the portal as `spellPath`** if not omitted by the dispatcher. Mitigation: B2 explicitly sets `spellPath: undefined` on the `CastInput` when `systemPromptInline` is set — verified in B3 unit test case (b).
+7. **The `refineCastSpell().path = '<refine>'` sentinel would confuse the portal if passed as-is.** Mitigation: `CastDispatchInput.systemPromptFilePath` is set by the builder; the dispatcher uses it as `CastInput.spellPath` for remote casts (vault-relative path to `refine.md`). Verified in B4 unit test case (b).
 
 ## Open questions (carried forward for the dev agent / orchestrator)
 
-1. **Should the `executeOnNote` checkbox in the Refine OptionsPanel be hidden in this iteration?** Plan defers it; the checkbox stays visible but its toggle is ignored. If user feedback strongly objects, hiding it is a follow-up iteration.
+1. **`executeOnNote` checkbox hidden — resolved.** C6 hides it via `showExecuteOnNote: false` on `OptionsPanelDeps`.
 
-2. **Should remote-mode Refine cast be supported at all in this iteration?** Plan supports it via inline `userPrompt` (`systemPromptInline` → caster receives `spellPath: undefined`). If the portal's contract requires a non-null `spellPath` (verify against `grimoire-portal/src/cast/...`), remote-mode Refine would 400. **Verification step in B3:** the dispatcher's behavior with `systemPromptInline` set sets `spellPath: undefined` on the `CastInput`; the portal must accept the optional field. Spot-checked against the current code (`src/execution/Caster.ts:6` says `spellPath` is optional for inline casts; this is the same shape forge had pre-018). **Resolution: supported.** If the portal regresses on optional-spellPath, that's a separate iteration's concern.
+2. **Remote-mode Refine cast — resolved.** Materialized `refine.md` is a real vault path; `systemPromptFilePath` is passed as `CastInput.spellPath` for remote casts. Portal reads the file from the vault. Same shape as forge post-018. Verified in B4 unit test.
 
 3. **Should the Refine cast-log row have a click-to-open-active-note affordance?** Currently `CastLogRow` has a navigation affordance for live spells (line 196 early-return). Forge entries skip it. Refine entries will also skip it (A6 todo). Future iteration may add "click Refine row → open the note Refine modified" — out of scope here.
 

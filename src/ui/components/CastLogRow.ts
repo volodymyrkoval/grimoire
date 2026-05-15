@@ -1,5 +1,5 @@
 import type { CastRecord } from '../../castLog/CastRecord';
-import { FORGE_SPELL_PATH } from '../../castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../castLog/types';
 import { formatRelativeTime } from '../../castLog/format/relativeTime';
 import { formatDuration } from '../../castLog/format/duration';
 import { resolveDisplayName } from '../../castLog/format/displayName';
@@ -191,9 +191,15 @@ function appendFollowUpRow(body: HTMLElement, record: CastRecord): void {
   row.createSpan({ text: record.followUp });
 }
 
-/** Appends execution-on-note indicator if applicable (non-Forge, executeOnNote=true). */
+/** Appends execution-on-note indicator if applicable (non-Forge, non-Refine, executeOnNote=true). */
 function appendExecuteOnNoteRow(body: HTMLElement, record: CastRecord): void {
-  if (record.spellPath === FORGE_SPELL_PATH || record.executeOnNote !== true) return;
+  if (
+    record.spellPath === FORGE_SPELL_PATH ||
+    record.spellPath === REFINE_SPELL_PATH ||
+    record.executeOnNote !== true
+  ) {
+    return;
+  }
   const row = body.createDiv({ cls: 'cast-log-execute-on-note-row cast-log-field-row' });
   row.createSpan({ cls: 'cast-log-field-label', text: 'Runs on note:' });
   row.createSpan({ text: '✓' });

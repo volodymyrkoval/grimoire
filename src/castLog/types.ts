@@ -55,3 +55,8 @@ export type CastLogEvent = CastedEvent | ErrorEvent | InProgressEvent | DoneEven
  * Sentinel spell path for casts originating from the Forge (not a live spell).
  */
 export const FORGE_SPELL_PATH = '<forge>' as const;
+
+/**
+ * Sentinel spell path for casts originating from the Refine sentinel (not a live spell).
+ */
+export const REFINE_SPELL_PATH = '<refine>' as const;

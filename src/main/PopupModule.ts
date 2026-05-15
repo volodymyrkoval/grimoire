@@ -8,6 +8,7 @@ import { CastDispatcher } from '../cast/CastDispatcher';
 import { createCaster } from '../cast/createCaster';
 import { CommandPopupBuilder } from '../ui/popup/CommandPopupBuilder';
 import type { CastLogModule } from './CastLogModule';
+import type { PluginPaths } from '../infra/PluginPaths';
 
 /**
  * Owns the spell browser popup and its lifecycle: opens the popup command,
@@ -21,6 +22,7 @@ export class PopupModule {
   readonly #getAgentHooksDirAbs: () => string;
   readonly #sessionMap: OptionsSessionMap;
   readonly #imprinter: ForgeImprinter;
+  readonly #paths: PluginPaths;
 
   constructor(deps: {
     app: App;
@@ -29,12 +31,14 @@ export class PopupModule {
     castLog: CastLogModule;
     getAgentHooksDirAbs: () => string;
     forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
+    paths: PluginPaths;
   }) {
     this.#app = deps.app;
     this.#getData = deps.getData;
     this.#overrides = deps.overrides;
     this.#castLog = deps.castLog;
     this.#getAgentHooksDirAbs = deps.getAgentHooksDirAbs;
+    this.#paths = deps.paths;
 
     this.#sessionMap = new OptionsSessionMap();
     this.#imprinter = new ForgeImprinter({
@@ -68,6 +72,7 @@ export class PopupModule {
         caster: () => createCaster(this.#getData().settings, this.#getAgentHooksDirAbs()),
         logWriter: () => this.#castLog.activeLogStore(),
       }),
+      paths: this.#paths,
     }).build().open();
   }
 }

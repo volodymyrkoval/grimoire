@@ -147,4 +147,44 @@ describe('CastLogModule', () => {
     consoleSpy.mockRestore();
   });
 
+  it('initStartupMaintenance invokes refineMaterializerFactory once and awaits its run()', async () => {
+    const refineRunMock = vi.fn().mockResolvedValue(undefined);
+    const refineMaterializerFactorySpy = vi.fn(() => ({ run: refineRunMock }));
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
+      forgeMaterializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      refineMaterializerFactory: refineMaterializerFactorySpy,
+      getSettings: () => ({ spellTag: '#spell', forgeOutputFolder: 'Spells', vaultMountPath: '/vault' }),
+    });
+
+    await module.initStartupMaintenance();
+
+    expect(refineMaterializerFactorySpy).toHaveBeenCalledTimes(1);
+    expect(refineRunMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejection in the refine materializer is caught and logged, plugin still loads', async () => {
+    const refineRunMock = vi.fn().mockRejectedValue(new Error('refine disk full'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
+      forgeMaterializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      refineMaterializerFactory: () => ({ run: refineRunMock }),
+      getSettings: () => ({ spellTag: '#spell', forgeOutputFolder: 'Spells', vaultMountPath: '/vault' }),
+    });
+
+    await expect(module.initStartupMaintenance()).resolves.toBeUndefined();
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('RefineMaterializer'), expect.any(Error));
+
+    consoleSpy.mockRestore();
+  });
+
 });

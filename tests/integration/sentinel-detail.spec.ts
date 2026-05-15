@@ -51,12 +51,17 @@ describe('sentinel detail', () => {
   });
 
   it('D4: Enter on Refine fully closes the modal (no detail, no cast)', () => {
+    // refineCastAction is created fresh in this test to capture it and make it dismiss
+    const refineCastActionSpy = vi.fn((snap) => h.modal.dismiss());
+    h = createPopupHarness({ castAction: castActionSpy, refineCastAction: refineCastActionSpy });
+
     navigateToRefine(h);
     h.pressKey('Enter');
 
     // Modal removed from DOM entirely
     expect(h.modal.containerEl.parentElement).toBe(null);
-    // Cast was NOT called
+    // Cast was NOT called, but refineCastAction was
     expect(castActionSpy).not.toHaveBeenCalled();
+    expect(refineCastActionSpy).toHaveBeenCalledOnce();
   });
 });

@@ -15,7 +15,7 @@ import type { FormDefaults } from "../domain/settings/FormDefaults";
 import { SpellOverrideStore } from "../domain/settings/SpellOverrideStore";
 import { OptionsSessionMap } from "./options/OptionsSessionMap";
 import type { OptionsFormSnapshot } from "./options/OptionsFormState";
-import { optionsFormSnapshotFromDefaults } from "./options/OptionsFormState";
+import { optionsFormSnapshotFromDefaults, optionsFormSnapshotFromRefineDefaults } from "./options/OptionsFormState";
 import { SpellOptionsDetail } from "./components/SpellOptionsDetail";
 import { RefineOptionsDetail } from "./components/RefineOptionsDetail";
 import type { PopupPhase, PopupPhaseContext } from "./popup/PopupPhase";
@@ -34,6 +34,12 @@ export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
  */
 export type CastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
 
+/**
+ * Callback signature for casting the Refine sentinel with resolved options.
+ * Called when user confirms Refine from list or dialog.
+ */
+export type RefineCastAction = (snapshot: OptionsFormSnapshot) => void;
+
 export type { FormDefaults } from "../domain/settings/FormDefaults";
 
 /**
@@ -42,6 +48,7 @@ export type { FormDefaults } from "../domain/settings/FormDefaults";
  * - `spellTag`: Vault tag used to scan spells in the vault.
  * - `imprintAction`: Callback when Forge completes (new spell).
  * - `castAction`: Callback when a spell is cast.
+ * - `refineCastAction`: Callback when Refine is cast.
  * - `defaults`: Default form values (model, options per spell).
  * - `overrides`: Per-spell option overrides (persisted, mutable).
  * - `sessionMap`: Ephemeral form state per spell during popup lifetime.
@@ -52,6 +59,7 @@ export interface CommandPopupParams {
   spellTag: string;
   imprintAction: ImprintAction;
   castAction: CastAction;
+  refineCastAction: RefineCastAction;
   defaults: FormDefaults;
   overrides: SpellOverrideStore;
   sessionMap: OptionsSessionMap;
@@ -77,6 +85,7 @@ export class CommandPopup extends Modal {
   #kb = new KeyboardController(this.scope);
   readonly #imprintAction: ImprintAction;
   readonly #castAction: CastAction;
+  readonly #refineCastAction: RefineCastAction;
   readonly #formDefaults: FormDefaults;
   readonly #overrides: SpellOverrideStore;
   readonly #sessionMap: OptionsSessionMap;
@@ -96,10 +105,17 @@ export class CommandPopup extends Modal {
    */
   get currentPhase(): PopupPhase { return this.#currentPhase; }
 
+  /**
+   * Accessor for #refineCastAction to avoid unused-private-class-members error.
+   * TODO: Section D — wire in event handlers.
+   */
+  get refineCastActionForWiring(): RefineCastAction { return this.#refineCastAction; }
+
   constructor(params: CommandPopupParams) {
     super(params.app);
     this.#imprintAction = params.imprintAction;
     this.#castAction = params.castAction;
+    this.#refineCastAction = params.refineCastAction;
     this.#formDefaults = params.defaults;
     this.#overrides = params.overrides;
     this.#sessionMap = params.sessionMap;
@@ -205,7 +221,15 @@ export class CommandPopup extends Modal {
     panel.events.on("sentinel", () => { this.#reattachTabBar(); this.#renderForgeSentinelDetail(); });
     panel.events.on("open-options", (spell) => this.#renderOptionsPanel(spell));
     panel.events.on("open-refine-options", () => this.#renderRefineOptionsPanel());
-    panel.events.on("dismiss-refine", () => this.close());
+    panel.events.on("refine-cast", () => {
+      const snapshot = optionsFormSnapshotFromRefineDefaults(
+        this.#formDefaults,
+        this.#overrides,
+        this.#sessionMap,
+        SUPPORTED_MODELS,
+      );
+      this.#refineCastAction(snapshot);
+    });
     return panel;
   }
 
@@ -298,7 +322,7 @@ export class CommandPopup extends Modal {
       formDefaults: this.#formDefaults,
       models: SUPPORTED_MODELS,
       onBack: exit,
-      onCast: () => this.dismiss(),
+      onCast: (snap) => this.#refineCastAction(snap),
       onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
     });
     this.#enterDetail(detail, exit, { suspendKb: true });

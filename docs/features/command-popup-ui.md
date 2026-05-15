@@ -15,8 +15,8 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 | `ArrowRight` on spell row | Open the options panel for that spell (see `options-panel`) |
 | Click on spell row | Same as Enter |
 | `Enter` on Forge sentinel | Open Forge form (name/desc/executeOnNote/model/effort, focused on name) |
-| `Enter` on Refine sentinel | Close the popup (no detail, no cast) |
-| `ArrowRight` on Refine sentinel | Open the options panel (same as authored spell); Cast/Enter inside dismisses the popup without dispatching |
+| `Enter` on Refine sentinel | Dispatch a Refine cast against the active note; Notice if no active note open |
+| `ArrowRight` on Refine sentinel | Open the options panel (same as authored spell); Cast/Mod+Enter inside dispatches a Refine cast and fully closes the modal |
 | `Escape` or `close()` in detail | Run `exitDetail()` — destroy active detail, resume keys, return to search |
 | Back button click | Same as Escape in detail |
 | Submit Forge form | Invoke `imprintAction(snapshot)` then `exitDetail()` |
@@ -32,7 +32,7 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 ┌────────────────────┐   Enter/click on spell row → castAction(spell, defaultSnapshot), close popup (search→close)
 │   SEARCH phase     │   ArrowRight on spell row  → renderOptionsPanel(spell)
 │  • #kb active      │   Enter on Forge sentinel  → renderForgeSentinelDetail()
-│  • TabBar enabled  │   Enter on Refine sentinel → close popup (no detail route)
+│  • TabBar enabled  │   Enter on Refine sentinel → refineCastAction(defaultSnapshot), close popup
 │                    │   ArrowRight on Refine sentinel → renderRefineSentinelOptions()
 └─────────┬──────────┘
           │
@@ -45,14 +45,14 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 │                                            │
 │  Forge sentinel:  kb.suspend(); FSD owns its own KeyboardController
 │  Options panel:   kb.suspend(); OptionsPanel owns its own KeyboardController
-│  Refine options:  kb.suspend(); same as spell options panel, but Cast/Enter dismisses without dispatching
+│  Refine options:  kb.suspend(); same as spell options panel; Cast/Enter dispatches a Refine cast
 └────────────────────────────────────────────┘
 ```
 
 Detail variants:
 - **Forge sentinel** — `renderForgeSentinelDetail`: kb suspended, `ForgeSentinelDetail` mounted (owns model-select ArrowUp/Down). `destroy()` runs in `exitDetail` before `kb.resume()`.
 - **Spell options panel** — `renderOptionsPanel`: kb suspended, `SpellOptionsDetail` (which mounts `OptionsPanel`) owns its own keys (Cmd+Enter for Cast). `destroy()` runs in `exitDetail` before `kb.resume()`.
-- **Refine sentinel options** — `renderRefineSentinelOptions`: kb suspended, same panel and form as spell options. `onCast` calls `dismiss()` instead of dispatching a cast action.
+- **Refine sentinel options** — `renderRefineSentinelOptions`: kb suspended, same panel and form as spell options. `onCast` calls `refineCastAction(snapshot)` to dispatch a Refine cast.
 
 ## Constructor
 

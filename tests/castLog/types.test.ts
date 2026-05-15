@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { CastLogEvent, CastLogStage } from '../../src/castLog/types';
-import { FORGE_SPELL_PATH } from '../../src/castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../src/castLog/types';
 
 function assertNever(_x: never): never {
   throw new Error('unhandled CastLogEvent stage');
@@ -61,6 +61,10 @@ describe('CastLogEvent', () => {
 
   it('should export FORGE_SPELL_PATH as <forge>', () => {
     expect(FORGE_SPELL_PATH).toBe('<forge>');
+  });
+
+  it('should export REFINE_SPELL_PATH as <refine>', () => {
+    expect(REFINE_SPELL_PATH).toBe('<refine>');
   });
 
   it('switch over stage covers all variants at compile time', () => {

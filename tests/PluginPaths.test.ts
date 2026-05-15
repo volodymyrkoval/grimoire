@@ -51,4 +51,18 @@ describe('PluginPaths', () => {
     const expected = normalizePath(`${pluginDir}/forge.md`);
     expect(paths.forgeSpellPathVaultRel()).toBe(expected);
   });
+
+  it('refineSpellPathPluginRel returns normalized path to refine.md file', () => {
+    const pluginDir = '.obsidian/plugins/grimoire';
+    const paths = new PluginPaths(pluginDir);
+    const expected = normalizePath(`${pluginDir}/refine.md`);
+    expect(paths.refineSpellPathPluginRel()).toBe(expected);
+  });
+
+  it('refineSpellPathVaultRel returns vault-relative refine.md path', () => {
+    const pluginDir = '.obsidian/plugins/grimoire';
+    const paths = new PluginPaths(pluginDir);
+    const expected = normalizePath(`${pluginDir}/refine.md`);
+    expect(paths.refineSpellPathVaultRel()).toBe(expected);
+  });
 });

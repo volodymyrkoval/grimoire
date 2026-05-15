@@ -1,6 +1,13 @@
 import { normalizePath } from 'obsidian';
 
-/** Encapsulates normalized paths to plugin directories and log files. */
+/**
+ * Encapsulates normalized paths to plugin directories and log files.
+ *
+ * Serves as a single authority for all paths the plugin needs: directories (plugin root,
+ * agent hooks, scratch), log files (plugin-side and agent-side cast logs), and spell paths
+ * (forge.md and refine.md). All paths are normalized via Obsidian's `normalizePath()`.
+ * Both plugin-relative and vault-relative forms are provided where needed for different contexts.
+ */
 export class PluginPaths {
   readonly #pluginDir: string;
   readonly #pluginLog: string;
@@ -53,5 +60,21 @@ export class PluginPaths {
    */
   forgeSpellPathVaultRel(): string {
     return normalizePath(`${this.#pluginDir}/forge.md`);
+  }
+
+  /**
+   * Returns the refine spell path relative to the plugin directory root.
+   * To obtain the OS-level absolute path, prepend `vaultMountPath`.
+   */
+  refineSpellPathPluginRel(): string {
+    return normalizePath(`${this.#pluginDir}/refine.md`);
+  }
+
+  /**
+   * Returns the refine spell path expressed relative to the vault root,
+   * suitable for sending to the portal as `spellPath`.
+   */
+  refineSpellPathVaultRel(): string {
+    return normalizePath(`${this.#pluginDir}/refine.md`);
   }
 }

@@ -16,7 +16,7 @@
 import { App } from 'obsidian';
 import { vi } from 'vitest';
 import { CommandPopup } from '../../src/ui/CommandPopup';
-import type { ImprintAction, FormDefaults, CastAction } from '../../src/ui/CommandPopup';
+import type { ImprintAction, FormDefaults, CastAction, RefineCastAction } from '../../src/ui/CommandPopup';
 import type { Scope } from 'obsidian';
 import type { Effort } from '../../src/domain/settings/Settings';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
@@ -55,6 +55,7 @@ function makeFakeCastLogPanelDeps(): Omit<CastLogPanelDeps, 'openLink'> {
 export function createPopupHarness(options?: {
   imprintAction?: ImprintAction;
   castAction?: CastAction;
+  refineCastAction?: RefineCastAction;
   defaults?: FormDefaults;
   overrides?: SpellOverrideStore;
   sessionMap?: OptionsSessionMap;
@@ -62,6 +63,7 @@ export function createPopupHarness(options?: {
   const app = new App() as any;
   const imprintAction = options?.imprintAction ?? vi.fn();
   const castAction: CastAction = options?.castAction ?? vi.fn();
+  const refineCastAction: RefineCastAction = options?.refineCastAction ?? vi.fn();
   const defaults: FormDefaults = options?.defaults ?? { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' };
   const overrides = options?.overrides ?? new SpellOverrideStore({
     data: { settings: {} as any, spellOverrides: {} },
@@ -84,7 +86,7 @@ export function createPopupHarness(options?: {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction, defaults, overrides, sessionMap, castLogPanelDeps: makeFakeCastLogPanelDeps() });
+  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction, refineCastAction, defaults, overrides, sessionMap, castLogPanelDeps: makeFakeCastLogPanelDeps() });
   modal.open();
   const { contentEl } = modal;
 

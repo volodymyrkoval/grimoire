@@ -1,4 +1,4 @@
-import { FORGE_SPELL_PATH } from '../../castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../castLog/types';
 import type { CastRecord } from '../../castLog/CastRecord';
 
 /**
@@ -24,6 +24,10 @@ export function resolveDisplayName(record: CastRecord): string {
       return `Forge: ${basename}`;
     }
     return 'Forge';
+  }
+
+  if (record.spellPath === REFINE_SPELL_PATH) {
+    return 'Refine';
   }
 
   return getBasename(record.spellPath);

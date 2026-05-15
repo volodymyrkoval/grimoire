@@ -6,12 +6,12 @@ import type { Spell, Sentinel } from "./Spell";
  * - `sentinel`: user pressed Enter/clicked Forge sentinel.
  * - `open-options`: user pressed Right on a spell.
  * - `open-refine-options`: user pressed Right on the Refine sentinel.
- * - `dismiss-refine`: user pressed Enter/clicked the Refine sentinel to dismiss its popup.
+ * - `refine-cast`: fired when the Refine sentinel is confirmed and a cast should be dispatched.
  */
 export type SpellEvents = {
   cast: Spell;
   sentinel: Sentinel;
   "open-options": Spell;
   "open-refine-options": void;
-  "dismiss-refine": void;
+  "refine-cast": void;
 };

@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { CastRecord } from '../../src/castLog/CastRecord';
 import { CastLogRow } from '../../src/ui/components/CastLogRow';
-import { FORGE_SPELL_PATH } from '../../src/castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../src/castLog/types';
 
 const NOW = new Date('2026-05-14T12:00:00Z');
 
@@ -258,6 +258,26 @@ describe('CastLogRow', () => {
         castId: 'cast-xyz',
         status: 'done',
         spellPath: FORGE_SPELL_PATH,
+        model: 'claude-opus-4-7',
+        effort: null,
+        contextNotes: [],
+        executeOnNote: true,
+        castedTs: NOW.toISOString(),
+      };
+
+      const row = new CastLogRow(container, record, () => {});
+      row.render(true, NOW, () => {});
+
+      const body = container.querySelector('.cast-log-row-body') as HTMLElement;
+      expect(body.textContent).not.toContain('Runs on note:');
+    });
+
+    it('omits execute-on-note for refine spells (refine always targets active note)', () => {
+      const container = document.createElement('div');
+      const record: CastRecord = {
+        castId: 'cast-xyz',
+        status: 'done',
+        spellPath: REFINE_SPELL_PATH,
         model: 'claude-opus-4-7',
         effort: null,
         contextNotes: [],

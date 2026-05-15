@@ -18,7 +18,7 @@ Each dispatch generates a UUID via `crypto.randomUUID`, threads it through the r
 - **`castId` is required on `CastRunInput` and on both dispatcher deps.** Optional would invite drift where some paths skip log entries — exactly the failure mode the contract prevents.
 - **Dispatchers own id generation, not `main.ts`.** Generating after each dispatcher's guard passes means a guard-blocked cast never gets an id and never gets a `casted` event.
 - **Runner stays oblivious to the store.** It threads `castId` into env and surfaces failures via its existing `onFailure(msg)` callback; the dispatcher/imprinter writes `error` from inside that callback. Preserves runner's single responsibility.
-- **`FORGE_SPELL_PATH = '<forge>'` lives in the log types module**, not in `forge/`, because it is a property of the log contract and future readers will render it specially.
+- **`FORGE_SPELL_PATH = '<forge>'` and `REFINE_SPELL_PATH = '<refine>'` live in the log types module**, not in `forge/` or `refine/`, because they are properties of the log contract and future readers will render them specially. Each sentinel identifies casts originating from the corresponding trigger (Forge form vs. Refine sentinel).
 - **No schema-version field yet.** Deferred to the first breaking change. Adding `schemaVersion: 1` now would lock the format earlier than necessary.
 
 ## Scope

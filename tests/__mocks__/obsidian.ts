@@ -5,9 +5,50 @@ export type EventRef = object;
 /**
  * Mock of Obsidian's Workspace class.
  * Provides access to the active file and link navigation.
+ *
+ * getActiveFile() returns the file set via setActiveFile(), or null by default.
+ * The returned object includes { path, extension } where extension is extracted from path.
  */
 export class Workspace {
-  getActiveFile = vi.fn<() => any>(() => null);
+  private activeFile: { path: string; extension: string } | null = null;
+
+  /**
+   * Returns the currently active file (set via setActiveFile), or null.
+   * The returned shape includes `extension` extracted from the path's basename.
+   */
+  getActiveFile = vi.fn<() => any>((): { path: string; extension: string } | null => {
+    return this.activeFile;
+  });
+
+  /**
+   * Set the active file for this workspace mock.
+   * Pass null to clear it (return null from getActiveFile).
+   * Pass an object with { path: string; extension?: string } — if extension is omitted,
+   * it is extracted from the path's basename (e.g., 'notes/today.md' → 'md').
+   */
+  setActiveFile(fileOrNull: { path: string; extension?: string } | null): void {
+    if (fileOrNull === null) {
+      this.activeFile = null;
+    } else {
+      const extension =
+        fileOrNull.extension ?? (fileOrNull.path.split('.').pop() ?? '');
+      this.activeFile = { path: fileOrNull.path, extension };
+    }
+  }
+
+  /**
+   * Reset the active file to null and clear the getActiveFile mock.
+   * Call this in beforeEach to ensure test isolation.
+   */
+  resetActiveFile(): void {
+    this.activeFile = null;
+    this.getActiveFile.mockReset();
+    // Re-stub getActiveFile after reset to restore the implementation.
+    this.getActiveFile = vi.fn<() => any>((): { path: string; extension: string } | null => {
+      return this.activeFile;
+    });
+  }
+
   openLinkText = vi.fn<(path: string, source: string, newLeaf?: boolean) => void>();
 }
 

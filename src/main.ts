@@ -64,6 +64,7 @@ export default class GrimoirePlugin extends Plugin {
         absForCaster: `${this.data.settings.vaultMountPath}/${paths.forgeSpellPathVaultRel()}`,
         vaultRelForPortal: paths.forgeSpellPathVaultRel(),
       }),
+      paths,
     });
   }
 

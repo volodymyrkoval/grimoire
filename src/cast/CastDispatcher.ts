@@ -15,6 +15,15 @@ export interface CastDispatchInput {
   settings: GrimoireSettings;
   activeFilePath: string | null;
   executeOnNote: boolean;
+  /**
+   * Optional explicit system-prompt file path. When present, used directly as
+   * `systemPromptFile` (local) and as `spellPath` (remote, so the portal reads
+   * the file from the vault). Overrides the default `vaultMountPath/spell.path`
+   * computation. Used by Refine cast (where spell.path is the cast-log sentinel
+   * `<refine>`, not a real vault path). Live spells and forge cast leave this
+   * undefined and use the standard computation.
+   */
+  readonly systemPromptFilePath?: string;
 }
 
 /**
@@ -82,11 +91,11 @@ export class CastDispatcher {
     caster.cast(
       {
         castId,
-        spellPath: spell.path,
+        spellPath: input.systemPromptFilePath ?? spell.path,
         modelId: model,
         effort,
         userPrompt,
-        systemPromptFile: isRemote ? undefined : `${settings.vaultMountPath}/${spell.path}`,
+        systemPromptFile: isRemote ? undefined : (input.systemPromptFilePath ?? `${settings.vaultMountPath}/${spell.path}`),
         vaultMountPath: settings.vaultMountPath,
       },
       {

@@ -37,6 +37,7 @@ export class RefineOptionsDetail {
     this.#panel.destroy();
   }
 
+  /** Resolves Refine sentinel options (model, effort) from defaults and overrides. */
   #resolveOptions(params: RefineOptionsDetailParams) {
     return resolveSpellOptions({
       spellPath: REFINE_SENTINEL_PATH,
@@ -61,6 +62,7 @@ export class RefineOptionsDetail {
     });
   }
 
+  /** Builds initial form state from resolved options and session context notes/follow-up. */
   #buildFormState(resolved: ReturnType<typeof resolveSpellOptions>, params: RefineOptionsDetailParams) {
     const sessionEntry = params.sessionMap.get(REFINE_SENTINEL_PATH);
     return new OptionsFormState({
@@ -72,6 +74,7 @@ export class RefineOptionsDetail {
     });
   }
 
+  /** Mounts OptionsPanel with Refine-specific configuration (no executeOnNote toggle). */
   #createPanel(resolved: ReturnType<typeof resolveSpellOptions>, formState: OptionsFormState, params: RefineOptionsDetailParams) {
     const snapshot = { model: resolved.model, effort: resolved.effort };
     const panel = new OptionsPanel(params.scope);
@@ -83,6 +86,7 @@ export class RefineOptionsDetail {
       onCast: params.onCast,
       onOverrideChanged: params.onOverrideChanged,
       onBack: params.onBack,
+      showExecuteOnNote: false,
     });
     return panel;
   }

@@ -4,6 +4,7 @@ import type { CastLogWriter } from '../castLog/CastLogWriter';
 import { CastLogStore } from '../castLog/store';
 import { HookMaterializer } from '../castLog/HookMaterializer';
 import { ForgeMaterializer } from '../forge/ForgeMaterializer';
+import { RefineMaterializer } from '../refine/RefineMaterializer';
 import { ScratchSweeper } from '../castLog/ScratchSweeper';
 import { CastLogSource } from '../castLog/CastLogSource';
 import { VaultRefreshCoordinator } from '../castLog/VaultRefreshCoordinator';
@@ -31,6 +32,11 @@ type ForgeMaterializerPorts = {
   adapter?: DataAdapter;
 };
 
+type RefineMaterializerPorts = {
+  getRefinePathAbs: () => string;
+  adapter?: DataAdapter;
+};
+
 /**
  * Manages cast log storage, source, and coordination with vault refresh and polling timers.
  * All "casted" events write to the local log regardless of execution mode; the remote log is
@@ -44,6 +50,7 @@ export class CastLogModule {
   readonly #materializerFactory: (ports: MaterializerPorts) => { run(): Promise<void> };
   readonly #sweeperFactory: (ports: SweeperPorts) => { sweep(): Promise<void> };
   readonly #forgeMaterializerFactory: (ports: ForgeMaterializerPorts) => { run(): Promise<void> };
+  readonly #refineMaterializerFactory: (ports: RefineMaterializerPorts) => { run(): Promise<void> };
   readonly #getSettings: () => ForgeSystemPromptInput;
 
   constructor(deps: {
@@ -52,6 +59,7 @@ export class CastLogModule {
     materializerFactory?: (ports: MaterializerPorts) => { run(): Promise<void> };
     sweeperFactory?: (ports: SweeperPorts) => { sweep(): Promise<void> };
     forgeMaterializerFactory?: (ports: ForgeMaterializerPorts) => { run(): Promise<void> };
+    refineMaterializerFactory?: (ports: RefineMaterializerPorts) => { run(): Promise<void> };
     getSettings?: () => ForgeSystemPromptInput;
   }) {
     this.#app = deps.app;
@@ -59,6 +67,7 @@ export class CastLogModule {
     this.#materializerFactory = deps.materializerFactory ?? ((ports) => new HookMaterializer(ports));
     this.#sweeperFactory = deps.sweeperFactory ?? ((ports) => new ScratchSweeper(ports));
     this.#forgeMaterializerFactory = deps.forgeMaterializerFactory ?? ((ports) => new ForgeMaterializer(ports));
+    this.#refineMaterializerFactory = deps.refineMaterializerFactory ?? ((ports) => new RefineMaterializer(ports));
     this.#getSettings = deps.getSettings ?? (() => ({ spellTag: '', forgeOutputFolder: '', vaultMountPath: '' }));
 
     const adapter = this.#app.vault.adapter;
@@ -131,6 +140,17 @@ export class CastLogModule {
       await forgeMaterializer.run();
     } catch (e) {
       console.error('ForgeMaterializer failed', e);
+    }
+
+    const refineMaterializer = this.#refineMaterializerFactory({
+      adapter,
+      getRefinePathAbs: () => this.#paths.refineSpellPathPluginRel(),
+    });
+
+    try {
+      await refineMaterializer.run();
+    } catch (e) {
+      console.error('RefineMaterializer failed', e);
     }
 
     const sweeper = this.#sweeperFactory({

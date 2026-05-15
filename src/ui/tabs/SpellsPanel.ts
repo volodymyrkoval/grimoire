@@ -72,7 +72,7 @@ export class SpellsPanel implements NavigablePanel {
   /**
    * Execute the action for a selected row (spell or sentinel).
    * - Spell at index < filteredSpells.length: emit cast event.
-   * - Refine sentinel: emit dismiss-refine (closes modal, does not enter options).
+   * - Refine sentinel: emit refine-cast event (triggers a Refine cast).
    * - Forge or other sentinel: emit sentinel event (enters detail panel).
    * Index semantics: spells occupy [0, filteredSpells.length); sentinels occupy [filteredSpells.length, ...).
    */
@@ -84,7 +84,7 @@ export class SpellsPanel implements NavigablePanel {
       const sentinel = SENTINELS[index - this.#filteredSpells.length];
       if (sentinel) {
         if (sentinel.kind === "refine") {
-          this.events.emit("dismiss-refine");
+          this.events.emit("refine-cast");
           return;
         }
         this.events.emit("sentinel", sentinel);

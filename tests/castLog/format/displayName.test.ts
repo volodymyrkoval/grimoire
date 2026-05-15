@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveDisplayName } from '../../../src/castLog/format/displayName';
 import type { CastRecord } from '../../../src/castLog/CastRecord';
+import { REFINE_SPELL_PATH } from '../../../src/castLog/types';
 
 describe('resolveDisplayName', () => {
   const baseRecord = {
@@ -87,5 +88,22 @@ describe('resolveDisplayName', () => {
       affectedFiles: ['first.md', 'second.md', 'third.md'],
     };
     expect(resolveDisplayName(record)).toBe('Forge: first');
+  });
+
+  it('returns "Refine" when spellPath is REFINE_SPELL_PATH', () => {
+    const record: CastRecord = {
+      ...baseRecord,
+      spellPath: REFINE_SPELL_PATH,
+    };
+    expect(resolveDisplayName(record)).toBe('Refine');
+  });
+
+  it('returns "Refine" even with affectedFiles (Refine modifies active note, not spell file)', () => {
+    const record: CastRecord = {
+      ...baseRecord,
+      spellPath: REFINE_SPELL_PATH,
+      affectedFiles: ['x.md'],
+    };
+    expect(resolveDisplayName(record)).toBe('Refine');
   });
 });
