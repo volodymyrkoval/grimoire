@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { FormDefaults, OptionsCastAction } from '../src/ui/CommandPopup';
+import type { FormDefaults, CastAction } from '../src/ui/CommandPopup';
 // obsidian is aliased to tests/__mocks__/obsidian.ts in vitest.config.ts
 import { App } from 'obsidian';
 import { CommandPopup } from '../src/ui/CommandPopup';
@@ -69,17 +69,16 @@ function makeFakeCastLogPanelDeps(): Omit<CastLogPanelDeps, 'openLink'> {
   };
 }
 
-function makePopup(optionsCastAction?: OptionsCastAction) {
+function makePopup(castAction?: CastAction) {
   return new CommandPopup({
     app: makeApp(),
     spellTag: 'spell',
     imprintAction: vi.fn(),
-    castAction: vi.fn(),
+    castAction: castAction ?? vi.fn(),
     defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
     overrides: makeStubOverrides(),
     sessionMap: new OptionsSessionMap(),
     castLogPanelDeps: makeFakeCastLogPanelDeps(),
-    optionsCastAction: optionsCastAction ?? vi.fn(),
   });
 }
 
@@ -313,7 +312,6 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: fakeDeps,
-      optionsCastAction: vi.fn(),
     });
 
     const panels = (popup as any).panels as any[];
@@ -336,7 +334,6 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
-      optionsCastAction: vi.fn(),
     });
 
     const panels = (popup as any).panels as any[];
@@ -364,7 +361,6 @@ describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
       overrides: stubOverrides,
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
-      optionsCastAction: vi.fn(),
     });
 
     const spellsPanel = (popup as any).panels[0];

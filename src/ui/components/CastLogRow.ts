@@ -3,7 +3,7 @@ import { FORGE_SPELL_PATH } from '../../castLog/types';
 import { formatRelativeTime } from '../../castLog/format/relativeTime';
 import { formatDuration } from '../../castLog/format/duration';
 import { resolveDisplayName } from '../../castLog/format/displayName';
-import { statusBadge } from '../../castLog/format/statusBadge';
+import { statusBadge } from './statusBadge';
 import { durationMs } from '../../castLog/format/durationMs';
 
 export class CastLogRow {

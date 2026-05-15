@@ -1,42 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CastDispatcher } from '../src/cast/CastDispatcher';
-import type { CastLogStore } from '../src/castLog/store';
-import { CastRunner, CastRunCallbacks } from '../src/cast/CastRunner';
-import { RemoteCastTransport } from '../src/cast/RemoteCastTransport';
+import type { CastInput, CastCallbacks, Caster } from '../src/cast/Caster';
+import type { CastLogWriter } from '../src/castLog/CastLogWriter';
 import { GrimoireSettings } from '../src/domain/settings/Settings';
 import { Spell } from '../src/domain/spells/Spell';
 
-function makeStubTransport() {
-  let capturedInput: any;
-  let capturedCallbacks: any;
-  const stub = {
-    run: vi.fn((input: any, callbacks: any) => {
-      capturedInput = input;
-      capturedCallbacks = callbacks;
-    }),
-  } as unknown as RemoteCastTransport;
+function makeStubCaster() {
+  let capturedInput: CastInput | undefined;
+  let capturedCallbacks: CastCallbacks | undefined;
+  const castFn = vi.fn((input: CastInput, cbs: CastCallbacks) => {
+    capturedInput = input;
+    capturedCallbacks = cbs;
+  });
+  const instance: Caster = { cast: castFn };
   return {
-    stub,
-    getInput: () => capturedInput,
-    getCallbacks: () => capturedCallbacks,
+    thunk: () => instance,
+    getInput: () => capturedInput!,
+    getCallbacks: () => capturedCallbacks!,
+    castFn,
   };
 }
 
-function makeStubRunner() {
-  let capturedInput: any;
-  let capturedCallbacks: CastRunCallbacks | undefined;
-
-  const stub = {
-    run: vi.fn((input: any, callbacks: CastRunCallbacks) => {
-      capturedInput = input;
-      capturedCallbacks = callbacks;
-    }),
-  };
-
+function makeLogWriter(): CastLogWriter {
   return {
-    stub: stub as any as CastRunner,
-    getInput: () => capturedInput,
-    getCallbacks: () => capturedCallbacks,
+    recordCasted: vi.fn().mockResolvedValue(undefined),
+    recordError: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -57,27 +45,24 @@ const baseSettings: GrimoireSettings = {
 };
 
 describe('CastDispatcher', () => {
-  const castLogStoreStub = {
-    recordCasted: vi.fn().mockResolvedValue(undefined),
-    recordError: vi.fn().mockResolvedValue(undefined),
-  } as unknown as CastLogStore;
-
   beforeEach(() => vi.clearAllMocks());
+
+  // ── pre-flight guard 1: executeOnNote + null activeFilePath ──────────────────
 
   it('notifies "Open a note to cast against" and closes when activeFilePath is null', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
-    const { stub } = makeStubRunner();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: notifyFn,
       close: closeFn,
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -89,21 +74,110 @@ describe('CastDispatcher', () => {
 
     expect(notifyFn).toHaveBeenCalledWith('Open a note to cast against');
     expect(closeFn).toHaveBeenCalled();
-    expect(stub.run).not.toHaveBeenCalled();
+    expect(casterStub.castFn).not.toHaveBeenCalled();
   });
 
-  it('constructs prompt with activeFilePath when no context notes or followUp', () => {
-    const { stub, getInput } = makeStubRunner();
+  it('guard when activeFilePath is null and executeOnNote is true: no log entry', () => {
+    const logWriter = makeLogWriter();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
+      caster: makeStubCaster().thunk,
+      logWriter: () => logWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: baseSettings,
+      activeFilePath: null,
+      executeOnNote: true,
+    });
+
+    expect(logWriter.recordCasted).not.toHaveBeenCalled();
+    expect(logWriter.recordError).not.toHaveBeenCalled();
+  });
+
+  // ── pre-flight guard 2: remote + empty portalHost ────────────────────────────
+
+  it('pre-dispatch guard: remote + empty portalHost notifies and does not record or close', () => {
+    const notifyFn = vi.fn();
+    const closeFn = vi.fn();
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: closeFn,
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: '' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
+    expect(logWriter.recordCasted).not.toHaveBeenCalled();
+    expect(closeFn).not.toHaveBeenCalled();
+    expect(casterStub.castFn).not.toHaveBeenCalled();
+  });
+
+  it('pre-dispatch guard: remote + whitespace-only portalHost notifies and does not record or close', () => {
+    const notifyFn = vi.fn();
+    const closeFn = vi.fn();
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: closeFn,
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: '   ' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
+    expect(logWriter.recordCasted).not.toHaveBeenCalled();
+    expect(closeFn).not.toHaveBeenCalled();
+    expect(casterStub.castFn).not.toHaveBeenCalled();
+  });
+
+  // ── prompt construction ─────────────────────────────────────────────────────
+
+  it('constructs prompt with activeFilePath when no context notes or followUp', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -113,22 +187,21 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    const input = getInput();
-    expect(input.userPrompt).toContain('Execute this spell against the note at `/vault/notes/active.md`.');
+    expect(casterStub.getInput().userPrompt).toContain('Execute this spell against the note at `/vault/notes/active.md`.');
   });
 
   it('appends context notes to prompt when present', () => {
-    const { stub, getInput } = makeStubRunner();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: ['a.md', 'b.md'],
@@ -138,22 +211,21 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    const input = getInput();
-    expect(input.userPrompt).toContain('Additional context notes: a.md, b.md.');
+    expect(casterStub.getInput().userPrompt).toContain('Additional context notes: a.md, b.md.');
   });
 
   it('appends followUp to prompt when present', () => {
-    const { stub, getInput } = makeStubRunner();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -163,23 +235,77 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    const input = getInput();
-    expect(input.userPrompt).toContain('Follow-up: then do more');
+    expect(casterStub.getInput().userPrompt).toContain('Follow-up: then do more');
   });
 
-  it('calls onSuccess callback from runner', () => {
-    const notifyFn = vi.fn();
-    const { stub, getCallbacks } = makeStubRunner();
+  it('invokes caster when executeOnNote is false and activeFilePath is null', () => {
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
-      notify: notifyFn,
+      notify: vi.fn(),
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: ['ctx.md'],
+      followUp: 'do something',
+      settings: baseSettings,
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(casterStub.castFn).toHaveBeenCalled();
+    const input = casterStub.getInput();
+    expect(input.userPrompt).not.toContain('Execute this spell against the note at');
+    expect(input.userPrompt).toContain('Additional context notes: ctx.md.');
+    expect(input.userPrompt).toContain('Follow-up: do something');
+  });
+
+  it('omits leading sentence when executeOnNote is false even with an active file', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: ['ctx.md'],
+      followUp: 'extra instruction',
+      settings: baseSettings,
+      activeFilePath: 'notes/x.md',
+      executeOnNote: false,
+    });
+
+    expect(casterStub.castFn).toHaveBeenCalled();
+    const input = casterStub.getInput();
+    expect(input.userPrompt).not.toContain('Execute this spell against the note at');
+    expect(input.userPrompt).toContain('Additional context notes: ctx.md.');
+    expect(input.userPrompt).toContain('Follow-up: extra instruction');
+  });
+
+  it('includes leading sentence when executeOnNote is true with an active file', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -189,49 +315,21 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    const callbacks = getCallbacks();
-    callbacks?.onSuccess();
-
-    expect(notifyFn).toHaveBeenCalledWith('Spell cast');
+    expect(casterStub.castFn).toHaveBeenCalled();
+    expect(casterStub.getInput().userPrompt).toContain('Execute this spell against the note at `/vault/notes/active.md`.');
   });
 
-  it('calls onFailure callback with error message from runner', () => {
+  // ── local dispatch ───────────────────────────────────────────────────────────
+
+  it('notifies "Casting <name>…" with single-quoted spell name (local)', () => {
     const notifyFn = vi.fn();
-    const { stub, getCallbacks } = makeStubRunner();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: notifyFn,
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
-    });
-
-    dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: [],
-      followUp: '',
-      settings: baseSettings,
-      activeFilePath: 'notes/active.md',
-      executeOnNote: true,
-    });
-
-    const callbacks = getCallbacks();
-    callbacks?.onFailure('something went wrong');
-
-    expect(notifyFn).toHaveBeenCalledWith('Cast failed: something went wrong');
-  });
-
-  it('notifies "Casting <name>…" with single-quoted spell name', () => {
-    const notifyFn = vi.fn();
-    const { stub } = makeStubRunner();
-
-    const dispatcher = new CastDispatcher({
-      notify: notifyFn,
-      close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
@@ -248,74 +346,19 @@ describe('CastDispatcher', () => {
     expect(notifyFn).toHaveBeenCalledWith("Casting 'Summoning Circle'…");
   });
 
-  it('invokes runner when executeOnNote is false and activeFilePath is null', () => {
-    const { stub, getInput } = makeStubRunner();
+  it('local: caster.cast is called with castId in input', () => {
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+      generateId: () => 'fixed-uuid',
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: ['ctx.md'],
-      followUp: 'do something',
-      settings: baseSettings,
-      activeFilePath: null,
-      executeOnNote: false,
-    });
-
-    expect(stub.run).toHaveBeenCalled();
-    const input = getInput();
-    expect(input.userPrompt).not.toContain('Execute this spell against the note at');
-    expect(input.userPrompt).toContain('Additional context notes: ctx.md.');
-    expect(input.userPrompt).toContain('Follow-up: do something');
-  });
-
-  it('omits leading sentence when executeOnNote is false even with an active file', () => {
-    const { stub, getInput } = makeStubRunner();
-
-    const dispatcher = new CastDispatcher({
-      notify: vi.fn(),
-      close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
-    });
-
-    dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: ['ctx.md'],
-      followUp: 'extra instruction',
-      settings: baseSettings,
-      activeFilePath: 'notes/x.md',
-      executeOnNote: false,
-    });
-
-    expect(stub.run).toHaveBeenCalled();
-    const input = getInput();
-    expect(input.userPrompt).not.toContain('Execute this spell against the note at');
-    expect(input.userPrompt).toContain('Additional context notes: ctx.md.');
-    expect(input.userPrompt).toContain('Follow-up: extra instruction');
-  });
-
-  it('includes leading sentence when executeOnNote is true with an active file', () => {
-    const { stub, getInput } = makeStubRunner();
-
-    const dispatcher = new CastDispatcher({
-      notify: vi.fn(),
-      close: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreStub,
-    });
-
-    dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -325,47 +368,18 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    expect(stub.run).toHaveBeenCalled();
-    const input = getInput();
-    expect(input.userPrompt).toContain('Execute this spell against the note at `/vault/notes/active.md`.');
+    expect(casterStub.getInput().castId).toBe('fixed-uuid');
   });
 
-  it('guard when activeFilePath is null and executeOnNote is true: no log entry', () => {
-    const recordCasted = vi.fn().mockResolvedValue(undefined);
-    const recordError = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted, recordError } as unknown as CastLogStore;
+  it('local: recordCasted called once with expected shape on successful dispatch', () => {
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      castLogStore: storeStub,
-    });
-
-    dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: [],
-      followUp: '',
-      settings: baseSettings,
-      activeFilePath: null,
-      executeOnNote: true,
-    });
-
-    expect(recordCasted).not.toHaveBeenCalled();
-    expect(recordError).not.toHaveBeenCalled();
-  });
-
-  it('successful dispatch calls recordCasted once with expected shape', () => {
-    const recordCasted = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
-    const { stub } = makeStubRunner();
-
-    const dispatcher = new CastDispatcher({
-      notify: vi.fn(),
-      close: vi.fn(),
-      castRunner: stub,
-      castLogStore: storeStub,
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
     });
 
@@ -380,7 +394,7 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    expect(recordCasted).toHaveBeenCalledWith({
+    expect(logWriter.recordCasted).toHaveBeenCalledWith({
       castId: 'fixed-uuid',
       spellPath: 'spells/test.md',
       model: 'claude-sonnet-4-5',
@@ -389,52 +403,22 @@ describe('CastDispatcher', () => {
       followUp: 'then continue',
       executeOnNote: true,
     });
-    expect(recordCasted).toHaveBeenCalledTimes(1);
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(1);
   });
 
-  it('runner.run is called with castId in input', () => {
-    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError: vi.fn() } as unknown as CastLogStore;
-    const { stub, getInput } = makeStubRunner();
-
-    const dispatcher = new CastDispatcher({
-      notify: vi.fn(),
-      close: vi.fn(),
-      castRunner: stub,
-      castLogStore: storeStub,
-      generateId: () => 'fixed-uuid',
-    });
-
-    dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: [],
-      followUp: '',
-      settings: baseSettings,
-      activeFilePath: 'notes/active.md',
-      executeOnNote: true,
-    });
-
-    const input = getInput();
-    expect(input.castId).toBe('fixed-uuid');
-  });
-
-  it('onFailure calls recordError then notify with failure message', () => {
+  it('local: onAccepted fires notify "Spell cast"', () => {
     const notifyFn = vi.fn();
-    const recordError = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError } as unknown as CastLogStore;
-    const { stub, getCallbacks } = makeStubRunner();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: notifyFn,
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: storeStub,
-      generateId: () => 'fixed-uuid',
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -444,33 +428,25 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    const callbacks = getCallbacks();
-    callbacks?.onFailure('boom');
+    casterStub.getCallbacks().onAccepted({});
 
-    expect(recordError).toHaveBeenCalledWith({
-      castId: 'fixed-uuid',
-      message: 'boom',
-    });
-    expect(recordError).toHaveBeenCalledTimes(1);
-    expect(notifyFn).toHaveBeenCalledWith('Cast failed: boom');
+    expect(notifyFn).toHaveBeenCalledWith('Spell cast');
   });
 
-  it('onSuccess produces no log write', () => {
-    const recordCasted = vi.fn().mockResolvedValue(undefined);
-    const recordError = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted, recordError } as unknown as CastLogStore;
-    const { stub, getCallbacks } = makeStubRunner();
+  it('local: onAccepted with no jobId does not write a second recordCasted', () => {
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      castRunner: stub,
-      castLogStore: storeStub,
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -480,32 +456,86 @@ describe('CastDispatcher', () => {
       executeOnNote: true,
     });
 
-    const callbacks = getCallbacks();
-    callbacks?.onSuccess();
+    casterStub.getCallbacks().onAccepted({});
 
-    expect(recordCasted).toHaveBeenCalledTimes(1); // only from dispatch, not from onSuccess
-    expect(recordError).not.toHaveBeenCalled();
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(1); // only the pre-cast write
+    expect(logWriter.recordError).not.toHaveBeenCalled();
   });
 
-  // ── E3: remote dispatch branch ──────────────────────────────────────────────
+  it('local: onFailure calls recordError then notify with "Cast failed: <msg>"', () => {
+    const notifyFn = vi.fn();
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
 
-  it('remote happy path: records, notifies, closes, and invokes transport with correct input', () => {
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
+      generateId: () => 'fixed-uuid',
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: baseSettings,
+      activeFilePath: 'notes/active.md',
+      executeOnNote: true,
+    });
+
+    casterStub.getCallbacks().onFailure('something went wrong');
+
+    expect(logWriter.recordError).toHaveBeenCalledWith({
+      castId: 'fixed-uuid',
+      message: 'something went wrong',
+    });
+    expect(logWriter.recordError).toHaveBeenCalledTimes(1);
+    expect(notifyFn).toHaveBeenCalledWith('Cast failed: something went wrong');
+  });
+
+  it('local: systemPromptFile is set to vault path + spell path', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: baseSettings,
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(casterStub.getInput().systemPromptFile).toBe('/vault/spells/test.md');
+  });
+
+  // ── remote dispatch ──────────────────────────────────────────────────────────
+
+  it('remote: notifies "Casting <name> on portal…" and closes', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
-    const recordCasted = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
-    const { stub: transportStub, getInput: getTransportInput } = makeStubTransport();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: notifyFn,
       close: closeFn,
-      remoteTransport: transportStub,
-      castLogStore: storeStub,
-      generateId: () => 'fixed-id',
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md', name: 'Summoning Circle' } as Spell,
+      spell: { name: 'Summoning Circle', path: 'spells/summoning.md' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -515,31 +545,24 @@ describe('CastDispatcher', () => {
       executeOnNote: false,
     });
 
-    expect(recordCasted).toHaveBeenCalledWith(
-      expect.objectContaining({ castId: 'fixed-id', spellPath: 'spells/test.md' }),
-      { remote: true }
-    );
     expect(notifyFn).toHaveBeenCalledWith("Casting 'Summoning Circle' on portal…");
     expect(closeFn).toHaveBeenCalledTimes(1);
-    const transportInput = getTransportInput();
-    expect(transportInput).toMatchObject({ castId: 'fixed-id', spellPath: 'spells/test.md', portalHost: 'portal.example.com' });
   });
 
-  it('remote onAccepted: writes a second recordCasted with portalCastId', () => {
-    const recordCasted = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
-    const { stub: transportStub, getCallbacks: getTransportCallbacks } = makeStubTransport();
+  it('remote: recordCasted called before caster.cast with correct shape', () => {
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      remoteTransport: transportStub,
-      castLogStore: storeStub,
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'fixed-id',
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md', name: 'Summoning Circle' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -549,32 +572,49 @@ describe('CastDispatcher', () => {
       executeOnNote: false,
     });
 
-    const callbacks = getTransportCallbacks();
-    callbacks.onAccepted({ portalCastId: 'srv-1' });
-
-    expect(recordCasted).toHaveBeenCalledTimes(2);
-    expect(recordCasted).toHaveBeenLastCalledWith(
-      expect.objectContaining({ castId: 'fixed-id', spellPath: 'spells/test.md', portalCastId: 'srv-1' }),
-      { remote: true }
+    expect(logWriter.recordCasted).toHaveBeenCalledWith(
+      expect.objectContaining({ castId: 'fixed-id', spellPath: 'spells/test.md' }),
     );
+    expect(casterStub.castFn).toHaveBeenCalled();
   });
 
-  it('remote onFailure: writes recordError and notifies with the failure message', () => {
+  it('remote: systemPromptFile is undefined', () => {
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(casterStub.getInput().systemPromptFile).toBeUndefined();
+  });
+
+  it('remote: onAccepted does not notify "Spell cast"', () => {
     const notifyFn = vi.fn();
-    const recordError = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError } as unknown as CastLogStore;
-    const { stub: transportStub, getCallbacks: getTransportCallbacks } = makeStubTransport();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: notifyFn,
       close: vi.fn(),
-      remoteTransport: transportStub,
-      castLogStore: storeStub,
-      generateId: () => 'fixed-id',
+      caster: casterStub.thunk,
+      logWriter: makeLogWriter,
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md', name: 'Summoning Circle' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -584,84 +624,58 @@ describe('CastDispatcher', () => {
       executeOnNote: false,
     });
 
-    const callbacks = getTransportCallbacks();
-    callbacks.onFailure('Portal request timed out.');
+    notifyFn.mockClear();
+    casterStub.getCallbacks().onAccepted({});
 
-    expect(recordError).toHaveBeenCalledWith({ castId: 'fixed-id', message: 'Portal request timed out.' }, { remote: true });
+    expect(notifyFn).not.toHaveBeenCalled();
+  });
+
+  it('remote: onFailure writes recordError and notifies with the raw failure message', () => {
+    const notifyFn = vi.fn();
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
+
+    const dispatcher = new CastDispatcher({
+      notify: notifyFn,
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
+      generateId: () => 'fixed-id',
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    casterStub.getCallbacks().onFailure('Portal request timed out.');
+
+    expect(logWriter.recordError).toHaveBeenCalledWith({ castId: 'fixed-id', message: 'Portal request timed out.' });
     expect(notifyFn).toHaveBeenCalledWith('Portal request timed out.');
   });
 
-  it('unknown executionMode falls through to local branch (runner.run is called)', () => {
-    const { stub: runner } = makeStubRunner();
-    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError: vi.fn() } as unknown as CastLogStore;
+  // ── D5: second-recordCasted contract ─────────────────────────────────────────
+
+  it('remote: onAccepted with jobId triggers a second recordCasted containing portalCastId', () => {
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      castRunner: runner,
-      castLogStore: storeStub,
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
+      generateId: () => 'fixed-id',
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: [],
-      followUp: '',
-      settings: { ...baseSettings, executionMode: 'unknown-mode' as any },
-      activeFilePath: null,
-      executeOnNote: false,
-    });
-
-    expect(runner.run).toHaveBeenCalled();
-  });
-
-  // ── E2: pre-dispatch guard ────────────────────────────────────────────────
-
-  it('pre-dispatch guard: remote + empty portalHost notifies and does not record or close', () => {
-    const notifyFn = vi.fn();
-    const closeFn = vi.fn();
-    const recordCasted = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
-    const { stub: transportStub } = makeStubTransport();
-
-    const dispatcher = new CastDispatcher({
-      notify: notifyFn,
-      close: closeFn,
-      remoteTransport: transportStub,
-      castLogStore: storeStub,
-    });
-
-    dispatcher.dispatch({
-      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
-      model: 'claude-sonnet-4-5',
-      effort: null,
-      contextNotePaths: [],
-      followUp: '',
-      settings: { ...baseSettings, executionMode: 'remote', portalHost: '' },
-      activeFilePath: null,
-      executeOnNote: false,
-    });
-
-    expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
-    expect(recordCasted).not.toHaveBeenCalled();
-    expect(closeFn).not.toHaveBeenCalled();
-    expect((transportStub as any).run).not.toHaveBeenCalled();
-  });
-
-  it('remote with no remoteTransport in deps calls onFailure with a sensible message instead of throwing', () => {
-    const notifyFn = vi.fn();
-    const storeStub = { recordCasted: vi.fn().mockResolvedValue(undefined), recordError: vi.fn().mockResolvedValue(undefined) } as unknown as CastLogStore;
-
-    const dispatcher = new CastDispatcher({
-      notify: notifyFn,
-      close: vi.fn(),
-      // remoteTransport intentionally omitted
-      castLogStore: storeStub,
-    });
-
-    expect(() => dispatcher.dispatch({
-      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
@@ -669,40 +683,90 @@ describe('CastDispatcher', () => {
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
-    })).not.toThrow();
+    });
 
-    expect(notifyFn).toHaveBeenCalledWith(expect.stringContaining('not configured'));
+    // after dispatch: first recordCasted was written (pre-cast)
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(1);
+
+    // onAccepted fires with jobId → second recordCasted with portalCastId
+    casterStub.getCallbacks().onAccepted({ jobId: 'srv-1' });
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(2);
+    expect(logWriter.recordCasted).toHaveBeenLastCalledWith(
+      expect.objectContaining({ castId: 'fixed-id', portalCastId: 'srv-1' }),
+    );
   });
 
-  it('pre-dispatch guard: remote + whitespace-only portalHost notifies and does not record or close', () => {
-    const notifyFn = vi.fn();
-    const closeFn = vi.fn();
-    const recordCasted = vi.fn().mockResolvedValue(undefined);
-    const storeStub = { recordCasted, recordError: vi.fn() } as unknown as CastLogStore;
-    const { stub: transportStub } = makeStubTransport();
+  it('remote: onAccepted without jobId does not trigger a second recordCasted', () => {
+    const logWriter = makeLogWriter();
+    const casterStub = makeStubCaster();
 
     const dispatcher = new CastDispatcher({
-      notify: notifyFn,
-      close: closeFn,
-      remoteTransport: transportStub,
-      castLogStore: storeStub,
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: casterStub.thunk,
+      logWriter: () => logWriter,
+      generateId: () => 'id2',
     });
 
     dispatcher.dispatch({
-      spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
       model: 'claude-sonnet-4-5',
       effort: null,
       contextNotePaths: [],
       followUp: '',
-      settings: { ...baseSettings, executionMode: 'remote', portalHost: '   ' },
+      settings: { ...baseSettings, executionMode: 'remote', portalHost: 'p.com' },
       activeFilePath: null,
       executeOnNote: false,
     });
 
-    expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
-    expect(recordCasted).not.toHaveBeenCalled();
-    expect(closeFn).not.toHaveBeenCalled();
-    expect((transportStub as any).run).not.toHaveBeenCalled();
+    casterStub.getCallbacks().onAccepted({}); // no jobId
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(1); // only the pre-cast write
   });
 
+  // ── logWriter thunk: resolved per-dispatch, not captured at construction ─────
+
+  it('uses logWriter resolved at dispatch time, not construction time', () => {
+    const localWriter = makeLogWriter();
+    const remoteWriter = makeLogWriter();
+    const mutableSettings = { ...baseSettings, executionMode: 'local' as 'local' | 'remote' };
+
+    const dispatcher = new CastDispatcher({
+      notify: vi.fn(),
+      close: vi.fn(),
+      caster: makeStubCaster().thunk,
+      logWriter: () => mutableSettings.executionMode === 'remote' ? remoteWriter : localWriter,
+      generateId: () => 'id',
+    });
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: mutableSettings,
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(localWriter.recordCasted).toHaveBeenCalledTimes(1);
+    expect(remoteWriter.recordCasted).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    mutableSettings.executionMode = 'remote';
+
+    dispatcher.dispatch({
+      spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      contextNotePaths: [],
+      followUp: '',
+      settings: { ...mutableSettings, portalHost: 'portal.example.com' },
+      activeFilePath: null,
+      executeOnNote: false,
+    });
+
+    expect(remoteWriter.recordCasted).toHaveBeenCalledTimes(1);
+    expect(localWriter.recordCasted).not.toHaveBeenCalled();
+  });
 });

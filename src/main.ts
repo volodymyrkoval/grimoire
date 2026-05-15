@@ -1,4 +1,4 @@
-import { Plugin, Notice, normalizePath, requestUrl } from 'obsidian';
+import { Plugin, Notice, normalizePath } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './domain/settings/persistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
@@ -7,9 +7,8 @@ import { OptionsSessionMap } from './ui/options/OptionsSessionMap';
 import { GrimoireSettingTab } from './ui/settings/GrimoireSettingTab';
 import { CommandPopup } from './ui/CommandPopup';
 import { ForgeImprinter } from './forge/ForgeImprinter';
-import { CastRunner } from './cast/CastRunner';
 import { CastDispatcher } from './cast/CastDispatcher';
-import { RemoteCastTransport } from './cast/RemoteCastTransport';
+import { createCaster } from './cast/createCaster';
 import { CastLogStore } from './castLog/store';
 import { HookMaterializer } from './castLog/HookMaterializer';
 import { ScratchSweeper } from './castLog/ScratchSweeper';
@@ -23,49 +22,20 @@ export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
-  #castLogStore!: CastLogStore;
-  #remoteTransport!: RemoteCastTransport;
+  #localCastLogStore!: CastLogStore;
+  #remoteCastLogStore!: CastLogStore;
   #pluginDir!: string;
+
+  get #activeLogStore(): CastLogStore {
+    return this.data.settings.executionMode === 'remote' ? this.#remoteCastLogStore : this.#localCastLogStore;
+  }
 
   async onload(): Promise<void> {
     await this.#initCore();
-    const adapter = this.app.vault.adapter;
-    this.#pluginDir = this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`;
-    const pluginDir = this.#pluginDir;
-
-    this.#castLogStore = new CastLogStore({
-      adapter,
-      getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-local.jsonl`),
-      getRemoteLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
-    });
-
-    this.#remoteTransport = new RemoteCastTransport({ requestUrlFn: requestUrl });
-
-    const materializer = new HookMaterializer({
-      adapter,
-      getPluginDirAbs: () => pluginDir,
-      getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-local.jsonl`),
-    });
-    try {
-      await materializer.run();
-    } catch (e) {
-      console.error('HookMaterializer failed', e);
-    }
-
-    const sweeper = new ScratchSweeper({
-      adapter,
-      getScratchDirAbs: () => normalizePath(`${pluginDir}/cast-log-scratch`),
-    });
-    sweeper.sweep().catch(console.error);
-
-    const sessionMap = new OptionsSessionMap();
-    const imprinter = new ForgeImprinter({
-      notify: (msg) => { new Notice(msg); },
-      castRunner: new CastRunner(),
-      remoteTransport: this.#remoteTransport,
-      castLogStore: this.#castLogStore,
-    });
-    this.#registerUI(sessionMap, imprinter);
+    this.#initPluginDir();
+    this.#initCastLog();
+    await this.#runStartupMaintenance();
+    this.#registerUI(...this.#initImprinter());
   }
 
   onunload(): void {
@@ -78,6 +48,54 @@ export default class GrimoirePlugin extends Plugin {
     this.data = hydrate(await this.loadData(), this.app);
     this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
     this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
+  }
+
+  #initPluginDir(): void {
+    this.#pluginDir = this.manifest.dir ?? `${this.app.vault.configDir}/plugins/grimoire`;
+  }
+
+  #initCastLog(): void {
+    const adapter = this.app.vault.adapter;
+    const pluginDir = this.#pluginDir;
+    this.#localCastLogStore = new CastLogStore({
+      adapter,
+      getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-local.jsonl`),
+      getRemoteLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
+    });
+    this.#remoteCastLogStore = new CastLogStore({
+      adapter,
+      getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
+    });
+  }
+
+  async #runStartupMaintenance(): Promise<void> {
+    const adapter = this.app.vault.adapter;
+    const pluginDir = this.#pluginDir;
+    const materializer = new HookMaterializer({
+      adapter,
+      getPluginDirAbs: () => pluginDir,
+      getLogPathAbs: () => normalizePath(`${pluginDir}/cast-log-local.jsonl`),
+    });
+    try {
+      await materializer.run();
+    } catch (e) {
+      console.error('HookMaterializer failed', e);
+    }
+    const sweeper = new ScratchSweeper({
+      adapter,
+      getScratchDirAbs: () => normalizePath(`${pluginDir}/cast-log-scratch`),
+    });
+    sweeper.sweep().catch(console.error);
+  }
+
+  #initImprinter(): [OptionsSessionMap, ForgeImprinter] {
+    const sessionMap = new OptionsSessionMap();
+    const imprinter = new ForgeImprinter({
+      notify: (msg) => { new Notice(msg); },
+      caster: () => createCaster(this.data.settings),
+      logWriter: () => this.#activeLogStore,
+    });
+    return [sessionMap, imprinter];
   }
 
   #registerUI(sessionMap: OptionsSessionMap, imprinter: ForgeImprinter): void {
@@ -102,9 +120,8 @@ export default class GrimoirePlugin extends Plugin {
     return new CastDispatcher({
       notify: (msg) => { new Notice(msg); },
       close: () => closeRef.close(),
-      castRunner: new CastRunner(),
-      remoteTransport: this.#remoteTransport,
-      castLogStore: this.#castLogStore,
+      caster: () => createCaster(this.data.settings),
+      logWriter: () => this.#activeLogStore,
     });
   }
 
@@ -114,47 +131,11 @@ export default class GrimoirePlugin extends Plugin {
     dispatcher: CastDispatcher,
     closeRef: { close: () => void },
   ): CommandPopup {
-    const pluginDir = this.#pluginDir;
-    const castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'> = {
-      source: new CastLogSource({ reader: this.#castLogStore, foldEvents }),
-      refresh: new VaultRefreshCoordinator({
-        adapter: this.app.vault.adapter,
-        vault: this.app.vault,
-        watchedVaultPaths: [
-          normalizePath(`${pluginDir}/cast-log-local.jsonl`),
-          normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
-        ],
-        watchedAbsPaths: [
-          normalizePath(`${pluginDir}/cast-log-local.jsonl`),
-          normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
-        ],
-        pollIntervalMs: 1500,
-        debounceMs: 50,
-        settlingWindowMs: 3000,
-      }),
-      tick: new IntervalTickCoordinator({ intervalMs: 1000 }),
-      now: () => new Date(),
-    };
-
     return new CommandPopup({
       app: this.app,
       spellTag: this.data.settings.spellTag,
       imprintAction: (snapshot) => imprinter.imprint(snapshot, this.data.settings, () => closeRef.close()),
-      castAction: (spell) => dispatcher.dispatch({
-        spell,
-        model: this.data.settings.defaultModel,
-        effort: this.data.settings.defaultEffort,
-        contextNotePaths: [],
-        followUp: '',
-        settings: this.data.settings,
-        activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
-        executeOnNote: spell.executeOnNote,
-      }),
-      defaults: { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
-      overrides: this.overrides,
-      sessionMap,
-      castLogPanelDeps,
-      optionsCastAction: (spell, snap) => dispatcher.dispatch({
+      castAction: (spell, snap) => dispatcher.dispatch({
         spell,
         model: snap.model,
         effort: snap.effort,
@@ -164,6 +145,32 @@ export default class GrimoirePlugin extends Plugin {
         activeFilePath: this.app.workspace.getActiveFile()?.path ?? null,
         executeOnNote: snap.executeOnNote,
       }),
+      defaults: { defaultModel: this.data.settings.defaultModel, defaultEffort: this.data.settings.defaultEffort },
+      overrides: this.overrides,
+      sessionMap,
+      castLogPanelDeps: this.#buildCastLogPanelDeps(),
     });
+  }
+
+  #buildCastLogPanelDeps(): Omit<CastLogPanelDeps, 'openLink'> {
+    const pluginDir = this.#pluginDir;
+    const castLogPaths = [
+      normalizePath(`${pluginDir}/cast-log-local.jsonl`),
+      normalizePath(`${pluginDir}/cast-log-remote.jsonl`),
+    ];
+    return {
+      source: new CastLogSource({ reader: this.#localCastLogStore, foldEvents }),
+      refresh: new VaultRefreshCoordinator({
+        adapter: this.app.vault.adapter,
+        vault: this.app.vault,
+        watchedVaultPaths: castLogPaths,
+        watchedAbsPaths: castLogPaths,
+        pollIntervalMs: 1500,
+        debounceMs: 50,
+        settlingWindowMs: 3000,
+      }),
+      tick: new IntervalTickCoordinator({ intervalMs: 1000 }),
+      now: () => new Date(),
+    };
   }
 }

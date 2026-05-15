@@ -78,7 +78,7 @@ describe('GrimoirePlugin', () => {
     );
   });
 
-  it('command callback constructs CommandPopup with app, spellTag, imprintAction, castAction, defaults, overrides, sessionMap, optionsCastAction', async () => {
+  it('command callback constructs CommandPopup with app, spellTag, imprintAction, castAction, defaults, overrides, sessionMap', async () => {
     await plugin.onload();
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
@@ -108,7 +108,7 @@ describe('GrimoirePlugin', () => {
     expect(params.overrides).toBe(plugin.overrides);
     const { OptionsSessionMap } = await import('../src/ui/options/OptionsSessionMap');
     expect(params.sessionMap).toBeInstanceOf(OptionsSessionMap);
-    expect(typeof params.optionsCastAction).toBe('function');
+    expect(params.optionsCastAction).toBeUndefined();
 
     popupSpy.mockRestore();
   });
@@ -183,7 +183,7 @@ describe('GrimoirePlugin', () => {
     const dispatchSpy = vi.spyOn(CastDispatcher.prototype, 'dispatch').mockImplementation(() => {});
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
-    let capturedCastAction: ((spell: any) => void) | undefined;
+    let capturedCastAction: ((spell: any, snapshot: any) => void) | undefined;
     vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(params: any) {
       capturedCastAction = params.castAction;
       return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
@@ -198,7 +198,14 @@ describe('GrimoirePlugin', () => {
 
     (app as any).workspace.getActiveFile.mockReturnValue({ path: 'notes/active.md', basename: 'active' });
     const stubSpell = { name: 'Test Spell', path: 'spells/test.md', executeOnNote: true };
-    capturedCastAction!(stubSpell);
+    const stubSnapshot = {
+      model: plugin.data.settings.defaultModel,
+      effort: plugin.data.settings.defaultEffort,
+      contextNotePaths: [],
+      followUp: '',
+      executeOnNote: true,
+    };
+    capturedCastAction!(stubSpell, stubSnapshot);
 
     expect(dispatchSpy).toHaveBeenCalledOnce();
     expect(dispatchSpy).toHaveBeenCalledWith({
@@ -221,7 +228,7 @@ describe('GrimoirePlugin', () => {
     const dispatchSpy = vi.spyOn(CastDispatcher.prototype, 'dispatch').mockImplementation(() => {});
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
-    const capturedCastActions: Array<(spell: any) => void> = [];
+    const capturedCastActions: Array<(spell: any, snapshot: any) => void> = [];
     vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(params: any) {
       capturedCastActions.push(params.castAction);
       return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
@@ -238,23 +245,30 @@ describe('GrimoirePlugin', () => {
     expect(capturedCastActions).toHaveLength(2);
 
     const stubSpell = { name: 'Stub Spell', path: 'spells/stub.md' };
-    capturedCastActions[1]!(stubSpell);
+    const stubSnapshot = {
+      model: 'some-model',
+      effort: 'medium' as const,
+      contextNotePaths: [],
+      followUp: '',
+      executeOnNote: true,
+    };
+    capturedCastActions[1]!(stubSpell, stubSnapshot);
 
     expect(dispatchSpy).toHaveBeenCalledOnce();
-    expect(dispatchSpy.mock.calls[0][0]).toMatchObject({ model: 'different-model' });
+    expect(dispatchSpy.mock.calls[0][0]).toMatchObject({ model: 'some-model' });
 
     dispatchSpy.mockRestore();
   });
 
-  it('optionsCastAction closure dispatches with snapshot values and current settings', async () => {
+  it('castAction closure dispatches with snapshot values and current settings', async () => {
     await plugin.onload();
 
     const dispatchSpy = vi.spyOn(CastDispatcher.prototype, 'dispatch').mockImplementation(() => {});
 
     const CommandPopupModule = await import('../src/ui/CommandPopup');
-    let capturedOptionsCastAction: ((spell: any, snapshot: any) => void) | undefined;
+    let capturedCastAction: ((spell: any, snapshot: any) => void) | undefined;
     vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function(params: any) {
-      capturedOptionsCastAction = params.optionsCastAction;
+      capturedCastAction = params.castAction;
       return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
     } as any);
 
@@ -263,7 +277,7 @@ describe('GrimoirePlugin', () => {
     );
     commandCall![0].callback();
 
-    expect(capturedOptionsCastAction).toBeDefined();
+    expect(capturedCastAction).toBeDefined();
 
     (app as any).workspace.getActiveFile.mockReturnValue({ path: 'notes/active.md', basename: 'active' });
     const stubSpell = { name: 'Test Spell', path: 'spells/test.md' };
@@ -274,7 +288,7 @@ describe('GrimoirePlugin', () => {
       followUp: 'This is a follow-up.',
       executeOnNote: true,
     };
-    capturedOptionsCastAction!(stubSpell, stubSnapshot);
+    capturedCastAction!(stubSpell, stubSnapshot);
 
     expect(dispatchSpy).toHaveBeenCalledOnce();
     expect(dispatchSpy).toHaveBeenCalledWith({
@@ -375,7 +389,7 @@ describe('GrimoirePlugin', () => {
     materializerSpy.mockRestore();
   });
 
-  it('onload invokes new CastLogStore exactly once with getLogPathAbs', async () => {
+  it('onload invokes new CastLogStore twice: once with both getters (local), once with only getLogPathAbs (remote)', async () => {
     const CastLogStoreModule = await import('../src/castLog/store');
     const OriginalStore = CastLogStoreModule.CastLogStore;
     const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
@@ -384,23 +398,22 @@ describe('GrimoirePlugin', () => {
 
     await plugin.onload();
 
-    expect(storeSpy).toHaveBeenCalledTimes(1);
-    expect(storeSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        getLogPathAbs: expect.any(Function),
-      })
-    );
+    expect(storeSpy).toHaveBeenCalledTimes(2);
+    // first call: local store with both getters
+    expect(storeSpy.mock.calls[0][0]).toMatchObject({
+      getLogPathAbs: expect.any(Function),
+      getRemoteLogPathAbs: expect.any(Function),
+    });
+    // second call: remote log writer with only getLogPathAbs (no getRemoteLogPathAbs)
+    expect(storeSpy.mock.calls[1][0]).toMatchObject({
+      getLogPathAbs: expect.any(Function),
+    });
+    expect(storeSpy.mock.calls[1][0].getRemoteLogPathAbs).toBeUndefined();
 
     storeSpy.mockRestore();
   });
 
-  it('ForgeImprinter constructor receives the same castLogStore instance', async () => {
-    const CastLogStoreModule = await import('../src/castLog/store');
-    const OriginalStore = CastLogStoreModule.CastLogStore;
-    const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
-      return new OriginalStore(deps);
-    });
-
+  it('ForgeImprinter constructor receives a caster thunk and logWriter instead of castLogStore/remoteTransport', async () => {
     const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
     const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
     const imprintSpy = vi.spyOn(ForgeImprinterModule, 'ForgeImprinter').mockImplementation((deps: any) => {
@@ -410,9 +423,12 @@ describe('GrimoirePlugin', () => {
     await plugin.onload();
 
     expect(imprintSpy).toHaveBeenCalledOnce();
-    expect(imprintSpy.mock.calls[0][0].castLogStore).toBe(storeSpy.mock.results[0].value);
+    const deps = imprintSpy.mock.calls[0][0] as any;
+    expect(typeof deps.caster).toBe('function');
+    expect(deps.logWriter).toBeDefined();
+    expect(deps.castLogStore).toBeUndefined();
+    expect(deps.remoteTransport).toBeUndefined();
 
-    storeSpy.mockRestore();
     imprintSpy.mockRestore();
   });
 
@@ -461,13 +477,7 @@ describe('GrimoirePlugin', () => {
     storeSpy.mockRestore();
   });
 
-  it('CastDispatcher constructor receives the same castLogStore instance', async () => {
-    const CastLogStoreModule = await import('../src/castLog/store');
-    const OriginalStore = CastLogStoreModule.CastLogStore;
-    const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
-      return new OriginalStore(deps);
-    });
-
+  it('CastDispatcher constructor receives a caster thunk and logWriter instead of castLogStore/remoteTransport', async () => {
     const CastDispatcherModule = await import('../src/cast/CastDispatcher');
     const OriginalDispatcher = CastDispatcherModule.CastDispatcher;
     const dispatcherSpy = vi.spyOn(CastDispatcherModule, 'CastDispatcher').mockImplementation((deps: any) => {
@@ -482,49 +492,18 @@ describe('GrimoirePlugin', () => {
     commandCall![0].callback();
 
     expect(dispatcherSpy).toHaveBeenCalledOnce();
-    expect(dispatcherSpy.mock.calls[0][0].castLogStore).toBe(storeSpy.mock.results[0].value);
+    const deps = dispatcherSpy.mock.calls[0][0] as any;
+    expect(typeof deps.caster).toBe('function');
+    expect(deps.logWriter).toBeDefined();
+    expect(deps.castLogStore).toBeUndefined();
+    expect(deps.remoteTransport).toBeUndefined();
 
-    storeSpy.mockRestore();
     dispatcherSpy.mockRestore();
   });
 
-  it('ForgeImprinter constructor receives a RemoteCastTransport instance', async () => {
-    const RemoteCastTransportModule = await import('../src/cast/RemoteCastTransport');
-
-    const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
-    const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
-    const imprintSpy = vi.spyOn(ForgeImprinterModule, 'ForgeImprinter').mockImplementation((deps: any) => {
-      return new OriginalForgeImprinter(deps);
-    });
-
-    await plugin.onload();
-
-    expect(imprintSpy).toHaveBeenCalledOnce();
-    expect(imprintSpy.mock.calls[0][0].remoteTransport).toBeInstanceOf(RemoteCastTransportModule.RemoteCastTransport);
-
-    imprintSpy.mockRestore();
-  });
-
-  it('RemoteCastTransport constructor receives requestUrlFn from obsidian', async () => {
-    const RemoteCastTransportModule = await import('../src/cast/RemoteCastTransport');
-    const OriginalTransport = RemoteCastTransportModule.RemoteCastTransport;
-    const transportSpy = vi.spyOn(RemoteCastTransportModule, 'RemoteCastTransport').mockImplementation((deps: any) => {
-      return new OriginalTransport(deps);
-    });
-
-    await plugin.onload();
-
-    expect(transportSpy).toHaveBeenCalledOnce();
-    // Production wiring explicitly passes requestUrl from obsidian
-    const callArg = transportSpy.mock.calls[0][0];
-    expect(callArg?.requestUrlFn).toBeDefined();
-    expect(typeof callArg?.requestUrlFn).toBe('function');
-
-    transportSpy.mockRestore();
-  });
-
-  it('CastDispatcher constructor receives the same RemoteCastTransport instance', async () => {
-    const RemoteCastTransportModule = await import('../src/cast/RemoteCastTransport');
+  it('CastDispatcher and ForgeImprinter caster thunks invoke createCaster with current settings', async () => {
+    const createCasterModule = await import('../src/cast/createCaster');
+    const createCasterSpy = vi.spyOn(createCasterModule, 'createCaster');
 
     const ForgeImprinterModule = await import('../src/forge/ForgeImprinter');
     const OriginalForgeImprinter = ForgeImprinterModule.ForgeImprinter;
@@ -547,9 +526,20 @@ describe('GrimoirePlugin', () => {
 
     expect(dispatcherSpy).toHaveBeenCalledOnce();
     expect(imprintSpy).toHaveBeenCalledOnce();
-    expect(dispatcherSpy.mock.calls[0][0].remoteTransport).toBeInstanceOf(RemoteCastTransportModule.RemoteCastTransport);
-    expect(dispatcherSpy.mock.calls[0][0].remoteTransport).toBe(imprintSpy.mock.calls[0][0].remoteTransport);
 
+    // invoke both thunks to confirm they call createCaster with settings
+    const dispatcherCasterThunk = dispatcherSpy.mock.calls[0][0].caster as () => any;
+    const imprinterCasterThunk = (imprintSpy.mock.calls[0][0] as any).caster as () => any;
+
+    createCasterSpy.mockImplementation(() => ({} as any));
+    dispatcherCasterThunk();
+    imprinterCasterThunk();
+
+    expect(createCasterSpy).toHaveBeenCalledTimes(2);
+    expect(createCasterSpy.mock.calls[0][0]).toBe(plugin.data.settings);
+    expect(createCasterSpy.mock.calls[1][0]).toBe(plugin.data.settings);
+
+    createCasterSpy.mockRestore();
     imprintSpy.mockRestore();
     dispatcherSpy.mockRestore();
   });

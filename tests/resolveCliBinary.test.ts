@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveCliBinary } from '../src/cast/resolveCliBinary';
+import { resolveCliBinary } from '../src/cast/local/resolveCliBinary';
 
 describe('resolveCliBinary', () => {
   it('returns binaryPath when it is non-empty', () => {

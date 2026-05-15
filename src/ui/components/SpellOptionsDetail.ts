@@ -2,7 +2,7 @@ import type { App, Scope } from 'obsidian';
 import type { Spell } from '../../domain/spells/Spell';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { SupportedModel } from '../../domain/settings/Settings';
-import type { FormDefaults } from '../CommandPopup';
+import type { FormDefaults } from '../../domain/settings/FormDefaults';
 import { resolveSpellOptions } from '../../domain/settings/spellOptionsResolver';
 import { OptionsFormState } from '../options/OptionsFormState';
 import type { OptionsFormSnapshot } from '../options/OptionsFormState';

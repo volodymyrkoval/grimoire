@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCastArgs } from '../src/cast/buildCastArgs';
+import { buildCastArgs } from '../src/cast/local/buildCastArgs';
 
 describe('buildCastArgs', () => {
   it('builds inline mode args with metaSpell', () => {

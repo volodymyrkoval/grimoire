@@ -3,7 +3,7 @@ import {
   RemoteCastTransport,
   type RemoteCastInput,
   type RemoteCastCallbacks,
-} from '../../src/cast/RemoteCastTransport';
+} from '../../src/cast/portal/RemoteCastTransport';
 import { buildBasicAuthHeader } from '../../src/cast/portal/buildBasicAuthHeader';
 
 const baseInput: RemoteCastInput = {

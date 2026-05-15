@@ -1,5 +1,7 @@
 import type { DataAdapter } from 'obsidian';
-import type { CastedEvent, ErrorEvent, CastLogEvent } from './types';
+import type { CastLogEvent } from './types';
+import type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
+export type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
 
 export interface CastLogStorePorts {
   getLogPathAbs: () => string;
@@ -8,13 +10,6 @@ export interface CastLogStorePorts {
   readFile?: (path: string, encoding: 'utf-8') => Promise<string>;
   now?: () => Date;
   adapter?: DataAdapter;
-}
-
-export type RecordCastedInput = Omit<CastedEvent, 'stage' | 'ts'>;
-export type RecordErrorInput = Omit<ErrorEvent, 'stage' | 'ts'>;
-
-export interface RecordOptions {
-  readonly remote?: boolean;
 }
 
 export class CastLogStore {
@@ -39,34 +34,24 @@ export class CastLogStore {
     });
   }
 
-  async recordCasted(input: RecordCastedInput, opts?: RecordOptions): Promise<void> {
+  async recordCasted(input: RecordCastedInput): Promise<void> {
     const event = {
       stage: 'casted' as const,
       ts: this.#now().toISOString(),
       ...input,
     };
-    const path = this.#getTargetPath(opts);
+    const path = this.#ports.getLogPathAbs();
     await this.#appendLine(path, JSON.stringify(event) + '\n');
   }
 
-  async recordError(input: RecordErrorInput, opts?: RecordOptions): Promise<void> {
+  async recordError(input: RecordErrorInput): Promise<void> {
     const event = {
       stage: 'error' as const,
       ts: this.#now().toISOString(),
       ...input,
     };
-    const path = this.#getTargetPath(opts);
+    const path = this.#ports.getLogPathAbs();
     await this.#appendLine(path, JSON.stringify(event) + '\n');
-  }
-
-  #getTargetPath(opts?: RecordOptions): string {
-    if (opts?.remote === true) {
-      if (!this.#ports.getRemoteLogPathAbs) {
-        throw new Error('CastLogStore: remote write requested but getRemoteLogPathAbs is not configured');
-      }
-      return this.#ports.getRemoteLogPathAbs();
-    }
-    return this.#ports.getLogPathAbs();
   }
 
   async readAll(): Promise<CastLogEvent[]> {

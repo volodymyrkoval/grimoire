@@ -39,7 +39,7 @@ function createHarnessWithAction(
     data: { settings: {} as any, spellOverrides: {} },
     saver: { schedule: vi.fn() } as any,
   });
-  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction: vi.fn(), defaults, overrides: stubOverrides, sessionMap: new OptionsSessionMap(), optionsCastAction: vi.fn() });
+  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction: vi.fn(), defaults, overrides: stubOverrides, sessionMap: new OptionsSessionMap() });
   modal.open();
   const { contentEl } = modal;
 

@@ -1,4 +1,4 @@
-import { Effort } from '../domain/settings/Settings';
+import { Effort } from '../../domain/settings/Settings';
 
 interface BaseCastArgsInput {
   modelId: string;
@@ -34,7 +34,7 @@ export function buildCastArgs(input: CastArgsInput): string[] {
   ];
 
   if (input.effort !== null) {
-    args.push('--effort', input.effort);
+    args.push('--effort', String(input.effort));
   }
 
   if (input.vaultMountPath !== '') {

@@ -3,7 +3,7 @@
  *
  * Seam: the boundary between CommandPopup (parent) and OptionsPanel (real child),
  * exercised via the harness. Covers the ArrowRight binding, phase transitions,
- * optionsCastAction callback, override-dot rendering, and idempotency guard.
+ * castAction callback, override-dot rendering, and idempotency guard.
  *
  * Spell rows are alphabetically sorted by `getSpells`. Harness spells in sorted order:
  *   index 0 → Banishment Hex       (/spells/banishment.md)
@@ -23,7 +23,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createPopupHarness } from './harness';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
-import type { OptionsCastAction } from '../../src/ui/CommandPopup';
+import type { CastAction } from '../../src/ui/CommandPopup';
 
 describe('options-panel-popup integration — ArrowRight → OptionsPanel seam', () => {
   // ------------------------------------------------------------------ A1
@@ -61,9 +61,9 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
   });
 
   // ------------------------------------------------------------------ A3
-  it('open panel, click Cast → optionsCastAction called with spell and snapshot', () => {
-    const optionsCastAction: OptionsCastAction = vi.fn();
-    const h = createPopupHarness({ optionsCastAction });
+  it('open panel, click Cast → castAction called with spell and snapshot', () => {
+    const castAction: CastAction = vi.fn();
+    const h = createPopupHarness({ castAction });
 
     // Open options panel for first spell (index 0 = Banishment Hex)
     h.pressKey('ArrowRight');
@@ -74,9 +74,9 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
     // Submit the form (Cast)
     form.dispatchEvent(new Event('submit'));
 
-    expect(optionsCastAction).toHaveBeenCalledOnce();
+    expect(castAction).toHaveBeenCalledOnce();
 
-    const [spellArg, snapshotArg] = (optionsCastAction as ReturnType<typeof vi.fn>).mock.calls[0];
+    const [spellArg, snapshotArg] = (castAction as ReturnType<typeof vi.fn>).mock.calls[0];
 
     // First arg: the spell object for Banishment Hex
     expect(spellArg).toMatchObject({

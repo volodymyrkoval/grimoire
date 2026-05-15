@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CastSpawner, SpawnFn, SpawnedProcess } from '../src/cast/spawnCast';
+import { CastSpawner, SpawnFn, SpawnedProcess } from '../src/cast/local/spawnCast';
 
 function makeFakeProcess() {
   const handlers: Record<string, ((...args: any[]) => void)[]> = {};

@@ -9,21 +9,17 @@ import { SpellsPanel } from "./tabs/SpellsPanel";
 import { CastLogPanel } from "./tabs/CastLogPanel";
 import type { CastLogPanelDeps } from "./tabs/CastLogPanel";
 import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
-import type { Effort } from "../domain/settings/Settings";
 import { SUPPORTED_MODELS } from "../domain/settings/Settings";
+import type { FormDefaults } from "../domain/settings/FormDefaults";
 import { SpellOverrideStore } from "../domain/settings/SpellOverrideStore";
 import { OptionsSessionMap } from "./options/OptionsSessionMap";
 import type { OptionsFormSnapshot } from "./options/OptionsFormState";
 import { SpellOptionsDetail } from "./components/SpellOptionsDetail";
 
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
-export type CastAction = (spell: Spell) => void;
-export type OptionsCastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
+export type CastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
 
-export interface FormDefaults {
-  defaultModel: string;
-  defaultEffort: Effort | null;
-}
+export type { FormDefaults } from "../domain/settings/FormDefaults";
 
 export interface CommandPopupParams {
   app: App;
@@ -34,7 +30,6 @@ export interface CommandPopupParams {
   overrides: SpellOverrideStore;
   sessionMap: OptionsSessionMap;
   castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'>;
-  optionsCastAction: OptionsCastAction;
 }
 
 export class CommandPopup extends Modal {
@@ -54,7 +49,6 @@ export class CommandPopup extends Modal {
   readonly #formDefaults: FormDefaults;
   readonly #overrides: SpellOverrideStore;
   readonly #sessionMap: OptionsSessionMap;
-  readonly #optionsCastAction: OptionsCastAction;
 
   constructor(params: CommandPopupParams) {
     super(params.app);
@@ -63,7 +57,6 @@ export class CommandPopup extends Modal {
     this.#formDefaults = params.defaults;
     this.#overrides = params.overrides;
     this.#sessionMap = params.sessionMap;
-    this.#optionsCastAction = params.optionsCastAction;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
       openLink: (path) => {
@@ -141,7 +134,16 @@ export class CommandPopup extends Modal {
   #createSpellsPanel(spellTag: string): SpellsPanel {
     const panel = new SpellsPanel(this.app, spellTag);
     panel.setHasOverride((path) => this.#overrides.has(path));
-    panel.events.on("cast", (spell) => this.#castAction(spell));
+    panel.events.on("cast", (spell) => {
+      const snapshot: OptionsFormSnapshot = {
+        model: this.#formDefaults.defaultModel,
+        effort: this.#formDefaults.defaultEffort,
+        contextNotePaths: [],
+        followUp: '',
+        executeOnNote: spell.executeOnNote,
+      };
+      this.#castAction(spell, snapshot);
+    });
     panel.events.on("sentinel", (sentinel) => this.#renderSentinelDetail(sentinel));
     panel.events.on("open-options", (spell) => this.#renderOptionsPanel(spell));
     return panel;
@@ -218,7 +220,7 @@ export class CommandPopup extends Modal {
       formDefaults: this.#formDefaults,
       models: SUPPORTED_MODELS,
       onBack: exit,
-      onCast: (snap) => this.#optionsCastAction(spell, snap),
+      onCast: (snap) => this.#castAction(spell, snap),
       onOverrideChanged: () => (this.panels[0] as SpellsPanel).refreshOverrides(),
     });
     this.#onDetailBack = exit;

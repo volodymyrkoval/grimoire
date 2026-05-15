@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statusBadge } from '../../../src/castLog/format/statusBadge';
+import { statusBadge } from '../../../src/ui/components/statusBadge';
 
 describe('statusBadge', () => {
   it('returns { label: "Queued", cls: "is-neutral" } for "casted"', () => {

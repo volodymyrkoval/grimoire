@@ -1,4 +1,4 @@
-import { Effort } from '../domain/settings/Settings';
+import { Effort } from '../../domain/settings/Settings';
 import { buildCastArgs } from './buildCastArgs';
 import { resolveCliBinary } from './resolveCliBinary';
 import { CastExitInfo, CastSpawner, SpawnFn } from './spawnCast';

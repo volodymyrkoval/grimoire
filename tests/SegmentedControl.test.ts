@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SegmentedControl } from '../src/ui/SegmentedControl';
+import { SegmentedControl } from '../src/ui/widgets/SegmentedControl';
 
 describe('SegmentedControl', () => {
   let parent: HTMLElement;

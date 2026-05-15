@@ -35,7 +35,14 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
       expect.objectContaining({
         name: 'Banishment Hex',
         path: '/spells/banishment.md',
-      })
+      }),
+      expect.objectContaining({
+        model: 'claude-sonnet-4-5',
+        effort: 'medium',
+        contextNotePaths: [],
+        followUp: '',
+        executeOnNote: true,
+      }),
     );
   });
 
@@ -50,7 +57,14 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
       expect.objectContaining({
         name: 'Banishment Hex',
         path: '/spells/banishment.md',
-      })
+      }),
+      expect.objectContaining({
+        model: 'claude-sonnet-4-5',
+        effort: 'medium',
+        contextNotePaths: [],
+        followUp: '',
+        executeOnNote: true,
+      }),
     );
   });
 
@@ -65,7 +79,14 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
       expect.objectContaining({
         name: 'Divination Ritual',
         path: '/spells/divination.md',
-      })
+      }),
+      expect.objectContaining({
+        model: 'claude-sonnet-4-5',
+        effort: 'medium',
+        contextNotePaths: [],
+        followUp: '',
+        executeOnNote: true,
+      }),
     );
   });
 
@@ -82,7 +103,14 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
       expect.objectContaining({
         name: 'Banishment Hex',
         path: '/spells/banishment.md',
-      })
+      }),
+      expect.objectContaining({
+        model: 'claude-sonnet-4-5',
+        effort: 'medium',
+        contextNotePaths: [],
+        followUp: '',
+        executeOnNote: true,
+      }),
     );
   });
 });

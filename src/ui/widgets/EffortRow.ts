@@ -1,4 +1,4 @@
-import { SegmentedControl } from '../SegmentedControl';
+import { SegmentedControl } from './SegmentedControl';
 import { Effort, SupportedModel } from '../../domain/settings/Settings';
 
 export interface EffortRowOpts {

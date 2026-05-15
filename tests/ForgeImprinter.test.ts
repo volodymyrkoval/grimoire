@@ -1,43 +1,34 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ForgeImprinter } from '../src/forge/ForgeImprinter';
-import { CastRunner, CastRunCallbacks } from '../src/cast/CastRunner';
-import { CastLogStore } from '../src/castLog/store';
 import { GrimoireSettings } from '../src/domain/settings/Settings';
 import { ForgeFormSnapshot } from '../src/forge/ForgeFormSnapshot';
-import type { RemoteCastCallbacks, RemoteCastInput } from '../src/cast/RemoteCastTransport';
+import type { CastInput, CastCallbacks } from '../src/cast/Caster';
+import type { CastLogWriter } from '../src/castLog/CastLogWriter';
 
-function makeStubRunner() {
-  let capturedInput: any;
-  let capturedCallbacks: CastRunCallbacks | undefined;
-
-  const stub = {
-    run: vi.fn((input: any, callbacks: CastRunCallbacks) => {
-      capturedInput = input;
-      capturedCallbacks = callbacks;
-    }),
-  };
-
+function makeStubCaster() {
+  let capturedInput: CastInput | undefined;
+  let capturedCallbacks: CastCallbacks | undefined;
+  const castFn = vi.fn((input: CastInput, cbs: CastCallbacks) => {
+    capturedInput = input;
+    capturedCallbacks = cbs;
+  });
+  const instance = { cast: castFn };
   return {
-    stub: stub as any as CastRunner,
-    getInput: () => capturedInput,
-    getCallbacks: () => capturedCallbacks,
+    thunk: () => instance,
+    getInput: () => capturedInput!,
+    getCallbacks: () => capturedCallbacks!,
+    castFn,
   };
 }
 
-function makeStubCastLogStore() {
+function makeLogWriterStub(): CastLogWriter {
   return {
     recordCasted: vi.fn().mockResolvedValue(undefined),
     recordError: vi.fn().mockResolvedValue(undefined),
-  } as unknown as CastLogStore;
-}
-
-function makeStubRemoteTransport() {
-  return {
-    run: vi.fn<[RemoteCastInput, RemoteCastCallbacks], void>(),
   };
 }
 
-const remoteBaseSettings: GrimoireSettings = {
+const localBaseSettings: GrimoireSettings = {
   vaultMountPath: '/vault',
   spellTag: 'grimoire/spell',
   binaryPath: '/usr/bin/claude',
@@ -45,6 +36,16 @@ const remoteBaseSettings: GrimoireSettings = {
   forgeOutputFolder: 'Spells/',
   defaultModel: 'claude-sonnet-4-5',
   defaultEffort: null,
+  executionMode: 'local',
+  portalHost: '',
+  portalPort: '',
+  portalPath: '',
+  portalAuthUser: '',
+  portalAuthPassword: '',
+};
+
+const remoteBaseSettings: GrimoireSettings = {
+  ...localBaseSettings,
   executionMode: 'remote',
   portalHost: 'portal.example.com',
   portalPort: '',
@@ -57,12 +58,12 @@ describe('ForgeImprinter', () => {
   it('notifies invalid name and closes when name sanitises to empty', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
-    const { stub } = makeStubRunner();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -73,32 +74,24 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       closeFn
     );
 
     expect(notifyFn).toHaveBeenCalledWith('Spell name is invalid after sanitisation');
     expect(closeFn).toHaveBeenCalled();
-    expect(stub.run).not.toHaveBeenCalled();
+    expect(stubCaster.castFn).not.toHaveBeenCalled();
   });
 
-  it('notifies forging and close on valid name, then calls runner', () => {
+  it('notifies forging and close on valid name, then calls caster.cast', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
-    const { stub } = makeStubRunner();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -109,30 +102,22 @@ describe('ForgeImprinter', () => {
         effort: 'medium',
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       closeFn
     );
 
     expect(notifyFn).toHaveBeenCalledWith("Forging 'My Spell'…");
     expect(closeFn).toHaveBeenCalled();
-    expect(stub.run).toHaveBeenCalled();
+    expect(stubCaster.castFn).toHaveBeenCalled();
   });
 
-  it('passes metaSpell to runner with name and description', () => {
-    const { stub, getInput } = makeStubRunner();
+  it('passes metaSpell to caster with name and description in userPrompt', () => {
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -143,31 +128,23 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       vi.fn()
     );
 
-    const input = getInput();
-    expect(input.metaSpell).toContain('- **Name (already sanitised):** Test Spell');
-    expect(input.metaSpell).toContain('- **Description:** A test spell');
+    const input = stubCaster.getInput();
+    expect(input.userPrompt).toContain('- **Name (already sanitised):** Test Spell');
+    expect(input.userPrompt).toContain('- **Description:** A test spell');
   });
 
-  it('calls onSuccess callback with success toast', () => {
+  it('calls onAccepted callback with success toast for local mode', () => {
     const notifyFn = vi.fn();
-    const { stub, getCallbacks } = makeStubRunner();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -176,33 +153,25 @@ describe('ForgeImprinter', () => {
         description: 'test',
         model: 'claude-sonnet-4-5',
         effort: null,
+        executeOnNote: false,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       vi.fn()
     );
 
-    const callbacks = getCallbacks();
-    callbacks?.onSuccess();
+    stubCaster.getCallbacks().onAccepted({});
 
     expect(notifyFn).toHaveBeenCalledWith('Spell "My Spell" forged');
   });
 
   it('calls onFailure callback with failure toast', () => {
     const notifyFn = vi.fn();
-    const { stub, getCallbacks } = makeStubRunner();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -213,31 +182,22 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       vi.fn()
     );
 
-    const callbacks = getCallbacks();
-    callbacks?.onFailure('boom');
+    stubCaster.getCallbacks().onFailure('boom');
 
     expect(notifyFn).toHaveBeenCalledWith('Forge failed: boom');
   });
 
   it('threads executeOnNote: false into metaSpell', () => {
-    const { stub, getInput } = makeStubRunner();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -248,36 +208,22 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: false,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       vi.fn()
     );
 
-    const input = getInput();
-    expect(input.metaSpell).toContain('grimoire-execute-on-note: false');
+    const input = stubCaster.getInput();
+    expect(input.userPrompt).toContain('grimoire-execute-on-note: false');
   });
 
   it('empty-name guard calls neither recordCasted nor recordError', () => {
-    const recordCastedFn = vi.fn().mockResolvedValue(undefined);
-    const recordErrorFn = vi.fn().mockResolvedValue(undefined);
-    const castLogStoreMock = {
-      recordCasted: recordCastedFn,
-      recordError: recordErrorFn,
-    } as unknown as CastLogStore;
-    const { stub } = makeStubRunner();
-    const closeFn = vi.fn();
+    const logWriter = makeLogWriterStub();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreMock,
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
     });
 
     imprinter.imprint(
@@ -288,34 +234,22 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
-      closeFn
+      localBaseSettings,
+      vi.fn()
     );
 
-    expect(recordCastedFn).not.toHaveBeenCalled();
-    expect(recordErrorFn).not.toHaveBeenCalled();
+    expect(logWriter.recordCasted).not.toHaveBeenCalled();
+    expect(logWriter.recordError).not.toHaveBeenCalled();
   });
 
   it('valid imprint calls recordCasted once with correct shape (forge variant)', () => {
-    const recordCastedFn = vi.fn().mockResolvedValue(undefined);
-    const castLogStoreMock = {
-      recordCasted: recordCastedFn,
-      recordError: vi.fn().mockResolvedValue(undefined),
-    } as unknown as CastLogStore;
-    const { stub } = makeStubRunner();
+    const logWriter = makeLogWriterStub();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreMock,
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
     });
 
@@ -327,22 +261,10 @@ describe('ForgeImprinter', () => {
       executeOnNote: true,
     } as ForgeFormSnapshot;
 
-    imprinter.imprint(
-      snapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
-      vi.fn()
-    );
+    imprinter.imprint(snapshot, localBaseSettings, vi.fn());
 
-    expect(recordCastedFn).toHaveBeenCalledOnce();
-    const callArg = recordCastedFn.mock.calls[0][0];
+    expect(logWriter.recordCasted).toHaveBeenCalledOnce();
+    const callArg = (logWriter.recordCasted as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(callArg).toEqual({
       castId: 'fixed-uuid',
       spellPath: '<forge>',
@@ -350,17 +272,16 @@ describe('ForgeImprinter', () => {
       effort: snapshot.effort,
       contextNotes: [],
     });
-    // Assert no followUp or executeOnNote keys
     expect(Object.keys(callArg).sort()).toEqual(['castId', 'contextNotes', 'effort', 'model', 'spellPath']);
   });
 
-  it('castRunner.run receives castId in its input', () => {
-    const { stub, getInput } = makeStubRunner();
+  it('caster.cast receives castId in its input', () => {
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
       generateId: () => 'fixed-uuid',
     });
 
@@ -372,35 +293,22 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       vi.fn()
     );
 
-    const input = getInput();
-    expect(input.castId).toBe('fixed-uuid');
+    expect(stubCaster.getInput().castId).toBe('fixed-uuid');
   });
 
   it('onFailure callback records error and notifies', () => {
-    const recordErrorFn = vi.fn().mockResolvedValue(undefined);
-    const castLogStoreMock = {
-      recordCasted: vi.fn().mockResolvedValue(undefined),
-      recordError: recordErrorFn,
-    } as unknown as CastLogStore;
+    const logWriter = makeLogWriterStub();
     const notifyFn = vi.fn();
-    const { stub, getCallbacks } = makeStubRunner();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: castLogStoreMock,
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
     });
 
@@ -412,64 +320,29 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       vi.fn()
     );
 
-    const callbacks = getCallbacks();
-    callbacks?.onFailure('boom');
+    stubCaster.getCallbacks().onFailure('boom');
 
-    expect(recordErrorFn).toHaveBeenCalledOnce();
-    expect(recordErrorFn).toHaveBeenCalledWith({
+    expect(logWriter.recordError).toHaveBeenCalledOnce();
+    expect(logWriter.recordError).toHaveBeenCalledWith({
       castId: 'fixed-uuid',
       message: 'boom',
     });
     expect(notifyFn).toHaveBeenCalledWith('Forge failed: boom');
   });
 
-  it('remote with no remoteTransport in deps calls onFailure with a sensible message instead of throwing', () => {
-    const notifyFn = vi.fn();
-    const imprinter = new ForgeImprinter({
-      notify: notifyFn,
-      castRunner: makeStubRunner().stub,
-      castLogStore: makeStubCastLogStore(),
-      // remoteTransport intentionally omitted
-    });
-
-    expect(() => imprinter.imprint(
-      {
-        name: 'My Spell',
-        description: 'test',
-        model: 'claude-sonnet-4-5',
-        effort: null,
-        executeOnNote: false,
-      } as ForgeFormSnapshot,
-      remoteBaseSettings,
-      vi.fn()
-    )).not.toThrow();
-
-    expect(notifyFn).toHaveBeenCalledWith(expect.stringContaining('not configured'));
-  });
-
-  it('empty-host guard: notifies exact message, no close, no castRunner, no remoteTransport', () => {
+  it('empty-host guard: notifies exact message, no close, caster never called', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
-    const { stub } = makeStubRunner();
-    const remoteTransport = makeStubRemoteTransport();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
-      remoteTransport: remoteTransport as any,
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -480,30 +353,24 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        ...remoteBaseSettings,
-        portalHost: '',
-      },
+      { ...remoteBaseSettings, portalHost: '' },
       closeFn
     );
 
     expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
     expect(closeFn).not.toHaveBeenCalled();
-    expect(stub.run).not.toHaveBeenCalled();
-    expect(remoteTransport.run).not.toHaveBeenCalled();
+    expect(stubCaster.castFn).not.toHaveBeenCalled();
   });
 
   it('whitespace-only host guard: fires same guard as empty host', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
-    const { stub } = makeStubRunner();
-    const remoteTransport = makeStubRemoteTransport();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: makeStubCastLogStore(),
-      remoteTransport: remoteTransport as any,
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
     });
 
     imprinter.imprint(
@@ -514,35 +381,25 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        ...remoteBaseSettings,
-        portalHost: '   ',
-      },
+      { ...remoteBaseSettings, portalHost: '   ' },
       closeFn
     );
 
     expect(notifyFn).toHaveBeenCalledWith('Configure portal host in settings before casting remotely.');
     expect(closeFn).not.toHaveBeenCalled();
-    expect(stub.run).not.toHaveBeenCalled();
-    expect(remoteTransport.run).not.toHaveBeenCalled();
+    expect(stubCaster.castFn).not.toHaveBeenCalled();
   });
 
-  it('remote happy path: recordCasted with remote flag, notice, close, remoteTransport.run called', () => {
-    const recordCastedFn = vi.fn().mockResolvedValue(undefined);
-    const castLogStoreMock = {
-      recordCasted: recordCastedFn,
-      recordError: vi.fn().mockResolvedValue(undefined),
-    } as unknown as CastLogStore;
+  it('remote happy path: recordCasted, notice on portal, close, caster.cast called', () => {
+    const logWriter = makeLogWriterStub();
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
-    const { stub } = makeStubRunner();
-    const remoteTransport = makeStubRemoteTransport();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: stub,
-      castLogStore: castLogStoreMock,
-      remoteTransport: remoteTransport as any,
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'forge-id',
     });
 
@@ -558,40 +415,23 @@ describe('ForgeImprinter', () => {
       closeFn
     );
 
-    // recordCasted once with remote: true, no portalCastId
-    expect(recordCastedFn).toHaveBeenCalledOnce();
-    const [recordedInput, recordedOpts] = recordCastedFn.mock.calls[0];
-    expect(recordedInput).toMatchObject({ castId: 'forge-id', spellPath: '<forge>' });
-    expect(recordedOpts).toEqual({ remote: true });
+    expect(logWriter.recordCasted).toHaveBeenCalledOnce();
+    const callArg = (logWriter.recordCasted as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(callArg).toMatchObject({ castId: 'forge-id', spellPath: '<forge>' });
 
-    // Notice uses single quotes around name
     expect(notifyFn).toHaveBeenCalledWith("Forging 'My Spell' on portal…");
-
-    // close called once
     expect(closeFn).toHaveBeenCalledOnce();
-
-    // remoteTransport.run called once with expected shape
-    expect(remoteTransport.run).toHaveBeenCalledOnce();
-    const [transportInput] = remoteTransport.run.mock.calls[0] as [RemoteCastInput, RemoteCastCallbacks];
-    expect(transportInput).toMatchObject({ spellPath: '<forge>', portalHost: 'portal.example.com', castId: 'forge-id' });
-
-    // local castRunner should NOT be called
-    expect(stub.run).not.toHaveBeenCalled();
+    expect(stubCaster.castFn).toHaveBeenCalledOnce();
   });
 
-  it('remote onAccepted: second recordCasted called with portalCastId and remote flag', () => {
-    const recordCastedFn = vi.fn().mockResolvedValue(undefined);
-    const castLogStoreMock = {
-      recordCasted: recordCastedFn,
-      recordError: vi.fn().mockResolvedValue(undefined),
-    } as unknown as CastLogStore;
-    const remoteTransport = makeStubRemoteTransport();
+  it('remote onAccepted with jobId: second recordCasted with portalCastId', () => {
+    const logWriter = makeLogWriterStub();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
-      castRunner: makeStubRunner().stub,
-      castLogStore: castLogStoreMock,
-      remoteTransport: remoteTransport as any,
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'forge-id',
     });
 
@@ -607,29 +447,51 @@ describe('ForgeImprinter', () => {
       vi.fn()
     );
 
-    const [, callbacks] = remoteTransport.run.mock.calls[0] as [RemoteCastInput, RemoteCastCallbacks];
-    callbacks.onAccepted({ portalCastId: 'srv-1' });
+    stubCaster.getCallbacks().onAccepted({ jobId: 'srv-forge-1' });
 
-    expect(recordCastedFn).toHaveBeenCalledTimes(2);
-    const [secondInput, secondOpts] = recordCastedFn.mock.calls[1];
-    expect(secondInput).toMatchObject({ castId: 'forge-id', spellPath: '<forge>', portalCastId: 'srv-1' });
-    expect(secondOpts).toEqual({ remote: true });
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(2);
+    expect(logWriter.recordCasted).toHaveBeenLastCalledWith(
+      expect.objectContaining({ castId: 'forge-id', portalCastId: 'srv-forge-1' })
+    );
   });
 
-  it('remote onFailure: recordError with remote flag, notify message', () => {
-    const recordErrorFn = vi.fn().mockResolvedValue(undefined);
-    const castLogStoreMock = {
-      recordCasted: vi.fn().mockResolvedValue(undefined),
-      recordError: recordErrorFn,
-    } as unknown as CastLogStore;
+  it('remote onAccepted without jobId: no second recordCasted', () => {
+    const logWriter = makeLogWriterStub();
+    const stubCaster = makeStubCaster();
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
+      generateId: () => 'forge-id',
+    });
+
+    imprinter.imprint(
+      {
+        name: 'My Spell',
+        description: 'Does things',
+        model: 'claude-sonnet-4-5',
+        effort: 'medium',
+        executeOnNote: false,
+      } as ForgeFormSnapshot,
+      remoteBaseSettings,
+      vi.fn()
+    );
+
+    stubCaster.getCallbacks().onAccepted({});
+
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(1);
+  });
+
+  it('remote onFailure: recordError + notify with message (no Forge failed: prefix)', () => {
+    const logWriter = makeLogWriterStub();
     const notifyFn = vi.fn();
-    const remoteTransport = makeStubRemoteTransport();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: notifyFn,
-      castRunner: makeStubRunner().stub,
-      castLogStore: castLogStoreMock,
-      remoteTransport: remoteTransport as any,
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'forge-id',
     });
 
@@ -645,29 +507,24 @@ describe('ForgeImprinter', () => {
       vi.fn()
     );
 
-    const [, callbacks] = remoteTransport.run.mock.calls[0] as [RemoteCastInput, RemoteCastCallbacks];
-    callbacks.onFailure('Portal returned 500: boom.');
+    stubCaster.getCallbacks().onFailure('Portal returned 500: boom.');
 
-    expect(recordErrorFn).toHaveBeenCalledOnce();
-    const [errorInput, errorOpts] = recordErrorFn.mock.calls[0];
-    expect(errorInput).toMatchObject({ castId: 'forge-id', message: 'Portal returned 500: boom.' });
-    expect(errorOpts).toEqual({ remote: true });
+    expect(logWriter.recordError).toHaveBeenCalledOnce();
+    expect(logWriter.recordError).toHaveBeenCalledWith({
+      castId: 'forge-id',
+      message: 'Portal returned 500: boom.',
+    });
     expect(notifyFn).toHaveBeenCalledWith('Portal returned 500: boom.');
   });
 
-  it('onSuccess produces no log write', () => {
-    const recordCastedFn = vi.fn().mockResolvedValue(undefined);
-    const recordErrorFn = vi.fn().mockResolvedValue(undefined);
-    const castLogStoreMock = {
-      recordCasted: recordCastedFn,
-      recordError: recordErrorFn,
-    } as unknown as CastLogStore;
-    const { stub, getCallbacks } = makeStubRunner();
+  it('local onAccepted produces no second log write', () => {
+    const logWriter = makeLogWriterStub();
+    const stubCaster = makeStubCaster();
 
     const imprinter = new ForgeImprinter({
       notify: vi.fn(),
-      castRunner: stub,
-      castLogStore: castLogStoreMock,
+      caster: stubCaster.thunk,
+      logWriter: () => logWriter,
       generateId: () => 'fixed-uuid',
     });
 
@@ -679,25 +536,93 @@ describe('ForgeImprinter', () => {
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
-      {
-        vaultMountPath: '/vault',
-        spellTag: 'grimoire/spell',
-        binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
-        forgeOutputFolder: 'Spells/',
-        defaultModel: 'claude-sonnet-4-5',
-        defaultEffort: null,
-      } as GrimoireSettings,
+      localBaseSettings,
       vi.fn()
     );
 
-    const callbacks = getCallbacks();
-    callbacks?.onSuccess();
+    stubCaster.getCallbacks().onAccepted({});
 
-    // recordCasted was called once on dispatch
-    expect(recordCastedFn).toHaveBeenCalledOnce();
-    // recordError should never be called
-    expect(recordErrorFn).not.toHaveBeenCalled();
+    expect(logWriter.recordCasted).toHaveBeenCalledOnce();
+    expect(logWriter.recordError).not.toHaveBeenCalled();
   });
 
+  // E5: second-recordCasted contract test
+  it('remote: onAccepted with jobId triggers second recordCasted with portalCastId', () => {
+    const logWriter = makeLogWriterStub();
+    const { thunk, getCallbacks } = makeStubCaster();
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: thunk,
+      logWriter: () => logWriter,
+      generateId: () => 'forge-id',
+    });
+
+    imprinter.imprint(
+      { name: 'My Spell', description: 'desc', model: 'claude-sonnet-4-5', effort: null, executeOnNote: false },
+      { ...remoteBaseSettings },
+      vi.fn()
+    );
+
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(1);
+
+    getCallbacks().onAccepted({ jobId: 'srv-forge-1' });
+    expect(logWriter.recordCasted).toHaveBeenCalledTimes(2);
+    expect(logWriter.recordCasted).toHaveBeenLastCalledWith(
+      expect.objectContaining({ castId: 'forge-id', portalCastId: 'srv-forge-1' })
+    );
+
+    // no jobId → no second write
+    const logWriter2 = makeLogWriterStub();
+    const caster2 = makeStubCaster();
+    const imprinter2 = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: caster2.thunk,
+      logWriter: () => logWriter2,
+      generateId: () => 'id2',
+    });
+    imprinter2.imprint(
+      { name: 'X', description: 'd', model: 'claude-sonnet-4-5', effort: null, executeOnNote: false },
+      { ...remoteBaseSettings },
+      vi.fn()
+    );
+    caster2.getCallbacks().onAccepted({});
+    expect(logWriter2.recordCasted).toHaveBeenCalledTimes(1);
+  });
+
+  // ── logWriter thunk: resolved per-imprint, not captured at construction ──────
+
+  it('uses logWriter resolved at imprint time, not construction time', () => {
+    const localWriter = makeLogWriterStub();
+    const remoteWriter = makeLogWriterStub();
+    const mutableSettings = { ...localBaseSettings, executionMode: 'local' as 'local' | 'remote' };
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: makeStubCaster().thunk,
+      logWriter: () => mutableSettings.executionMode === 'remote' ? remoteWriter : localWriter,
+      generateId: () => 'id',
+    });
+
+    const snapshot: ForgeFormSnapshot = {
+      name: 'My Spell',
+      description: 'test',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      executeOnNote: false,
+    };
+
+    imprinter.imprint(snapshot, mutableSettings, vi.fn());
+
+    expect(localWriter.recordCasted).toHaveBeenCalledTimes(1);
+    expect(remoteWriter.recordCasted).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    mutableSettings.executionMode = 'remote';
+
+    imprinter.imprint(snapshot, { ...mutableSettings, portalHost: 'portal.example.com' }, vi.fn());
+
+    expect(remoteWriter.recordCasted).toHaveBeenCalledTimes(1);
+    expect(localWriter.recordCasted).not.toHaveBeenCalled();
+  });
 });

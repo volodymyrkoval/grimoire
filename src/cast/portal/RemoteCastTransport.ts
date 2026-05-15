@@ -1,9 +1,9 @@
-import type { Effort } from '../domain/settings/Settings';
-import { parsePortalScheme } from './portal/parsePortalScheme';
-import { buildPortalUrl } from './portal/buildPortalUrl';
-import { buildBasicAuthHeader } from './portal/buildBasicAuthHeader';
-import { buildPortalRequestBody } from './portal/buildPortalRequestBody';
-import { mapPortalError } from './portal/mapPortalError';
+import type { Effort } from '../../domain/settings/Settings';
+import { parsePortalScheme } from './parsePortalScheme';
+import { buildPortalUrl } from './buildPortalUrl';
+import { buildBasicAuthHeader } from './buildBasicAuthHeader';
+import { buildPortalRequestBody } from './buildPortalRequestBody';
+import { mapPortalError } from './mapPortalError';
 
 const TIMEOUT_MS = 30_000;
 

@@ -1,11 +1,19 @@
 import { SpellPath } from '../../domain/spells/SpellPath';
 import { SpellOverrideStore } from './SpellOverrideStore';
-import { OptionsSessionMap } from '../../ui/options/OptionsSessionMap';
 import { GrimoireSettings, Effort, SupportedModel } from './Settings';
+
+export interface SpellSessionEntry {
+  model: string;
+  effort: Effort | null;
+}
+
+export interface SpellSessionReader {
+  get(path: SpellPath): SpellSessionEntry | undefined;
+}
 
 export interface ResolveOptionsInput {
   spellPath: SpellPath;
-  session: OptionsSessionMap;
+  session: SpellSessionReader;
   overrides: SpellOverrideStore;
   settings: GrimoireSettings;
   models: readonly SupportedModel[];

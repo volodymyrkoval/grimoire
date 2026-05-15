@@ -1,9 +1,7 @@
 import { type Spell } from '../domain/spells/Spell';
 import { type Effort, type GrimoireSettings } from '../domain/settings/Settings';
-import { type CastLogStore } from '../castLog/store';
-import { CastRunner } from './CastRunner';
-import { type SpawnFn } from './spawnCast';
-import { RemoteCastTransport } from './RemoteCastTransport';
+import type { Caster } from '../execution/Caster';
+import type { CastLogWriter } from '../castLog/CastLogWriter';
 
 export interface CastDispatchInput {
   spell: Spell;
@@ -19,152 +17,81 @@ export interface CastDispatchInput {
 export interface CastDispatcherDeps {
   notify: (msg: string) => void;
   close: () => void;
-  castRunner?: CastRunner;
-  spawner?: SpawnFn;
-  remoteTransport?: RemoteCastTransport;
-  castLogStore: CastLogStore;
+  caster: () => Caster;
+  logWriter: () => CastLogWriter;
   generateId?: () => string;
 }
 
 export class CastDispatcher {
   readonly #notify: (msg: string) => void;
   readonly #close: () => void;
-  readonly #castRunner?: CastRunner;
-  readonly #spawner?: SpawnFn;
-  readonly #remoteTransport?: RemoteCastTransport;
-  readonly #castLogStore: CastLogStore;
+  readonly #caster: () => Caster;
+  readonly #logWriter: () => CastLogWriter;
   readonly #generateId: () => string;
 
   constructor(deps: CastDispatcherDeps) {
     this.#notify = deps.notify;
     this.#close = deps.close;
-    this.#castRunner = deps.castRunner;
-    this.#spawner = deps.spawner;
-    this.#remoteTransport = deps.remoteTransport;
-    this.#castLogStore = deps.castLogStore;
+    this.#caster = deps.caster;
+    this.#logWriter = deps.logWriter;
     this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
   }
 
   dispatch(input: CastDispatchInput): void {
     const { spell, model, effort, contextNotePaths, followUp, settings, activeFilePath } = input;
-    const executionMode = settings.executionMode;
+    const isRemote = settings.executionMode === 'remote';
+    const logWriter = this.#logWriter();
 
+    // pre-flight guard 1
     if (input.executeOnNote && activeFilePath === null) {
       this.#notify('Open a note to cast against');
       this.#close();
       return;
     }
 
-    if (executionMode === 'remote' && settings.portalHost.trim() === '') {
+    // pre-flight guard 2
+    if (isRemote && settings.portalHost.trim() === '') {
       this.#notify('Configure portal host in settings before casting remotely.');
       return;
     }
 
-    if (executionMode === 'remote') {
-      this.#remoteDispatch(input);
-      return;
-    }
+    const castId = this.#generateId();
+    const userPrompt = this.#buildUserPrompt(input.executeOnNote, settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
 
-    const castId = this.#recordCast(spell, input, model, effort);
+    logWriter
+      .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote })
+      .catch(console.error);
 
-    const userPrompt = this.#buildUserPrompt(
-      input.executeOnNote,
-      settings.vaultMountPath,
-      activeFilePath,
-      contextNotePaths,
-      followUp
-    );
-
-    this.#notify(`Casting '${spell.name}'…`);
+    const noticeText = isRemote ? `Casting '${spell.name}' on portal…` : `Casting '${spell.name}'…`;
+    this.#notify(noticeText);
     this.#close();
 
-    const runner = this.#castRunner ?? new CastRunner(this.#spawner);
-    runner.run(
+    const caster = this.#caster();
+    caster.cast(
       {
-        systemPromptFile: `${settings.vaultMountPath}/${spell.path}`,
-        userPrompt,
+        castId,
+        spellPath: spell.path,
         modelId: model,
         effort,
+        userPrompt,
+        systemPromptFile: isRemote ? undefined : `${settings.vaultMountPath}/${spell.path}`,
         vaultMountPath: settings.vaultMountPath,
-        binaryPath: settings.binaryPath,
-        cliCommand: settings.cliCommand,
-        castId,
       },
       {
-        onSuccess: () => this.#notify('Spell cast'),
-        onFailure: (msg) => {
-          this.#castLogStore.recordError({ castId, message: msg }).catch(console.error);
-          this.#notify('Cast failed: ' + msg);
+        onAccepted: ({ jobId }) => {
+          if (jobId !== undefined) {
+            logWriter
+              .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote, portalCastId: jobId })
+              .catch(console.error);
+          }
+          if (!isRemote) this.#notify('Spell cast');
         },
-      }
-    );
-  }
-
-  #remoteDispatch(input: CastDispatchInput): void {
-    const { spell, model, effort, contextNotePaths, followUp, settings, activeFilePath } = input;
-    const { executeOnNote } = input;
-
-    const castId = this.#generateId();
-    this.#castLogStore
-      .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote }, { remote: true })
-      .catch(console.error);
-
-    this.#notify(`Casting '${spell.name}' on portal…`);
-    this.#close();
-
-    const userPrompt = this.#buildUserPrompt(executeOnNote, settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
-
-    if (!this.#remoteTransport) {
-      this.#notify('Remote transport not configured');
-      return;
-    }
-
-    this.#remoteTransport.run(
-      {
-        castId,
-        spellPath: spell.path,
-        userPrompt,
-        modelId: model,
-        effort,
-        portalHost: settings.portalHost,
-        portalPort: settings.portalPort,
-        portalPath: settings.portalPath,
-        portalAuthUser: settings.portalAuthUser,
-        portalAuthPassword: settings.portalAuthPassword,
+        onFailure: (msg) => {
+          logWriter.recordError({ castId, message: msg }).catch(console.error);
+          this.#notify(isRemote ? msg : `Cast failed: ${msg}`);
+        },
       },
-      {
-        onAccepted: ({ portalCastId }) => {
-          this.#castLogStore
-            .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote, portalCastId }, { remote: true })
-            .catch(console.error);
-        },
-        onFailure: (msg) => {
-          this.#castLogStore.recordError({ castId, message: msg }, { remote: true }).catch(console.error);
-          this.#notify(msg);
-        },
-      }
     );
-  }
-
-  #recordCast(
-    spell: Spell,
-    input: CastDispatchInput,
-    model: string,
-    effort: Effort | null
-  ) {
-    const castId = this.#generateId();
-    this.#castLogStore
-      .recordCasted({
-        castId,
-        spellPath: spell.path,
-        model,
-        effort,
-        contextNotes: [...input.contextNotePaths],
-        followUp: input.followUp,
-        executeOnNote: input.executeOnNote,
-      })
-      .catch(console.error);
-    return castId;
   }
 
   #buildUserPrompt(

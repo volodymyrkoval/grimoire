@@ -2,9 +2,9 @@ import { Scope } from 'obsidian';
 import { KeyboardController } from '../KeyboardController';
 import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import { SUPPORTED_MODELS, Effort } from '../../domain/settings/Settings';
+import type { FormDefaults } from '../../domain/settings/FormDefaults';
 import { EffortRow } from '../widgets/EffortRow';
 import { buildModelSelect } from '../widgets/ModelSelect';
-import type { FormDefaults } from '../CommandPopup';
 
 export interface ForgeSentinelDetailParams {
   contentEl: HTMLElement;
