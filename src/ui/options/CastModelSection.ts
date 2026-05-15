@@ -15,6 +15,11 @@ export interface CastModelSectionDeps {
   onOverrideChanged: () => void;
 }
 
+/**
+ * Form section for selecting cast model and effort, with "Set as default" checkbox.
+ * Manages reactive visibility: checkbox only shows when effort differs from snapshot
+ * and the model supports effort options. Handles dynamic mounting/unmounting of EffortRow.
+ */
 export class CastModelSection {
   #kb: KeyboardController;
   #effortRow = new EffortRow();

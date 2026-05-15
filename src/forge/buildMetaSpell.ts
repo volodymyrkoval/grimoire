@@ -1,6 +1,7 @@
 import { EXECUTE_ON_NOTE_KEY } from '../domain/spells/Spell';
 import { Effort } from '../domain/settings/Settings';
 
+/** Input for generating a forge meta-spell prompt. */
 export interface MetaSpellInput {
   description: string;
   name: string;
@@ -12,6 +13,10 @@ export interface MetaSpellInput {
   executeOnNote: boolean;
 }
 
+/**
+ * Generates the complete prompt for the Forge spell that creates a new user-defined spell.
+ * Embeds the spell metadata, execution mode instruction, and structured wrapper format.
+ */
 export function buildMetaSpell(input: MetaSpellInput): string {
   const { description, name, model, effort, spellTag, forgeOutputFolder, vaultMountPath, executeOnNote } = input;
   const effortDisplay = effort ?? 'n/a';

@@ -8,11 +8,16 @@ import { GrimoireSettingTab } from './ui/settings/GrimoireSettingTab';
 import { CastLogModule } from './main/CastLogModule';
 import { PopupModule } from './main/PopupModule';
 
+/**
+ * Obsidian plugin entry point for Grimoire (spell management and casting).
+ * Lifecycle: onload (initializes data, cast log, and UI) → onunload (flushes pending saves).
+ */
 export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
 
+  /** Initializes plugin data, cast log, UI panels, and settings tab. */
   async onload(): Promise<void> {
     await this.#loadPluginData();
     const paths = this.#buildPaths();
@@ -58,9 +63,11 @@ export default class GrimoirePlugin extends Plugin {
     popupModule.register(this);
   }
 
+  /** Flushes any pending saves before shutdown. */
   onunload(): void {
     this.saver.flush();
   }
 
+  /** Schedules a deferred save of the plugin data. */
   save(): void { this.saver.schedule(); }
 }

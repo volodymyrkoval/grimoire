@@ -1,5 +1,6 @@
 import { normalizePath } from 'obsidian';
 
+/** Encapsulates normalized paths to plugin directories and log files. */
 export class PluginPaths {
   readonly #pluginDir: string;
   readonly #localLog: string;
@@ -13,18 +14,22 @@ export class PluginPaths {
     this.#scratch = normalizePath(`${pluginDir}/cast-log-scratch`);
   }
 
+  /** Returns the absolute path to the plugin directory. */
   pluginDirAbs(): string {
     return this.#pluginDir;
   }
 
+  /** Returns the absolute path to the local cast log file. */
   localLogPath(): string {
     return this.#localLog;
   }
 
+  /** Returns the absolute path to the remote cast log file. */
   remoteLogPath(): string {
     return this.#remoteLog;
   }
 
+  /** Returns the absolute path to the cast log scratch directory. */
   scratchDir(): string {
     return this.#scratch;
   }

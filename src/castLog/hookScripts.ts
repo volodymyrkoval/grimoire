@@ -1,6 +1,9 @@
 const shellEscape = (p: string) => p.replace(/"/g, '\\"');
 
-// Generates shell script that logs session start event with timestamp and cast ID
+/**
+ * Generates session-start.sh: logs cast initiation with in-progress event.
+ * Invoked at the beginning of a Grimoire session (CAST_ID set by orchestrator).
+ */
 export function renderSessionStartScript(args: { logPathAbs: string }): string {
   const { logPathAbs } = args;
   return `#!/bin/sh
@@ -13,7 +16,10 @@ printf '{"stage":"in-progress","ts":"%s","castId":"%s"}\\n' "$TS" "$CAST_ID" >> 
 `;
 }
 
-// Generates shell script that captures file paths from tool execution events for later processing
+/**
+ * Generates post-tool-use.sh: captures file paths from tool input for deferred collection.
+ * Invoked after each tool execution; accumulates paths in scratch file for later deduplication.
+ */
 export function renderPostToolUseScript(args: { scratchDirAbs: string }): string {
   const { scratchDirAbs } = args;
   return `#!/bin/sh
@@ -31,7 +37,10 @@ exit 0
 `;
 }
 
-// Generates shell script that logs session end with deduplicated affected files collected during execution
+/**
+ * Generates stop.sh: logs cast completion with deduplicated affected files.
+ * Invoked at session end; reads scratch file, deduplicates and JSONifies paths, cleans up.
+ */
 export function renderStopScript(args: { logPathAbs: string; scratchDirAbs: string }): string {
   const { logPathAbs, scratchDirAbs } = args;
   return `#!/bin/sh

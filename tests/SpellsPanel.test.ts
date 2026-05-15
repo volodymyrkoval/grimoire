@@ -100,13 +100,10 @@ describe('SpellsPanel with vault', () => {
   });
 
   it('untagged files return no spells plus sentinels', () => {
-    // makeApp returns null from getFileCache when spells array is empty,
-    // but here we need files with no matching tag — set up manually
     const app = new App() as any;
     app.vault.getMarkdownFiles.mockReturnValue([
       { basename: 'Not A Spell', path: '/notes/note.md' },
     ]);
-    // null cache means no tags => no match
     app.metadataCache.getFileCache.mockReturnValue(null);
     const panel = new SpellsPanel(app, 'spell');
     panel.mount(makeMockEl());
@@ -133,7 +130,7 @@ describe('SpellsPanel.openOptions', () => {
     panel.filter('protect');
     const spy = vi.spyOn(panel.events, 'emit');
 
-    panel.openOptions(1); // 'protect' matches exactly 1 spell; index 1 is the sentinel boundary
+    panel.openOptions(1);
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -217,9 +214,8 @@ describe('SpellsPanel with hasOverride predicate', () => {
     const container = makeMockEl();
     panel.mount(container);
 
-    // Move selection to index 2
     panel.updateSelection(0, 2);
-    panel.move(1, 1); // Move to index 2
+    panel.move(1, 1);
 
     const spellListEl = container.createDiv.mock.results[0].value;
     const getSelectedRowIndex = () => {
@@ -233,11 +229,8 @@ describe('SpellsPanel with hasOverride predicate', () => {
       return selectedIndex;
     };
 
-    // Call refreshOverrides
     panel['refreshOverrides']();
 
-    // Verify selection is still at index 2 by checking if is-selected was called on that row
-    // This is a sanity check that refreshOverrides maintains selection
     expect(spellListEl).toBeTruthy();
   });
 

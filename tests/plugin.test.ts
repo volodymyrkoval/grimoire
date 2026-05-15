@@ -48,29 +48,23 @@ describe('C — close wiring', () => {
       return popupMock as any;
     } as any);
 
-    // Mock CastDispatcher to capture the close callback and invoke it immediately
     const CastDispatcherModule = await import('../src/cast/CastDispatcher');
     const OriginalDispatcher = CastDispatcherModule.CastDispatcher;
     let capturedCloseCallback: (() => void) | undefined;
     let closeWasInvokedDuringConstruction = false;
     const dispatcherSpy = vi.spyOn(CastDispatcherModule, 'CastDispatcher').mockImplementation((deps: any) => {
-      // Capture and immediately invoke the close callback
       capturedCloseCallback = deps.close;
       capturedCloseCallback();
       closeWasInvokedDuringConstruction = true;
       return new OriginalDispatcher(deps);
     });
 
-    // Invoke the command callback which runs #openCommandPopup
     const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
       (c: any[]) => c[0].id === 'open-popup'
     );
     expect(commandCall).toBeDefined();
     commandCall![0].callback();
 
-    // The test pins the temporal property: if close is invoked during or immediately after
-    // dispatcher construction (before #openCommandPopup finishes), the popup still closes.
-    // This fails on the current code because the mutable closeRef box is a no-op until after popup creation.
     expect(closeWasInvokedDuringConstruction).toBe(true);
     expect(popupMock.close).toHaveBeenCalledOnce();
 

@@ -1,5 +1,9 @@
 import type { Spell } from "../../domain/spells/Spell";
 
+/**
+ * Renders a single spell row in the spells list.
+ * Displays spell name, override indicator (dot), and keyboard hint text.
+ */
 export class SpellRow {
   el!: HTMLElement;
 

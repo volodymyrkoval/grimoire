@@ -79,7 +79,7 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
     });
   });
 
-  it('(e) returns selectedEffort as-is when it is in the resolved model\'s effortOptions', () => {
+  it('(e) returns selectedEffort when it is in the resolved model\'s effortOptions', () => {
     input.session.get = vi.fn(() => ({
       model: 'claude-sonnet-4-5',
       effort: 'high' as const,
@@ -95,20 +95,20 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
   it('(f) clamps selectedEffort to model\'s defaultEffort when not in effortOptions', () => {
     input.session.get = vi.fn(() => ({
       model: 'claude-sonnet-4-5',
-      effort: 'xhigh' as const, // xhigh is NOT in sonnet's effortOptions
+      effort: 'xhigh' as const,
       contextNotePaths: [],
       followUp: '',
     }));
 
     const result = resolveSpellOptions(input);
 
-    expect(result.effort).toBe('medium'); // sonnet's defaultEffort
+    expect(result.effort).toBe('medium');
   });
 
   it('(g) returns null effort when resolvedModel has effortOptions === null (Haiku)', () => {
     input.session.get = vi.fn(() => ({
       model: 'claude-haiku-4-5',
-      effort: 'high' as const, // effort ignored for haiku
+      effort: 'high' as const,
       contextNotePaths: [],
       followUp: '',
     }));

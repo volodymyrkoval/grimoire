@@ -126,7 +126,6 @@ describe('persistence.hydrate', () => {
     expect(result.settings.portalAuthPassword).toBe('');
   });
 
-  // read-API name-lock: verifies field names are stable across refactors (distinct from per-field default assertions in (h))
   it('(k) hydrate(undefined) exposes all six new remote-casting fields with stable typed names', () => {
     const result = hydrate(undefined, app);
     expect(result.settings).toEqual(expect.objectContaining({

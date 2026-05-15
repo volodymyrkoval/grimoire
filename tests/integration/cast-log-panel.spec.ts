@@ -119,27 +119,21 @@ describe('CastLogPanel', () => {
       const { container, tick } = mountPanel([recordA, recordB]);
       await flushPromises();
 
-      // Header shows "1 in flight" (recordA is in-progress, recordB is done)
       const headerText = container.textContent;
       expect(headerText).toContain('1 in flight');
 
-      // Both rows visible — display names: "Fireball" (basename of Spells/Fireball.md)
-      // and "Forge: result" (Forge: basename of Notes/result.md)
       expect(container.textContent).toContain('Fireball');
       expect(container.textContent).toContain('Forge: result');
 
-      // Status badges
       expect(container.textContent).toContain('Running');
       expect(container.textContent).toContain('Done');
 
-      // Tick updates in-flight duration — capture duration text before tick, fire, compare
       const rowA = container.querySelector('[data-cast-id="cast-a"], .cast-log-row') as HTMLElement;
       const durationSpan = rowA?.querySelector('.cast-log-duration') as HTMLElement | null;
       const durationBefore = durationSpan?.textContent ?? '';
 
-      // Advance clock so next tick sees a different time
       const laterNow = new Date(NOW_MS + 2_000);
-      // Re-mount with a controllable clock to verify tick mutates duration
+
       const container2 = document.createElement('div');
       let currentTime = new Date(NOW_MS);
       const source2 = new FakeCastLogSource([recordA, recordB]);
@@ -162,7 +156,6 @@ describe('CastLogPanel', () => {
       tick2.fire();
 
       const durationAfterTick = durationSpan2?.textContent ?? '';
-      // Duration text changes after a tick for the in-flight row
       expect(durationAfterTick).not.toBe(durationBeforeTick);
     });
 
@@ -171,8 +164,6 @@ describe('CastLogPanel', () => {
       await flushPromises();
 
       expect(container.textContent).toContain('No casts yet');
-
-      // No in-flight header when empty
       expect(container.textContent).not.toContain('in flight');
     });
 
@@ -180,11 +171,9 @@ describe('CastLogPanel', () => {
       const { container } = mountPanel([recordA, recordB]);
       await flushPromises();
 
-      // Find recordA's row header and click it
       const rows = container.querySelectorAll('.cast-log-row');
       expect(rows.length).toBeGreaterThanOrEqual(1);
 
-      // Find the row for cast-a
       const rowA = Array.from(rows).find((r) =>
         r.textContent?.includes('Fireball')
       ) as HTMLElement | undefined;
@@ -194,15 +183,12 @@ describe('CastLogPanel', () => {
       expect(header).toBeTruthy();
       header.click();
 
-      // Row should now have is-expanded class
       expect(rowA!.classList.contains('is-expanded')).toBe(true);
 
-      // Body should be visible with castId
       const body = rowA!.querySelector('.cast-log-row-body') as HTMLElement | null;
       expect(body).toBeTruthy();
       expect(body!.textContent).toContain('cast-a');
 
-      // Context notes link for 'Notes/context.md' should be in the body
       const links = Array.from(body!.querySelectorAll('a'));
       const contextLink = links.find((a) => a.textContent?.includes('context'));
       expect(contextLink).toBeTruthy();
@@ -220,11 +206,9 @@ describe('CastLogPanel', () => {
 
       const header = rowA!.querySelector('.cast-log-row-header') as HTMLElement;
 
-      // Click to expand
       header.click();
       expect(rowA!.classList.contains('is-expanded')).toBe(true);
 
-      // Click again to collapse
       header.click();
       expect(rowA!.classList.contains('is-expanded')).toBe(false);
     });
@@ -259,7 +243,6 @@ describe('CastLogPanel', () => {
 
       contextLink!.click();
 
-      // openLink called exactly once with the vault path
       expect(openLink).toHaveBeenCalledTimes(1);
       expect(openLink).toHaveBeenCalledWith('Notes/context.md');
     });
@@ -277,14 +260,12 @@ describe('CastLogPanel', () => {
       const tick = new FakeTickCoordinator();
       const panel = new CastLogPanel({ source, refresh, tick, openLink: vi.fn(), now: () => new Date() });
 
-      // First mount — rows must appear
       panel.mount(container);
       await flushPromises();
 
       const rowsFirstMount = container.querySelectorAll('.cast-log-row');
       expect(rowsFirstMount.length).toBeGreaterThan(0);
 
-      // Unmount — sets disposed = true internally
       panel.unmount();
 
       // In production (SearchInput / reattachTabBar) the container is cleared
@@ -292,14 +273,9 @@ describe('CastLogPanel', () => {
       // from the first mount does not mask the bug.
       container.innerHTML = '';
 
-      // Re-mount into the cleared container (simulates tab switching back)
       panel.mount(container);
       await flushPromises();
 
-      // Rows must be present again — bug: disposed flag is not reset, so
-      // source.load() resolves but the guard silently drops the result and
-      // the container stays empty (only the structural header/list divs from
-      // the CastLogList constructor appear, but zero .cast-log-row elements).
       const rowsSecondMount = container.querySelectorAll('.cast-log-row');
       expect(rowsSecondMount.length).toBeGreaterThan(0);
     });
@@ -330,12 +306,10 @@ describe('CastLogPanel', () => {
       panel.mount(container);
       await flushPromises();
 
-      // Initial state: badge should show "Running"
       const badgeBefore = container.querySelector('.cast-log-status-badge') as HTMLElement | null;
       expect(badgeBefore).toBeTruthy();
       expect(badgeBefore!.textContent).toBe('Running');
 
-      // Update source to return a "done" version of the same castId
       const doneRecord: CastRecord = {
         ...inProgressRecord,
         status: 'done',
@@ -344,18 +318,13 @@ describe('CastLogPanel', () => {
       };
       source.records = [doneRecord];
 
-      // Trigger a refresh via the coordinator (same pattern as D2)
       refresh.fire();
       await flushPromises();
 
-      // Badge must now show "Done" — bug: CastLogList reuses the existing
-      // CastLogRow instance but never updates this.record or re-renders
-      // the badge/body, so it stays "Running".
       const badgeAfter = container.querySelector('.cast-log-status-badge') as HTMLElement | null;
       expect(badgeAfter).toBeTruthy();
       expect(badgeAfter!.textContent).toBe('Done');
 
-      // Affected-files section must also reflect the updated record
       const affectedLinks = container.querySelectorAll('.cast-log-affected-files a');
       expect(affectedLinks.length).toBeGreaterThan(0);
       expect(affectedLinks[0].textContent).toBe('Notes/transmuted.md');
@@ -378,7 +347,6 @@ describe('CastLogPanel', () => {
       panel.mount(container);
       await flushPromises();
 
-      // Expand recordA (cast-a)
       const rowsBefore = container.querySelectorAll('.cast-log-row');
       const rowA = Array.from(rowsBefore).find((r) =>
         r.textContent?.includes('Fireball')
@@ -388,11 +356,9 @@ describe('CastLogPanel', () => {
       rowA!.querySelector('.cast-log-row-header')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       expect(rowA!.classList.contains('is-expanded')).toBe(true);
 
-      // Fire refresh — source still returns the same two records
       refresh.fire();
       await flushPromises();
 
-      // After refresh, DOM rows are rebuilt — find them again
       const rowsAfter = container.querySelectorAll('.cast-log-row');
 
       const rowAAfter = Array.from(rowsAfter).find((r) =>
@@ -405,7 +371,6 @@ describe('CastLogPanel', () => {
       expect(rowAAfter).toBeTruthy();
       expect(rowBAfter).toBeTruthy();
 
-      // cast-a row is still expanded; cast-b row is not
       expect(rowAAfter!.classList.contains('is-expanded')).toBe(true);
       expect(rowBAfter!.classList.contains('is-expanded')).toBe(false);
     });

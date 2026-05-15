@@ -2,6 +2,11 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import { GrimoireData, SUPPORTED_MODELS } from '../../domain/settings/Settings';
 import { EffortRow } from '../widgets/EffortRow';
 
+/**
+ * Plugin settings UI rendered in Obsidian's Settings modal.
+ * Groups general settings (spell tag, CLI, binary path, vault mount) and advanced settings
+ * (remote execution, portal config, auth) with reactive persistence via plugin.save().
+ */
 export class GrimoireSettingTab extends PluginSettingTab {
   readonly #plugin: { app: App; data: GrimoireData; save(): void };
 

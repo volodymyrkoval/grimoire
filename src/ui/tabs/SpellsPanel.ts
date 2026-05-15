@@ -13,6 +13,10 @@ const SENTINELS: readonly Sentinel[] = [
   { kind: "refine", name: "Refine" },
 ];
 
+/**
+ * Spells panel: renders scanned spells + sentinels (Forge, Refine) with fuzzy filtering,
+ * selection tracking, and override indicator display. Emits cast/sentinel/open-options events.
+ */
 export class SpellsPanel implements NavigablePanel {
   readonly id = "spells";
   readonly events = new TypedEmitter<SpellEvents>();

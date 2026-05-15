@@ -1,3 +1,7 @@
+/**
+ * Build an HTTP Basic Authorization header value from username and password.
+ * Uses Buffer in Node.js environments, TextEncoder + btoa in browser environments.
+ */
 export function buildBasicAuthHeader(user: string, password: string): string {
   const credentials = `${user}:${password}`;
 

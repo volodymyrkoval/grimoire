@@ -56,7 +56,6 @@ describe('RemoteCaster', () => {
 
   it('does not call onAccepted when transport silently skips (202 without castId)', () => {
     const transport = makeTransportStub((_input, _cbs) => {
-      // transport does nothing — mirrors 202-without-castId silence
     });
     const caster = new RemoteCaster({ transport, settings: baseSettings });
 

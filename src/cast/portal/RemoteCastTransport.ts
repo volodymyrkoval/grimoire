@@ -7,7 +7,9 @@ import { mapPortalError } from './mapPortalError';
 
 const TIMEOUT_MS = 30_000;
 
-// Local shims — mirror Obsidian's real types without importing from the obsidian package.
+/**
+ * Local shims — mirror Obsidian's real types without importing from the obsidian package.
+ */
 export interface RequestUrlParam {
   url: string;
   method?: string;
@@ -16,14 +18,20 @@ export interface RequestUrlParam {
   throw?: boolean;
 }
 
-// In production, Obsidian's real `.json` is a lazy getter that may throw if the body is not valid JSON.
-// This shim declares it as `unknown` for test convenience only — callers must not assume it is pre-parsed.
+/**
+ * HTTP response from the portal.
+ * In production, Obsidian's real `.json` is a lazy getter that may throw if the body is not valid JSON.
+ * This shim declares it as `unknown` for test convenience only — callers must not assume it is pre-parsed.
+ */
 export interface RequestUrlResponse {
   status: number;
   text: string;
   json: unknown;
 }
 
+/**
+ * Input fields for a remote cast request.
+ */
 export interface RemoteCastInput {
   readonly castId: string;
   readonly spellPath: string;
@@ -37,13 +45,24 @@ export interface RemoteCastInput {
   readonly portalAuthPassword: string;
 }
 
+/**
+ * Callbacks fired when a remote cast is accepted or fails.
+ */
 export interface RemoteCastCallbacks {
   onAccepted: (info: { portalCastId: string }) => void;
   onFailure: (msg: string) => void;
 }
 
+/**
+ * Function signature for making HTTP requests to the portal (testable via dependency injection).
+ */
 export type RequestUrlFn = (req: RequestUrlParam) => Promise<RequestUrlResponse>;
 
+/**
+ * Coordinates a remote cast: builds the request (URL, headers, body), sends it via Obsidian's requestUrl,
+ * handles timeouts and errors, and reports results via callbacks.
+ * A 202 response with castId is treated as accepted; 202 without castId is silent (no callback).
+ */
 export class RemoteCastTransport {
   readonly #requestUrlFn: RequestUrlFn;
 
@@ -53,6 +72,9 @@ export class RemoteCastTransport {
     );
   }
 
+  /**
+   * Fire a remote cast request asynchronously.
+   */
   run(input: RemoteCastInput, callbacks: RemoteCastCallbacks): void {
     void this.#execute(input, callbacks);
   }

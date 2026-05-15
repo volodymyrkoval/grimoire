@@ -1,14 +1,21 @@
 import { FORGE_SPELL_PATH } from '../../castLog/types';
 import type { CastRecord } from '../../castLog/CastRecord';
 
+/**
+ * Extracts the display-friendly filename from a file path.
+ * Strips .md extension if present.
+ */
 function getBasename(path: string): string {
-  // Extract the last component after the final /
   const parts = path.split('/');
   const filename = parts[parts.length - 1];
-  // Remove .md extension if present
   return filename.endsWith('.md') ? filename.slice(0, -3) : filename;
 }
 
+/**
+ * Resolves a display name for a cast record.
+ * For forge casts, returns "Forge: <affected-file>" if files were affected, otherwise "Forge".
+ * For live spells, returns the spell's display name (basename without .md extension).
+ */
 export function resolveDisplayName(record: CastRecord): string {
   if (record.spellPath === FORGE_SPELL_PATH) {
     // Forge cast
@@ -19,6 +26,5 @@ export function resolveDisplayName(record: CastRecord): string {
     return 'Forge';
   }
 
-  // Live spell: return basename without .md
   return getBasename(record.spellPath);
 }

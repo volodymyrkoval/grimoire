@@ -3,6 +3,9 @@ import { buildCastArgs } from './buildCastArgs';
 import { resolveCliBinary } from './resolveCliBinary';
 import { CastExitInfo, CastSpawner, SpawnFn } from './spawnCast';
 
+/**
+ * Base fields common to both inline and file-based cast runs.
+ */
 interface BaseCastRunInput {
   modelId: string;
   effort: Effort | null;
@@ -12,25 +15,41 @@ interface BaseCastRunInput {
   castId: string;
 }
 
+/**
+ * Input for an inline (meta-spell) cast run.
+ */
 interface InlineCastRunInput extends BaseCastRunInput {
   metaSpell: string;
   systemPromptFile?: never;
   userPrompt?: never;
 }
 
+/**
+ * Input for a file-based cast run.
+ */
 interface FileCastRunInput extends BaseCastRunInput {
   metaSpell?: never;
   systemPromptFile: string;
   userPrompt: string;
 }
 
+/**
+ * Union of valid cast run inputs — either inline or file-based.
+ */
 export type CastRunInput = InlineCastRunInput | FileCastRunInput;
 
+/**
+ * Callbacks fired when a cast run completes or fails.
+ */
 export interface CastRunCallbacks {
   onSuccess: () => void;
   onFailure: (msg: string) => void;
 }
 
+/**
+ * Spawns a local cast process (the forging CLI), manages its lifecycle, and reports the result.
+ * Combines CLI argument construction, binary resolution, and process spawning into a single responsibility.
+ */
 export class CastRunner {
   readonly #castSpawner: CastSpawner;
 
@@ -38,6 +57,10 @@ export class CastRunner {
     this.#castSpawner = new CastSpawner({ spawner });
   }
 
+  /**
+   * Execute a cast by spawning the CLI process asynchronously.
+   * Resolves the binary path, constructs arguments, spawns the process, and reports success/failure via callbacks.
+   */
   run(input: CastRunInput, callbacks: CastRunCallbacks): void {
     const binary = this.#getPathToBinary(input);
     const args = this.#getCastArgs(input);

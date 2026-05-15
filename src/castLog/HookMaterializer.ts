@@ -5,6 +5,10 @@ import {
   renderStopScript,
 } from './hookScripts';
 
+/**
+ * Write and filesystem operations for HookMaterializer.
+ * Defaults to Obsidian's DataAdapter if not provided.
+ */
 export interface HookMaterializerPorts {
   getPluginDirAbs: () => string;
   getLogPathAbs: () => string;
@@ -13,6 +17,10 @@ export interface HookMaterializerPorts {
   adapter?: DataAdapter;
 }
 
+/**
+ * Generates and writes shell hook scripts into the plugin's hooks directory.
+ * Hooks are invoked by the Grimoire orchestrator to log cast lifecycle events (session-start, post-tool-use, stop).
+ */
 export class HookMaterializer {
   static readonly SESSION_START_SCRIPT = 'session-start.sh';
   static readonly POST_TOOL_USE_SCRIPT = 'post-tool-use.sh';
@@ -34,6 +42,9 @@ export class HookMaterializer {
     this.#mkdir = ports.mkdir ?? ((dir) => adapter!.mkdir(dir));
   }
 
+  /**
+   * Generates all hooks and writes them to disk with execute permissions.
+   */
   async run(): Promise<void> {
     const pluginDirAbs = this.#ports.getPluginDirAbs();
     const logPathAbs = this.#ports.getLogPathAbs();

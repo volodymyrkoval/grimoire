@@ -9,6 +9,7 @@ export interface ModelSelectOptions {
   onChange: (modelId: string) => void;
 }
 
+/** Creates the select element and populates options from the models list. */
 function createModelSelectElement(
   container: HTMLElement,
   models: readonly SupportedModel[],
@@ -23,6 +24,7 @@ function createModelSelectElement(
   return select;
 }
 
+/** Binds arrow-key handlers to the select element via the KeyboardController. */
 function bindModelSelectKeys(
   select: HTMLSelectElement,
   kb: KeyboardController,
@@ -43,6 +45,10 @@ function bindModelSelectKeys(
   });
 }
 
+/**
+ * Creates a select element with model options and wires up keyboard navigation and change events.
+ * Arrow keys cycle through options when the select is focused; change event and keyboard handlers both trigger onChange.
+ */
 export function buildModelSelect({
   container,
   kb,

@@ -1,6 +1,10 @@
 import { prepareFuzzySearch, sortSearchResults } from 'obsidian';
 import type { Sentinel, Spell } from './Spell';
 
+/**
+ * Filters spells by fuzzy-matching the query against spell names, then appends sentinels.
+ * Returns all items (unsorted) when the query is empty.
+ */
 export function fuzzyFilter(
   spells: readonly Spell[],
   sentinels: readonly Sentinel[],

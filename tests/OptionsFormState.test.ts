@@ -15,7 +15,6 @@ describe('OptionsFormState', () => {
     };
   });
 
-  // (a) Constructor stores snapshot; snapshot() returns equivalent values
   it('stores initial snapshot in constructor', () => {
     const state = new OptionsFormState(initialSnapshot);
     const snap = state.snapshot();
@@ -26,7 +25,6 @@ describe('OptionsFormState', () => {
     expect(snap.followUp).toBe('');
   });
 
-  // (b) setEffort('high') updates effort to 'high'; onChange listener fires once
   it('setEffort updates effort and fires onChange once', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
@@ -38,7 +36,6 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  // (c) setModel to Opus when current effort is 'medium' — 'medium' is in Opus's effortOptions → effort survives
   it('setModel to Opus preserves effort when in effortOptions', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
@@ -51,7 +48,6 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  // (d) setModel to Sonnet when current effort is 'xhigh' — 'xhigh' is NOT in Sonnet's effortOptions → fallback
   it('setModel to Sonnet falls back to defaultEffort when current effort not in options', () => {
     const stateSnapshot: OptionsFormSnapshot = {
       model: 'claude-opus-4-5',
@@ -71,7 +67,6 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  // (e) setModel to Haiku (no options) → effort becomes null
   it('setModel to Haiku sets effort to null', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
@@ -84,7 +79,6 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  // (f) setModel with unknown id → falls back to models[0] (Haiku), console.warn called
   it('setModel with unknown id falls back to models[0] and warns', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
@@ -103,7 +97,6 @@ describe('OptionsFormState', () => {
     warnSpy.mockRestore();
   });
 
-  // (g) setContextNotePaths and setFollowUp update fields and fire onChange each
   it('setContextNotePaths updates contextNotePaths and fires onChange', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
@@ -126,7 +119,6 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  // (h) onChange returns unsubscribe function that stops future emissions
   it('onChange returns unsubscribe function that stops emissions', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
@@ -140,7 +132,6 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1); // still 1, not 2
   });
 
-  // (i) snapshot().contextNotePaths is a fresh array — mutating it doesn't affect internal state
   it('snapshot returns fresh array for contextNotePaths', () => {
     const state = new OptionsFormState({
       ...initialSnapshot,
@@ -155,7 +146,6 @@ describe('OptionsFormState', () => {
     expect(snap2.contextNotePaths).not.toContain('mutated.md');
   });
 
-  // (j) Initial seed: new OptionsFormState with executeOnNote: false → snapshot().executeOnNote === false
   it('stores initial executeOnNote in constructor', () => {
     const state = new OptionsFormState({
       ...initialSnapshot,
@@ -165,7 +155,6 @@ describe('OptionsFormState', () => {
     expect(state.snapshot().executeOnNote).toBe(false);
   });
 
-  // (k) setExecuteOnNote(false) on state initialized with true → snapshot().executeOnNote === false, listener fires once
   it('setExecuteOnNote updates executeOnNote and fires onChange once', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
@@ -177,7 +166,6 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  // (l) Snapshot round-trip: setExecuteOnNote(true) → snapshot().executeOnNote === true
   it('setExecuteOnNote(true) updates executeOnNote to true', () => {
     const state = new OptionsFormState({
       ...initialSnapshot,

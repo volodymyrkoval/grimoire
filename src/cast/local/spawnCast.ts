@@ -5,6 +5,9 @@
 
 import { Platform } from "obsidian";
 
+/**
+ * Configuration for spawning a cast process.
+ */
 export interface CastSpawnConfig {
   binary: string;
   args: readonly string[];
@@ -12,10 +15,16 @@ export interface CastSpawnConfig {
   cwd?: string;
 }
 
+/**
+ * Dependency injection ports for CastSpawner.
+ */
 export interface CastSpawnPorts {
   spawner?: SpawnFn;
 }
 
+/**
+ * Function signature for spawning a child process.
+ */
 export type SpawnFn = (
   command: string,
   args: readonly string[],
@@ -26,6 +35,9 @@ export type SpawnFn = (
   }
 ) => SpawnedProcess;
 
+/**
+ * Duck-typed interface for a spawned child process (mirrors Node.js ChildProcess).
+ */
 export interface SpawnedProcess {
   stdout: {
     on(event: "data", listener: (chunk: Uint8Array | string) => void): void;
@@ -37,6 +49,9 @@ export interface SpawnedProcess {
   on(event: "error", listener: (err: Error) => void): void;
 }
 
+/**
+ * Result of a cast process termination: exit code, captured stderr, and any spawn error.
+ */
 export interface CastExitInfo {
   code: number | null;
   stderrTail: string;
@@ -49,6 +64,10 @@ interface StderrBuffer {
   message: string;
 }
 
+/**
+ * Spawns a child process, manages its event stream (stdout drained, stderr buffered), and resolves once on the first terminal event.
+ * Abstracts Platform.isDesktop check and dynamic import of Node.js child_process.
+ */
 export class CastSpawner {
   readonly #ports: CastSpawnPorts | undefined;
 
@@ -56,6 +75,10 @@ export class CastSpawner {
     this.#ports = ports;
   }
 
+  /**
+   * Spawn a process and return once it exits or an error is encountered.
+   * Resolves with exit code and captured stderr; rejects on sync spawn errors (e.g., ENOENT).
+   */
   async run(config: CastSpawnConfig): Promise<CastExitInfo> {
     const spawner = this.#ports?.spawner ?? await this.#loadSpawner();
     const options = this.#getOptions(config);

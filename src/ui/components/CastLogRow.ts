@@ -6,6 +6,10 @@ import { resolveDisplayName } from '../../castLog/format/displayName';
 import { statusBadge } from './statusBadge';
 import { durationMs } from '../../castLog/format/durationMs';
 
+/**
+ * Renders a single cast record as an expandable row with header and body sections.
+ * Owns the DOM element (.el) and exposes update/repaintTimes for partial rerenders.
+ */
 export class CastLogRow {
   readonly el: HTMLElement;
   #record: CastRecord;
@@ -73,6 +77,7 @@ export class CastLogRow {
   }
 }
 
+/** Builds and returns the spell name span for the row header. */
 function buildNameSpan(header: HTMLElement, record: CastRecord): HTMLElement {
   const displayName = resolveDisplayName(record);
   const span = header.createSpan({ cls: 'cast-log-display-name', text: displayName });
@@ -80,11 +85,13 @@ function buildNameSpan(header: HTMLElement, record: CastRecord): HTMLElement {
   return span;
 }
 
+/** Builds and returns the model/effort badge span for the row header. */
 function buildModelBadgeSpan(header: HTMLElement, record: CastRecord): HTMLElement {
   const text = record.effort ? `${record.model} ${record.effort}` : record.model;
   return header.createSpan({ cls: 'cast-log-model-badge', text });
 }
 
+/** Builds and returns the relative-time span for the row header. */
 function buildStartedSpan(header: HTMLElement, record: CastRecord, now: Date): HTMLElement {
   return header.createSpan({
     cls: 'cast-log-started',
@@ -92,6 +99,7 @@ function buildStartedSpan(header: HTMLElement, record: CastRecord, now: Date): H
   });
 }
 
+/** Builds and returns the duration span for the row header. */
 function buildDurationSpan(header: HTMLElement, record: CastRecord, now: Date): HTMLElement {
   return header.createSpan({
     cls: 'cast-log-duration',
@@ -99,41 +107,49 @@ function buildDurationSpan(header: HTMLElement, record: CastRecord, now: Date): 
   });
 }
 
+/** Builds and returns the status badge span for the row header. */
 function buildStatusBadgeSpan(header: HTMLElement, record: CastRecord): HTMLElement {
   const { label, cls } = statusBadge(record.status);
   return header.createSpan({ cls: `cast-log-status-badge ${cls}`, text: label });
 }
 
+/** Updates the name span text and title in place. */
 function updateNameSpan(span: HTMLElement, record: CastRecord): void {
   const displayName = resolveDisplayName(record);
   span.textContent = displayName;
   span.title = displayName;
 }
 
+/** Updates the model badge text in place. */
 function updateModelBadgeSpan(span: HTMLElement, record: CastRecord): void {
   span.textContent = record.effort ? `${record.model} ${record.effort}` : record.model;
 }
 
+/** Updates the started time text in place. */
 function updateStartedSpan(span: HTMLElement, record: CastRecord, now: Date): void {
   span.textContent = formatRelativeTime(new Date(record.castedTs), now);
 }
 
+/** Updates the duration text in place. */
 function updateDurationSpan(span: HTMLElement, record: CastRecord, now: Date): void {
   span.textContent = formatDuration(durationMs(record, now));
 }
 
+/** Updates the status badge text and class in place. */
 function updateStatusBadgeSpan(span: HTMLElement, record: CastRecord): void {
   const { label, cls } = statusBadge(record.status);
   span.textContent = label;
   span.className = `cast-log-status-badge ${cls}`;
 }
 
+/** Appends a cast ID field row to the body. */
 function appendCastIdRow(body: HTMLElement, record: CastRecord): void {
   const row = body.createDiv({ cls: 'cast-log-field-row' });
   row.createSpan({ cls: 'cast-log-field-label', text: 'Cast ID:' });
   row.createEl('code', { cls: 'cast-log-castid', text: record.castId }).addClass('is-selectable');
 }
 
+/** Appends context notes as clickable links if any exist. */
 function appendContextNotesRow(
   body: HTMLElement,
   record: CastRecord,
@@ -150,6 +166,7 @@ function appendContextNotesRow(
   }
 }
 
+/** Appends affected files as clickable links if any exist. */
 function appendAffectedFilesRow(
   body: HTMLElement,
   record: CastRecord,
@@ -166,6 +183,7 @@ function appendAffectedFilesRow(
   }
 }
 
+/** Appends follow-up instruction text if present. */
 function appendFollowUpRow(body: HTMLElement, record: CastRecord): void {
   if (!record.followUp) return;
   const row = body.createDiv({ cls: 'cast-log-follow-up-row cast-log-field-row' });
@@ -173,6 +191,7 @@ function appendFollowUpRow(body: HTMLElement, record: CastRecord): void {
   row.createSpan({ text: record.followUp });
 }
 
+/** Appends execution-on-note indicator if applicable (non-Forge, executeOnNote=true). */
 function appendExecuteOnNoteRow(body: HTMLElement, record: CastRecord): void {
   if (record.spellPath === FORGE_SPELL_PATH || record.executeOnNote !== true) return;
   const row = body.createDiv({ cls: 'cast-log-execute-on-note-row cast-log-field-row' });

@@ -16,6 +16,10 @@ export interface CommandPopupBuilderDeps {
   createDispatcher: (close: () => void) => CastDispatcher;
 }
 
+/**
+ * Factory for CommandPopup with dependency injection.
+ * Wires up imprint and cast actions, bridging the popup to the plugin's core cast/forge engines.
+ */
 export class CommandPopupBuilder {
   readonly #deps: CommandPopupBuilderDeps;
 

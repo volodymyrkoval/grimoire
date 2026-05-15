@@ -100,7 +100,6 @@ describe('IntervalTickCoordinator', () => {
 
     coordinator.start(onTick);
 
-    // Both ticks should have been attempted
     expect(calls.length).toBe(2);
   });
 

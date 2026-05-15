@@ -155,8 +155,6 @@ describe('ScratchSweeper', () => {
 
     await sweeper.sweep();
 
-    // file1 stat rejected — unlink should NOT be called for it
-    // file2 stat succeeded and is expired — unlink SHOULD be called for it
     expect(unlinkFn).toHaveBeenCalledTimes(1);
     expect(unlinkFn).toHaveBeenCalledWith('/scratch/file2.paths');
 

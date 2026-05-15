@@ -126,11 +126,9 @@ export class Modal {
 
   constructor(app: App) {
     this.app = app;
-    // Use document if available (happy-dom integration tests), otherwise use mock
     if (typeof document !== 'undefined') {
       this.contentEl = document.createElement('div');
     } else {
-      // Node environment (unit tests) — use vi.fn() mock
       this.contentEl = createMockElement();
     }
   }
@@ -190,7 +188,6 @@ export class PluginSettingTab {
   constructor(app: App, plugin: Plugin) {
     this.app = app;
     this.plugin = plugin;
-    // Use document if available (happy-dom), otherwise use mock
     if (typeof document !== 'undefined') {
       this.containerEl = document.createElement('div');
     } else {
@@ -264,7 +261,6 @@ class DropdownComponent {
       option.textContent = label;
       this.selectEl.appendChild(option);
     } else {
-      // In node env, mock the options array
       if (!Array.isArray(this.selectEl.options)) {
         this.selectEl.options = [];
       }
@@ -356,12 +352,10 @@ export class Setting {
 
   setDesc(desc: string): this {
     if (typeof this.settingEl.textContent !== 'undefined') {
-      // In happy-dom, just append to settingEl for simplicity
       const descEl = document.createElement('div');
       descEl.textContent = desc;
       this.settingEl.appendChild(descEl);
     } else {
-      // In node, call a mock method if it exists
       this.settingEl.setText?.(desc);
     }
     return this;
@@ -371,13 +365,11 @@ export class Setting {
     if (typeof document !== 'undefined') {
       const parent = this.settingEl.parentElement;
       if (parent) {
-        // Mirror real Obsidian: insert <hr> before settingEl, then an <h3> with the heading text
         const hr = document.createElement('hr');
         parent.insertBefore(hr, this.settingEl);
         const h3 = document.createElement('h3');
         h3.textContent = this.settingEl.textContent ?? '';
         parent.insertBefore(h3, this.settingEl);
-        // Remove the original settingEl and controlEl — heading has no control
         parent.removeChild(this.settingEl);
         if (this.controlEl.parentElement) {
           parent.removeChild(this.controlEl);

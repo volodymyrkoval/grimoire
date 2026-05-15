@@ -133,10 +133,8 @@ describe('post-tool-use.sh', () => {
     const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
     expect(status).toBe(0);
 
-    // No log file should be created
     expect(fs.existsSync(path.join(tempDir, 'cast-log.jsonl'))).toBe(false);
 
-    // Scratch file should have the path
     const scratchFile = path.join(scratchDir, 'abc.paths');
     expect(fs.existsSync(scratchFile)).toBe(true);
     expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('foo/bar.md\n');
@@ -246,21 +244,17 @@ describe('stop.sh', () => {
     const stopContent = renderStopScript({ logPathAbs: logPath, scratchDirAbs: scratchDir });
     const stopScript = await materializeScript(tempDir, 'stop.sh', stopContent);
 
-    // PostToolUse for castA — foo.md
     runShell(postScript, {
       stdin: '{"tool_name":"Write","tool_input":{"file_path":"foo.md"},"tool_response":{}}',
       env: { CAST_ID: 'castA' },
     });
 
-    // PostToolUse for castB — bar.md
     runShell(postScript, {
       stdin: '{"tool_name":"Write","tool_input":{"file_path":"bar.md"},"tool_response":{}}',
       env: { CAST_ID: 'castB' },
     });
 
-    // Stop castA
     runShell(stopScript, { env: { CAST_ID: 'castA' } });
-    // Stop castB
     runShell(stopScript, { env: { CAST_ID: 'castB' } });
 
     const lines = readLog(logPath) as Array<{

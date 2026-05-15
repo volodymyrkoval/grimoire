@@ -1,8 +1,16 @@
+/**
+ * Test globals setup: augments happy-dom and node environments with Obsidian API shims.
+ *
+ * Obsidian plugins expect DOM methods and helpers (createEl, createDiv, etc.) and
+ * custom HTMLElement methods (hide, show, addClass, etc.) that don't exist in standard
+ * happy-dom or Node.js. This file provides both:
+ *   - Real document (happy-dom): augments HTMLElement prototype with Obsidian methods
+ *   - No document (Node): provides a mock document with all required methods
+ */
+
 import { vi } from 'vitest';
 
-// Provide Obsidian globals used by source files.
-// - happy-dom tests: real document + HTMLElement prototype augmented with Obsidian extensions
-// - node environment tests: full mock (real document unavailable or partial)
+
 
 (globalThis as Record<string, unknown>).activeWindow = globalThis;
 
@@ -49,7 +57,6 @@ function isRealDocument(d: unknown): d is Document {
 }
 
 if (isRealDocument(globalThis.document)) {
-  // Augment the real happy-dom document with Obsidian DOM helpers.
   const doc = globalThis.document as unknown as Record<string, unknown>;
   if (typeof doc['createEl'] !== 'function') {
     doc['createEl'] = (tag: string, opts?: { text?: string; cls?: string }) => {
@@ -75,8 +82,6 @@ if (isRealDocument(globalThis.document)) {
     };
   }
 
-  // Augment HTMLElement prototype with Obsidian-specific methods.
-  // These exist at runtime inside an Obsidian vault but not in happy-dom.
   const proto = (globalThis as unknown as { HTMLElement: { prototype: Record<string, unknown> } })
     .HTMLElement.prototype;
   if (typeof proto['hide'] !== 'function') {
@@ -136,7 +141,6 @@ if (isRealDocument(globalThis.document)) {
 
   (globalThis as Record<string, unknown>).activeDocument = globalThis.document;
 } else {
-  // Node environment — provide a fully-mocked activeDocument.
   const mockDoc = createMockEl();
   mockDoc['createEl'] = vi.fn((tag: string) => {
     const el = createMockEl();

@@ -3,6 +3,10 @@ import type { GrimoireSettings } from '../../domain/settings/Settings';
 import type { Caster, CastInput, CastCallbacks } from '../../execution/Caster';
 import { RemoteCastTransport } from './RemoteCastTransport';
 
+/**
+ * Caster implementation that executes spells remotely via a portal HTTP endpoint.
+ * Adapts generic CastInput into RemoteCastTransport format and delegates to RemoteCastTransport.
+ */
 export class RemoteCaster implements Caster {
   readonly #transport: RemoteCastTransport;
   readonly #settings: GrimoireSettings;
@@ -12,6 +16,9 @@ export class RemoteCaster implements Caster {
     this.#settings = settings;
   }
 
+  /**
+   * Execute a spell cast remotely via the portal endpoint.
+   */
   cast(input: CastInput, callbacks: CastCallbacks): void {
     this.#transport.run(
       {

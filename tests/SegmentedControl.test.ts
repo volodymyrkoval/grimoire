@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SegmentedControl } from '../src/ui/widgets/SegmentedControl';
 
 describe('SegmentedControl', () => {
@@ -10,7 +10,6 @@ describe('SegmentedControl', () => {
     document.body.appendChild(parent);
   });
 
-  // Cleanup after each test
   afterEach(() => {
     document.body.removeChild(parent);
   });
@@ -234,21 +233,17 @@ describe('SegmentedControl', () => {
     const lowButton = buttonsBefore[0];
     const mediumButtonBefore = buttonsBefore[1];
 
-    // focus the low button then press ArrowRight → onChange fires → setOptions called inside onChange
     lowButton.focus();
     lowButton.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
 
     expect(emittedValue).toBe('medium');
 
-    // The medium button that was focused by #handleArrow must still be the active element
-    // (i.e. setOptions must NOT have destroyed and recreated it)
     const buttonsAfter = parent.querySelectorAll(
       '.grimoire-segmented__btn'
     ) as NodeListOf<HTMLButtonElement>;
     const mediumButtonAfter = buttonsAfter[1];
 
     expect(document.activeElement).toBe(mediumButtonAfter);
-    // And it must be the same DOM node (not rebuilt)
     expect(mediumButtonAfter).toBe(mediumButtonBefore);
   });
 });

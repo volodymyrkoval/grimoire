@@ -278,7 +278,6 @@ describe('foldEvents', () => {
 
     const result = foldEvents([castedEvent, doneEvent]);
 
-    // affectedFiles should be present on the record (filled from doneEvent)
     expect(result[0]).toMatchObject({
       affectedFiles: ['output.md'],
     });

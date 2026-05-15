@@ -1,5 +1,6 @@
 import type { Effort } from '../domain/settings/Settings';
 
+/** Input required to initiate a cast (spell execution). */
 export interface CastInput {
   readonly castId: string;
   readonly spellPath: string;
@@ -10,15 +11,18 @@ export interface CastInput {
   readonly vaultMountPath: string;
 }
 
+/** Info returned when a cast is accepted for execution (e.g., portal job ID). */
 export interface CastAcceptedInfo {
   readonly jobId?: string;
 }
 
+/** Callbacks fired when a cast is accepted or fails. */
 export interface CastCallbacks {
   onAccepted(info: CastAcceptedInfo): void;
   onFailure(message: string): void;
 }
 
+/** Abstract interface for spell execution via local or remote backend. */
 export interface Caster {
   cast(input: CastInput, callbacks: CastCallbacks): void;
 }

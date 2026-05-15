@@ -10,6 +10,10 @@ export interface OptionsFormSnapshot {
   executeOnNote: boolean;
 }
 
+/**
+ * Creates an initial form snapshot from plugin defaults and spell executeOnNote flag.
+ * Used to populate OptionsPanel when opening a spell's options for the first time.
+ */
 export function optionsFormSnapshotFromDefaults(
   defaults: FormDefaults,
   spell: Pick<Spell, "executeOnNote">,
@@ -23,6 +27,11 @@ export function optionsFormSnapshotFromDefaults(
   };
 }
 
+/**
+ * Reactive form state for casting options (model, effort, context notes, follow-up, executeOnNote).
+ * Implements reactive pattern: listeners are notified on any change via onChange.
+ * setModel applies effort survival rule: current effort persists if valid for new model.
+ */
 export class OptionsFormState {
   #model: string;
   #effort: Effort | null;

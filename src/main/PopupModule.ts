@@ -9,6 +9,10 @@ import { createCaster } from '../cast/createCaster';
 import { CommandPopupBuilder } from '../ui/popup/CommandPopupBuilder';
 import type { CastLogModule } from './CastLogModule';
 
+/**
+ * Owns the spell browser popup and its lifecycle: opens the popup command,
+ * constructs the popup UI with all dependencies, and manages session-level form state.
+ */
 export class PopupModule {
   readonly #app: App;
   readonly #getData: () => GrimoireData;
@@ -36,6 +40,7 @@ export class PopupModule {
     });
   }
 
+  /** Registers the "Open spell browser" command with the plugin. */
   register(plugin: Plugin): void {
     plugin.addCommand({
       id: 'open-popup',
@@ -44,6 +49,7 @@ export class PopupModule {
     });
   }
 
+  /** Opens the spell browser popup, building all UI and dependencies fresh. */
   #openPopup(): void {
     new CommandPopupBuilder({
       app: this.#app,

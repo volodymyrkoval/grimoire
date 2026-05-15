@@ -91,7 +91,6 @@ describe('SearchPhase', () => {
     const result = phase.handleTab();
 
     expect(result).toBe(true);
-    // handleTab sets the next panel as active and triggers a full re-render
     expect(ctx.setActivePanel).toHaveBeenCalledWith(panel2);
     expect(ctx.renderSearch).toHaveBeenCalled();
   });

@@ -1,5 +1,9 @@
 import type { Sentinel } from "../../domain/spells/Spell";
 
+/**
+ * Renders a single sentinel row (Forge, Refine) in the spells list.
+ * Displays the sentinel name and selected state.
+ */
 export class SentinelRow {
   el!: HTMLElement;
 

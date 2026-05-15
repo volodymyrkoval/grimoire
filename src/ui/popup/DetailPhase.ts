@@ -1,5 +1,9 @@
 import type { PopupPhase, PopupPhaseContext } from './PopupPhase';
 
+/**
+ * Detail phase: all keyboard/navigation events are blocked; only Escape/close will trigger back.
+ * Holds the active detail panel (e.g., ForgeSentinelDetail, SpellOptionsDetail) and its destroy hook.
+ */
 export class DetailPhase implements PopupPhase {
   readonly kind = 'detail' as const;
   #ctx: PopupPhaseContext;
@@ -35,7 +39,6 @@ export class DetailPhase implements PopupPhase {
     if (this.#onDetailBack) {
       const back = this.#onDetailBack;
       this.#onDetailBack = null;
-      // Clear detail reference (will be used in D5 for cleanup)
       this.#activeDetail?.destroy?.();
       this.#activeDetail = null;
       back();

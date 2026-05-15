@@ -47,8 +47,6 @@ const baseSettings: GrimoireSettings = {
 describe('CastDispatcher', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  // ── pre-flight guard 1: executeOnNote + null activeFilePath ──────────────────
-
   it('notifies "Open a note to cast against" and closes when activeFilePath is null', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
@@ -101,8 +99,6 @@ describe('CastDispatcher', () => {
     expect(logWriter.recordCasted).not.toHaveBeenCalled();
     expect(logWriter.recordError).not.toHaveBeenCalled();
   });
-
-  // ── pre-flight guard 2: remote + empty portalHost ────────────────────────────
 
   it('pre-dispatch guard: remote + empty portalHost notifies and does not record or close', () => {
     const notifyFn = vi.fn();
@@ -163,8 +159,6 @@ describe('CastDispatcher', () => {
     expect(closeFn).not.toHaveBeenCalled();
     expect(casterStub.castFn).not.toHaveBeenCalled();
   });
-
-  // ── prompt construction ─────────────────────────────────────────────────────
 
   it('constructs prompt with activeFilePath when no context notes or followUp', () => {
     const casterStub = makeStubCaster();
@@ -318,8 +312,6 @@ describe('CastDispatcher', () => {
     expect(casterStub.castFn).toHaveBeenCalled();
     expect(casterStub.getInput().userPrompt).toContain('Execute this spell against the note at `/vault/notes/active.md`.');
   });
-
-  // ── local dispatch ───────────────────────────────────────────────────────────
 
   it('notifies "Casting <name>…" with single-quoted spell name (local)', () => {
     const notifyFn = vi.fn();
@@ -520,8 +512,6 @@ describe('CastDispatcher', () => {
     expect(casterStub.getInput().systemPromptFile).toBe('/vault/spells/test.md');
   });
 
-  // ── remote dispatch ──────────────────────────────────────────────────────────
-
   it('remote: notifies "Casting <name> on portal…" and closes', () => {
     const notifyFn = vi.fn();
     const closeFn = vi.fn();
@@ -660,8 +650,6 @@ describe('CastDispatcher', () => {
     expect(notifyFn).toHaveBeenCalledWith('Portal request timed out.');
   });
 
-  // ── D5: second-recordCasted contract ─────────────────────────────────────────
-
   it('remote: onAccepted with jobId triggers a second recordCasted containing portalCastId', () => {
     const logWriter = makeLogWriter();
     const casterStub = makeStubCaster();
@@ -722,8 +710,6 @@ describe('CastDispatcher', () => {
     casterStub.getCallbacks().onAccepted({}); // no jobId
     expect(logWriter.recordCasted).toHaveBeenCalledTimes(1); // only the pre-cast write
   });
-
-  // ── logWriter thunk: resolved per-dispatch, not captured at construction ─────
 
   it('uses logWriter resolved at dispatch time, not construction time', () => {
     const localWriter = makeLogWriter();

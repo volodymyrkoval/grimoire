@@ -1,3 +1,18 @@
+/**
+ * PopupHarness — shared fixture for CommandPopup integration tests.
+ *
+ * Encapsulates the PopupHarness interface and factory function. Reduces boilerplate
+ * across test files by providing a unified API for:
+ * - Keyboard navigation (pressKey, ArrowUp/ArrowDown/Enter/Tab)
+ * - Typed input (type, pressKey)
+ * - Tab/row selection (clickTab, clickRow)
+ * - Form submission (submitForge, clickBack)
+ * - DOM assertions (visibleSpellRows, selectedRow, activeTabId, isInDetail)
+ *
+ * All DOM queries are encapsulated; tests interact only through the PopupHarness
+ * interface, not the raw contentEl.
+ */
+
 import { App } from 'obsidian';
 import { vi } from 'vitest';
 import { CommandPopup } from '../../src/ui/CommandPopup';

@@ -6,6 +6,7 @@ import { ForgeFormSnapshot } from './ForgeFormSnapshot';
 import type { Caster } from '../execution/Caster';
 import type { CastLogWriter } from '../castLog/CastLogWriter';
 
+/** Dependencies injected into ForgeImprinter, allowing optional ID generation override for testing. */
 export interface ForgeImprinterDeps {
   notify: (msg: string) => void;
   caster: () => Caster;
@@ -13,6 +14,10 @@ export interface ForgeImprinterDeps {
   generateId?: () => string;
 }
 
+/**
+ * Orchestrates spell forging: validates input, builds the forge meta-spell, logs the cast, and dispatches execution.
+ * Handles both local and remote execution modes, with appropriate user notifications.
+ */
 export class ForgeImprinter {
   readonly #notify: (msg: string) => void;
   readonly #caster: () => Caster;
@@ -26,17 +31,19 @@ export class ForgeImprinter {
     this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
   }
 
+  /**
+   * Initiates spell forging from a form submission.
+   * Validates name sanitisation, logs the initial cast record, and starts execution.
+   */
   imprint(snapshot: ForgeFormSnapshot, settings: GrimoireSettings, close: () => void): void {
     const isRemote = settings.executionMode === 'remote';
     const logWriter = this.#logWriter();
 
-    // pre-flight guard 1: empty portal host
     if (isRemote && settings.portalHost.trim() === '') {
       this.#notify('Configure portal host in settings before casting remotely.');
       return;
     }
 
-    // pre-flight guard 2: invalid spell name
     const sanitised = sanitiseSpellName(snapshot.name);
     if (sanitised === '') {
       this.#notify('Spell name is invalid after sanitisation');

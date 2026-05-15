@@ -18,6 +18,11 @@ export interface OptionsPanelDeps {
   onBack: () => void;
 }
 
+/**
+ * Panel for spell casting options: context notes, follow-up, executeOnNote toggle,
+ * and model/effort selection. Owns sub-components (ContextNotesInput, CastModelSection),
+ * a keyboard controller for Mod+Enter to cast, and reset/cast buttons.
+ */
 export class OptionsPanel {
   #kb: KeyboardController;
   #contextNotesInput: ContextNotesInput;

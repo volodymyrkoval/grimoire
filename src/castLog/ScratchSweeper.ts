@@ -1,5 +1,9 @@
 import type { DataAdapter } from 'obsidian';
 
+/**
+ * File system operations for ScratchSweeper.
+ * Defaults to Obsidian's DataAdapter if not provided.
+ */
 export interface ScratchSweeperPorts {
   getScratchDirAbs: () => string;
   readdir?: (dir: string) => Promise<string[]>;
@@ -10,6 +14,10 @@ export interface ScratchSweeperPorts {
   adapter?: DataAdapter;
 }
 
+/**
+ * Removes stale temporary files from the cast-log-scratch directory.
+ * Files older than the TTL (default 24h) are deleted; missing directory is treated as empty.
+ */
 export class ScratchSweeper {
   #getScratchDirAbs: () => string;
   #readdir: (dir: string) => Promise<string[]>;
@@ -38,6 +46,10 @@ export class ScratchSweeper {
     this.#ttlMs = ports.ttlMs ?? 24 * 60 * 60 * 1000;
   }
 
+  /**
+   * Scans the scratch directory and deletes files exceeding the TTL.
+   * Silently completes if the directory doesn't exist yet.
+   */
   async sweep(): Promise<void> {
     const scratchDir = this.#getScratchDirAbs();
     const files = await this.#readScratchDir(scratchDir);

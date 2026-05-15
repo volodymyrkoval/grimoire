@@ -21,7 +21,10 @@ import type { PopupPhase, PopupPhaseContext } from "./popup/PopupPhase";
 import { SearchPhase } from "./popup/SearchPhase";
 import { DetailPhase } from "./popup/DetailPhase";
 
+/** Callback signature for submitting a Forge sentinel form. */
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
+
+/** Callback signature for casting a spell with resolved options. */
 export type CastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
@@ -37,6 +40,11 @@ export interface CommandPopupParams {
   castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'>;
 }
 
+/**
+ * Command palette popup: main modal that owns two tabs (Spells, Logs),
+ * keyboard navigation, detail-panel routing, and form dismissal logic.
+ * Phases (SearchPhase, DetailPhase) govern keyboard handling and close interception.
+ */
 export class CommandPopup extends Modal {
   #selectedIndex = 0;
   #searchQuery = "";

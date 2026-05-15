@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { OptionsSessionMap, OptionsSessionEntry } from '../src/ui/options/OptionsSessionMap';
 
 describe('OptionsSessionMap', () => {
-  // (a) put then get returns the entry
   it('put then get returns the entry', () => {
     const map = new OptionsSessionMap();
     const entry: OptionsSessionEntry = {
@@ -19,7 +18,6 @@ describe('OptionsSessionMap', () => {
     expect(retrieved).toEqual(entry);
   });
 
-  // (b) get for a missing key returns undefined
   it('get for a missing key returns undefined', () => {
     const map = new OptionsSessionMap();
 
@@ -28,7 +26,6 @@ describe('OptionsSessionMap', () => {
     expect(retrieved).toBeUndefined();
   });
 
-  // (c) delete removes the entry; get returns undefined after
   it('delete removes the entry; get returns undefined after', () => {
     const map = new OptionsSessionMap();
     const entry: OptionsSessionEntry = {
@@ -46,7 +43,6 @@ describe('OptionsSessionMap', () => {
     expect(map.get('spell/test.ts')).toBeUndefined();
   });
 
-  // (d) clear empties the map; get returns undefined after
   it('clear empties the map; get returns undefined after', () => {
     const map = new OptionsSessionMap();
     const entry1: OptionsSessionEntry = {
@@ -74,7 +70,6 @@ describe('OptionsSessionMap', () => {
     expect(map.get('spell/test2.ts')).toBeUndefined();
   });
 
-  // (e) put an entry with executeOnNote: false, get it back, assert executeOnNote === false
   it('put and get entry with executeOnNote: false preserves the value', () => {
     const map = new OptionsSessionMap();
     const entry: OptionsSessionEntry = {

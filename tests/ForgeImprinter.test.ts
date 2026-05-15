@@ -546,7 +546,6 @@ describe('ForgeImprinter', () => {
     expect(logWriter.recordError).not.toHaveBeenCalled();
   });
 
-  // E5: second-recordCasted contract test
   it('remote: onAccepted with jobId triggers second recordCasted with portalCastId', () => {
     const logWriter = makeLogWriterStub();
     const { thunk, getCallbacks } = makeStubCaster();
@@ -589,8 +588,6 @@ describe('ForgeImprinter', () => {
     caster2.getCallbacks().onAccepted({});
     expect(logWriter2.recordCasted).toHaveBeenCalledTimes(1);
   });
-
-  // ── logWriter thunk: resolved per-imprint, not captured at construction ──────
 
   it('uses logWriter resolved at imprint time, not construction time', () => {
     const localWriter = makeLogWriterStub();

@@ -1,3 +1,12 @@
+/**
+ * Integration test: CastLogRow — component unit seam.
+ *
+ * Seam: the boundary between CastLogRow (subject) and its render contract.
+ * Tests the expanded-body rendering of cast records, field labels, conditional
+ * sections (context notes, affected files, follow-up), and the executeOnNote flag
+ * (only for live spells).
+ */
+
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { CastRecord } from '../../src/castLog/CastRecord';
 import { CastLogRow } from '../../src/ui/components/CastLogRow';
@@ -25,7 +34,6 @@ describe('CastLogRow', () => {
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
       expect(body).toBeTruthy();
 
-      // Cast ID row should have a label
       const castIdRow = body.querySelector('.cast-log-field-row');
       expect(castIdRow).toBeTruthy();
       const label = castIdRow!.querySelector('.cast-log-field-label');
@@ -50,7 +58,6 @@ describe('CastLogRow', () => {
       row.render(true, NOW, () => {});
 
       const body = container.querySelector('.cast-log-row-body') as HTMLElement;
-      // Should NOT contain a "Context notes:" label or the dash
       expect(body.textContent).not.toContain('Context notes:');
       expect(body.textContent).not.toContain('—');
     });

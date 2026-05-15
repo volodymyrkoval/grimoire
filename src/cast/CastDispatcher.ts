@@ -3,6 +3,9 @@ import { type Effort, type GrimoireSettings } from '../domain/settings/Settings'
 import type { Caster } from '../execution/Caster';
 import type { CastLogWriter } from '../castLog/CastLogWriter';
 
+/**
+ * Input payload for a spell cast request.
+ */
 export interface CastDispatchInput {
   spell: Spell;
   model: string;
@@ -14,6 +17,9 @@ export interface CastDispatchInput {
   executeOnNote: boolean;
 }
 
+/**
+ * Dependency injection parameters for CastDispatcher.
+ */
 export interface CastDispatcherDeps {
   notify: (msg: string) => void;
   close: () => void;
@@ -22,6 +28,10 @@ export interface CastDispatcherDeps {
   generateId?: () => string;
 }
 
+/**
+ * Orchestrates spell casting: validates inputs, logs intent, delegates execution to a local or remote caster.
+ * Caster and LogWriter are obtained from injected factories to enable test injection.
+ */
 export class CastDispatcher {
   readonly #notify: (msg: string) => void;
   readonly #close: () => void;
@@ -37,19 +47,21 @@ export class CastDispatcher {
     this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
   }
 
+  /**
+   * Dispatch a spell cast request. Validates prerequisites, logs the cast intent, and queues execution.
+   * Runs asynchronously; errors are surfaced via notify callback.
+   */
   dispatch(input: CastDispatchInput): void {
     const { spell, model, effort, contextNotePaths, followUp, settings, activeFilePath } = input;
     const isRemote = settings.executionMode === 'remote';
     const logWriter = this.#logWriter();
 
-    // pre-flight guard 1
     if (input.executeOnNote && activeFilePath === null) {
       this.#notify('Open a note to cast against');
       this.#close();
       return;
     }
 
-    // pre-flight guard 2
     if (isRemote && settings.portalHost.trim() === '') {
       this.#notify('Configure portal host in settings before casting remotely.');
       return;

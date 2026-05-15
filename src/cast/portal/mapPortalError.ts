@@ -1,8 +1,14 @@
+/**
+ * Tagged union of portal request errors: timeout, network connectivity, or HTTP response.
+ */
 export type PortalErrorInput =
   | { kind: 'timeout' }
   | { kind: 'network'; message: string; host: string }
   | { kind: 'http'; status: number; body: string };
 
+/**
+ * User-facing error message and logging decision for a portal error.
+ */
 export interface PortalErrorOutput {
   notice: string;
   // 'none' is reserved for retryable errors that should surface a notice but not write an error log entry.
@@ -19,6 +25,10 @@ const HTTP_STATUS_TEXT: Record<number, string> = {
   503: 'Service Unavailable',
 };
 
+/**
+ * Map a portal error into a user-facing notice and logging decision.
+ * 401 (auth) and network timeouts surface user-actionable guidance.
+ */
 export function mapPortalError(input: PortalErrorInput): PortalErrorOutput {
   switch (input.kind) {
     case 'timeout':

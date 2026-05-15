@@ -3,6 +3,10 @@ import type { CastLogEvent } from './types';
 import type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
 export type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
 
+/**
+ * File I/O and time operations for CastLogStore.
+ * Defaults to Obsidian's DataAdapter if not provided.
+ */
 export interface CastLogStorePorts {
   getLogPathAbs: () => string;
   getRemoteLogPathAbs?: () => string;
@@ -12,6 +16,11 @@ export interface CastLogStorePorts {
   adapter?: DataAdapter;
 }
 
+/**
+ * Persists and reads cast log events from one or two files (local + optional remote).
+ * Implements CastLogWriter and CastLogReader interfaces via recordCasted/recordError and readAll.
+ * Events are stored as newline-delimited JSON.
+ */
 export class CastLogStore {
   readonly #ports: CastLogStorePorts;
   readonly #now: () => Date;
@@ -34,6 +43,9 @@ export class CastLogStore {
     });
   }
 
+  /**
+   * Records a cast initiation event with timestamp.
+   */
   async recordCasted(input: RecordCastedInput): Promise<void> {
     const event = {
       stage: 'casted' as const,
@@ -44,6 +56,9 @@ export class CastLogStore {
     await this.#appendLine(path, JSON.stringify(event) + '\n');
   }
 
+  /**
+   * Records a cast error event with timestamp.
+   */
   async recordError(input: RecordErrorInput): Promise<void> {
     const event = {
       stage: 'error' as const,
@@ -54,14 +69,15 @@ export class CastLogStore {
     await this.#appendLine(path, JSON.stringify(event) + '\n');
   }
 
+  /**
+   * Reads all events from local and remote logs (if configured), returning them in order of appearance.
+   */
   async readAll(): Promise<CastLogEvent[]> {
     const events: CastLogEvent[] = [];
 
-    // Read local file
     const localEvents = await this.#readFromFile(this.#ports.getLogPathAbs());
     events.push(...localEvents);
 
-    // Read remote file if getter is defined
     if (this.#ports.getRemoteLogPathAbs) {
       const remoteEvents = await this.#readFromFile(this.#ports.getRemoteLogPathAbs());
       events.push(...remoteEvents);
@@ -70,6 +86,10 @@ export class CastLogStore {
     return events;
   }
 
+  /**
+   * Reads and parses events from a single file, silently returning empty on ENOENT,
+   * skipping malformed lines, and logging read errors.
+   */
   async #readFromFile(filePath: string): Promise<CastLogEvent[]> {
     try {
       const content = await this.#readFile(filePath, 'utf-8');
@@ -77,28 +97,23 @@ export class CastLogStore {
 
       const lines = content.split('\n');
       for (const line of lines) {
-        // Skip empty lines
         if (!line.trim()) {
           continue;
         }
 
-        // Parse JSON
         let parsed: unknown;
         try {
           parsed = JSON.parse(line);
         } catch {
-          // Silently drop lines that fail JSON.parse
           continue;
         }
 
-        // Validate required fields
         if (
           !parsed ||
           typeof parsed !== 'object' ||
           !('castId' in parsed) ||
           !('stage' in parsed)
         ) {
-          // Drop lines missing castId or stage
           continue;
         }
 
@@ -107,7 +122,7 @@ export class CastLogStore {
 
       return events;
     } catch (error) {
-      // Treat ENOENT as empty
+      // ENOENT means the file doesn't exist yet — treat as empty log
       if (
         error &&
         typeof error === 'object' &&
@@ -117,7 +132,6 @@ export class CastLogStore {
         return [];
       }
 
-      // Log other errors and return empty
       console.error(`Failed to read cast log from ${filePath}:`, error);
       return [];
     }

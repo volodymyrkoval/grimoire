@@ -6,6 +6,10 @@ interface IntervalTickCoordinatorOptions {
   clearInterval?: typeof activeWindow.clearInterval;
 }
 
+/**
+ * Implements TickCoordinator using setInterval.
+ * Periodically invokes a callback at fixed intervals, swallowing any errors to keep the interval alive.
+ */
 export class IntervalTickCoordinator implements TickCoordinator {
   #intervalMs: number;
   #setInterval: typeof activeWindow.setInterval;
@@ -27,7 +31,7 @@ export class IntervalTickCoordinator implements TickCoordinator {
       try {
         onTick();
       } catch {
-        // Swallow callback errors; the interval continues
+        // Callback error must not break the interval.
       }
     }, this.#intervalMs);
   }

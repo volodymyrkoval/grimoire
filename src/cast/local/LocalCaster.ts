@@ -2,6 +2,10 @@ import type { GrimoireSettings } from '../../domain/settings/Settings';
 import type { Caster, CastInput, CastCallbacks } from '../../execution/Caster';
 import { CastRunner } from './CastRunner';
 
+/**
+ * Caster implementation that executes spells locally via the forging CLI.
+ * Adapts generic CastInput into LocalCaster-specific CastRunInput and delegates to CastRunner.
+ */
 export class LocalCaster implements Caster {
   readonly #runner: CastRunner;
   readonly #settings: GrimoireSettings;
@@ -11,6 +15,9 @@ export class LocalCaster implements Caster {
     this.#settings = settings;
   }
 
+  /**
+   * Execute a spell cast locally by preparing arguments and spawning the CLI process.
+   */
   cast(input: CastInput, callbacks: CastCallbacks): void {
     const runInput = input.systemPromptFile
       ? {

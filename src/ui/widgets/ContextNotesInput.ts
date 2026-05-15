@@ -5,6 +5,11 @@ export interface ContextNotesInputProps {
   onChange: (paths: readonly string[]) => void;
 }
 
+/**
+ * Autocomplete input for adding context notes (markdown files) as pills.
+ * Renders pills with remove buttons, a search input with dropdown menu,
+ * and handles programmatic add/clear for form restoration.
+ */
 export class ContextNotesInput {
   #pillPaths: string[] = [];
   #searchInput: HTMLInputElement | null = null;

@@ -2,6 +2,10 @@ import type { NavigablePanel } from "../tabs/TabPanel";
 
 type FilterCallback = (query: string, selectedIndex: number) => void;
 
+/**
+ * Renders a text input field for filtering a navigable panel (spells or cast logs).
+ * Restores previous selection and query on mount; filters as the user types.
+ */
 export class SearchInput {
   render(
     container: HTMLElement,

@@ -1,5 +1,10 @@
 import type { CastStatus } from '../../castLog/CastRecord';
 
+/**
+ * Maps a cast status to a human-readable label and CSS class for styling.
+ * @param status The cast status to format.
+ * @returns An object with `label` (displayed text) and `cls` (CSS class for color/style).
+ */
 export function statusBadge(status: CastStatus): { label: string; cls: string } {
   switch (status) {
     case 'casted':

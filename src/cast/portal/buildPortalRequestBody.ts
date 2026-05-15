@@ -1,5 +1,8 @@
 import type { Effort } from '../../domain/settings/Settings';
 
+/**
+ * Input fields for constructing a portal cast request body.
+ */
 export interface BuildPortalRequestBodyInput {
   castId: string;
   spellPath: string;
@@ -8,6 +11,9 @@ export interface BuildPortalRequestBodyInput {
   effort: Effort | null;
 }
 
+/**
+ * Serialize a cast request into JSON body format for the portal HTTP endpoint.
+ */
 export function buildPortalRequestBody(input: BuildPortalRequestBodyInput): string {
   const body = {
     castId: input.castId,

@@ -22,6 +22,10 @@ type SweeperPorts = {
   getScratchDirAbs: () => string;
 };
 
+/**
+ * Manages cast log storage, source, and coordination with vault refresh and polling timers.
+ * Maintains separate in-memory stores for local and remote casts; activeLogStore() routes to the correct one.
+ */
 export class CastLogModule {
   readonly #app: App;
   readonly #paths: PluginPaths;
@@ -58,12 +62,14 @@ export class CastLogModule {
     });
   }
 
+  /** Routes to the active log store (local or remote) based on current execution mode. */
   activeLogStore(): CastLogWriter {
     return this.#getExecutionMode() === 'remote'
       ? this.#remoteCastLogStore
       : this.#localCastLogStore;
   }
 
+  /** Builds all dependencies except openLink callback for the CastLogPanel UI component. */
   buildCastLogPanelDeps(): Omit<CastLogPanelDeps, 'openLink'> {
     const castLogPaths = [
       this.#paths.localLogPath(),
@@ -89,6 +95,7 @@ export class CastLogModule {
     };
   }
 
+  /** Runs startup tasks: materializes missing cast log from git hooks, sweeps stale scratch files. */
   async initStartupMaintenance(): Promise<void> {
     const adapter = this.#app.vault.adapter;
 

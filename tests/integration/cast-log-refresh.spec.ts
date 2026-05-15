@@ -47,7 +47,6 @@ describe('VaultRefreshCoordinator — vault/modify seam', () => {
     coordinator.start(onRefresh);
     (app.vault as any).__fireModify(WATCHED_PATH);
 
-    // Before debounce settles — should not have fired yet
     expect(onRefresh).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(DEBOUNCE_MS);
@@ -73,14 +72,12 @@ describe('VaultRefreshCoordinator — vault/modify seam', () => {
 
     coordinator.start(onRefresh);
 
-    // Fire the watched path several times within the debounce window
     (app.vault as any).__fireModify(WATCHED_PATH);
     vi.advanceTimersByTime(DEBOUNCE_MS / 2);
     (app.vault as any).__fireModify(WATCHED_PATH);
     vi.advanceTimersByTime(DEBOUNCE_MS / 2);
     (app.vault as any).__fireModify(WATCHED_PATH);
 
-    // Still within the debounce window of the last fire
     expect(onRefresh).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(DEBOUNCE_MS);
@@ -95,10 +92,8 @@ describe('VaultRefreshCoordinator — vault/modify seam', () => {
     coordinator.start(onRefresh);
     coordinator.stop();
 
-    // vault.offref should have been called with the ref returned by vault.on
     expect(app.vault.offref).toHaveBeenCalledTimes(1);
 
-    // Firing modify after stop must not trigger the callback
     (app.vault as any).__fireModify(WATCHED_PATH);
     vi.advanceTimersByTime(DEBOUNCE_MS * 2);
 

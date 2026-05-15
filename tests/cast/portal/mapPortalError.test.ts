@@ -66,7 +66,6 @@ describe('mapPortalError', () => {
       body: longBody,
     });
 
-    // Body should be truncated to 200 chars
     expect(result.notice).toMatch(/Portal returned 500: /);
     const bodyPart = result.notice.replace(/Portal returned 500: /, '').slice(0, -1); // remove trailing dot
     expect(bodyPart).toBe('x'.repeat(200));

@@ -1,6 +1,10 @@
 import type { PopupPhase, PopupPhaseContext } from './PopupPhase';
 import { isNavigable } from '../tabs/TabPanel';
 
+/**
+ * Search phase: default mode where arrow keys navigate list, Enter confirms selection,
+ * Tab switches panels, and arrow-right opens options (spell details).
+ */
 export class SearchPhase implements PopupPhase {
   readonly kind = 'search' as const;
   readonly #ctx: PopupPhaseContext;

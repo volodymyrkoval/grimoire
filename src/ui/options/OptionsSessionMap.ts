@@ -9,6 +9,11 @@ export interface OptionsSessionEntry {
   executeOnNote: boolean;
 }
 
+/**
+ * Session-scoped cache of casting options keyed by spell path.
+ * Persists user input across popup reopens within the same session.
+ * Cleared when the user clicks Reset or closes the popup.
+ */
 export class OptionsSessionMap {
   #map = new Map<string, OptionsSessionEntry>();
 

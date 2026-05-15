@@ -1,3 +1,7 @@
+/**
+ * Renders a horizontal tab bar with disabled/active state management.
+ * Tab labels are auto-capitalized from id (e.g., "spells" → "Spells").
+ */
 export class TabBar {
   el!: HTMLElement;
 

@@ -81,16 +81,13 @@ describe('CastLogSource.load() — composition seam', () => {
     const source = new CastLogSource({ reader, foldEvents });
     const records: CastRecord[] = await source.load();
 
-    // Two casts total
     expect(records).toHaveLength(2);
 
-    // Newest cast (B) is first
     expect(records[0].castId).toBe(CAST_B_ID);
     expect(records[0].status).toBe('in-progress');
     expect(records[0].castedTs).toBe('2024-01-01T11:00:00Z');
     expect(records[0].startedTs).toBe('2024-01-01T11:01:00Z');
 
-    // Older cast (A) is second
     expect(records[1].castId).toBe(CAST_A_ID);
     expect(records[1].status).toBe('done');
     expect(records[1].castedTs).toBe('2024-01-01T10:00:00Z');

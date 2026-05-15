@@ -1,6 +1,10 @@
 import type { CastRecord } from '../../castLog/CastRecord';
 import { CastLogRow } from './CastLogRow';
 
+/**
+ * Renders a list of cast records with per-row expansion state and time-display updates.
+ * Maintains a cache of row instances keyed by castId for efficient partial redraws.
+ */
 export class CastLogList {
   #header: HTMLElement;
   #listWrapper: HTMLElement;
@@ -11,10 +15,7 @@ export class CastLogList {
 
   constructor(container: HTMLElement, openLink: (path: string) => void) {
     this.#openLink = openLink;
-    // Header for in-flight count (hidden by default)
     this.#header = container.createDiv({ cls: 'cast-log-header is-hidden' });
-
-    // List wrapper for rows
     this.#listWrapper = container.createDiv({ cls: 'cast-log-list' });
   }
 

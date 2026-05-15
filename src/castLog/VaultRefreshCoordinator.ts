@@ -1,6 +1,10 @@
 import type { Vault, EventRef, DataAdapter } from 'obsidian';
 import type { RefreshCoordinator } from './RefreshCoordinator';
 
+/**
+ * Obsidian vault operations and timer functions for VaultRefreshCoordinator.
+ * Defaults to Obsidian's Vault and activeWindow timers if not provided.
+ */
 export interface VaultRefreshCoordinatorPorts {
   vault: Vault;
   watchedVaultPaths: readonly string[];
@@ -16,6 +20,12 @@ export interface VaultRefreshCoordinatorPorts {
   adapter?: DataAdapter;
 }
 
+/**
+ * Detects cast log file changes via Obsidian's vault.on('modify') event, with fallback polling.
+ * Strategy: listen to vault events for watched vault paths; if no events fire during a settling window,
+ * engage a poller for watched absolute paths (e.g., files outside the vault like .obsidian/plugins/**).
+ * Uses trailing debounce to suppress redundant callbacks within a debounce window.
+ */
 export class VaultRefreshCoordinator implements RefreshCoordinator {
   readonly #vault: Vault;
   readonly #watchedVaultPaths: readonly string[];
@@ -58,6 +68,10 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     this.#clearTimeout = (ports.clearTimeout ?? activeWindow.clearTimeout.bind(activeWindow)) as typeof activeWindow.clearTimeout;
   }
 
+  /**
+   * Starts monitoring: subscribe to vault events, sample baselines, and schedule settling window.
+   * Throws if already started.
+   */
   start(onRefresh: () => void): void {
     if (this.#started) throw new Error('VaultRefreshCoordinator already started');
     this.#started = true;
@@ -65,7 +79,6 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     this.#eventsObserved = false;
     this.#onRefresh = onRefresh;
 
-    // Register vault modify handler — filter to watched paths
     this.#eventRef = this.#vault.on('modify', (file: { path: string }) => {
       if (this.#watchedVaultPaths.includes(file.path)) {
         this.#eventsObserved = true;
@@ -73,12 +86,14 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
       }
     });
 
-    // Sample initial mtimes then schedule the settling window check
     void this.#sampleBaseline().then(() => {
       this.#scheduleSettlingWindow();
     });
   }
 
+  /**
+   * Stops monitoring: clears vault subscription and all timers.
+   */
   stop(): void {
     this.#disposed = true;
     this.#started = false;
@@ -104,7 +119,10 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     }
   }
 
-  // Trailing debounce — each call resets the timer window.
+  /**
+   * Schedules a trailing debounced refresh callback.
+   * Each call resets the timer window; callback fires once after debounceMs of quiet.
+   */
   #scheduleRefresh(): void {
     if (this.#debounceHandle !== null) {
       this.#clearTimeout(this.#debounceHandle);
@@ -121,6 +139,10 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     }, this.#debounceMs);
   }
 
+  /**
+   * Reads initial modification times for all watched absolute paths.
+   * Treats stat errors as "no baseline" (0) to ensure poller engages.
+   */
   async #sampleBaseline(): Promise<void> {
     for (const absPath of this.#watchedAbsPaths) {
       try {
@@ -135,6 +157,9 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     }
   }
 
+  /**
+   * Schedules the settling window check: a probe to detect if vault-modify events fire.
+   */
   #scheduleSettlingWindow(): void {
     if (this.#watchedAbsPaths.length === 0 || this.#disposed) return;
 
@@ -144,15 +169,14 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     }, this.#settlingWindowMs);
   }
 
+  /**
+   * Checks if vault events were observed during the settling window.
+   * If not, engages the poller for files outside Obsidian's event surface (e.g., .obsidian/plugins/**).
+   * Updates mtimes regardless to keep baseline current.
+   */
   async #checkSettlingWindow(): Promise<void> {
     if (this.#disposed || this.#eventsObserved) return;
 
-    // Sample mtimes once to keep lastStat current — but don't gate poller
-    // engagement on whether they changed. The settling window is a probe for
-    // the vault-modify path; if no events were observed during it, the file
-    // lives outside Obsidian's event surface (e.g. .obsidian/plugins/**) and
-    // we must fall back to polling regardless of whether mtime moved during
-    // that initial window.
     for (const absPath of this.#watchedAbsPaths) {
       try {
         const { mtimeMs } = await this.#stat(absPath);
@@ -160,7 +184,7 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
           this.#lastStat.set(absPath, mtimeMs);
         }
       } catch {
-        // Treat stat error as no change.
+        // File may no longer exist; treat as no change.
       }
     }
 
@@ -169,6 +193,9 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     }
   }
 
+  /**
+   * Starts the polling timer for periodic mtime checks.
+   */
   #engagePoller(): void {
     if (this.#pollHandle !== null || this.#disposed) return;
 
@@ -177,6 +204,9 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     }, this.#pollIntervalMs);
   }
 
+  /**
+   * Polls watched absolute paths for mtime changes; schedules a debounced refresh if any changed.
+   */
   async #pollMtimes(): Promise<void> {
     if (this.#disposed) return;
 
@@ -189,7 +219,7 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
           this.#lastStat.set(absPath, mtimeMs);
         }
       } catch {
-        // Treat stat error as no change.
+        // File may no longer exist; treat as no change.
       }
     }
 

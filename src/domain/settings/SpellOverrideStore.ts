@@ -2,11 +2,16 @@ import { SpellPath } from "../spells/SpellPath";
 import { GrimoireData, SpellOverride, SUPPORTED_MODELS, Effort } from "./Settings";
 import { DebouncedSaver } from "../../infra/DebouncedSaver";
 
+/** Dependencies for initializing the spell override store. */
 export interface SpellOverrideStoreDeps {
   data: GrimoireData;
   saver: DebouncedSaver;
 }
 
+/**
+ * Manages per-spell model and effort overrides with validation and debounced persistence.
+ * Prevents invalid overrides (unknown models, missing effort support) from being stored.
+ */
 export class SpellOverrideStore {
   #data: GrimoireData;
   #saver: DebouncedSaver;

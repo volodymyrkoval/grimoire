@@ -5,6 +5,11 @@ import type { SpellEvents } from "../../domain/spells/SpellEvents";
 import { SpellRow } from "./SpellRow";
 import { SentinelRow } from "./SentinelRow";
 
+/**
+ * Renders a list of spells plus sentinel sentries (Forge, Refine) in a single container.
+ * Manages selection state and handles click events that emit cast/sentinel/open-options events.
+ * Applies hover-reset CSS workaround after DOM mutations to flush stale :hover states.
+ */
 export class SpellList {
   readonly el: HTMLElement;
   #rows: (SpellRow | SentinelRow)[] = [];

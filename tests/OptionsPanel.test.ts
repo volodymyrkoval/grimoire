@@ -80,7 +80,6 @@ function mountPanel(overrides?: Partial<{
 }
 
 describe('OptionsPanel — per-control wiring', () => {
-  // Test 1: model select is populated with SUPPORTED_MODELS
   it('model select populated with SUPPORTED_MODELS', () => {
     const { contentEl } = mountPanel();
 
@@ -99,7 +98,6 @@ describe('OptionsPanel — per-control wiring', () => {
     }
   });
 
-  // Test 2: changing model select dispatches change event and calls formState.setModel
   it('changing model select calls formState.setModel', () => {
     const { contentEl, formState } = mountPanel({
       model: 'claude-sonnet-4-5',
@@ -119,7 +117,6 @@ describe('OptionsPanel — per-control wiring', () => {
     spy.mockRestore();
   });
 
-  // Test 3: select element exists and can be manually navigated by index
   it('select exists and can be manually navigated by index', () => {
     // Mount with Haiku (index 0) to test wrap-around easily
     const { contentEl } = mountPanel({ model: 'claude-haiku-4-5', effort: null });
@@ -143,7 +140,6 @@ describe('OptionsPanel — per-control wiring', () => {
     expect(select.selectedIndex).toBe(0);
   });
 
-  // Test 4: textarea input fires formState.setFollowUp
   it('textarea input calls formState.setFollowUp', () => {
     const { contentEl, formState } = mountPanel();
 
@@ -161,7 +157,6 @@ describe('OptionsPanel — per-control wiring', () => {
     spy.mockRestore();
   });
 
-  // Test 5: Back button click calls onBack
   it('Back button click calls onBack', () => {
     const { contentEl, onBack } = mountPanel();
 
@@ -175,21 +170,17 @@ describe('OptionsPanel — per-control wiring', () => {
     expect(onBack).toHaveBeenCalledOnce();
   });
 
-  // Test 6: destroy() cleans up subscriptions
   it('destroy() completes without error', () => {
     const { panel } = mountPanel({
       model: 'claude-sonnet-4-5',
       effort: 'medium',
     });
 
-    // destroy() should unsubscribe the formState listener and unbind keyboard
-    // If something fails during cleanup, this will throw
     expect(() => {
       panel.destroy();
     }).not.toThrow();
   });
 
-  // Test 7: form submission fires Cast via form.onsubmit
   it('form submission calls onCast with current formState snapshot', () => {
     const { contentEl, formState, onCast } = mountPanel();
 
@@ -212,7 +203,6 @@ describe('OptionsPanel — per-control wiring', () => {
     );
   });
 
-  // Test 8: Cmd+Enter keyboard shortcut fires Cast
   it('Cmd+Enter keyboard shortcut calls onCast', () => {
     const { scope, onCast } = mountPanel();
 

@@ -6,6 +6,11 @@ export interface OptionsSnapshot {
   effort: Effort | null;
 }
 
+/**
+ * Compares a baseline snapshot (from spell defaults or overrides) against the current form state.
+ * Returns true if model and effort match (ignoring contextNotePaths, followUp, executeOnNote).
+ * Used to determine whether to show the "Set as default" checkbox.
+ */
 export function snapshotEqualsCurrent(snap: OptionsSnapshot, current: OptionsFormSnapshot): boolean {
   return snap.model === current.model && snap.effort === current.effort;
 }

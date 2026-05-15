@@ -8,6 +8,11 @@ export interface EffortRowOpts {
   onChange: (effort: Effort) => void;
 }
 
+/**
+ * Conditionally mounts a segmented control for model effort selection.
+ * Effort row only mounts if the model has effortOptions; intelligently mounts/unmounts
+ * as the model changes. Stores state to handle model changes that gain or lose effort options.
+ */
 export class EffortRow {
   #segmented: SegmentedControl<Effort> | null = null;
   #wrapper: HTMLElement | null = null;

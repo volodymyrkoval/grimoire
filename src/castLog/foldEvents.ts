@@ -2,6 +2,9 @@ import type { CastLogEvent, CastedEvent, DoneEvent, ErrorEvent, InProgressEvent 
 import type { CastRecord } from './CastRecord';
 import { STAGE_PRIORITY } from './stagePriority';
 
+/**
+ * Combines a casted event into an initial CastRecord, extracting all available fields.
+ */
 function combineCastedRecord(castId: string, castedEvent: CastedEvent): CastRecord {
   return {
     castId,
@@ -19,6 +22,10 @@ function combineCastedRecord(castId: string, castedEvent: CastedEvent): CastReco
   };
 }
 
+/**
+ * Checks if an event's stage has higher priority than the record's current status.
+ * Used to prevent older casted events from regressing a record already in done/error state.
+ */
 function shouldUpdateStatus(
   event: CastLogEvent,
   record: CastRecord,
@@ -28,6 +35,9 @@ function shouldUpdateStatus(
   return incomingPriority > currentPriority;
 }
 
+/**
+ * Merges in-progress event into a record, recording the first start timestamp observed.
+ */
 function updateForInProgress(record: CastRecord, event: InProgressEvent): CastRecord {
   if (!record.startedTs) {
     return { ...record, startedTs: event.ts };
@@ -35,6 +45,9 @@ function updateForInProgress(record: CastRecord, event: InProgressEvent): CastRe
   return record;
 }
 
+/**
+ * Merges done event into a record, recording first end timestamp and any newly collected affected files.
+ */
 function updateForDone(record: CastRecord, event: DoneEvent): CastRecord {
   let updated = record;
   if (!updated.endedTs) {
@@ -46,6 +59,9 @@ function updateForDone(record: CastRecord, event: DoneEvent): CastRecord {
   return updated;
 }
 
+/**
+ * Merges error event into a record, recording first end timestamp and error message.
+ */
 function updateForError(record: CastRecord, event: ErrorEvent): CastRecord {
   let updated = record;
   if (!updated.endedTs) {
@@ -57,6 +73,9 @@ function updateForError(record: CastRecord, event: ErrorEvent): CastRecord {
   return updated;
 }
 
+/**
+ * Applies a single event to an existing record, updating status and fields according to the event type.
+ */
 function updateRecordWithEvent(
   record: CastRecord,
   event: CastLogEvent,
@@ -84,6 +103,10 @@ function updateRecordWithEvent(
   return updated;
 }
 
+/**
+ * Folds all events for a single cast ID into a record.
+ * Requires at least one casted event; returns null if the group has no casted event (incomplete log).
+ */
 function processCastGroup(
   castId: string,
   groupEvents: CastLogEvent[],
@@ -100,6 +123,9 @@ function processCastGroup(
   return remainingEvents.reduce(updateRecordWithEvent, record);
 }
 
+/**
+ * Groups log events by castId, collecting related events (casted, in-progress, done/error) for each cast.
+ */
 function groupRelatedEvent(events: CastLogEvent[]) {
   return events.reduce((groups, event) => {
     if (!groups.has(event.castId)) {
@@ -110,6 +136,9 @@ function groupRelatedEvent(events: CastLogEvent[]) {
   }, new Map<string, CastLogEvent[]>());
 }
 
+/**
+ * Processes cast groups into records, filtering out incomplete casts (those lacking a casted event).
+ */
 function buildRecordsFromGroups(
   groups: Map<string, CastLogEvent[]>,
 ): CastRecord[] {
@@ -118,6 +147,9 @@ function buildRecordsFromGroups(
     .filter((record): record is CastRecord => record !== null);
 }
 
+/**
+ * Orders records by castedTs descending (most recent first).
+ */
 function sortByMostRecentFirst(records: CastRecord[]): CastRecord[] {
   return [...records].sort((a, b) => {
     const timeA = new Date(a.castedTs).getTime();
@@ -126,6 +158,11 @@ function sortByMostRecentFirst(records: CastRecord[]): CastRecord[] {
   });
 }
 
+/**
+ * Transforms a flat stream of cast log events into structured CastRecord objects.
+ * Casts events are grouped by castId; within each group, events are folded into a record following
+ * their stage priority (casted → in-progress → done/error). Returns records sorted most recent first.
+ */
 export function foldEvents(events: CastLogEvent[]): CastRecord[] {
   const groups = groupRelatedEvent(events);
   const records = buildRecordsFromGroups(groups);

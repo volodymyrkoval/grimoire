@@ -141,10 +141,7 @@ describe('HookMaterializer', () => {
 
       await mat.run();
 
-      // mkdir should still resolve to /p/hooks (not /p//hooks)
       expect(mkdir).toHaveBeenCalledWith('/p/hooks');
-
-      // First writeFile should write to /p/hooks/session-start.sh (not /p//hooks/session-start.sh)
       expect(writeFile.mock.calls[0][0]).toBe('/p/hooks/session-start.sh');
       expect(writeFile.mock.calls[1][0]).toBe('/p/hooks/post-tool-use.sh');
       expect(writeFile.mock.calls[2][0]).toBe('/p/hooks/stop.sh');

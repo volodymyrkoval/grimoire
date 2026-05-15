@@ -2,15 +2,18 @@ import { SpellPath } from '../../domain/spells/SpellPath';
 import { SpellOverrideStore } from './SpellOverrideStore';
 import { GrimoireSettings, Effort, SupportedModel } from './Settings';
 
+/** Model and effort selected for a spell within the current session. */
 export interface SpellSessionEntry {
   model: string;
   effort: Effort | null;
 }
 
+/** Read-only view of per-spell session data. */
 export interface SpellSessionReader {
   get(path: SpellPath): SpellSessionEntry | undefined;
 }
 
+/** Input to the spell options resolution cascade. */
 export interface ResolveOptionsInput {
   spellPath: SpellPath;
   session: SpellSessionReader;
@@ -19,11 +22,16 @@ export interface ResolveOptionsInput {
   models: readonly SupportedModel[];
 }
 
+/** Final resolved model and effort for a cast, guaranteed to be valid for the model. */
 export interface ResolvedSpellOptions {
   model: string;
   effort: Effort | null;
 }
 
+/**
+ * Resolves model and effort through a three-tier cascade: session → overrides → settings.
+ * Clamps effort to the selected model's supported range, falling back to the model's default if needed.
+ */
 export function resolveSpellOptions(input: ResolveOptionsInput): ResolvedSpellOptions {
   let selectedModel: string;
   let selectedEffort: Effort | null;

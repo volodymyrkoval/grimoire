@@ -4,6 +4,10 @@ import { computeVaultMountDefault } from './computeVaultMountDefault';
 
 const VALID_EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
+/**
+ * Merges saved plugin data with defaults, validates effort enums, and computes missing vault paths.
+ * Returns a complete GrimoireData object safe to use throughout the plugin.
+ */
 export function hydrate(saved: unknown, app: App): GrimoireData {
   const s = saved as
     | { settings?: Partial<GrimoireSettings>; spellOverrides?: Record<string, SpellOverride> }

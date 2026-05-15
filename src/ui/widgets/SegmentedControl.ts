@@ -4,6 +4,11 @@ export interface SegmentedControlOptions<T extends string> {
   onChange: (next: T) => void;
 }
 
+/**
+ * Generic segmented control (radio-button group) with keyboard navigation.
+ * Arrow left/right moves selection; click or arrow event triggers onChange callback.
+ * Manages tabIndex and focus: selected button has tabIndex=0, others have tabIndex=-1.
+ */
 export class SegmentedControl<T extends string> {
   #current: T;
   #buttons: Map<T, HTMLButtonElement> = new Map();
@@ -72,7 +77,6 @@ export class SegmentedControl<T extends string> {
       const btn = wrapper.createEl('button', { cls: 'grimoire-segmented__btn', text: opt });
       btn.type = 'button';
       this.#buttons.set(opt, btn);
-      // @todo replace with Keyboard controller
       btn.addEventListener('click', () => this.#handleClick(opt));
       btn.addEventListener('keydown', (e) => this.#handleArrow(e));
     }
