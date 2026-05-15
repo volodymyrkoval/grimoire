@@ -70,10 +70,10 @@ A spell row keyboard hint reads `↵ cast · → options` to advertise both bind
 
 ## Refine sentinel variant
 
-The Refine sentinel can be opened via `ArrowRight` in search mode (same as a spell row), mounting the same `OptionsPanel` form with a synthetic spell:
-- **Input:** a synthetic `Spell` with `path = REFINE_SENTINEL_PATH` (ensures it's never confused with a real file-backed spell)
-- **Form state:** identical to spell options — model, effort, context notes, follow-up, executeOnNote controls
-- **Key difference:** `onCast` calls `dismiss()` (closing the popup) rather than dispatching a cast action through `CastDispatcher`
+The Refine sentinel can be opened via `ArrowRight` in search mode (same as a spell row), mounting the same `OptionsPanel` form via a dedicated coordinator — see `refine-note-dialog` for the full feature:
+- **Coordinator:** `RefineOptionsDetail` mirrors `SpellOptionsDetail` but takes no `Spell` parameter; it keys session/override/resolver lookups directly on the reserved `REFINE_SENTINEL_PATH`.
+- **Form state:** identical to spell options — model, effort, context notes, follow-up, executeOnNote controls.
+- **Key difference:** `onCast` calls `dismiss()` (fully closing the popup) rather than dispatching a cast through `CastDispatcher`.
 - **Cross-link:** see `command-popup-ui.md` for the keyboard routing (`ArrowRight` on Refine sentinel).
 
 This variant allows the user to configure default or override settings for Refine operations without invoking Refine itself.
