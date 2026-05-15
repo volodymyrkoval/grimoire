@@ -1,6 +1,6 @@
 # Refine Cast
 
-> `dev/done-019` — 2026-05-15 — Wires the Refine sentinel's Enter trigger (from list and dialog) to the shared cast pipeline. Materializes `refine.md` on plugin load; guards on active markdown note; supplies cast-log `<refine>` sentinel.
+> `dev/done-018` — 2026-05-15 — Wires the Refine sentinel's Enter trigger (from list and dialog) to the shared cast pipeline. Materializes `refine.md` on plugin load; guards on active markdown note; supplies cast-log `<refine>` sentinel.
 
 ## What it does
 
@@ -34,10 +34,10 @@ Refine requires an open markdown file: if the user presses Enter and no `.md` fi
 - Live-spec + drift sweep on three existing feature docs.
 
 **Out:**
-- Autonomous modes (Generate / Expand) — deferred; cast requires either `@cast` lines or a follow-up.
-- CodeMirror decoration of `@cast` lines.
-- Custom Refine Script — prompt is hardcoded in plugin source.
-- Re-cast affordance on Refine entries in Cast Log.
+- Autonomous modes (Generate / Expand) — deferred; cast requires either `@cast` lines or a follow-up to do anything.
+- CodeMirror decoration of `@cast` lines — editor-decoration is a separate future phase, no mode detection lives in the plugin yet.
+- Custom Refine Script — prompt is hardcoded in plugin source; user-authored prompt body waits for a second use case.
+- Re-cast affordance on Refine entries in Cast Log — pitch explicitly defers; existing log row behaviour applies unchanged.
 
 ## Relationship to existing system
 
@@ -50,5 +50,5 @@ Refine requires an open markdown file: if the user presses Enter and no `.md` fi
 
 - **Enter on Refine sentinel (from list).** Previously dismissed the modal (no detail, no cast). Now dispatches a Refine cast against the active note (with a Notice if no active `.md` file open).
 - **Cast/Mod+Enter inside Refine OptionsPanel.** Previously dismissed the modal only. Now dispatches a Refine cast with form-snapshot values and fully closes the popup.
-- **Refine cast-log entry.** Previously did not exist. Now a `<refine>` row appears in Cast Log for each Refine cast, showing model, effort, and status.
-- **Plugin `onload` side effects.** In addition to materializing hooks and sweep, `onload` now writes `<pluginDir>/refine.md`. Failures caught and logged; plugin still loads.
+- **Refine cast-log entry.** Previously did not exist. Now a `<refine>` row appears in Cast Log for each Refine cast, showing model, effort, and status — auditable like any other dispatched cast.
+- **Plugin `onload` side effects.** In addition to materializing hooks and sweep, `onload` now writes `<pluginDir>/refine.md`. The file must exist before any cast can resolve `systemPromptFile`; failures are caught and logged so the plugin still loads.

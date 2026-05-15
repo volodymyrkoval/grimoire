@@ -1,6 +1,6 @@
 # Cast Log Panel
 
-> `dev/done-010` — 2026-05-14 — Replaces the placeholder Logs tab with a live, auto-refreshing reverse-chronological view of every cast (live + forge) recorded in the local and remote JSONL log files.
+> `dev/done-010` — 2026-05-14 — Replaces the placeholder Logs tab with a live, auto-refreshing reverse-chronological view of every cast (live, forge, and — since `refine-cast` — Refine) recorded in the local and remote JSONL log files.
 
 ## What it does
 

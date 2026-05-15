@@ -70,13 +70,13 @@ A spell row keyboard hint reads `↵ cast · → options` to advertise both bind
 
 ## Refine sentinel variant
 
-The Refine sentinel can be opened via `ArrowRight` in search mode (same as a spell row), mounting the same `OptionsPanel` form via a dedicated coordinator — see `refine-note-dialog` for the full feature:
+The Refine sentinel can be opened via `ArrowRight` in search mode (same as a spell row), mounting the same `OptionsPanel` form via a dedicated coordinator — see `refine-note-dialog` and `refine-cast` for the full features:
 - **Coordinator:** `RefineOptionsDetail` mirrors `SpellOptionsDetail` but takes no `Spell` parameter; it keys session/override/resolver lookups directly on the reserved `REFINE_SENTINEL_PATH`.
-- **Form state:** identical to spell options — model, effort, context notes, follow-up, executeOnNote controls.
-- **Key difference:** `onCast` calls `dismiss()` (fully closing the popup) rather than dispatching a cast through `CastDispatcher`.
+- **Form state:** model, effort, context notes, follow-up — same as spell options. The `executeOnNote` checkbox is hidden (`OptionsPanel` accepts `showExecuteOnNote: false`); Refine always targets the active note, so exposing the toggle would be misleading.
+- **Cast behaviour (since `refine-cast`):** `onCast` invokes `refineCastAction(snapshot)`, which builds a synthetic Refine `Spell`, guards on an active markdown note (`Notice` + bail-out otherwise), dispatches through the shared `CastDispatcher` with `systemPromptFilePath` pointing at the materialized `refine.md`, then calls `popup.dismiss()` to fully close the modal.
 - **Cross-link:** see `command-popup-ui.md` for the keyboard routing (`ArrowRight` on Refine sentinel).
 
-This variant allows the user to configure default or override settings for Refine operations without invoking Refine itself.
+This variant lets the user configure default or override settings for Refine, and (since `refine-cast`) submit the form to dispatch a Refine cast against the active note.
 
 ## Edge cases / invariants
 
