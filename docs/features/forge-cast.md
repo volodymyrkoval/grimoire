@@ -68,7 +68,7 @@ The file contains an auto-generated banner (`%% … %%` block) documenting that 
 
 - **Empty/whitespace/all-illegal name** → `sanitiseSpellName` returns `""`; imprinter notifies `"Spell name is invalid after sanitisation"` and calls `close()` without spawning.
 - **`vaultMountPath === ""`** → `buildCastArgs` skips `--add-dir`; cast may still succeed if Claude can resolve the file. No new validation UI.
-- **`effort === null`** (Haiku-style) → meta-spell renders `Effort: n/a`; CLI args omit `--effort`.
+- **`effort === null`** (Haiku-style) → `buildForgeUserPrompt` renders `Effort: n/a`; CLI args omit `--effort`.
 - **Spawn failure** (binary missing, ENOENT, EACCES) → `CastSpawner` resolves `{ code: null, error, stderrTail }`; `CastRunner` routes to `onFailure(err.message)`, which `LocalCaster` forwards to the imprinter's `onFailure` callback; imprinter toasts `Forge failed: <msg>`.
 - **Both `exit` and `error` fire** → `CastSpawner.safeResolve` ensures only the first wins (`fired` flag).
 - **Double-call of popup teardown** → `imprinter.imprint` calls `close()`, then the popup wraps `imprintAction` and also calls `exitDetail()`. The second call is idempotent (`#onDetailBack` cleared on first call).

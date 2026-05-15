@@ -19,7 +19,7 @@ The panel stays in sync with disk in two ways. It subscribes to Obsidian's vault
 - **Expansion state lives on the panel, keyed by `castId`.** Re-renders rebuild row DOM, so rows cannot own state they do not survive. A `Set<string>` on the panel is the only state that persists across refresh and tick.
 - **`CastLogRow.repaintTimes(now)` updates spans in place.** No DOM diffing framework, no virtual DOM — the row already holds references to its relative-time and duration spans, so each tick is a handful of `textContent` writes.
 - **`openLink` is a single injected callback** that wraps `workspace.openLinkText` *and* popup `close()`. The row treats link-click as one action and never imports `app` or popup internals.
-- **Forge display name comes only from `affectedFiles`.** No probing of follow-up text or meta-prompt; the meta-spell's own collision-rename logic means the sanitised name is not necessarily the on-disk name. While a forge cast is in flight, the name is the bare word `Forge`.
+- **Forge display name comes only from `affectedFiles`.** No probing of follow-up text or system prompt; the forge instructions' own collision-rename logic means the sanitised name is not necessarily the on-disk name. While a forge cast is in flight, the name is the bare word `Forge`.
 
 ## Scope
 

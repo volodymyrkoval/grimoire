@@ -9,7 +9,7 @@ Every spell now carries a boolean `executeOnNote`, sourced from its YAML frontma
 1. **Active-note guard.** When `executeOnNote === true` (default) and no note is active, dispatch toasts `Open a note to cast against` and bails. When `false`, the cast proceeds regardless of active-file state.
 2. **User-prompt prefix.** When `executeOnNote === true` and a note is active, the user prompt is prefixed with `` `Execute this spell against the note at <vaultMountPath>/<activeFilePath>.` ``. When `false` (or no active file), the prefix is replaced by `Proceed with the execution according to the instructions`. Context notes and follow-up clauses, if present, append unchanged.
 
-The flag flows through four layers — Forge UI sets it, `buildMetaSpell` instructs the LLM to write it into the new spell's frontmatter, `getSpells` reads it back at scan time, and the options panel surfaces a per-cast override checkbox seeded from the stored value.
+The flag flows through four layers — Forge UI sets it, the forge system prompt instructs the LLM to write it into the new spell's frontmatter (rendered by `renderForgeSystemPrompt` and surfaced by name through `buildForgeUserPrompt`; see `forge-spell-materialization`), `getSpells` reads it back at scan time, and the options panel surfaces a per-cast override checkbox seeded from the stored value.
 
 ## Key components
 
@@ -18,7 +18,7 @@ The flag flows through four layers — Forge UI sets it, `buildMetaSpell` instru
 | `EXECUTE_ON_NOTE_KEY` | `src/domain/spells/Spell.ts` | The frontmatter key constant `'grimoire-execute-on-note'` |
 | `Spell.executeOnNote` | `src/domain/spells/Spell.ts` | Boolean field on the `Spell` interface |
 | `getSpells` | `src/domain/spells/spellScanner.ts` | Reads `frontmatter[EXECUTE_ON_NOTE_KEY]`; coerces non-strict-bool values to `true` |
-| `buildMetaSpell` | `src/forge/buildMetaSpell.ts` | Emits step-3 frontmatter instruction `${EXECUTE_ON_NOTE_KEY}: ${executeOnNote}` |
+| `renderForgeSystemPrompt` / `buildForgeUserPrompt` | `src/forge/forgeTemplate.ts`, `src/forge/buildForgeUserPrompt.ts` | System prompt emits step-3 frontmatter instruction `${EXECUTE_ON_NOTE_KEY}: <value>`; user prompt carries the per-cast `executeOnNote` value (see `forge-spell-materialization`) |
 | `ForgeFormSnapshot.executeOnNote` | `src/forge/ForgeFormSnapshot.ts` | Forge form output field |
 | `ForgeSentinelDetail` (checkbox) | `src/ui/components/ForgeSentinelDetail.ts` | "Execute on active note" checkbox, default checked |
 | `OptionsFormSnapshot.executeOnNote` + `setExecuteOnNote` | `src/ui/options/OptionsFormState.ts` | Reactive per-cast override |
@@ -35,7 +35,7 @@ ForgeSentinelDetail                     ---
   ForgeFormSnapshot                     grimoire-execute-on-note: true|false
     .executeOnNote                      ---
                                                      │
-                                       buildMetaSpell instructs the LLM
+                                       forge system prompt instructs LLM
                                        to write the key (best-effort);
                                        missing → scanner defaults true
                                                      │
@@ -74,5 +74,5 @@ The direct-cast path (Enter from the spell row) reads `spell.executeOnNote` dire
 - **`executeOnNote === false` + active file present** — the active-note prefix is still omitted; the flag wins over presence of an active file.
 - **Per-cast override is session-only** — `OptionsFormSnapshot.executeOnNote` flows into `OptionsSessionEntry` (kept in `OptionsSessionMap`) but never into `SpellOverrideStore`, which remains a `model+effort` store by design.
 - **Reset in options panel** — restores the value the panel was constructed with (the initial seed: session entry or spell frontmatter), not the spell's frontmatter unconditionally.
-- **LLM compliance not guaranteed** — `buildMetaSpell` *instructs* the LLM to write the frontmatter key; if the LLM omits it, the scanner defaults the spell to note-bound. Users may correct manually.
+- **LLM compliance not guaranteed** — the forge system prompt *instructs* the LLM to write the frontmatter key; if the LLM omits it, the scanner defaults the spell to note-bound. Users may correct manually.
 - **Spell file edited mid-session** — `Spell.executeOnNote` reflects the value at popup-open time (when `getSpells` last ran). The options panel reads from `Spell` once at construction; reopening the popup re-scans.

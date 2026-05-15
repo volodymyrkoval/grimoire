@@ -48,7 +48,7 @@ The mechanism is platform hooks, not model-honoured instructions. On every plugi
 
 - **Completes `cast-log-foundation`** — the discriminated-union schema (`casted` / `error` / `in-progress` / `done`) defined in 008 now has all four stages emitted. The `CAST_ID` env var threaded through `CastRunner` in 008 is the join key the hook scripts read.
 - **Leaves `forge-cast` and `live-spells-and-casting` spawn args unchanged.** Both dispatch paths still build the same `claude` command they did before this iteration; no `--settings` flag is appended. The hook integration happens entirely outside the spawn contract, in the user's own Claude Code settings file.
-- **Touches `buildMetaSpell`** — the `## Progress Tracking` mention is removed from the wrapper-instructions bullet given to Claude. `## Execution Mode` and `## MCP Tools` are unchanged.
+- **Touched the forge meta-spell renderer** — the `## Progress Tracking` mention was removed from the wrapper-instructions bullet given to Claude. `## Execution Mode` and `## MCP Tools` are unchanged. *(That renderer was later replaced by `renderForgeSystemPrompt` in `forge-spell-materialization`; the removal is preserved in the new template.)*
 - **Adds new on-disk surfaces** under `<plugin-dir>/`: `agent-hooks/` (scripts) and `cast-log-scratch/` (transient per-cast files). Both are gitignored.
 
 ## Behavior changes
