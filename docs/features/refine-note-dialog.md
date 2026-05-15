@@ -34,7 +34,7 @@ Activation closes the popup. In this iteration only, `Enter` on the Refine row d
 **Out:**
 - Refine cast dispatch / `castId` / cast-record / Claude Code invocation — *the entire cast pipeline for Refine is the next iteration's concern*.
 - Mode detection from the active note (word count, `@cast` lines) — *the dialog does nothing the user does not directly drive*.
-- `@cast` directive parsing or CodeMirror inline-marker styling — *editor-decoration is a separate future phase*.
+- `@cast` directive parsing — *the dialog itself does not parse them; the Refine prompt acts on them at cast time. Editor-side `@cast` line decoration shipped separately — see `docs/features/refine-marker-styling.md`.*
 - Refine-specific prompt body — *no prompt is written or referenced this iteration*.
 - A fork of `OptionsPanel` / `SpellOptionsDetail` — *the panel UI is reused unchanged; only the coordinator differs*.
 - Override-dot on the Refine row — *`SpellList` paints dots only on `SpellRow`; extending it for a single sentinel is premature*.

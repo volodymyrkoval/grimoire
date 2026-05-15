@@ -35,7 +35,7 @@ Refine requires an open markdown file: if the user presses Enter and no `.md` fi
 
 **Out:**
 - Autonomous modes (Generate / Expand) — deferred; cast requires either `@cast` lines or a follow-up to do anything.
-- CodeMirror decoration of `@cast` lines — editor-decoration is a separate future phase, no mode detection lives in the plugin yet.
+- Autonomous mode detection — no mode reasoning lives in the plugin; the Refine prompt itself decides what to do based on `@cast` lines and follow-up text. (Editor-side `@cast` line decoration shipped separately — see `docs/features/refine-marker-styling.md`.)
 - Custom Refine Script — prompt is hardcoded in plugin source; user-authored prompt body waits for a second use case.
 - Re-cast affordance on Refine entries in Cast Log — pitch explicitly defers; existing log row behaviour applies unchanged.
 
