@@ -195,7 +195,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
     expect(vi.mocked(requestUrl)).toHaveBeenCalledOnce();
     const reqArg = vi.mocked(requestUrl).mock.calls[0][0];
     const parsedBody = JSON.parse(reqArg.body as string);
-    expect(parsedBody.spellPath).not.toBe('<forge>');
+    expect(parsedBody).not.toHaveProperty('spellPath');
   });
 
   // ─── Case 6: onFailure — recordError + notify ─────────────────────────────
