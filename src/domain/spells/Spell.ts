@@ -1,7 +1,12 @@
 import type { SpellPath } from './SpellPath';
+import { spellPath } from './SpellPath';
 
 /** Frontmatter key that controls whether a spell auto-executes when opened. */
 export const EXECUTE_ON_NOTE_KEY = 'grimoire-execute-on-note';
+
+/** Reserved synthetic SpellPath for the built-in Refine sentinel's per-spell overrides.
+ *  Angle-bracketed prefix is impossible in real vault paths, preventing collision. */
+export const REFINE_SENTINEL_PATH: SpellPath = spellPath('<grimoire-sentinel:refine>');
 
 /** A castable spell sourced from a vault note with a grimoire tag. */
 export interface Spell {
@@ -23,3 +28,4 @@ export interface Sentinel {
 export function isSentinel(item: Spell | Sentinel): item is Sentinel {
   return "kind" in item;
 }
+

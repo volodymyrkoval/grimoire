@@ -3,7 +3,8 @@
     pointer-events: none;
 }
 
-.spells-row {
+.spells-row,
+.sentinel-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -19,7 +20,8 @@
     transition: opacity 0.1s;
 }
 
-.spells-row.is-selected .spells-row-hint {
+.spells-row.is-selected .spells-row-hint,
+.sentinel-row.is-selected .spells-row-hint {
     opacity: 0.7 !important;
 }
 
@@ -29,12 +31,6 @@
 
 .spells-row.is-selected {
     background-color: var(--background-modifier-active-hover);
-}
-
-.sentinel-row {
-    padding: 4px 8px;
-    cursor: pointer;
-    border-radius: 4px;
 }
 
 .sentinels-section {

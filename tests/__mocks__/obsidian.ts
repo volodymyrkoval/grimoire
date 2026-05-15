@@ -2,11 +2,19 @@ import { vi } from 'vitest';
 
 export type EventRef = object;
 
+/**
+ * Mock of Obsidian's Workspace class.
+ * Provides access to the active file and link navigation.
+ */
 export class Workspace {
   getActiveFile = vi.fn<() => any>(() => null);
   openLinkText = vi.fn<(path: string, source: string, newLeaf?: boolean) => void>();
 }
 
+/**
+ * Creates a mock DataAdapter with sensible defaults for filesystem operations.
+ * All methods return resolved promises; used by App.vault.adapter.
+ */
 function makeDataAdapterMock() {
   return {
     exists: vi.fn<(path: string) => Promise<boolean>>().mockResolvedValue(false),
@@ -20,6 +28,11 @@ function makeDataAdapterMock() {
   };
 }
 
+/**
+ * Mock of Obsidian's App class.
+ * Provides vault (file management), metadataCache, and workspace instances.
+ * Includes __fireModify() helper for triggering file change events in tests.
+ */
 export class App {
   private vaultModifySubscribers = new Map<EventRef, (file: { path: string }) => void>();
 
@@ -49,16 +62,29 @@ export class App {
   workspace = new Workspace();
 }
 
+/**
+ * Mock of Obsidian's TFile class.
+ * Represents a file in the vault with a basename and normalized path.
+ */
 export class TFile {
   constructor(public basename: string, public path: string) {}
 }
 
 type RegisteredHandler = (e: KeyboardEvent) => boolean;
 
+/**
+ * Encodes keyboard modifiers + key into a lookup string.
+ * Sorts modifiers to ensure consistent keys (e.g., 'Ctrl+Shift' == 'Shift+Ctrl').
+ */
 function scopeKey(modifiers: string[], key: string): string {
   return [...modifiers].sort().join('+') + '::' + key;
 }
 
+/**
+ * Mock of Obsidian's Scope class.
+ * Manages keyboard event handlers with LIFO dispatch (most-recently-registered wins).
+ * Provides vi.fn() wrappers for register/unregister to allow spying; dispatch() is a test helper.
+ */
 export class Scope {
   private readonly handlers = new Map<string, RegisteredHandler[]>();
   // For unit tests that expect to spy on register/unregister, provide vi.fn() methods
@@ -92,7 +118,11 @@ export class Scope {
   }
 }
 
-// Create a mock element for Node environment (vitest run with environment: 'node')
+/**
+ * Creates a mock HTMLElement for Node environment (vitest without DOM).
+ * Provides stub implementations of common DOM methods (empty, appendChild, etc.)
+ * and component methods (createEl, createDiv, setText, etc.) required by Obsidian UI.
+ */
 function createMockElement(): any {
   const el: any = {};
   el.empty = vi.fn();
@@ -119,10 +149,19 @@ function createMockElement(): any {
   return el;
 }
 
+/**
+ * Mock of Obsidian's Modal class.
+ * Provides contentEl (inner content area) and containerEl (outer wrapper).
+ * open() appends to document.body (if DOM available); close() removes and calls onClose().
+ * Subclasses override onOpen() and onClose() for lifecycle hooks.
+ */
 export class Modal {
   readonly app: App;
   readonly scope = new Scope();
   readonly contentEl: HTMLElement | any;
+  // Mirrors Obsidian's real Modal.containerEl — the element attached to document.body.
+  // In this mock, containerEl is the same node as contentEl (the outer wrapper).
+  readonly containerEl: HTMLElement | any;
 
   constructor(app: App) {
     this.app = app;
@@ -131,6 +170,7 @@ export class Modal {
     } else {
       this.contentEl = createMockElement();
     }
+    this.containerEl = this.contentEl;
   }
 
   open(): void {
@@ -151,6 +191,12 @@ export class Modal {
   onClose(): void {}
 }
 
+/**
+ * Mock of Obsidian's prepareFuzzySearch.
+ * Returns a function that fuzzy-matches a query in text (order-sensitive, skip-allowed).
+ * Score is negative text length (so shorter matches score higher).
+ * Returns null if query cannot be matched.
+ */
 export function prepareFuzzySearch(query: string): (text: string) => { score: number } | null {
   const lower = query.toLowerCase();
   return (text: string) => {
@@ -163,10 +209,17 @@ export function prepareFuzzySearch(query: string): (text: string) => { score: nu
   };
 }
 
+/**
+ * Sorts search results in-place by score descending (highest score first).
+ */
 export function sortSearchResults(results: Array<{ match: { score: number } }>): void {
   results.sort((a, b) => b.match.score - a.match.score);
 }
 
+/**
+ * Mock of Obsidian's Plugin class.
+ * Provides app reference, manifest metadata, and stub methods for data persistence and settings.
+ */
 export class Plugin {
   readonly app: App;
   readonly manifest = { dir: '.obsidian/plugins/test' };
@@ -180,6 +233,11 @@ export class Plugin {
   }
 }
 
+/**
+ * Mock of Obsidian's PluginSettingTab.
+ * Provides app and plugin references, containerEl for rendering settings UI.
+ * display() and hide() are lifecycle hooks for subclasses.
+ */
 export class PluginSettingTab {
   readonly app: App;
   readonly plugin: Plugin;
@@ -199,6 +257,11 @@ export class PluginSettingTab {
   hide(): void {}
 }
 
+/**
+ * Mock of Obsidian's TextComponent.
+ * Wraps an <input type="text"> element with builder pattern methods (setValue, setPlaceholder, onChange).
+ * __triggerChange() is a test helper to programmatically fire the onChange callback.
+ */
 class TextComponent {
   private onChangeHandler: ((value: string) => void) | null = null;
   readonly inputEl: HTMLInputElement | any;
@@ -238,6 +301,12 @@ class TextComponent {
   }
 }
 
+/**
+ * Mock of Obsidian's DropdownComponent.
+ * Wraps a <select> element with builder pattern methods (addOption, setValue, onChange).
+ * Handles both DOM (when document is available) and mock node environments.
+ * __triggerChange() is a test helper to programmatically fire the onChange callback.
+ */
 class DropdownComponent {
   private onChangeHandler: ((value: string) => void) | null = null;
   readonly selectEl: HTMLSelectElement | any;
@@ -288,6 +357,11 @@ class DropdownComponent {
   }
 }
 
+/**
+ * Mock of Obsidian's ToggleComponent.
+ * Wraps a <input type="checkbox"> element with builder pattern methods (setValue, onChange).
+ * __triggerChange() is a test helper to programmatically fire the onChange callback.
+ */
 class ToggleComponent {
   private onChangeHandler: ((value: boolean) => void) | null = null;
   readonly toggleEl: HTMLInputElement | any;
@@ -325,6 +399,11 @@ class ToggleComponent {
   }
 }
 
+/**
+ * Mock of Obsidian's Setting class.
+ * Builder pattern for creating labeled settings with optional descriptions, headings, and controls.
+ * Methods: setName(), setDesc(), setHeading(), addText(), addDropdown(), addToggle().
+ */
 export class Setting {
   readonly settingEl: HTMLElement | any;
   readonly controlEl: HTMLElement | any;
@@ -398,6 +477,10 @@ export class Setting {
   }
 }
 
+/**
+ * Mock of Obsidian's Notice class.
+ * Stores notification messages; static instances array allows test inspection.
+ */
 export class Notice {
   static instances: Notice[] = [];
   constructor(public readonly message: string) {
@@ -407,6 +490,10 @@ export class Notice {
 
 export const Platform = { isDesktop: true };
 
+/**
+ * Mock of Obsidian's FileSystemAdapter.
+ * Stub implementation of vault filesystem adapter; getBasePath returns test vault path.
+ */
 export class FileSystemAdapter {
   getBasePath = vi.fn(() => '/test/vault');
 }
@@ -421,6 +508,9 @@ export interface DataAdapter {
   mkdir(normalizedPath: string): Promise<void>;
 }
 
+/**
+ * Normalizes path: collapses double slashes, strips trailing slashes, returns '/' for empty.
+ */
 export function normalizePath(path: string): string {
   return path.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
 }

@@ -68,9 +68,19 @@ Reset (button click):
 
 A spell row keyboard hint reads `↵ cast · → options` to advertise both bindings.
 
+## Refine sentinel variant
+
+The Refine sentinel can be opened via `ArrowRight` in search mode (same as a spell row), mounting the same `OptionsPanel` form with a synthetic spell:
+- **Input:** a synthetic `Spell` with `path = REFINE_SENTINEL_PATH` (ensures it's never confused with a real file-backed spell)
+- **Form state:** identical to spell options — model, effort, context notes, follow-up, executeOnNote controls
+- **Key difference:** `onCast` calls `dismiss()` (closing the popup) rather than dispatching a cast action through `CastDispatcher`
+- **Cross-link:** see `command-popup-ui.md` for the keyboard routing (`ArrowRight` on Refine sentinel).
+
+This variant allows the user to configure default or override settings for Refine operations without invoking Refine itself.
+
 ## Edge cases / invariants
 
-- **`ArrowRight` in detail phase or on a sentinel row** — binding returns `false` (no second mount); the keystroke falls through to platform default.
+- **`ArrowRight` in detail phase or on the Forge sentinel row** — binding returns `false` (no second mount); the keystroke falls through to platform default. (Refine sentinel is the exception — `ArrowRight` on Refine opens the options panel, as described above.)
 - **`ArrowRight` on empty filtered list** — `openOptions(index)` bounds-check no-ops.
 - **Haiku model selected** — `EffortRow` renders no segmented control; "Set as default" stays hidden because `snapshot.effort === null` (effort not persistable).
 - **Stored override already matches snapshot** — on first open of a spell with an override, the resolver returns the override values; snapshot matches current → checkbox hidden. Once the user drifts the form, the checkbox appears, already showing `checked: true` (since `overrides.has` is true).

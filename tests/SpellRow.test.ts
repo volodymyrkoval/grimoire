@@ -54,4 +54,21 @@ describe('SpellRow', () => {
     );
     expect(dotCalls).toHaveLength(0);
   });
+
+  it('renders the keyboard hint span with the correct text', () => {
+    const container = makeMockEl();
+    const spell = { name: 'Fire Bolt', path: '/spells/fire.md' };
+
+    const row = new SpellRow();
+    row.render(container, spell, false);
+
+    const hintCalls = row.el.createSpan.mock.calls.filter(
+      (call: any[]) => call[0]?.cls === 'spells-row-hint'
+    );
+    expect(hintCalls).toHaveLength(1);
+    expect(hintCalls[0][0]).toEqual({
+      cls: 'spells-row-hint',
+      text: '↵ cast · → options',
+    });
+  });
 });

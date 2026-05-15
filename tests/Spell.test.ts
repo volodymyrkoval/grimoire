@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EXECUTE_ON_NOTE_KEY, type Spell } from '../src/domain/spells/Spell';
+import { EXECUTE_ON_NOTE_KEY, REFINE_SENTINEL_PATH, type Spell } from '../src/domain/spells/Spell';
 
 describe('Spell', () => {
   it('exports EXECUTE_ON_NOTE_KEY constant with correct value', () => {
@@ -14,4 +14,9 @@ describe('Spell', () => {
     };
     expect(spell.executeOnNote).toBe(true);
   });
+
+  it('REFINE_SENTINEL_PATH has correct value', () => {
+    expect(REFINE_SENTINEL_PATH).toBe('<grimoire-sentinel:refine>');
+  });
+
 });

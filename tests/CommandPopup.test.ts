@@ -352,6 +352,31 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
   });
 });
 
+describe('CommandPopup D1 — dismiss() bypasses close-override intercept', () => {
+  it('from detail phase, dismiss() causes super.close() to run without interceptClose being called', () => {
+    const popup = makePopup();
+    popup.onOpen();
+
+    // Enter detail phase via a forge sentinel event
+    const spellsPanel = (popup as any).panels[0];
+    spellsPanel.events.emit('sentinel', { kind: 'forge', name: 'My Forge' });
+
+    expect((popup as any).currentPhase.kind).toBe('detail');
+
+    // Spy on interceptClose to verify it is NOT called
+    const detailPhase = (popup as any).currentPhase;
+    const interceptCloseSpy = vi.spyOn(detailPhase, 'interceptClose');
+
+    // Spy on contentEl.empty to verify onClose() ran (super.close() path)
+    const emptyMock = vi.spyOn((popup as any).contentEl, 'empty');
+
+    popup.dismiss();
+
+    expect(interceptCloseSpy).not.toHaveBeenCalled();
+    expect(emptyMock).toHaveBeenCalled();
+  });
+});
+
 describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
   it('spellsPanel hasOverride predicate delegates to overrides.has()', () => {
     const stubOverrides = makeStubOverrides();

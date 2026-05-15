@@ -26,6 +26,7 @@ export class SpellList {
     this.el = container.createDiv({ cls: "spells-list" });
   }
 
+  /** Renders all spell and sentinel rows. Clears prior DOM, rebuilds list, and resets hover state. */
   render(spells: Spell[], selectedIndex: number, hasOverride: (path: SpellPath) => boolean = () => false): void {
     this.el.empty();
     const spellRows = this.#buildSpellRows(spells, selectedIndex, hasOverride);
@@ -53,7 +54,7 @@ export class SpellList {
   #buildSentinelRows(container: HTMLElement, offset: number, selectedIndex: number): SentinelRow[] {
     return this.#sentinels.map((sentinel, i) => {
       const row = new SentinelRow();
-      row.render(container, sentinel, offset + i === selectedIndex);
+      row.render(container, sentinel, offset + i === selectedIndex, sentinel.kind === 'refine');
       row.el.onClickEvent(() => this.#emitter.emit("sentinel", sentinel));
       return row;
     });
@@ -67,6 +68,7 @@ export class SpellList {
     this.el.removeClass("spells-list--hover-reset");
   }
 
+  /** Updates selection visual state from row at prev index to row at next index. Scrolls the new selection into view. */
   updateSelection(prev: number, next: number): void {
     this.#rows[prev]?.el.removeClass("is-selected");
     this.#rows[next]?.el.addClass("is-selected");

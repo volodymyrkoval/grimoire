@@ -153,6 +153,62 @@ describe('SpellsPanel.openOptions', () => {
 
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('Forge sentinel index (10) is a no-op', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+
+    panel.openOptions(DEFAULT_TEST_SPELLS.length); // index 10 is Forge
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('Refine sentinel index (11) emits open-refine-options exactly once', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+
+    panel.openOptions(DEFAULT_TEST_SPELLS.length + 1); // index 11 is Refine
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledWith('open-refine-options');
+  });
+});
+
+describe('SpellsPanel.confirm', () => {
+  it('spell index emits cast with correct spell', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+
+    panel.confirm(0);
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledWith('cast', expect.objectContaining({ path: spellPath('/spells/banishment.md') }));
+  });
+
+  it('Forge sentinel index (10) emits sentinel event', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+
+    panel.confirm(DEFAULT_TEST_SPELLS.length); // index 10 is Forge
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledWith('sentinel', expect.objectContaining({ kind: 'forge', name: 'Forge' }));
+  });
+
+  it('Refine sentinel index (11) emits dismiss-refine', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const spy = vi.spyOn(panel.events, 'emit');
+
+    panel.confirm(DEFAULT_TEST_SPELLS.length + 1); // index 11 is Refine
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledWith('dismiss-refine');
+  });
 });
 
 describe('SpellsPanel with hasOverride predicate', () => {

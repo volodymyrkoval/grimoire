@@ -33,7 +33,7 @@ describe('keyboard suspend/resume across forge detail', () => {
     // Popup kb is resumed — selection memory restores to index 10 (Forge).
     // ArrowDown from 10 → 11 (Refine), not 1 — pinning actual behavior.
     expect(h.pressKey('ArrowDown')).toBe(true);
-    expect(h.selectedRow()?.textContent).toBe('Refine');
+    expect(h.selectedRowName()).toBe('Refine');
   });
 
   it('E3: resume works after two full suspend/resume cycles', () => {
@@ -50,6 +50,6 @@ describe('keyboard suspend/resume across forge detail', () => {
 
     // ArrowDown should still work after second resume — advances from 10 to 11 (Refine)
     expect(h.pressKey('ArrowDown')).toBe(true);
-    expect(h.selectedRow()?.textContent).toBe('Refine');
+    expect(h.selectedRowName()).toBe('Refine');
   });
 });

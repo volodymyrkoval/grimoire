@@ -1,6 +1,6 @@
 import { App, Modal } from "obsidian";
 import { KeyboardController } from "../infra/KeyboardController";
-import type { Spell, Sentinel } from "../domain/spells/Spell";
+import type { Spell } from "../domain/spells/Spell";
 import { TabBar } from "./components/TabBar";
 import { SearchInput } from "./components/SearchInput";
 import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
@@ -17,18 +17,36 @@ import { OptionsSessionMap } from "./options/OptionsSessionMap";
 import type { OptionsFormSnapshot } from "./options/OptionsFormState";
 import { optionsFormSnapshotFromDefaults } from "./options/OptionsFormState";
 import { SpellOptionsDetail } from "./components/SpellOptionsDetail";
+import { RefineOptionsDetail } from "./components/RefineOptionsDetail";
 import type { PopupPhase, PopupPhaseContext } from "./popup/PopupPhase";
 import { SearchPhase } from "./popup/SearchPhase";
 import { DetailPhase } from "./popup/DetailPhase";
 
-/** Callback signature for submitting a Forge sentinel form. */
+/**
+ * Callback signature for submitting a Forge sentinel form.
+ * Called when user completes the new spell creation flow.
+ */
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
 
-/** Callback signature for casting a spell with resolved options. */
+/**
+ * Callback signature for casting a spell with resolved options.
+ * Called when user confirms a spell execution (in search or detail panel).
+ */
 export type CastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
 
+/**
+ * Parameters for constructing a CommandPopup.
+ * - `app`: Obsidian app instance for workspace and scope.
+ * - `spellTag`: Vault tag used to scan spells in the vault.
+ * - `imprintAction`: Callback when Forge completes (new spell).
+ * - `castAction`: Callback when a spell is cast.
+ * - `defaults`: Default form values (model, options per spell).
+ * - `overrides`: Per-spell option overrides (persisted, mutable).
+ * - `sessionMap`: Ephemeral form state per spell during popup lifetime.
+ * - `castLogPanelDeps`: Shared dependencies for the cast log panel.
+ */
 export interface CommandPopupParams {
   app: App;
   spellTag: string;
@@ -43,7 +61,11 @@ export interface CommandPopupParams {
 /**
  * Command palette popup: main modal that owns two tabs (Spells, Logs),
  * keyboard navigation, detail-panel routing, and form dismissal logic.
+ *
  * Phases (SearchPhase, DetailPhase) govern keyboard handling and close interception.
+ * State is reset on each onOpen() (selectedIndex, searchQuery, activePanel).
+ * Detail panels (Forge, Options, Refine Options) suspend keyboard and intercept close()
+ * to ensure escape/back navigation returns to search instead of closing the modal.
  */
 export class CommandPopup extends Modal {
   #selectedIndex = 0;
@@ -62,10 +84,16 @@ export class CommandPopup extends Modal {
   readonly #detailPhase: DetailPhase;
   #currentPhase: PopupPhase;
 
-  // test seam — exposes #panels for bracket-notation access in tests
+  /**
+   * Test seam: exposes #panels for bracket-notation access in tests.
+   * In production, phases and keyboard handlers control panel transitions.
+   */
   get panels(): readonly TabPanel[] { return this.#panels; }
 
-  // test seam — exposes #currentPhase for bracket-notation access in tests
+  /**
+   * Test seam: exposes #currentPhase for bracket-notation access in tests.
+   * Allows assertions on phase transitions (search → detail → search).
+   */
   get currentPhase(): PopupPhase { return this.#currentPhase; }
 
   constructor(params: CommandPopupParams) {
@@ -123,6 +151,17 @@ export class CommandPopup extends Modal {
     this.#kb.bind([], "ArrowRight", () => this.#currentPhase.handleArrowRight());
   }
 
+  /**
+   * Fully closes the modal regardless of current phase, bypassing the
+   * close-override intercept. Required for paths that must dismiss the modal
+   * unconditionally (e.g. Cast inside the Refine options panel). The
+   * authored-spell cast path still uses `close()` so the intercept routes it
+   * back to search.
+   */
+  dismiss(): void {
+    super.close();
+  }
+
   // Obsidian's scope system and subcomponents can call close() directly,
   // bypassing keyboard handlers — intercept here to enforce phase navigation.
   override close(): void {
@@ -163,8 +202,10 @@ export class CommandPopup extends Modal {
       const snapshot = optionsFormSnapshotFromDefaults(this.#formDefaults, spell);
       this.#castAction(spell, snapshot);
     });
-    panel.events.on("sentinel", (sentinel) => this.#renderSentinelDetail(sentinel));
+    panel.events.on("sentinel", () => { this.#reattachTabBar(); this.#renderForgeSentinelDetail(); });
     panel.events.on("open-options", (spell) => this.#renderOptionsPanel(spell));
+    panel.events.on("open-refine-options", () => this.#renderRefineOptionsPanel());
+    panel.events.on("dismiss-refine", () => this.close());
     return panel;
   }
 
@@ -195,20 +236,16 @@ export class CommandPopup extends Modal {
     this.#renderSearch();
   }
 
+  /**
+   * Enter detail (Forge/Options/Refine panel) from search.
+   * When suspendKb=true, suspends global keyboard navigation (e.g., in Forge and Options panels),
+   * allowing form inputs to receive key events. DetailPhase still intercepts Escape via close().
+   * When suspendKb=false (not currently used), global nav remains active (for future use).
+   */
   #enterDetail(detail: { destroy(): void }, onBack: () => void, opts: { suspendKb: boolean }): void {
     if (opts.suspendKb) this.#kb.suspend();
     this.#currentPhase = this.#detailPhase;
     this.#detailPhase.setActive(detail, onBack);
-  }
-
-  #renderSentinelDetail(sentinel: Sentinel): void {
-    this.#reattachTabBar();
-
-    if (sentinel.kind === "forge") {
-      this.#renderForgeSentinelDetail();
-    } else {
-      this.#renderGenericSentinelDetail(sentinel);
-    }
   }
 
   #renderForgeSentinelDetail(): void {
@@ -248,13 +285,23 @@ export class CommandPopup extends Modal {
     this.#enterDetail(detail, exit, { suspendKb: true });
   }
 
-  #renderGenericSentinelDetail(sentinel: Sentinel): void {
+  #renderRefineOptionsPanel(): void {
+    this.#reattachTabBar();
     const exit = (): void => this.#exitDetail();
-    this.contentEl.createEl("h2", { text: sentinel.name });
-    this.contentEl.createEl("p", { text: `Type: ${sentinel.kind}` });
-    const back = this.contentEl.createEl("button", { text: "← back" });
-    back.onClickEvent(exit);
-    this.#enterDetail({ destroy() {} }, exit, { suspendKb: false });
+    const detail = new RefineOptionsDetail();
+    detail.render({
+      contentEl: this.contentEl,
+      scope: this.scope,
+      app: this.app,
+      overrides: this.#overrides,
+      sessionMap: this.#sessionMap,
+      formDefaults: this.#formDefaults,
+      models: SUPPORTED_MODELS,
+      onBack: exit,
+      onCast: () => this.dismiss(),
+      onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
+    });
+    this.#enterDetail(detail, exit, { suspendKb: true });
   }
 
   #switchTab(panel: TabPanel): void {

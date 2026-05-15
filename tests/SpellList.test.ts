@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SpellList } from '../src/ui/components/SpellList';
-import type { Spell } from '../src/domain/spells/Spell';
+import type { Spell, Sentinel } from '../src/domain/spells/Spell';
 import { spellPath } from '../src/domain/spells/SpellPath';
 
 function makeMockEl(): any {
@@ -113,5 +113,55 @@ describe('SpellList.render', () => {
       }
     });
     expect(overrideDotCount).toBe(0);
+  });
+
+  it('renders hint in Refine sentinel only, not Forge', () => {
+    const container = makeMockEl();
+    const emitter = makeMockEmitter();
+    const sentinels: Sentinel[] = [
+      { kind: 'forge', name: 'Forge' },
+      { kind: 'refine', name: 'Refine' },
+    ];
+    const list = new SpellList(container, emitter, sentinels);
+    const spells: Spell[] = [
+      { name: 'Fire Bolt', path: spellPath('/spells/fire.md') },
+    ];
+
+    list.render(spells, 0);
+
+    const listEl = list.el;
+    const divResults = listEl.createDiv.mock.results;
+
+    // The divResults: [0] spell row, [1] sentinels-section container
+    // The sentinel rows are created on the sentinels-section container
+    expect(divResults.length).toBeGreaterThanOrEqual(2);
+
+    // Get the sentinels-section container (should be at index 1)
+    const sentinelsSectionEl = divResults[1]?.value;
+    expect(sentinelsSectionEl).toBeDefined();
+
+    // The sentinel rows are created as children of sentinels-section
+    const sentinelDivResults = sentinelsSectionEl?.createDiv?.mock.results ?? [];
+    expect(sentinelDivResults.length).toBe(2);
+
+    // Get the Forge and Refine rows
+    const forgeRowEl = sentinelDivResults[0]?.value;
+    const refineRowEl = sentinelDivResults[1]?.value;
+
+    // Forge should not have hint
+    const forgeHintCalls = forgeRowEl?.createSpan?.mock.calls?.filter(
+      (call: any[]) => call[0]?.cls === 'spells-row-hint'
+    ) ?? [];
+    expect(forgeHintCalls.length).toBe(0);
+
+    // Refine should have exactly one hint
+    const refineHintCalls = refineRowEl?.createSpan?.mock.calls?.filter(
+      (call: any[]) => call[0]?.cls === 'spells-row-hint'
+    ) ?? [];
+    expect(refineHintCalls.length).toBe(1);
+    expect(refineHintCalls[0][0]).toEqual({
+      cls: 'spells-row-hint',
+      text: '↵ cast · → options',
+    });
   });
 });

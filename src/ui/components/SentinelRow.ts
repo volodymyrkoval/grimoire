@@ -1,4 +1,5 @@
 import type { Sentinel } from "../../domain/spells/Spell";
+import { appendRowHint } from "./rowHint";
 
 /**
  * Renders a single sentinel row (Forge, Refine) in the spells list.
@@ -7,10 +8,12 @@ import type { Sentinel } from "../../domain/spells/Spell";
 export class SentinelRow {
   el!: HTMLElement;
 
-  render(container: HTMLElement, sentinel: Sentinel, selected: boolean): void {
+  /** Renders the sentinel row into the container. Sets `this.el` as a side effect. */
+  render(container: HTMLElement, sentinel: Sentinel, selected: boolean, showHint: boolean = false): void {
     this.el = container.createDiv({ cls: "sentinel-row" });
     if (selected) this.#markSelected();
     this.#appendName(sentinel.name);
+    if (showHint) appendRowHint(this.el);
   }
 
   #markSelected(): void {

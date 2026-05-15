@@ -1,6 +1,6 @@
 # Command Popup UI
 
-An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activate spells or logs via keyboard-first navigation. Two phases: **search** (list + filter) and **detail** (forge form / options panel / generic sentinel detail).
+An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activate spells or logs via keyboard-first navigation. Two phases: **search** (list + filter) and **detail** (forge form / options panel / Refine sentinel options).
 
 ## User-facing behavior
 
@@ -15,7 +15,8 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 | `ArrowRight` on spell row | Open the options panel for that spell (see `options-panel`) |
 | Click on spell row | Same as Enter |
 | `Enter` on Forge sentinel | Open Forge form (name/desc/executeOnNote/model/effort, focused on name) |
-| `Enter` on Refine sentinel | Open generic detail (`<h2>` + `<p>Type: refine`) |
+| `Enter` on Refine sentinel | Close the popup (no detail, no cast) |
+| `ArrowRight` on Refine sentinel | Open the options panel (same as authored spell); Cast/Enter inside dismisses the popup without dispatching |
 | `Escape` or `close()` in detail | Run `exitDetail()` — destroy active detail, resume keys, return to search |
 | Back button click | Same as Escape in detail |
 | Submit Forge form | Invoke `imprintAction(snapshot)` then `exitDetail()` |
@@ -31,7 +32,8 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 ┌────────────────────┐   Enter/click on spell row → castAction(spell, defaultSnapshot), close popup (search→close)
 │   SEARCH phase     │   ArrowRight on spell row  → renderOptionsPanel(spell)
 │  • #kb active      │   Enter on Forge sentinel  → renderForgeSentinelDetail()
-│  • TabBar enabled  │   Enter on Refine sentinel → renderGenericSentinelDetail(s)
+│  • TabBar enabled  │   Enter on Refine sentinel → close popup (no detail route)
+│                    │   ArrowRight on Refine sentinel → renderRefineSentinelOptions()
 └─────────┬──────────┘
           │
           │   exitDetail()
@@ -43,14 +45,14 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 │                                            │
 │  Forge sentinel:  kb.suspend(); FSD owns its own KeyboardController
 │  Options panel:   kb.suspend(); OptionsPanel owns its own KeyboardController
-│  Generic sentinel: kb NOT suspended; <h2> + <p>Type: …  + Back
+│  Refine options:  kb.suspend(); same as spell options panel, but Cast/Enter dismisses without dispatching
 └────────────────────────────────────────────┘
 ```
 
 Detail variants:
 - **Forge sentinel** — `renderForgeSentinelDetail`: kb suspended, `ForgeSentinelDetail` mounted (owns model-select ArrowUp/Down). `destroy()` runs in `exitDetail` before `kb.resume()`.
-- **Options panel** — `renderOptionsPanel`: kb suspended, `SpellOptionsDetail` (which mounts `OptionsPanel`) owns its own keys (Cmd+Enter for Cast). `destroy()` runs in `exitDetail` before `kb.resume()`.
-- **Generic sentinel** (Refine) — `renderGenericSentinelDetail`: kb **not** suspended, `<h2>` + `<p>Type: …` + Back button.
+- **Spell options panel** — `renderOptionsPanel`: kb suspended, `SpellOptionsDetail` (which mounts `OptionsPanel`) owns its own keys (Cmd+Enter for Cast). `destroy()` runs in `exitDetail` before `kb.resume()`.
+- **Refine sentinel options** — `renderRefineSentinelOptions`: kb suspended, same panel and form as spell options. `onCast` calls `dismiss()` instead of dispatching a cast action.
 
 ## Constructor
 

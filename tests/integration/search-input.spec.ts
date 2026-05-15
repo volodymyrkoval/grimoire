@@ -18,7 +18,7 @@ describe('search input filtering and navigation', () => {
   it('F3: ArrowUp from index 0 wraps to last row; selectedRow is Refine', () => {
     h.pressKey('ArrowUp'); // 0 → 11 (Refine)
 
-    expect(h.selectedRow()?.textContent).toBe('Refine');
+    expect(h.selectedRowName()).toBe('Refine');
   });
 
   it('F4: type forge shows no spell rows and Forge sentinel is selected', () => {

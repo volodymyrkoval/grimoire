@@ -1,4 +1,5 @@
 import type { Spell } from "../../domain/spells/Spell";
+import { appendRowHint } from "./rowHint";
 
 /**
  * Renders a single spell row in the spells list.
@@ -7,6 +8,7 @@ import type { Spell } from "../../domain/spells/Spell";
 export class SpellRow {
   el!: HTMLElement;
 
+  /** Renders the spell row into the container. Sets `this.el` as a side effect. */
   render(container: HTMLElement, spell: Spell, selected: boolean, hasOverride: boolean = false): void {
     this.el = container.createDiv({ cls: "spells-row" });
     if (selected) this.#markSelected();
@@ -28,6 +30,6 @@ export class SpellRow {
   }
 
   #appendHint(): void {
-    this.el.createSpan({ cls: "spells-row-hint", text: "↵ cast · → options" });
+    appendRowHint(this.el);
   }
 }
