@@ -75,7 +75,6 @@ export class ForgeImprinter {
     caster.cast(
       {
         castId,
-        spellPath: FORGE_SPELL_PATH,
         modelId: snapshot.model,
         effort: snapshot.effort,
         userPrompt: metaSpell,

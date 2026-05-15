@@ -3,7 +3,8 @@ import type { Effort } from '../domain/settings/Settings';
 /** Input required to initiate a cast (spell execution). */
 export interface CastInput {
   readonly castId: string;
-  readonly spellPath: string;
+  /** Spell file path — omitted for inline casts such as forge meta-spells. */
+  readonly spellPath?: string;
   readonly modelId: string;
   readonly effort: Effort | null;
   readonly userPrompt: string;

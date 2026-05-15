@@ -589,6 +589,31 @@ describe('ForgeImprinter', () => {
     expect(logWriter2.recordCasted).toHaveBeenCalledTimes(1);
   });
 
+  it('caster.cast receives spellPath: undefined — forge has no spell file', () => {
+    const stubCaster = makeStubCaster();
+
+    const imprinter = new ForgeImprinter({
+      notify: vi.fn(),
+      caster: stubCaster.thunk,
+      logWriter: makeLogWriterStub,
+      generateId: () => 'forge-id',
+    });
+
+    imprinter.imprint(
+      {
+        name: 'My Spell',
+        description: 'test',
+        model: 'claude-sonnet-4-5',
+        effort: null,
+        executeOnNote: false,
+      } as ForgeFormSnapshot,
+      localBaseSettings,
+      vi.fn()
+    );
+
+    expect(stubCaster.getInput().spellPath).toBeUndefined();
+  });
+
   it('uses logWriter resolved at imprint time, not construction time', () => {
     const localWriter = makeLogWriterStub();
     const remoteWriter = makeLogWriterStub();
