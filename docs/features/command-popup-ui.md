@@ -19,7 +19,7 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 | `Escape` or `close()` in detail | Run `exitDetail()` — destroy active detail, resume keys, return to search |
 | Back button click | Same as Escape in detail |
 | Submit Forge form | Invoke `imprintAction(snapshot)` then `exitDetail()` |
-| Cast from options panel | Invoke `optionsCastAction(spell, snapshot)`; dispatcher closes the popup which routes to `exitDetail()` |
+| Cast from options panel | Invoke `castAction(spell, snapshot)`; dispatcher closes the popup which routes to `exitDetail()` |
 | Close modal from search | `super.close()` → `contentEl.empty()` |
 
 ## State machine
@@ -28,7 +28,7 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
           onOpen()
              │
              ▼
-┌────────────────────┐   Enter/click on spell row → castAction(spell), close popup (search→close)
+┌────────────────────┐   Enter/click on spell row → castAction(spell, defaultSnapshot), close popup (search→close)
 │   SEARCH phase     │   ArrowRight on spell row  → renderOptionsPanel(spell)
 │  • #kb active      │   Enter on Forge sentinel  → renderForgeSentinelDetail()
 │  • TabBar enabled  │   Enter on Refine sentinel → renderGenericSentinelDetail(s)
@@ -54,7 +54,7 @@ Detail variants:
 
 ## Constructor
 
-`CommandPopup` takes a single params object (`CommandPopupParams`): `app`, `spellTag`, `imprintAction`, `castAction`, `defaults` (`{ defaultModel, defaultEffort }`), `overrides` (`SpellOverrideStore`), `sessionMap` (`OptionsSessionMap`), `optionsCastAction`. All composition is done in `main.ts`; the popup imports neither `CastDispatcher` nor `ForgeImprinter` nor `Notice`.
+`CommandPopup` takes a single params object (`CommandPopupParams`): `app`, `spellTag`, `imprintAction`, `castAction` (single callback of shape `(spell, snapshot) => void` — see `cast-unification`), `defaults` (`{ defaultModel, defaultEffort }`), `overrides` (`SpellOverrideStore`), `sessionMap` (`OptionsSessionMap`), `castLogPanelDeps`. All composition is done in `main.ts`; the popup imports neither `CastDispatcher` nor `ForgeImprinter` nor `Notice`.
 
 ## Data flow
 
@@ -69,7 +69,8 @@ ArrowDown/Up → KeyboardController dispatch → CommandPopup.move(delta)
 
 Enter → CommandPopup.confirm() → activePanel.confirm(index)
       → SpellsPanel emits 'cast' (spell row) or 'sentinel' (sentinel row)
-      → CommandPopup → castAction(spell)  /  renderSentinelDetail(s)
+      → CommandPopup builds default snapshot from formDefaults + spell.executeOnNote
+      → castAction(spell, snapshot)  /  renderSentinelDetail(s)
 
 ArrowRight (search phase, spells tab, spell-row index)
       → spellsPanel.openOptions(selectedIndex)

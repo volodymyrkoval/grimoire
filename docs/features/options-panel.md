@@ -22,7 +22,7 @@ Cast button (or `Cmd/Ctrl+Enter`) writes the live values to the session map and 
 | `SpellOverrideStore` | `src/domain/settings/SpellOverrideStore.ts` | Persisted `model+effort` per spell path; rejects Haiku; debounced save |
 | `SpellRow` (modified) | `src/ui/components/SpellRow.ts` | Renders override dot when `hasOverride === true` |
 | `SpellsPanel.refreshOverrides` | `src/ui/tabs/SpellsPanel.ts` | Re-render the spell list at the same `selectedIndex` after override mutation |
-| `OptionsCastAction` (callback) | `src/ui/CommandPopup.ts` | `(spell, OptionsFormSnapshot) => void` — popup-side seam |
+| `CastAction` (callback) | `src/ui/CommandPopup.ts` | `(spell, OptionsFormSnapshot) => void` — popup-side seam; single action for both Enter-from-list and options-panel paths (see `cast-unification`) |
 
 ## Data flow
 
@@ -44,7 +44,7 @@ User edits form:
 Cast (button click / form submit / Cmd+Enter):
   → sessionMap.put(spellPath, formState.snapshot())
   → deps.onCast(snapshot)
-  → CommandPopup.#optionsCastAction(spell, snapshot)
+  → CommandPopup.#castAction(spell, snapshot)   // unified action after cast-unification
   → main.ts closure: dispatcher.dispatch({ spell, model, effort, contextNotePaths, followUp, settings, activeFilePath, executeOnNote })
 
 Reset (button click):
