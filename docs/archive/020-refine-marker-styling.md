@@ -173,13 +173,13 @@ None — every applicable edge case has a default decision above. The orchestrat
 
 **junior-dev**
 
-- [ ] A1: add `@codemirror/language` `^6.10.0` to `devDependencies` in `package.json`; run `npm install`; commit `package.json` and `package-lock.json` together — S, junior-dev
-- [ ] A2: create `src/editor/castLineRegex.ts` exporting `export const CAST_LINE_REGEX = /^@cast(?=\s|$)/;` — S, junior-dev
-- [ ] A3: create `src/editor/isInsideFencedCodeBlock.ts` with signature `export function isInsideFencedCodeBlock(state: EditorState, pos: number): boolean { return false; }` (stub returning `false`; real logic lands in B2) — S, junior-dev
-- [ ] A4: create `src/editor/buildCastDecorations.ts` with signature `export function buildCastDecorations(view: EditorView): DecorationSet { return Decoration.none; }` (stub; real logic lands in D-section) — S, junior-dev
-- [ ] A5: create `src/editor/castMarkerViewPlugin.ts` with `export const castMarkerViewPlugin = ViewPlugin.fromClass(class { decorations = Decoration.none; update() {} }, { decorations: v => v.decorations });` (stub; real `update`/constructor land in F-section) — S, junior-dev
-- [ ] A6: create `src/editor/refineMarkerExtension.ts` with `export function refineMarkerExtension(): Extension { return [castMarkerViewPlugin]; }` — S, junior-dev
-- [ ] A7: confirm `npm run build` and `npm test` both still pass with the stubs in place (no test changes yet) — S, junior-dev
+- [x] A1: add `@codemirror/language` `^6.10.0` to `devDependencies` in `package.json`; run `npm install`; commit `package.json` and `package-lock.json` together — S, junior-dev
+- [x] A2: create `src/editor/castLineRegex.ts` exporting `export const CAST_LINE_REGEX = /^@cast(?=\s|$)/;` — S, junior-dev
+- [x] A3: create `src/editor/isInsideFencedCodeBlock.ts` with signature `export function isInsideFencedCodeBlock(state: EditorState, pos: number): boolean { return false; }` (stub returning `false`; real logic lands in B2) — S, junior-dev
+- [x] A4: create `src/editor/buildCastDecorations.ts` with signature `export function buildCastDecorations(view: EditorView): DecorationSet { return Decoration.none; }` (stub; real logic lands in D-section) — S, junior-dev
+- [x] A5: create `src/editor/castMarkerViewPlugin.ts` with `export const castMarkerViewPlugin = ViewPlugin.fromClass(class { decorations = Decoration.none; update() {} }, { decorations: v => v.decorations });` (stub; real `update`/constructor land in F-section) — S, junior-dev
+- [x] A6: create `src/editor/refineMarkerExtension.ts` with `export function refineMarkerExtension(): Extension { return [castMarkerViewPlugin]; }` — S, junior-dev
+- [x] A7: confirm `npm run build` and `npm test` both still pass with the stubs in place (no test changes yet) — S, junior-dev
 
 ### B. Fenced-code-block detection
 
@@ -195,9 +195,9 @@ None — every applicable edge case has a default decision above. The orchestrat
 
 **junior-dev**
 
-- [ ] B1: add unit test `tests/editor/isInsideFencedCodeBlock.test.ts` covering three positives (fenced block body, fenced block fence line, inline code span) and three negatives (plain prose, blank line, line ending in single backtick) — M, junior-dev
-- [ ] B2: implement `isInsideFencedCodeBlock` in `src/editor/isInsideFencedCodeBlock.ts` — walk `syntaxTree(state).resolveInner(pos, 1)` upward via `cursor.parent()`; check each `node.type.name` against `FENCED_OR_INLINE_CODE_NODES = new Set(['FencedCode', 'CodeBlock', 'HyperMD-codeblock', 'HyperMD-codeblock-begin', 'HyperMD-codeblock-end', 'inline-code'])`; return `true` on first hit, `false` if walk exhausts; tolerate a null/undefined cursor by returning `false` — M, junior-dev
-- [ ] B3: cross-check the set against the actual node names by logging `node.type.name` during one test run; if observed names differ, update both the set and the live-spec — S, junior-dev
+- [x] B1: add unit test `tests/editor/isInsideFencedCodeBlock.test.ts` covering three positives (fenced block body, fenced block fence line, inline code span) and three negatives (plain prose, blank line, line ending in single backtick) — M, junior-dev
+- [x] B2: implement `isInsideFencedCodeBlock` in `src/editor/isInsideFencedCodeBlock.ts` — walk `syntaxTree(state).resolveInner(pos, 1)` upward via `cursor.parent()`; check each `node.type.name` against `FENCED_OR_INLINE_CODE_NODES = new Set(['FencedCode', 'CodeBlock', 'HyperMD-codeblock', 'HyperMD-codeblock-begin', 'HyperMD-codeblock-end', 'inline-code'])`; return `true` on first hit, `false` if walk exhausts; tolerate a null/undefined cursor by returning `false` — M, junior-dev
+- [x] B3: cross-check the set against the actual node names by logging `node.type.name` during one test run; if observed names differ, update both the set and the live-spec — S, junior-dev
 
 ### C. Cast line regex tests
 
@@ -213,7 +213,7 @@ None — every applicable edge case has a default decision above. The orchestrat
 
 **junior-dev**
 
-- [ ] C1: add `tests/editor/castLineRegex.test.ts` with the eight assertions above; each as a separate `it(...)` so failures pinpoint which axis broke — S, junior-dev
+- [x] C1: add `tests/editor/castLineRegex.test.ts` with the eight assertions above; each as a separate `it(...)` so failures pinpoint which axis broke — S, junior-dev (985b6b7)
 
 ### D. Decoration builder
 
@@ -244,13 +244,13 @@ Class names are locked: `grimoire-cast-line` and `grimoire-cast-marker` — see 
 
 **senior-dev**
 
-- [ ] D1: red test — fixture doc with three `@cast` lines (top, middle, bottom) and prose between; `buildCastDecorations(view)` returns a `DecorationSet` containing exactly three `Decoration.line` ranges and three `Decoration.mark` ranges; line decoration class is `grimoire-cast-line`, mark class is `grimoire-cast-marker`; mark ranges are each exactly 5 chars wide starting at column 0 — M, senior-dev
-- [ ] D2: red test — `@casting foo` and `@castaway` lines yield zero decorations (word-boundary edge case #2) — S, senior-dev
-- [ ] D3: red test — `  @cast` (leading spaces), `- @cast` (list marker), `> @cast` (blockquote) yield zero decorations (line-start edge case #3) — S, senior-dev
-- [ ] D4: red test — `@cast` inside a triple-backtick fenced block yields zero decorations; `@cast` inside a single-backtick inline span yields zero decorations (Edge cases #1) — M, senior-dev
-- [ ] D5: implement `buildCastDecorations` per the data-flow snippet above; iterate `view.visibleRanges`, use `state.doc.lineAt(from)` / `line.number` increment loop, call `CAST_LINE_REGEX.exec(line.text)`, call `isInsideFencedCodeBlock(state, line.from)`, add to `RangeSetBuilder` in the correct order (line then mark). All D1–D4 tests green — M, senior-dev
-- [ ] D6: red+green — viewport-only invariant: construct a view whose `visibleRanges` covers only lines 1–10 of a 100-line doc that has `@cast` on lines 5 and 50; result has exactly one line+mark pair (line 5), nothing for line 50 — M, senior-dev
-- [ ] D7: red+green — empty `@cast` line (just `@cast\n`) yields a line + mark decoration; an `@cast` with no newline at end-of-file also decorates (Edge case #6) — S, senior-dev
+- [x] D1: red test — fixture doc with three `@cast` lines (top, middle, bottom) and prose between; `buildCastDecorations(view)` returns a `DecorationSet` containing exactly three `Decoration.line` ranges and three `Decoration.mark` ranges; line decoration class is `grimoire-cast-line`, mark class is `grimoire-cast-marker`; mark ranges are each exactly 5 chars wide starting at column 0 — M, senior-dev
+- [x] D2: red test — `@casting foo` and `@castaway` lines yield zero decorations (word-boundary edge case #2) — S, senior-dev
+- [x] D3: red test — `  @cast` (leading spaces), `- @cast` (list marker), `> @cast` (blockquote) yield zero decorations (line-start edge case #3) — S, senior-dev
+- [x] D4: red test — `@cast` inside a triple-backtick fenced block yields zero decorations; `@cast` inside a single-backtick inline span yields zero decorations (Edge cases #1) — M, senior-dev
+- [x] D5: implement `buildCastDecorations` per the data-flow snippet above; iterate `view.visibleRanges`, use `state.doc.lineAt(from)` / `line.number` increment loop, call `CAST_LINE_REGEX.exec(line.text)`, call `isInsideFencedCodeBlock(state, line.from)`, add to `RangeSetBuilder` in the correct order (line then mark). All D1–D4 tests green — M, senior-dev
+- [x] D6: red+green — viewport-only invariant: construct a view whose `visibleRanges` covers only lines 1–10 of a 100-line doc that has `@cast` on lines 5 and 50; result has exactly one line+mark pair (line 5), nothing for line 50 — M, senior-dev
+- [x] D7: red+green — empty `@cast` line (just `@cast\n`) yields a line + mark decoration; an `@cast` with no newline at end-of-file also decorates (Edge case #6) — S, senior-dev
 
 ### E. CSS rules
 
@@ -270,7 +270,7 @@ Variables already used in `src/main.css`: `--background-modifier-hover`, `--back
 
 **junior-dev**
 
-- [ ] E1: append three rules to `src/main.css`:
+- [x] E1: append three rules to `src/main.css`:
   ```css
   .cm-line.grimoire-cast-line {
       background-color: var(--background-modifier-hover);
@@ -283,7 +283,7 @@ Variables already used in `src/main.css`: `--background-modifier-hover`, `--back
   }
   ```
   Verify no literal colour values; verify selectors match the locked class names from D5 — S, junior-dev
-- [ ] E2: run `npm run build`; verify `styles.css` regenerated and contains the new selectors; do not edit `styles.css` by hand — S, junior-dev
+- [x] E2: run `npm run build`; verify `styles.css` regenerated and contains the new selectors; do not edit `styles.css` by hand — S, junior-dev
 
 ### F. ViewPlugin lifecycle
 
@@ -299,11 +299,11 @@ Variables already used in `src/main.css`: `--background-modifier-hover`, `--back
 
 **junior-dev**
 
-- [ ] F1: red test in `tests/editor/castMarkerViewPlugin.test.ts` — construct an `EditorView` with `[castMarkerViewPlugin]` and doc `@cast hello\nplain prose`; assert `view.plugin(castMarkerViewPlugin)!.decorations.size === 2` (one line + one mark) — M, junior-dev
-- [ ] F2: red test — same view, dispatch `view.dispatch({ changes: { from: 0, to: 11, insert: 'plain again' } })` so the first line no longer matches; assert `view.plugin(...)!.decorations.size === 0` — M, junior-dev
-- [ ] F3: red test — `refineMarkerExtension()` returns an array (or `Extension`) containing `castMarkerViewPlugin`; installing the result in an `EditorView` produces decorations equivalent to installing the plugin directly — S, junior-dev
-- [ ] F4: implement `castMarkerViewPlugin` using `ViewPlugin.fromClass(class { decorations: DecorationSet; constructor(view) { this.decorations = buildCastDecorations(view); } update(u) { if (u.docChanged || u.viewportChanged) this.decorations = buildCastDecorations(u.view); } }, { decorations: v => v.decorations })`; F1–F3 green — M, junior-dev
-- [ ] F5: defensive wrap — make `update` swallow exceptions from `buildCastDecorations` (per Error handling): wrap the rebuild in `try/catch`, on catch call `console.error('refine-marker-styling: decoration build failed', err)` and assign `this.decorations = Decoration.none`. Add a unit test that monkey-patches `isInsideFencedCodeBlock` to throw and asserts the editor remains responsive (no thrown error reaches the dispatch caller) — M, junior-dev
+- [x] F1: red test in `tests/editor/castMarkerViewPlugin.test.ts` — construct an `EditorView` with `[castMarkerViewPlugin]` and doc `@cast hello\nplain prose`; assert `view.plugin(castMarkerViewPlugin)!.decorations.size === 2` (one line + one mark) — M, junior-dev (e0179d8)
+- [x] F2: red test — same view, dispatch `view.dispatch({ changes: { from: 0, to: 11, insert: 'plain again' } })` so the first line no longer matches; assert `view.plugin(...)!.decorations.size === 0` — M, junior-dev (e0179d8)
+- [x] F3: red test — `refineMarkerExtension()` returns an array (or `Extension`) containing `castMarkerViewPlugin`; installing the result in an `EditorView` produces decorations equivalent to installing the plugin directly — S, junior-dev (e0179d8)
+- [x] F4: implement `castMarkerViewPlugin` using `ViewPlugin.fromClass(class { decorations: DecorationSet; constructor(view) { this.decorations = buildCastDecorations(view); } update(u) { if (u.docChanged || u.viewportChanged) this.decorations = buildCastDecorations(u.view); } }, { decorations: v => v.decorations })`; F1–F3 green — M, junior-dev (e0179d8)
+- [x] F5: defensive wrap — make `update` swallow exceptions from `buildCastDecorations` (per Error handling): wrap the rebuild in `try/catch`, on catch call `console.error('refine-marker-styling: decoration build failed', err)` and assign `this.decorations = Decoration.none`. Add a unit test that monkey-patches `isInsideFencedCodeBlock` to throw and asserts the editor remains responsive (no thrown error reaches the dispatch caller) — M, junior-dev (e0179d8)
 
 ### G. Mock obsidian — registerEditorExtension
 
@@ -319,7 +319,7 @@ Variables already used in `src/main.css`: `--background-modifier-hover`, `--back
 
 **junior-dev**
 
-- [ ] G1: add `registerEditorExtension = vi.fn();` to the `Plugin` class in `tests/__mocks__/obsidian.ts` (place it next to the existing `addCommand` line). Add a one-line JSDoc above the field documenting it as the CM6 extension registration stub — S, junior-dev
+- [x] G1: add `registerEditorExtension = vi.fn();` to the `Plugin` class in `tests/__mocks__/obsidian.ts` (place it next to the existing `addCommand` line). Add a one-line JSDoc above the field documenting it as the CM6 extension registration stub — S, junior-dev
 
 ### H. Integration test — full editor wiring
 
@@ -348,10 +348,10 @@ Also: a separate small unit-level test verifies that `GrimoirePlugin.onload` cal
 
 **ui-integration-tester**
 
-- [ ] H1: add `@codemirror/lang-markdown` `^6.x` to `devDependencies` and run `npm install`. (Already external in esbuild; needed only for tests to parse markdown into a real syntax tree.) Confirm it imports cleanly in happy-dom by adding a temporary smoke `it('imports', () => { expect(markdown).toBeDefined(); })` and removing it after green — S, ui-integration-tester
-- [ ] H2: write the rendered-DOM integration test `tests/integration/refine-marker-styling.spec.ts` covering tc1, tc2, tc3 above. Use `document.body.appendChild` to mount the `EditorView`. Wait one microtask after `view.dispatch` before asserting (CM6 batches DOM updates synchronously, but the spec should call `view.requestMeasure()` or `await Promise.resolve()` to be safe) — M, ui-integration-tester
-- [ ] H3-edge1: add `tc-edge1` to the same spec — assert that `` `@cast inline` `` (single-backtick inline code) does not produce `.grimoire-cast-line`, locking Edge case #1's "inline code suppressed" decision — S, ui-integration-tester
-- [ ] H4: add `tc4` to `tests/main.test.ts` (existing file) — call `plugin.onload`, assert `plugin.registerEditorExtension` was called with a non-null argument. Do not assert deep structure (the exact `Extension` shape is internal); just call-count and arg-non-null — S, ui-integration-tester
+- [x] H1: add `@codemirror/lang-markdown` `^6.x` to `devDependencies` and run `npm install`. (Already external in esbuild; needed only for tests to parse markdown into a real syntax tree.) Confirm it imports cleanly in happy-dom by adding a temporary smoke `it('imports', () => { expect(markdown).toBeDefined(); })` and removing it after green — S, ui-integration-tester
+- [x] H2: write the rendered-DOM integration test `tests/integration/refine-marker-styling.spec.ts` covering tc1, tc2, tc3 above. Use `document.body.appendChild` to mount the `EditorView`. Wait one microtask after `view.dispatch` before asserting (CM6 batches DOM updates synchronously, but the spec should call `view.requestMeasure()` or `await Promise.resolve()` to be safe) — M, ui-integration-tester
+- [x] H3-edge1: add `tc-edge1` to the same spec — assert that `` `@cast inline` `` (single-backtick inline code) does not produce `.grimoire-cast-line`, locking Edge case #1's "inline code suppressed" decision — S, ui-integration-tester
+- [x] H4: add `tc4` to `tests/main.test.ts` (existing file) — call `plugin.onload`, assert `plugin.registerEditorExtension` was called with a non-null argument. Do not assert deep structure (the exact `Extension` shape is internal); just call-count and arg-non-null — S, ui-integration-tester
 
 ### I. Plugin wire-up
 
@@ -369,9 +369,9 @@ The factory `refineMarkerExtension` returns a CM6 `Extension`. Failures during t
 
 **senior-dev**
 
-- [ ] I1: add `import { refineMarkerExtension } from './editor/refineMarkerExtension';` to `src/main.ts` — S, senior-dev
-- [ ] I2: in `#registerUI`, after `popupModule.register(this);`, add `try { this.registerEditorExtension(refineMarkerExtension()); } catch (err) { console.error('refine-marker-styling: extension registration failed', err); }` — S, senior-dev
-- [ ] I3: confirm `npm test`, `npm run test:integration`, `npm run lint`, `npm run build`, `npm run arch:check` all green — S, senior-dev
+- [x] I1: add `import { refineMarkerExtension } from './editor/refineMarkerExtension';` to `src/main.ts` — S, senior-dev (3548a59)
+- [x] I2: in `#registerUI`, after `popupModule.register(this);`, add `try { this.registerEditorExtension(refineMarkerExtension()); } catch (err) { console.error('refine-marker-styling: extension registration failed', err); }` — S, senior-dev (3548a59)
+- [x] I3: confirm `npm test`, `npm run test:integration`, `npm run lint`, `npm run build`, `npm run arch:check` all green — S, senior-dev (3548a59)
 
 ## Overall effort summary
 
@@ -396,3 +396,5 @@ Junior dominates: most of the work is mechanical (scaffolding, regex tests, CSS,
 ## Perspective notes
 
 Plan complexity is Medium. No multi-perspective sweep done. Minimalist note: the `refineMarkerExtension.ts` wrapper file is borderline-deletable (collapses into the view-plugin export); kept for symmetry with the registration call. Extensibility note: a future second marker (`@imprint`?) extends the regex into an array and adds a `Map<RegExp, classNames>` — the seam to add it is in `buildCastDecorations`, not in the view plugin or factory. Devil's advocate: the biggest risk is `@codemirror/lang-markdown`'s node-type names diverging from the bundled set Obsidian ships at runtime — mitigated by B3 capturing actual names. User-advocate: with viewport-only scanning and live updates the user gets the "instruction, not content" gestalt the pitch asks for; failure mode is one frame of flicker on huge pastes, acceptable.
+
+reviewed @ 3548a59

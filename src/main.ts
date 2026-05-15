@@ -7,6 +7,7 @@ import { SpellOverrideStore } from './domain/settings/SpellOverrideStore';
 import { GrimoireSettingTab } from './ui/settings/GrimoireSettingTab';
 import { CastLogModule } from './main/CastLogModule';
 import { PopupModule } from './main/PopupModule';
+import { refineMarkerExtension } from './editor/refineMarkerExtension';
 
 /**
  * Obsidian plugin entry point for Grimoire (spell management and casting).
@@ -73,6 +74,11 @@ export default class GrimoirePlugin extends Plugin {
       castLog.materializeForge().catch(console.error);
     }));
     popupModule.register(this);
+    try {
+      this.registerEditorExtension(refineMarkerExtension());
+    } catch (err) {
+      console.error('refine-marker-styling: extension registration failed', err);
+    }
   }
 
   /** Flushes any pending saves before shutdown. */

@@ -566,6 +566,13 @@ describe('GrimoirePlugin', () => {
     imprintSpy.mockRestore();
   });
 
+  it('tc4: registers CM6 editor extension on load', async () => {
+    // call plugin.onload() — it's async
+    await plugin.onload();
+    expect(plugin.registerEditorExtension).toHaveBeenCalled();
+    expect(plugin.registerEditorExtension).toHaveBeenCalledWith(expect.anything());
+  });
+
   it('CastDispatcher and ForgeImprinter caster thunks invoke createCaster with current settings', async () => {
     const createCasterModule = await import('../src/cast/createCaster');
     const createCasterSpy = vi.spyOn(createCasterModule, 'createCaster');

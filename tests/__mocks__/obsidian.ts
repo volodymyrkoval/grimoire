@@ -267,6 +267,8 @@ export class Plugin {
   loadData = vi.fn(async () => undefined);
   saveData = vi.fn(async () => {});
   addCommand = vi.fn();
+  /** CM6 extension registration stub */
+  registerEditorExtension = vi.fn();
   addSettingTab = vi.fn();
 
   constructor(app: App) {

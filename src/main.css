@@ -367,3 +367,14 @@
     white-space: nowrap;
     flex-shrink: 0;
 }
+
+.cm-line.grimoire-cast-line {
+    background-color: var(--background-modifier-hover);
+    border-left: 3px solid var(--interactive-accent);
+    padding-left: 6px;
+}
+
+.grimoire-cast-marker {
+    color: var(--interactive-accent);
+    font-weight: 600;
+}

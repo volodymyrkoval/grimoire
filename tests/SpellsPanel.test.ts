@@ -172,7 +172,7 @@ describe('SpellsPanel.openOptions', () => {
     panel.openOptions(DEFAULT_TEST_SPELLS.length + 1); // index 11 is Refine
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith('open-refine-options');
+    expect(spy).toHaveBeenCalledWith('open-refine-options', undefined);
   });
 });
 
@@ -207,7 +207,7 @@ describe('SpellsPanel.confirm', () => {
     panel.confirm(DEFAULT_TEST_SPELLS.length + 1); // index 11 is Refine
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith('refine-cast');
+    expect(spy).toHaveBeenCalledWith('refine-cast', undefined);
   });
 });
 

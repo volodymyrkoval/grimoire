@@ -84,7 +84,7 @@ export class SpellsPanel implements NavigablePanel {
       const sentinel = SENTINELS[index - this.#filteredSpells.length];
       if (sentinel) {
         if (sentinel.kind === "refine") {
-          this.events.emit("refine-cast");
+          this.events.emit("refine-cast", undefined);
           return;
         }
         this.events.emit("sentinel", sentinel);
@@ -106,7 +106,7 @@ export class SpellsPanel implements NavigablePanel {
     }
     const sentinel = SENTINELS[index - this.#filteredSpells.length];
     if (sentinel?.kind === "refine") {
-      this.events.emit("open-refine-options");
+      this.events.emit("open-refine-options", undefined);
     }
   }
 
