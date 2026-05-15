@@ -31,10 +31,13 @@ export interface RequestUrlResponse {
 
 /**
  * Input fields for a remote cast request.
+ *
+ * `spellPath` is optional — inline casts (Forge meta-spells, ad-hoc prompts)
+ * have no backing spell file and rely on `userPrompt` alone.
  */
 export interface RemoteCastInput {
   readonly castId: string;
-  readonly spellPath: string;
+  readonly spellPath?: string;
   readonly userPrompt: string;
   readonly modelId: string;
   readonly effort: Effort | null;

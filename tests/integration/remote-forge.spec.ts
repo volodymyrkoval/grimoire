@@ -174,9 +174,33 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
     );
   });
 
-  // ─── Case 5: onFailure — recordError + notify ─────────────────────────────
+  // ─── Case 5: forge sentinel must not leak into the HTTP body ─────────────
 
-  it('Case 5 — onFailure: recordError called, notify called with mapped message', async () => {
+  it('Case 5 — remote forge: HTTP body sent to portal omits the <forge> sentinel as spellPath', () => {
+    // Portal treats `spellPath` as a file lookup key on its side. The cast-log
+    // sentinel '<forge>' is a UI marker, not a real file — leaking it on the
+    // wire makes the portal return 404 "spell not found". The transport must
+    // strip the sentinel; an inline forge cast is driven purely by userPrompt.
+    vi.mocked(requestUrl).mockResolvedValue({ status: 202, text: '', json: {} });
+
+    const imprinter = new ForgeImprinter({
+      notify,
+      caster: () => createCaster(remoteSettings),
+      logWriter: () => logWriter,
+      generateId: () => 'forge-id',
+    });
+
+    imprinter.imprint(snapshot, remoteSettings, close);
+
+    expect(vi.mocked(requestUrl)).toHaveBeenCalledOnce();
+    const reqArg = vi.mocked(requestUrl).mock.calls[0][0];
+    const parsedBody = JSON.parse(reqArg.body as string);
+    expect(parsedBody.spellPath).not.toBe('<forge>');
+  });
+
+  // ─── Case 6: onFailure — recordError + notify ─────────────────────────────
+
+  it('Case 6 — onFailure: recordError called, notify called with mapped message', async () => {
     vi.mocked(requestUrl).mockResolvedValue({ status: 500, text: 'Server error', json: null });
 
     const imprinter = new ForgeImprinter({
