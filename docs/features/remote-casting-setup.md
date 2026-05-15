@@ -42,7 +42,7 @@ At the time of this iteration, nothing else changed for the user — casting sti
 - **Builds on** `settings-panel` (`docs/features/settings-panel.md`) — same write-through and debounced-save contract, same Obsidian mock pattern, same integration-test harness.
 - **Mirrors** the additive-merge hydration documented in `settings-panel` — new fields take defaults for blobs saved before this iteration.
 - **Locks the names** that the follow-up "remote casting dispatch" iteration will read from `plugin.data.settings.*` — a small read-API smoke test guards rename drift.
-- **Forward-references** the existing `cast-log-remote.jsonl` reserved path in `cast-log-foundation` — nothing yet writes that file; this iteration brings dispatch one step closer.
+- **Forward-references** the existing `cast-log-agent.jsonl` reserved path in `cast-log-foundation` — nothing yet writes that file; this iteration brings dispatch one step closer.
 
 ## Behavior changes
 

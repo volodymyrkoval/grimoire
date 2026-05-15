@@ -1,12 +1,12 @@
 # Remote Casting
 
-> `dev/done-012` — 2026-05-14 — Wires the dispatcher and forge imprinter to actually call a portal when the **Remote execution** toggle is on, completing the seam laid down by `remote-casting-setup` and giving `cast-log-remote.jsonl` its first producer.
+> `dev/done-012` — 2026-05-14 — Wires the dispatcher and forge imprinter to actually call a portal when the **Remote execution** toggle is on, completing the seam laid down by `remote-casting-setup` and giving `cast-log-agent.jsonl` its first producer.
 
 ## What it does
 
-With the toggle in *Local* (the default), nothing changes — every cast still spawns Claude Code locally and writes to `cast-log-local.jsonl`. Flipping the toggle to *Remote* re-routes both live casts and forge imprints through a new HTTP transport: each dispatch POSTs to `<scheme>://<portalHost>[:<port>][<path>]/cast` with `Authorization: Basic …` and a JSON body carrying the cast id, spell path (or the `<forge>` sentinel), user prompt, model, and effort. The popup closes the moment the request is dispatched, and a *"Casting '<spell>' on portal…"* (or *"Forging '<name>' on portal…"*) toast confirms the remote branch took effect.
+With the toggle in *Local* (the default), nothing changes — every cast still spawns Claude Code locally and writes to `cast-log-plugin.jsonl`. Flipping the toggle to *Remote* re-routes both live casts and forge imprints through a new HTTP transport: each dispatch POSTs to `<scheme>://<portalHost>[:<port>][<path>]/cast` with `Authorization: Basic …` and a JSON body carrying the cast id, spell path (or the `<forge>` sentinel), user prompt, model, and effort. The popup closes the moment the request is dispatched, and a *"Casting '<spell>' on portal…"* (or *"Forging '<name>' on portal…"*) toast confirms the remote branch took effect.
 
-Each remote dispatch writes its events to `cast-log-remote.jsonl` instead of the local log. The Logs panel already merges both files (see `cast-log-panel`), so remote casts surface in the UI without any panel-side change. A new optional `portalCastId` field on the `casted` event captures the portal's server-side id when the response lands. Five named error shapes — empty host, network failure, 401, other non-2xx, and a 30 s timeout — each surface a specific notice; four of them write an `error` event to the remote log.
+Each remote dispatch writes its events to `cast-log-agent.jsonl` instead of the local log. The Logs panel already merges both files (see `cast-log-panel`), so remote casts surface in the UI without any panel-side change. A new optional `portalCastId` field on the `casted` event captures the portal's server-side id when the response lands. Five named error shapes — empty host, network failure, 401, other non-2xx, and a 30 s timeout — each surface a specific notice; four of them write an `error` event to the remote log.
 
 If the user flips the toggle on but the Portal host field is empty, dispatch refuses with *"Configure portal host in settings before casting remotely."*, leaves the popup open, and writes nothing — so the user can fix the field and retry without losing context. The Portal host row also picked up an inline description (*"Hostname or full URL. Defaults to HTTPS unless http:// is prefixed."*) so the bare-host vs. full-URL affordance is discoverable.
 
@@ -27,7 +27,7 @@ If the user flips the toggle on but the Portal host field is empty, dispatch ref
 - HTTP transport (`RemoteCastTransport`) composed from five pure helpers under `src/cast/portal/`: scheme parsing, URL building, Basic Auth header, JSON body, error mapping.
 - Pre-dispatch guard on empty (or whitespace-only) `portalHost`.
 - Remote branch in both `CastDispatcher` and `ForgeImprinter` with branch-specific notice text. *(After `cast-unification`, the observers are mode-agnostic and the branch lives in `createCaster`; notice text is still picked by the observer from `settings.executionMode`.)*
-- `CastLogStore` accepts `{ remote: true }` to direct writes to `cast-log-remote.jsonl`. *(Removed by `cast-unification`; each observer now holds a `CastLogWriter` bound to one log path.)*
+- `CastLogStore` accepts `{ remote: true }` to direct writes to `cast-log-agent.jsonl`. *(Removed by `cast-unification`; each observer now holds a `CastLogWriter` bound to one log path.)*
 - Optional `portalCastId` on `CastedEvent` / `CastRecord`, propagated by `foldEvents` with "later casted wins."
 - `requestUrl` mock added to the Obsidian test mock; description string added to the Portal host row.
 - Unit coverage for every helper, the transport, and both dispatch-site branches; integration specs for live cast and forge driving the seam end-to-end with a mocked portal.
@@ -44,7 +44,7 @@ If the user flips the toggle on but the Portal host field is empty, dispatch ref
 ## Relationship to existing system
 
 - **Closes the seam opened by `remote-casting-setup`.** That iteration shipped the toggle and the five portal fields as a read-only API; this iteration is their first consumer outside the settings tab.
-- **Gives `cast-log-foundation`'s reserved `cast-log-remote.jsonl` its first producer.** The schema and reader plumbing already existed; only the writers were missing.
+- **Gives `cast-log-foundation`'s reserved `cast-log-agent.jsonl` its first producer.** The schema and reader plumbing already existed; only the writers were missing.
 - **Surfaces in `cast-log-panel` for free.** The Logs panel already merges both log files, so remote casts show up alongside local ones with no panel-side change.
 - **Extends `live-spells-and-casting` and `forge-cast` with a parallel branch.** The local data flow documented in those specs is byte-for-byte unchanged; the remote branch is a sibling path with its own notice strings and its own log file. Both dispatch sites still own id generation and write the bare `casted` line before invoking their runner / transport.
 - **Reuses the Obsidian test mock pattern** established for `Plugin`, `Setting`, `TextComponent`, etc. — `requestUrl` is one more `vi.fn()` defaulting to a clear "not mocked" rejection so node-env tests that never touch it stay quiet.

@@ -24,7 +24,7 @@ The panel stays in sync with disk in two ways. It subscribes to Obsidian's vault
 ## Scope
 
 **In:**
-- Reading both `cast-log-local.jsonl` and `cast-log-remote.jsonl` via an extended `CastLogStore.readAll()`; missing files tolerated, malformed lines silently dropped.
+- Reading both `cast-log-plugin.jsonl` and `cast-log-agent.jsonl` via an extended `CastLogStore.readAll()`; missing files tolerated, malformed lines silently dropped.
 - Reverse-chronological flat list keyed off the `casted` timestamp; in-flight count header; per-row expansion; "No casts yet" empty state.
 - Real-time refresh via vault `modify` with mtime-poll fallback; 1 s tick for live timestamps, scoped to while the panel is mounted.
 - Clicking context-note or affected-file links opens the file and dismisses the popup.
@@ -36,7 +36,7 @@ The panel stays in sync with disk in two ways. It subscribes to Obsidian's vault
 - Deletion, recast, completion toasts, diff view, grouping/sorting — each its own concern, deferred until prompted by use.
 - Stale-cast timeout detection — in-flight rows remain in-flight forever; no producer of stale state to react to yet.
 - Tooltips and hover cards — premature; expansion already carries the detail.
-- A producer for `cast-log-remote.jsonl` — the reader handles the file's absence; a writer is a separate iteration tied to remote casting.
+- A producer for `cast-log-agent.jsonl` — the reader handles the file's absence; a writer is a separate iteration tied to remote casting.
 - Log retention, rotation, or size cap — premature; revisit once vaults accumulate enough events to matter.
 
 ## Relationship to existing system

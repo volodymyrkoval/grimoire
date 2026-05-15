@@ -9,7 +9,7 @@ export type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
  */
 export interface CastLogStorePorts {
   getLogPathAbs: () => string;
-  getRemoteLogPathAbs?: () => string;
+  getAgentLogPathAbs?: () => string;
   appendLine?: (filePath: string, line: string) => Promise<void>;
   readFile?: (path: string, encoding: 'utf-8') => Promise<string>;
   now?: () => Date;
@@ -78,8 +78,8 @@ export class CastLogStore {
     const localEvents = await this.#readFromFile(this.#ports.getLogPathAbs());
     events.push(...localEvents);
 
-    if (this.#ports.getRemoteLogPathAbs) {
-      const remoteEvents = await this.#readFromFile(this.#ports.getRemoteLogPathAbs());
+    if (this.#ports.getAgentLogPathAbs) {
+      const remoteEvents = await this.#readFromFile(this.#ports.getAgentLogPathAbs());
       events.push(...remoteEvents);
     }
 

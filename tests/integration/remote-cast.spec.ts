@@ -7,7 +7,8 @@
  * notify/close (UI), CastRunner.prototype.run (local process).
  *
  * Covers:
- *   1. Remote 202 happy path — requestUrl shape, two casted events in remote log.
+ *   1. Remote 202 happy path — requestUrl shape, both casted events land in the
+ *      LOCAL log (the remote log is portal-owned for in-progress/done events).
  *   2. Local branch — CastRunner.run called, requestUrl never touched.
  *   3. Pre-dispatch guard — empty portalHost blocks dispatch before any I/O.
  */
@@ -23,8 +24,8 @@ import type { Spell } from '../../src/domain/spells/Spell';
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
-const REMOTE_LOG = '/vault/cast-log-remote.jsonl';
-const LOCAL_LOG = '/vault/cast-log-local.jsonl';
+const REMOTE_LOG = '/vault/cast-log-agent.jsonl';
+const LOCAL_LOG = '/vault/cast-log-plugin.jsonl';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -60,10 +61,12 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
     vi.clearAllMocks();
   });
 
-  it('remote 202: calls requestUrl with correct shape, writes two casted events to remote log', async () => {
-    const logLines: string[] = [];
-    const captureAppend = vi.fn(async (_path: string, line: string) => {
-      logLines.push(line);
+  it('remote 202: calls requestUrl with correct shape, writes both casted events to the LOCAL log', async () => {
+    const writesByPath = new Map<string, string[]>();
+    const captureAppend = vi.fn(async (path: string, line: string) => {
+      const bucket = writesByPath.get(path) ?? [];
+      bucket.push(line);
+      writesByPath.set(path, bucket);
     });
 
     vi.mocked(requestUrl).mockResolvedValue({
@@ -72,8 +75,10 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
       text: '',
     });
 
-    const remoteLogStore = new CastLogStore({
-      getLogPathAbs: () => REMOTE_LOG,
+    // Production wiring (post-fix): the dispatcher's logWriter is always backed by the
+    // local cast log, even in remote mode. Reproduce that here.
+    const localLogStore = new CastLogStore({
+      getLogPathAbs: () => LOCAL_LOG,
       appendLine: captureAppend,
       now: () => new Date('2026-01-01T00:00:00Z'),
     });
@@ -87,7 +92,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
       notify,
       close,
       caster: () => createCaster(remoteSettings),
-      logWriter: () => remoteLogStore,
+      logWriter: () => localLogStore,
       generateId: () => 'cast-abc',
     });
 
@@ -125,16 +130,18 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
     expect(notify).toHaveBeenCalledWith("Casting 'Test' on portal…");
     expect(close).toHaveBeenCalledOnce();
 
-    // Remote log has two casted entries
-    const remoteLines = logLines.map((l) => JSON.parse(l.trim()));
-    expect(remoteLines).toHaveLength(2);
-    const [first, second] = remoteLines;
+    // Invariant: both casted events land in the LOCAL log; the remote log gets nothing.
+    const localLines = (writesByPath.get(LOCAL_LOG) ?? []).map((l) => JSON.parse(l.trim()));
+    expect(localLines).toHaveLength(2);
+    const [first, second] = localLines;
     expect(first.stage).toBe('casted');
     expect(first.castId).toBe('cast-abc');
     expect(first.portalCastId).toBeUndefined();
     expect(second.stage).toBe('casted');
     expect(second.castId).toBe('cast-abc');
     expect(second.portalCastId).toBe('srv-1');
+
+    expect(writesByPath.has(REMOTE_LOG)).toBe(false);
   });
 
   it('local branch: CastRunner.run called, requestUrl never called, only local log written', async () => {

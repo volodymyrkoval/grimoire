@@ -34,6 +34,16 @@ describe('PopupModule', () => {
     })),
   });
 
+  const HOOKS_DIR = '/vault/.obsidian/plugins/grimoire/agent-hooks';
+
+  const makeModuleDeps = (settings: ReturnType<typeof makeSettings>, overrides: any, castLog: any) => ({
+    app,
+    getData: () => ({ settings, spellOverrides: {} }),
+    overrides,
+    castLog,
+    getAgentHooksDirAbs: () => HOOKS_DIR,
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     app = new App();
@@ -46,12 +56,7 @@ describe('PopupModule', () => {
     const castLog = makeCastLogModule() as any;
 
     expect(() => {
-      new PopupModule({
-        app,
-        getData: () => ({ settings, spellOverrides: {} }),
-        overrides,
-        castLog,
-      });
+      new PopupModule(makeModuleDeps(settings, overrides, castLog));
     }).not.toThrow();
   });
 
@@ -61,12 +66,7 @@ describe('PopupModule', () => {
     const overrides = { getOverride: vi.fn() } as any;
     const castLog = makeCastLogModule() as any;
 
-    const module = new PopupModule({
-      app,
-      getData: () => ({ settings, spellOverrides: {} }),
-      overrides,
-      castLog,
-    });
+    const module = new PopupModule(makeModuleDeps(settings, overrides, castLog));
 
     const fakePlugin = { addCommand: vi.fn() } as any;
     module.register(fakePlugin);
@@ -91,12 +91,7 @@ describe('PopupModule', () => {
     const overrides = { getOverride: vi.fn() } as any;
     const castLog = makeCastLogModule() as any;
 
-    const module = new PopupModule({
-      app,
-      getData: () => ({ settings, spellOverrides: {} }),
-      overrides,
-      castLog,
-    });
+    const module = new PopupModule(makeModuleDeps(settings, overrides, castLog));
 
     const fakePlugin = { addCommand: vi.fn() } as any;
     module.register(fakePlugin);
@@ -124,12 +119,7 @@ describe('PopupModule', () => {
     const overrides = { getOverride: vi.fn() } as any;
     const castLog = makeCastLogModule() as any;
 
-    new PopupModule({
-      app,
-      getData: () => ({ settings, spellOverrides: {} }),
-      overrides,
-      castLog,
-    });
+    new PopupModule(makeModuleDeps(settings, overrides, castLog));
 
     expect(imprinterSpy).toHaveBeenCalledOnce();
     const deps = imprinterSpy.mock.calls[0][0] as any;
@@ -138,7 +128,7 @@ describe('PopupModule', () => {
 
     // Invoke thunks to verify they delegate correctly
     deps.caster();
-    expect(createCasterSpy).toHaveBeenCalledWith(settings);
+    expect(createCasterSpy).toHaveBeenCalledWith(settings, HOOKS_DIR);
 
     deps.logWriter();
     expect(castLog.activeLogStore).toHaveBeenCalled();
@@ -165,12 +155,7 @@ describe('PopupModule', () => {
     const overrides = { getOverride: vi.fn() } as any;
     const castLog = makeCastLogModule() as any;
 
-    const module = new PopupModule({
-      app,
-      getData: () => ({ settings, spellOverrides: {} }),
-      overrides,
-      castLog,
-    });
+    const module = new PopupModule(makeModuleDeps(settings, overrides, castLog));
 
     const fakePlugin = { addCommand: vi.fn() } as any;
     module.register(fakePlugin);
@@ -203,12 +188,7 @@ describe('PopupModule', () => {
     const overrides = { getOverride: vi.fn() } as any;
     const castLog = makeCastLogModule() as any;
 
-    const module = new PopupModule({
-      app,
-      getData: () => ({ settings, spellOverrides: {} }),
-      overrides,
-      castLog,
-    });
+    const module = new PopupModule(makeModuleDeps(settings, overrides, castLog));
 
     const fakePlugin = { addCommand: vi.fn() } as any;
     module.register(fakePlugin);

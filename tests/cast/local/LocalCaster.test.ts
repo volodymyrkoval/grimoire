@@ -73,6 +73,28 @@ describe('LocalCaster', () => {
     });
   });
 
+  describe('claudeHooksDirAbs threading', () => {
+    it('passes claudeHooksDirAbs as claudeHooksDir in run input', () => {
+      const caster = new LocalCaster({
+        runner,
+        settings,
+        claudeHooksDirAbs: '/vault/.obsidian/plugins/grimoire/agent-hooks',
+      });
+      caster.cast(baseInput, callbacks);
+
+      const [runInput] = runner.run.mock.calls[0];
+      expect(runInput.claudeHooksDir).toBe('/vault/.obsidian/plugins/grimoire/agent-hooks');
+    });
+
+    it('claudeHooksDir is undefined in run input when claudeHooksDirAbs is not provided', () => {
+      const caster = new LocalCaster({ runner, settings });
+      caster.cast(baseInput, callbacks);
+
+      const [runInput] = runner.run.mock.calls[0];
+      expect(runInput.claudeHooksDir).toBeUndefined();
+    });
+  });
+
   describe('callback translation', () => {
     it('runner onSuccess triggers callbacks.onAccepted({}) exactly once', () => {
       const caster = new LocalCaster({ runner, settings });

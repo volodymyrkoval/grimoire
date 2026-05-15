@@ -55,6 +55,21 @@ describe('buildPortalRequestBody', () => {
     expect(parsed.userPrompt).toBe('');
   });
 
+  it('does not include hooksDir in the JSON body', () => {
+    const input = {
+      castId: 'cast-123',
+      spellPath: '/path/to/spell',
+      userPrompt: 'Hello',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+    };
+
+    const result = buildPortalRequestBody(input);
+    const parsed = JSON.parse(result);
+
+    expect(parsed).not.toHaveProperty('hooksDir');
+  });
+
   it('round-trips: parsed JSON matches the expected object', () => {
     const input = {
       castId: 'abc-def',

@@ -8,6 +8,9 @@ dist/
 styles.css
 data.json
 hooks/
+agent-hooks/
 cast-log-local.jsonl
 cast-log-remote.jsonl
+cast-log-plugin.jsonl
+cast-log-agent.jsonl
 cast-log-scratch/

@@ -4,7 +4,7 @@
 
 ## What it does
 
-Every cast dispatched by the plugin — Spell Picker live cast or Forge imprint — now produces an auditable record in `<vault>/<plugin-dir>/cast-log-local.jsonl`. The file is append-only, one JSON event per line, created on first write.
+Every cast dispatched by the plugin — Spell Picker live cast or Forge imprint — now produces an auditable record in `<vault>/<plugin-dir>/cast-log-plugin.jsonl`. The file is append-only, one JSON event per line, created on first write.
 
 Two events are written by the plugin process today. A `casted` line is written before the subprocess spawns, capturing `castId`, spell path (or the `<forge>` sentinel for forge casts), model, effort, context notes, and (live casts only) follow-up and execute-on-note. An `error` line is written when the cast fails — non-zero exit or async launch failure — carrying the same `castId` and the failure message. A dispatch blocked by an existing guard (no active note, or empty-after-sanitise name) writes nothing: those casts never reached the dispatched state.
 
@@ -37,7 +37,7 @@ Each dispatch generates a UUID via `crypto.randomUUID`, threads it through the r
 - `in-progress` / `done` writes — delivered by the sibling iteration `cast-progress-events` via Claude Code hook scripts, written from outside the plugin process.
 - Hook scripts (materialised on plugin load) and the manual `.claude/settings.local.json` wiring that activates them — same sibling iteration.
 - Cast Log reader, parser, UI panel — no consumer of the JSONL file yet; deferred until the reader pitch.
-- `cast-log-remote.jsonl` — reserved name; not produced until remote casting lands.
+- `cast-log-agent.jsonl` — produced by hook scripts for `in-progress` / `done` events (both local and portal casts). First remote-cast `casted` writes landed in `remote-casting` (`dev/done-012`).
 - Timeout-based stale detection, retention/rotation, telemetry — premature; not justified by any current use case.
 - Surfacing `castId` in `Notice` toasts — no UX rationale yet.
 - Schema-versioning field — deferred to the first breaking change (YAGNI).

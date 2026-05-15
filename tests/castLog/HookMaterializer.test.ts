@@ -10,7 +10,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
         writeFile,
         mkdir,
       });
@@ -21,9 +21,9 @@ describe('HookMaterializer', () => {
       expect(mkdir).toHaveBeenCalledWith('/p/hooks');
 
       expect(writeFile).toHaveBeenCalledTimes(3);
-      expect(writeFile).toHaveBeenNthCalledWith(1, expect.stringContaining('/p/hooks/session-start.sh'), expect.any(String), expect.any(Number));
-      expect(writeFile).toHaveBeenNthCalledWith(2, expect.stringContaining('/p/hooks/post-tool-use.sh'), expect.any(String), expect.any(Number));
-      expect(writeFile).toHaveBeenNthCalledWith(3, expect.stringContaining('/p/hooks/stop.sh'), expect.any(String), expect.any(Number));
+      expect(writeFile).toHaveBeenNthCalledWith(1, expect.stringContaining('/p/hooks/session-start.sh'), expect.any(String));
+      expect(writeFile).toHaveBeenNthCalledWith(2, expect.stringContaining('/p/hooks/post-tool-use.sh'), expect.any(String));
+      expect(writeFile).toHaveBeenNthCalledWith(3, expect.stringContaining('/p/hooks/stop.sh'), expect.any(String));
     });
 
     it('should write session-start.sh with content matching renderSessionStartScript', async () => {
@@ -32,15 +32,15 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
         writeFile,
         mkdir,
       });
 
       await mat.run();
 
-      const expectedContent = renderSessionStartScript({ logPathAbs: '/p/cast-log-local.jsonl' });
-      expect(writeFile).toHaveBeenNthCalledWith(1, '/p/hooks/session-start.sh', expectedContent, 0o755);
+      const expectedContent = renderSessionStartScript({ logPathAbs: '/p/cast-log-plugin.jsonl' });
+      expect(writeFile).toHaveBeenNthCalledWith(1, '/p/hooks/session-start.sh', expectedContent);
     });
 
     it('should write post-tool-use.sh with content matching renderPostToolUseScript', async () => {
@@ -49,7 +49,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
         writeFile,
         mkdir,
       });
@@ -57,7 +57,7 @@ describe('HookMaterializer', () => {
       await mat.run();
 
       const expectedContent = renderPostToolUseScript({ scratchDirAbs: '/p/cast-log-scratch' });
-      expect(writeFile).toHaveBeenNthCalledWith(2, '/p/hooks/post-tool-use.sh', expectedContent, 0o755);
+      expect(writeFile).toHaveBeenNthCalledWith(2, '/p/hooks/post-tool-use.sh', expectedContent);
     });
 
     it('should write stop.sh with content matching renderStopScript', async () => {
@@ -66,7 +66,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
         writeFile,
         mkdir,
       });
@@ -74,28 +74,10 @@ describe('HookMaterializer', () => {
       await mat.run();
 
       const expectedContent = renderStopScript({
-        logPathAbs: '/p/cast-log-local.jsonl',
+        logPathAbs: '/p/cast-log-plugin.jsonl',
         scratchDirAbs: '/p/cast-log-scratch',
       });
-      expect(writeFile).toHaveBeenNthCalledWith(3, '/p/hooks/stop.sh', expectedContent, 0o755);
-    });
-
-    it('should pass mode 0o755 for all three shell scripts', async () => {
-      const mkdir = vi.fn().mockResolvedValue(undefined);
-      const writeFile = vi.fn().mockResolvedValue(undefined);
-
-      const mat = new HookMaterializer({
-        getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
-        writeFile,
-        mkdir,
-      });
-
-      await mat.run();
-
-      expect(writeFile.mock.calls[0][2]).toBe(0o755);
-      expect(writeFile.mock.calls[1][2]).toBe(0o755);
-      expect(writeFile.mock.calls[2][2]).toBe(0o755);
+      expect(writeFile).toHaveBeenNthCalledWith(3, '/p/hooks/stop.sh', expectedContent);
     });
 
     it('should reject if writeFile rejects on the first script', async () => {
@@ -105,7 +87,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
         writeFile,
         mkdir,
       });
@@ -121,11 +103,31 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/tmp/plugin',
-        getLogPathAbs: () => '/tmp/plugin/cast-log-local.jsonl',
+        getLogPathAbs: () => '/tmp/plugin/cast-log-plugin.jsonl',
       });
 
       // Constructor should complete without error
       expect(mat).toBeDefined();
+    });
+
+    it('should write to hooksDir subdirectory when hooksDir port is provided', async () => {
+      const mkdir = vi.fn().mockResolvedValue(undefined);
+      const writeFile = vi.fn().mockResolvedValue(undefined);
+
+      const mat = new HookMaterializer({
+        getPluginDirAbs: () => '/p',
+        getLogPathAbs: () => '/p/cast-log-agent.jsonl',
+        writeFile,
+        mkdir,
+        hooksDir: 'agent-hooks',
+      });
+
+      await mat.run();
+
+      expect(mkdir).toHaveBeenCalledWith('/p/agent-hooks');
+      expect(writeFile).toHaveBeenNthCalledWith(1, '/p/agent-hooks/session-start.sh', expect.any(String));
+      expect(writeFile).toHaveBeenNthCalledWith(2, '/p/agent-hooks/post-tool-use.sh', expect.any(String));
+      expect(writeFile).toHaveBeenNthCalledWith(3, '/p/agent-hooks/stop.sh', expect.any(String));
     });
 
     it('should handle trailing slash in getPluginDirAbs() correctly', async () => {
@@ -134,7 +136,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p/', // trailing slash
-        getLogPathAbs: () => '/p/cast-log-local.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
         writeFile,
         mkdir,
       });

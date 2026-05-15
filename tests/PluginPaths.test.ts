@@ -10,18 +10,18 @@ describe('PluginPaths', () => {
     expect(paths.pluginDirAbs()).toBe(expected);
   });
 
-  it('localLogPath returns normalized path to local cast log', () => {
+  it('pluginLogPath returns normalized path to local cast log', () => {
     const pluginDir = '.obsidian/plugins/grimoire';
     const paths = new PluginPaths(pluginDir);
-    const expected = normalizePath(`${pluginDir}/cast-log-local.jsonl`);
-    expect(paths.localLogPath()).toBe(expected);
+    const expected = normalizePath(`${pluginDir}/cast-log-plugin.jsonl`);
+    expect(paths.pluginLogPath()).toBe(expected);
   });
 
-  it('remoteLogPath returns normalized path to remote cast log', () => {
+  it('agentLogPath returns normalized path to remote cast log', () => {
     const pluginDir = '.obsidian/plugins/grimoire';
     const paths = new PluginPaths(pluginDir);
-    const expected = normalizePath(`${pluginDir}/cast-log-remote.jsonl`);
-    expect(paths.remoteLogPath()).toBe(expected);
+    const expected = normalizePath(`${pluginDir}/cast-log-agent.jsonl`);
+    expect(paths.agentLogPath()).toBe(expected);
   });
 
   it('scratchDir returns normalized path to scratch directory', () => {
@@ -29,5 +29,12 @@ describe('PluginPaths', () => {
     const paths = new PluginPaths(pluginDir);
     const expected = normalizePath(`${pluginDir}/cast-log-scratch`);
     expect(paths.scratchDir()).toBe(expected);
+  });
+
+  it('agentHooksDirAbs returns normalized path to agent-hooks subdirectory', () => {
+    const pluginDir = '.obsidian/plugins/grimoire';
+    const paths = new PluginPaths(pluginDir);
+    const expected = normalizePath(`${pluginDir}/agent-hooks`);
+    expect(paths.agentHooksDirAbs()).toBe(expected);
   });
 });

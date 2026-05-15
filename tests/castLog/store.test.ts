@@ -5,7 +5,7 @@ describe('CastLogStore', () => {
   describe('recordCasted', () => {
     it('should write casted event with stage and ts first, followed by input fields', async () => {
       const appendLine = vi.fn().mockResolvedValue(undefined);
-      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl';
+      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl';
       const now = () => new Date('2026-01-01T00:00:00.000Z');
 
       const store = new CastLogStore({
@@ -26,7 +26,7 @@ describe('CastLogStore', () => {
 
       expect(appendLine).toHaveBeenCalledTimes(1);
       expect(appendLine).toHaveBeenCalledWith(
-        '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl',
+        '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
         JSON.stringify({
           stage: 'casted',
           ts: '2026-01-01T00:00:00.000Z',
@@ -45,7 +45,7 @@ describe('CastLogStore', () => {
   describe('recordError', () => {
     it('should write error event with stage and ts first, followed by input fields', async () => {
       const appendLine = vi.fn().mockResolvedValue(undefined);
-      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl';
+      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl';
       const now = () => new Date('2026-01-01T00:00:00.000Z');
 
       const store = new CastLogStore({
@@ -61,7 +61,7 @@ describe('CastLogStore', () => {
 
       expect(appendLine).toHaveBeenCalledTimes(1);
       expect(appendLine).toHaveBeenCalledWith(
-        '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl',
+        '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
         JSON.stringify({
           stage: 'error',
           ts: '2026-01-01T00:00:00.000Z',
@@ -74,7 +74,7 @@ describe('CastLogStore', () => {
 
   describe('lazy path resolution', () => {
     it('should call getLogPathAbs on first recordCasted', async () => {
-      const getLogPathAbs = vi.fn(() => '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl');
+      const getLogPathAbs = vi.fn(() => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl');
       const appendLine = vi.fn().mockResolvedValue(undefined);
       const now = () => new Date('2026-01-01T00:00:00.000Z');
 
@@ -100,7 +100,7 @@ describe('CastLogStore', () => {
     });
 
     it('should call getLogPathAbs once per recordCasted call', async () => {
-      const getLogPathAbs = vi.fn(() => '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl');
+      const getLogPathAbs = vi.fn(() => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl');
       const appendLine = vi.fn().mockResolvedValue(undefined);
       const now = () => new Date('2026-01-01T00:00:00.000Z');
 
@@ -147,7 +147,7 @@ describe('CastLogStore', () => {
         appendLineCalls.push({ path, line });
       };
 
-      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl';
+      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl';
       const now = () => new Date('2026-01-01T00:00:00.000Z');
 
       // Use custom appendLine to demonstrate the default is called correctly
@@ -169,7 +169,7 @@ describe('CastLogStore', () => {
 
       expect(appendLineCalls).toHaveLength(1);
       expect(appendLineCalls[0].path).toBe(
-        '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl'
+        '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl'
       );
       expect(appendLineCalls[0].line).toContain('"stage":"casted"');
     });
@@ -189,7 +189,7 @@ describe('CastLogStore', () => {
         appendLineCalls.push({ path, line });
       };
 
-      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl';
+      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl';
 
       const store = new CastLogStore({
         getLogPathAbs,
@@ -213,7 +213,7 @@ describe('CastLogStore', () => {
   describe('edge cases', () => {
     it('should omit followUp and executeOnNote when not provided', async () => {
       const appendLine = vi.fn().mockResolvedValue(undefined);
-      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-local.jsonl';
+      const getLogPathAbs = () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl';
       const now = () => new Date('2026-01-01T00:00:00.000Z');
 
       const store = new CastLogStore({

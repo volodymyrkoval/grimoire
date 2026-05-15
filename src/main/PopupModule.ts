@@ -18,6 +18,7 @@ export class PopupModule {
   readonly #getData: () => GrimoireData;
   readonly #overrides: SpellOverrideStore;
   readonly #castLog: CastLogModule;
+  readonly #getAgentHooksDirAbs: () => string;
   readonly #sessionMap: OptionsSessionMap;
   readonly #imprinter: ForgeImprinter;
 
@@ -26,16 +27,18 @@ export class PopupModule {
     getData: () => GrimoireData;
     overrides: SpellOverrideStore;
     castLog: CastLogModule;
+    getAgentHooksDirAbs: () => string;
   }) {
     this.#app = deps.app;
     this.#getData = deps.getData;
     this.#overrides = deps.overrides;
     this.#castLog = deps.castLog;
+    this.#getAgentHooksDirAbs = deps.getAgentHooksDirAbs;
 
     this.#sessionMap = new OptionsSessionMap();
     this.#imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
-      caster: () => createCaster(this.#getData().settings),
+      caster: () => createCaster(this.#getData().settings, this.#getAgentHooksDirAbs()),
       logWriter: () => this.#castLog.activeLogStore(),
     });
   }
@@ -60,7 +63,7 @@ export class PopupModule {
       createDispatcher: (close) => new CastDispatcher({
         notify: (msg) => { new Notice(msg); },
         close,
-        caster: () => createCaster(this.#getData().settings),
+        caster: () => createCaster(this.#getData().settings, this.#getAgentHooksDirAbs()),
         logWriter: () => this.#castLog.activeLogStore(),
       }),
     }).build().open();

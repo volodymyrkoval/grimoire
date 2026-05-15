@@ -191,20 +191,20 @@ Without this file, Claude Code will prompt for confirmation on every tool call. 
 
 ### Cast log hooks
 
-On every plugin load, Grimoire generates three hook scripts into `.obsidian/plugins/grimoire/hooks/` inside your vault. To enable cast progress tracking, add these hooks to the same `.claude/settings.local.json` file in your vault root:
+On every plugin load, Grimoire generates three hook scripts into `.obsidian/plugins/grimoire/agent-hooks/` inside your vault. To enable cast progress tracking, add these hooks to the same `.claude/settings.local.json` file in your vault root:
 
 ```json
 {
   "permissions": { "..." : "..." },
   "hooks": {
     "SessionStart": [
-      { "hooks": [{ "type": "command", "command": ".obsidian/plugins/grimoire/hooks/session-start.sh" }] }
+      { "hooks": [{ "type": "command", "command": "sh .obsidian/plugins/grimoire/agent-hooks/session-start.sh" }] }
     ],
     "PostToolUse": [
-      { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": ".obsidian/plugins/grimoire/hooks/post-tool-use.sh" }] }
+      { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": "sh .obsidian/plugins/grimoire/agent-hooks/post-tool-use.sh" }] }
     ],
     "Stop": [
-      { "hooks": [{ "type": "command", "command": ".obsidian/plugins/grimoire/hooks/stop.sh" }] }
+      { "hooks": [{ "type": "command", "command": "sh .obsidian/plugins/grimoire/agent-hooks/stop.sh" }] }
     ]
   }
 }

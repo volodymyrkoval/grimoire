@@ -15,6 +15,7 @@ type MaterializerPorts = {
   adapter: DataAdapter;
   getPluginDirAbs: () => string;
   getLogPathAbs: () => string;
+  hooksDir?: string;
 };
 
 type SweeperPorts = {
@@ -24,61 +25,55 @@ type SweeperPorts = {
 
 /**
  * Manages cast log storage, source, and coordination with vault refresh and polling timers.
- * Maintains separate in-memory stores for local and remote casts; activeLogStore() routes to the correct one.
+ * All "casted" events write to the local log regardless of execution mode; the remote log is
+ * a read-side concern — the portal writes in-progress/done events to it directly, and reads
+ * fan it in via the store's getAgentLogPathAbs port.
  */
 export class CastLogModule {
   readonly #app: App;
   readonly #paths: PluginPaths;
-  readonly #getExecutionMode: () => 'local' | 'remote';
-  readonly #localCastLogStore: CastLogStore;
-  readonly #remoteCastLogStore: CastLogStore;
+  readonly #pluginCastLogStore: CastLogStore;
   readonly #materializerFactory: (ports: MaterializerPorts) => { run(): Promise<void> };
   readonly #sweeperFactory: (ports: SweeperPorts) => { sweep(): Promise<void> };
 
   constructor(deps: {
     app: App;
     paths: PluginPaths;
-    getExecutionMode: () => 'local' | 'remote';
     materializerFactory?: (ports: MaterializerPorts) => { run(): Promise<void> };
     sweeperFactory?: (ports: SweeperPorts) => { sweep(): Promise<void> };
   }) {
     this.#app = deps.app;
     this.#paths = deps.paths;
-    this.#getExecutionMode = deps.getExecutionMode;
     this.#materializerFactory = deps.materializerFactory ?? ((ports) => new HookMaterializer(ports));
     this.#sweeperFactory = deps.sweeperFactory ?? ((ports) => new ScratchSweeper(ports));
 
     const adapter = this.#app.vault.adapter;
 
-    this.#localCastLogStore = new CastLogStore({
+    this.#pluginCastLogStore = new CastLogStore({
       adapter,
-      getLogPathAbs: () => this.#paths.localLogPath(),
-      getRemoteLogPathAbs: () => this.#paths.remoteLogPath(),
-    });
-
-    this.#remoteCastLogStore = new CastLogStore({
-      adapter,
-      getLogPathAbs: () => this.#paths.remoteLogPath(),
+      getLogPathAbs: () => this.#paths.pluginLogPath(),
+      getAgentLogPathAbs: () => this.#paths.agentLogPath(),
     });
   }
 
-  /** Routes to the active log store (local or remote) based on current execution mode. */
+  /**
+   * Returns the writer for cast-initiation events. Always backed by the local log —
+   * `casted` events must never land in the remote log, which is portal-owned.
+   */
   activeLogStore(): CastLogWriter {
-    return this.#getExecutionMode() === 'remote'
-      ? this.#remoteCastLogStore
-      : this.#localCastLogStore;
+    return this.#pluginCastLogStore;
   }
 
   /** Builds all dependencies except openLink callback for the CastLogPanel UI component. */
   buildCastLogPanelDeps(): Omit<CastLogPanelDeps, 'openLink'> {
     const castLogPaths = [
-      this.#paths.localLogPath(),
-      this.#paths.remoteLogPath(),
+      this.#paths.pluginLogPath(),
+      this.#paths.agentLogPath(),
     ];
 
     return {
       source: new CastLogSource({
-        reader: this.#localCastLogStore,
+        reader: this.#pluginCastLogStore,
         foldEvents,
       }),
       refresh: new VaultRefreshCoordinator({
@@ -95,20 +90,21 @@ export class CastLogModule {
     };
   }
 
-  /** Runs startup tasks: materializes missing cast log from git hooks, sweeps stale scratch files. */
+  /** Runs startup tasks: materializes remote hook scripts, sweeps stale scratch files. */
   async initStartupMaintenance(): Promise<void> {
     const adapter = this.#app.vault.adapter;
 
-    const materializer = this.#materializerFactory({
+    const remoteMaterializer = this.#materializerFactory({
       adapter,
       getPluginDirAbs: () => this.#paths.pluginDirAbs(),
-      getLogPathAbs: () => this.#paths.localLogPath(),
+      getLogPathAbs: () => this.#paths.agentLogPath(),
+      hooksDir: 'agent-hooks',
     });
 
     try {
-      await materializer.run();
+      await remoteMaterializer.run();
     } catch (e) {
-      console.error('HookMaterializer failed', e);
+      console.error('HookMaterializer (remote) failed', e);
     }
 
     const sweeper = this.#sweeperFactory({

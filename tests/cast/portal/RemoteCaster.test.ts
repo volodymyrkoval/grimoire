@@ -37,6 +37,21 @@ const baseInput: CastInput = {
 };
 
 describe('RemoteCaster', () => {
+  it('does not pass hooksDir in transport.run input', () => {
+    let capturedInput: RemoteCastInput | undefined;
+    const transport = makeTransportStub((input, _cbs) => {
+      capturedInput = input;
+    });
+    const caster = new RemoteCaster({
+      transport,
+      settings: baseSettings,
+    });
+
+    caster.cast(baseInput, { onAccepted: vi.fn(), onFailure: vi.fn() });
+
+    expect(capturedInput).not.toHaveProperty('hooksDir');
+  });
+
   it('calls onAccepted with jobId when transport fires onAccepted with portalCastId', () => {
     const transport = makeTransportStub((_input, cbs) => {
       cbs.onAccepted({ portalCastId: 'srv-x' });

@@ -13,6 +13,7 @@ interface BaseCastRunInput {
   binaryPath: string;
   cliCommand: string;
   castId: string;
+  claudeHooksDir?: string;
 }
 
 /**
@@ -79,7 +80,11 @@ export class CastRunner {
         binary,
         args,
         // CAST_ID is opaque to the runner; producers guarantee uniqueness
-        env: { VAULT_MOUNT_PATH: input.vaultMountPath, CAST_ID: input.castId },
+        env: {
+          VAULT_MOUNT_PATH: input.vaultMountPath,
+          CAST_ID: input.castId,
+          ...(input.claudeHooksDir ? { CLAUDE_HOOKS_DIR: input.claudeHooksDir } : {}),
+        },
         cwd: input.vaultMountPath,
       })
       .then(this.#onCastExit(callbacks))

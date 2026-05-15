@@ -22,8 +22,8 @@ function makeVault() {
   return vault;
 }
 
-const WATCHED_VAULT_PATH = 'plugins/grimoire/cast-log-local.jsonl';
-const ABS_PATH = '/vault/plugins/grimoire/cast-log-local.jsonl';
+const WATCHED_VAULT_PATH = 'plugins/grimoire/cast-log-plugin.jsonl';
+const ABS_PATH = '/vault/plugins/grimoire/cast-log-plugin.jsonl';
 const DEBOUNCE_MS = 50;
 const SETTLING_MS = 3000;
 const POLL_MS = 1500;

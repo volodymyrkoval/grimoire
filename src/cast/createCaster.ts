@@ -7,9 +7,9 @@ import { RemoteCaster } from './portal/RemoteCaster';
  * Factory function that returns a caster instance based on the execution mode in settings.
  * Returns a RemoteCaster for remote execution, LocalCaster for local execution.
  */
-export function createCaster(settings: GrimoireSettings): Caster {
+export function createCaster(settings: GrimoireSettings, agentHooksDirAbs?: string): Caster {
   if (settings.executionMode === 'remote') {
     return new RemoteCaster({ settings });
   }
-  return new LocalCaster({ settings });
+  return new LocalCaster({ settings, claudeHooksDirAbs: agentHooksDirAbs });
 }

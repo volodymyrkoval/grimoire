@@ -22,7 +22,7 @@ export default class GrimoirePlugin extends Plugin {
     await this.#loadPluginData();
     const paths = this.#buildPaths();
     const castLog = await this.#initCastLog(paths);
-    const popupModule = this.#buildPopupModule(castLog);
+    const popupModule = this.#buildPopupModule(castLog, paths);
     this.#registerUI(popupModule);
   }
 
@@ -43,18 +43,18 @@ export default class GrimoirePlugin extends Plugin {
     const castLog = new CastLogModule({
       app: this.app,
       paths,
-      getExecutionMode: () => this.data.settings.executionMode,
     });
     await castLog.initStartupMaintenance();
     return castLog;
   }
 
-  #buildPopupModule(castLog: CastLogModule): PopupModule {
+  #buildPopupModule(castLog: CastLogModule, paths: PluginPaths): PopupModule {
     return new PopupModule({
       app: this.app,
       getData: () => this.data,
       overrides: this.overrides,
       castLog,
+      getAgentHooksDirAbs: () => `${this.data.settings.vaultMountPath}/${paths.agentHooksDirAbs()}`,
     });
   }
 

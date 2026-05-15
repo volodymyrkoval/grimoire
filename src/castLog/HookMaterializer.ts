@@ -12,9 +12,11 @@ import {
 export interface HookMaterializerPorts {
   getPluginDirAbs: () => string;
   getLogPathAbs: () => string;
-  writeFile?: (filePath: string, content: string, mode?: number) => Promise<void>;
+  writeFile?: (filePath: string, content: string) => Promise<void>;
   mkdir?: (dir: string) => Promise<void>;
   adapter?: DataAdapter;
+  /** Subdirectory name within the plugin dir to write scripts into. Defaults to `'hooks'`. */
+  hooksDir?: string;
 }
 
 /**
@@ -29,14 +31,14 @@ export class HookMaterializer {
   static readonly SCRATCH_DIR = 'cast-log-scratch';
 
   readonly #ports: HookMaterializerPorts;
-  readonly #writeFile: (filePath: string, content: string, mode?: number) => Promise<void>;
+  readonly #writeFile: (filePath: string, content: string) => Promise<void>;
   readonly #mkdir: (dir: string) => Promise<void>;
   #hooksDir: string = '';
 
   constructor(ports: HookMaterializerPorts) {
     this.#ports = ports;
     const adapter = ports.adapter;
-    this.#writeFile = ports.writeFile ?? (async (filePath, content, _mode) => {
+    this.#writeFile = ports.writeFile ?? (async (filePath, content) => {
       await adapter!.write(filePath, content);
     });
     this.#mkdir = ports.mkdir ?? ((dir) => adapter!.mkdir(dir));
@@ -48,7 +50,8 @@ export class HookMaterializer {
   async run(): Promise<void> {
     const pluginDirAbs = this.#ports.getPluginDirAbs();
     const logPathAbs = this.#ports.getLogPathAbs();
-    this.#hooksDir = normalizePath(`${pluginDirAbs}/${HookMaterializer.HOOKS_DIR}`);
+    const hooksDirName = this.#ports.hooksDir ?? HookMaterializer.HOOKS_DIR;
+    this.#hooksDir = normalizePath(`${pluginDirAbs}/${hooksDirName}`);
     const scratchDirAbs = normalizePath(`${pluginDirAbs}/${HookMaterializer.SCRATCH_DIR}`);
 
     await this.#ensureHooksDir();
@@ -67,6 +70,6 @@ export class HookMaterializer {
 
   async #writeScript(filename: string, content: string): Promise<void> {
     const scriptPath = normalizePath(`${this.#hooksDir}/${filename}`);
-    await this.#writeFile(scriptPath, content, 0o755);
+    await this.#writeFile(scriptPath, content);
   }
 }

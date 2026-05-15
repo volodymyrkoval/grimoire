@@ -65,6 +65,21 @@ describe('createCaster', () => {
     expect(vi.mocked(requestUrl)).toHaveBeenCalledOnce();
   });
 
+  it('remote mode: constructs RemoteCaster without getRemoteHooksDirAbs', async () => {
+    const RemoteCasterModule = await import('../../src/cast/portal/RemoteCaster');
+    const remoteCasterSpy = vi.spyOn(RemoteCasterModule, 'RemoteCaster').mockImplementation(function() {
+      return { cast: vi.fn() };
+    } as any);
+
+    createCaster(remoteSettings);
+
+    expect(remoteCasterSpy).toHaveBeenCalledOnce();
+    const constructedWith = remoteCasterSpy.mock.calls[0][0] as any;
+    expect(constructedWith).not.toHaveProperty('getRemoteHooksDirAbs');
+
+    remoteCasterSpy.mockRestore();
+  });
+
   it('returns an object with a cast method', () => {
     const runSpy = vi.spyOn(CastRunner.prototype, 'run').mockImplementation(() => {});
     const caster = createCaster(localSettings);

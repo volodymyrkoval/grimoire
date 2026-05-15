@@ -305,7 +305,7 @@ describe('GrimoirePlugin', () => {
     dispatchSpy.mockRestore();
   });
 
-  it('onload constructs HookMaterializer exactly once with getPluginDirAbs and getLogPathAbs ports', async () => {
+  it('onload constructs HookMaterializer once for agent-hooks (hooksDir: agent-hooks)', async () => {
     const HookMaterializerModule = await import('../src/castLog/HookMaterializer');
     const OriginalMaterializer = HookMaterializerModule.HookMaterializer;
     const materializerSpy = vi.spyOn(HookMaterializerModule, 'HookMaterializer').mockImplementation((ports: any) => {
@@ -321,6 +321,7 @@ describe('GrimoirePlugin', () => {
       expect.objectContaining({
         getPluginDirAbs: expect.any(Function),
         getLogPathAbs: expect.any(Function),
+        hooksDir: 'agent-hooks',
       }),
     );
 
@@ -389,7 +390,7 @@ describe('GrimoirePlugin', () => {
     materializerSpy.mockRestore();
   });
 
-  it('onload invokes new CastLogStore twice: once with both getters (local), once with only getLogPathAbs (remote)', async () => {
+  it('onload invokes new CastLogStore once with both getters (single local store; remote is read-side fan-in)', async () => {
     const CastLogStoreModule = await import('../src/castLog/store');
     const OriginalStore = CastLogStoreModule.CastLogStore;
     const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
@@ -398,17 +399,11 @@ describe('GrimoirePlugin', () => {
 
     await plugin.onload();
 
-    expect(storeSpy).toHaveBeenCalledTimes(2);
-    // first call: local store with both getters
+    expect(storeSpy).toHaveBeenCalledTimes(1);
     expect(storeSpy.mock.calls[0][0]).toMatchObject({
       getLogPathAbs: expect.any(Function),
-      getRemoteLogPathAbs: expect.any(Function),
+      getAgentLogPathAbs: expect.any(Function),
     });
-    // second call: remote log writer with only getLogPathAbs (no getRemoteLogPathAbs)
-    expect(storeSpy.mock.calls[1][0]).toMatchObject({
-      getLogPathAbs: expect.any(Function),
-    });
-    expect(storeSpy.mock.calls[1][0].getRemoteLogPathAbs).toBeUndefined();
 
     storeSpy.mockRestore();
   });
@@ -458,7 +453,36 @@ describe('GrimoirePlugin', () => {
     popupSpy.mockRestore();
   });
 
-  it('CastLogStore receives getRemoteLogPathAbs port on construction', async () => {
+  it('caster thunks pass settings to createCaster', async () => {
+    const createCasterModule = await import('../src/cast/createCaster');
+    const createCasterSpy = vi.spyOn(createCasterModule, 'createCaster').mockReturnValue({ cast: vi.fn() } as any);
+
+    const CastDispatcherModule = await import('../src/cast/CastDispatcher');
+    const OriginalDispatcher = CastDispatcherModule.CastDispatcher;
+    const dispatcherSpy = vi.spyOn(CastDispatcherModule, 'CastDispatcher').mockImplementation((deps: any) => {
+      return new OriginalDispatcher(deps);
+    });
+
+    await plugin.onload();
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-popup'
+    );
+    commandCall![0].callback();
+
+    expect(dispatcherSpy).toHaveBeenCalledOnce();
+    const casterThunk = dispatcherSpy.mock.calls[0][0].caster as () => any;
+
+    casterThunk();
+
+    expect(createCasterSpy).toHaveBeenCalledOnce();
+    expect(createCasterSpy.mock.calls[0].length).toBe(2);
+
+    createCasterSpy.mockRestore();
+    dispatcherSpy.mockRestore();
+  });
+
+  it('CastLogStore receives getAgentLogPathAbs port on construction', async () => {
     const CastLogStoreModule = await import('../src/castLog/store');
     const OriginalStore = CastLogStoreModule.CastLogStore;
     const storeSpy = vi.spyOn(CastLogStoreModule, 'CastLogStore').mockImplementation((deps: any) => {
@@ -470,7 +494,7 @@ describe('GrimoirePlugin', () => {
     expect(storeSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         getLogPathAbs: expect.any(Function),
-        getRemoteLogPathAbs: expect.any(Function),
+        getAgentLogPathAbs: expect.any(Function),
       })
     );
 

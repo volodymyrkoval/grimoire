@@ -18,15 +18,13 @@ describe('CastLogModule', () => {
   });
 
   it('constructs without throwing', () => {
-    const getExecutionMode = () => 'local' as const;
     expect(() => {
-      new CastLogModule({ app, paths, getExecutionMode });
+      new CastLogModule({ app, paths });
     }).not.toThrow();
   });
 
   it('buildCastLogPanelDeps returns an object with source, refresh, tick, now properties', () => {
-    const getExecutionMode = () => 'local' as const;
-    const module = new CastLogModule({ app, paths, getExecutionMode });
+    const module = new CastLogModule({ app, paths });
 
     const deps = module.buildCastLogPanelDeps();
 
@@ -37,34 +35,30 @@ describe('CastLogModule', () => {
     expect(deps.now).toBeDefined();
   });
 
-  it('activeLogStore returns local store when getExecutionMode returns "local"', () => {
-    const getExecutionMode = vi.fn(() => 'local' as const);
-    const module = new CastLogModule({ app, paths, getExecutionMode });
+  it('activeLogStore writes recordCasted to pluginLogPath (and never to agentLogPath)', async () => {
+    const module = new CastLogModule({ app, paths });
 
-    const store = module.activeLogStore();
+    await module.activeLogStore().recordCasted({
+      castId: 'c1',
+      spellPath: 'Spells/T.md',
+      model: 'm',
+      effort: null,
+      contextNotes: [],
+    });
 
-    expect(store).toBeDefined();
-    expect(getExecutionMode).toHaveBeenCalled();
+    const writeMock = vi.mocked(app.vault.adapter.write);
+    expect(writeMock).toHaveBeenCalledOnce();
+    expect(writeMock.mock.calls[0][0]).toBe(paths.pluginLogPath());
+    expect(writeMock.mock.calls[0][0]).not.toBe(paths.agentLogPath());
   });
 
-  it('activeLogStore returns remote store when getExecutionMode returns "remote"', () => {
-    const getExecutionMode = vi.fn(() => 'remote' as const);
-    const module = new CastLogModule({ app, paths, getExecutionMode });
-
-    const store = module.activeLogStore();
-
-    expect(store).toBeDefined();
-    expect(getExecutionMode).toHaveBeenCalled();
-  });
-
-  it('initStartupMaintenance calls run and sweep once via injected factories', async () => {
+  it('initStartupMaintenance calls run once (agent-hooks) and sweep once via injected factories', async () => {
     const runMock = vi.fn().mockResolvedValue(undefined);
     const sweepMock = vi.fn().mockResolvedValue(undefined);
 
     const module = new CastLogModule({
       app,
       paths,
-      getExecutionMode: () => 'local' as const,
       materializerFactory: () => ({ run: runMock }),
       sweeperFactory: () => ({ sweep: sweepMock }),
     });
@@ -75,6 +69,26 @@ describe('CastLogModule', () => {
     expect(sweepMock).toHaveBeenCalledTimes(1);
   });
 
+  it('initStartupMaintenance calls materializerFactory once with agent-hooks config', async () => {
+    const runMock = vi.fn().mockResolvedValue(undefined);
+    const factorySpy = vi.fn(() => ({ run: runMock }));
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: factorySpy,
+      sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
+    });
+
+    await module.initStartupMaintenance();
+
+    expect(factorySpy).toHaveBeenCalledTimes(1);
+
+    const callPorts = factorySpy.mock.calls[0][0];
+    expect(callPorts.getLogPathAbs()).toBe(paths.agentLogPath());
+    expect(callPorts.hooksDir).toBe('agent-hooks');
+  });
+
   it('initStartupMaintenance resolves via factory even when run rejects', async () => {
     const runMock = vi.fn().mockRejectedValue(new Error('disk full'));
     const sweepMock = vi.fn().mockResolvedValue(undefined);
@@ -82,7 +96,6 @@ describe('CastLogModule', () => {
     const module = new CastLogModule({
       app,
       paths,
-      getExecutionMode: () => 'local' as const,
       materializerFactory: () => ({ run: runMock }),
       sweeperFactory: () => ({ sweep: sweepMock }),
     });

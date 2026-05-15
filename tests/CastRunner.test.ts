@@ -216,6 +216,45 @@ describe('CastRunner', () => {
     expect(getOptions().env.CAST_ID).toBe('abc123');
   });
 
+  it('passes CLAUDE_HOOKS_DIR in env when claudeHooksDir is set', () => {
+    const { runner, getOptions } = makeRunnerWithFakeSpawn();
+
+    runner.run(
+      {
+        metaSpell: 'my spell',
+        modelId: 'claude-sonnet-4-5',
+        effort: null,
+        vaultMountPath: '/my/vault',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        castId: 'test-cast-id',
+        claudeHooksDir: '/my/vault/.obsidian/plugins/grimoire/agent-hooks',
+      },
+      { onSuccess: () => {}, onFailure: () => {} }
+    );
+
+    expect(getOptions().env.CLAUDE_HOOKS_DIR).toBe('/my/vault/.obsidian/plugins/grimoire/agent-hooks');
+  });
+
+  it('omits CLAUDE_HOOKS_DIR from env when claudeHooksDir is not set', () => {
+    const { runner, getOptions } = makeRunnerWithFakeSpawn();
+
+    runner.run(
+      {
+        metaSpell: 'my spell',
+        modelId: 'claude-sonnet-4-5',
+        effort: null,
+        vaultMountPath: '/my/vault',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        castId: 'test-cast-id',
+      },
+      { onSuccess: () => {}, onFailure: () => {} }
+    );
+
+    expect(getOptions().env.CLAUDE_HOOKS_DIR).toBeUndefined();
+  });
+
   it('passes vaultMountPath as cwd to spawner', () => {
     const { runner, getOptions } = makeRunnerWithFakeSpawn();
 

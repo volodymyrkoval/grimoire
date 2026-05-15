@@ -9,10 +9,12 @@ import { CastRunner } from './CastRunner';
 export class LocalCaster implements Caster {
   readonly #runner: CastRunner;
   readonly #settings: GrimoireSettings;
+  readonly #claudeHooksDirAbs: string | undefined;
 
-  constructor({ runner, settings }: { runner?: CastRunner; settings: GrimoireSettings }) {
+  constructor({ runner, settings, claudeHooksDirAbs }: { runner?: CastRunner; settings: GrimoireSettings; claudeHooksDirAbs?: string }) {
     this.#runner = runner ?? new CastRunner();
     this.#settings = settings;
+    this.#claudeHooksDirAbs = claudeHooksDirAbs;
   }
 
   /**
@@ -29,6 +31,7 @@ export class LocalCaster implements Caster {
           binaryPath: this.#settings.binaryPath,
           cliCommand: this.#settings.cliCommand,
           castId: input.castId,
+          claudeHooksDir: this.#claudeHooksDirAbs,
         }
       : {
           metaSpell: input.userPrompt,
@@ -38,6 +41,7 @@ export class LocalCaster implements Caster {
           binaryPath: this.#settings.binaryPath,
           cliCommand: this.#settings.cliCommand,
           castId: input.castId,
+          claudeHooksDir: this.#claudeHooksDirAbs,
         };
 
     this.#runner.run(runInput, {

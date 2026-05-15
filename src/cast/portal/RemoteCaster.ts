@@ -11,7 +11,13 @@ export class RemoteCaster implements Caster {
   readonly #transport: RemoteCastTransport;
   readonly #settings: GrimoireSettings;
 
-  constructor({ settings, transport }: { settings: GrimoireSettings; transport?: RemoteCastTransport }) {
+  constructor({
+    settings,
+    transport,
+  }: {
+    settings: GrimoireSettings;
+    transport?: RemoteCastTransport;
+  }) {
     this.#transport = transport ?? new RemoteCastTransport({ requestUrlFn: requestUrl });
     this.#settings = settings;
   }
