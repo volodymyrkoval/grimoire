@@ -34,39 +34,52 @@ export class CastLogPanel implements TabPanel {
   #records: CastRecord[] = [];
   #expandedIds = new Set<string>();
   #disposed = false;
-  // eslint-disable-next-line no-restricted-syntax -- accessed via bracket notation in tests
-  private deps: CastLogPanelDeps;
+  readonly #deps: CastLogPanelDeps;
 
   constructor(deps: CastLogPanelDeps) {
-    this.deps = deps;
+    this.#deps = deps;
   }
 
   mount(container: HTMLElement): void {
     this.#disposed = false;
+    this.#initList(container);
+    this.#reload();
+    this.#startRefresh();
+    this.#startTick();
+  }
 
-    // Create the list component
-    this.#list = new CastLogList(container, this.deps.openLink);
+  unmount(): void {
+    this.#disposed = true;
+    this.#deps.refresh.stop();
+    this.#deps.tick.stop();
+  }
 
-    // Load records and render
-    void this.deps.source.load().then((records) => {
-      if (this.#disposed) return;
-      this.#records = records;
-      this.#renderList();
-    });
+  #initList(container: HTMLElement): void {
+    this.#list = new CastLogList(container, this.#deps.openLink);
+  }
 
-    // Start refresh coordinator
-    this.deps.refresh.start(() => this.#reload());
+  #startRefresh(): void {
+    this.#deps.refresh.start(() => this.#reload());
+  }
 
-    // Start tick coordinator
-    this.deps.tick.start(() => {
+  #startTick(): void {
+    this.#deps.tick.start(() => {
       if (!this.#disposed) {
-        this.#list?.repaintTimes(this.deps.now());
+        this.#list?.repaintTimes(this.#deps.now());
       }
     });
   }
 
+  #reload(): void {
+    void this.#deps.source.load().then((records) => {
+      if (this.#disposed) return;
+      this.#records = records;
+      this.#renderList();
+    });
+  }
+
   #renderList(): void {
-    this.#list?.render(this.#records, this.#expandedIds, this.deps.now(), (castId) =>
+    this.#list?.render(this.#records, this.#expandedIds, this.#deps.now(), (castId) =>
       this.#handleToggle(castId)
     );
   }
@@ -78,45 +91,5 @@ export class CastLogPanel implements TabPanel {
       this.#expandedIds.add(castId);
     }
     this.#renderList();
-  }
-
-  #reload(): void {
-    void this.deps.source.load().then((records) => {
-      if (this.#disposed) return;
-      this.#records = records;
-      this.#renderList();
-    });
-  }
-
-  unmount(): void {
-    this.#disposed = true;
-    this.deps.refresh.stop();
-    this.deps.tick.stop();
-  }
-
-  // TabPanel interface methods (mostly no-ops per pitch)
-
-  filter(_query: string): number {
-    return 0;
-  }
-
-  confirm(_index: number): void {
-    // No-op: keyboard navigation not supported
-  }
-
-  move(_delta: number, current: number): number {
-    return current;
-  }
-
-  updateSelection(_prev: number, _next: number): void {
-    // No-op: keyboard navigation not supported
-  }
-
-  reset(): void {
-    // No-op: keyboard navigation not supported
-  }
-
-  get length(): number {
-    return 0;
   }
 }

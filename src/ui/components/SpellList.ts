@@ -1,7 +1,7 @@
 import type { Spell, Sentinel } from "../../domain/spells/Spell";
 import type { SpellPath } from "../../domain/spells/SpellPath";
-import type { TypedEmitter } from "../TypedEmitter";
-import type { SpellEvents } from "../SpellEvents";
+import type { TypedEmitter } from "../../infra/TypedEmitter";
+import type { SpellEvents } from "../../domain/spells/SpellEvents";
 import { SpellRow } from "./SpellRow";
 import { SentinelRow } from "./SentinelRow";
 
@@ -23,22 +23,40 @@ export class SpellList {
 
   render(spells: Spell[], selectedIndex: number, hasOverride: (path: SpellPath) => boolean = () => false): void {
     this.el.empty();
-    const spellRows = spells.map((spell, i) => {
-      const row = new SpellRow(this.el, spell, i === selectedIndex, hasOverride(spell.path));
+    const spellRows = this.#buildSpellRows(spells, selectedIndex, hasOverride);
+    const sentinelContainer = this.#buildSentinelContainer();
+    const sentinelRows = this.#buildSentinelRows(sentinelContainer, spells.length, selectedIndex);
+    this.#rows = [...spellRows, ...sentinelRows];
+    this.#resetHoverState();
+  }
+
+  #buildSpellRows(spells: Spell[], selectedIndex: number, hasOverride: (path: SpellPath) => boolean): SpellRow[] {
+    return spells.map((spell, i) => {
+      const row = new SpellRow();
+      row.render(this.el, spell, i === selectedIndex, hasOverride(spell.path));
       row.el.onClickEvent(() => this.#emitter.emit("cast", spell));
       return row;
     });
-    const sentinelContainer = this.#sentinels.length > 0
+  }
+
+  #buildSentinelContainer(): HTMLElement {
+    return this.#sentinels.length > 0
       ? this.el.createDiv({ cls: "sentinels-section" })
       : this.el;
-    const sentinelRows = this.#sentinels.map((sentinel, i) => {
-      const row = new SentinelRow(sentinelContainer, sentinel, spells.length + i === selectedIndex);
+  }
+
+  #buildSentinelRows(container: HTMLElement, offset: number, selectedIndex: number): SentinelRow[] {
+    return this.#sentinels.map((sentinel, i) => {
+      const row = new SentinelRow();
+      row.render(container, sentinel, offset + i === selectedIndex);
       row.el.onClickEvent(() => this.#emitter.emit("sentinel", sentinel));
       return row;
     });
-    this.#rows = [...spellRows, ...sentinelRows];
-    // Chromium doesn't recalculate :hover after DOM mutation without a mouse-move;
-    // toggling pointer-events + forcing a reflow resets stale hover states immediately.
+  }
+
+  // Chromium doesn't recalculate :hover after DOM mutation without a mouse-move;
+  // toggling pointer-events + forcing a reflow resets stale hover states immediately.
+  #resetHoverState(): void {
     this.el.addClass("spells-list--hover-reset");
     void this.el.offsetHeight;
     this.el.removeClass("spells-list--hover-reset");

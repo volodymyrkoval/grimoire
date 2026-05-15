@@ -1,5 +1,5 @@
 import { Scope } from 'obsidian';
-import { KeyboardController } from '../KeyboardController';
+import { KeyboardController } from '../../infra/KeyboardController';
 import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import { SUPPORTED_MODELS, Effort } from '../../domain/settings/Settings';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
@@ -8,7 +8,6 @@ import { buildModelSelect } from '../widgets/ModelSelect';
 
 export interface ForgeSentinelDetailParams {
   contentEl: HTMLElement;
-  scope: Scope;
   callbacks: {
     onBack: () => void;
     onSubmit: (snapshot: ForgeFormSnapshot) => void;
@@ -18,16 +17,20 @@ export interface ForgeSentinelDetailParams {
 
 /** Detail panel for the Forge sentinel: name/description/model form with its own keyboard bindings. */
 export class ForgeSentinelDetail {
-  readonly #nameInput: HTMLInputElement;
-  readonly #descInput: HTMLTextAreaElement;
-  readonly #modelSelect: HTMLSelectElement;
-  #effortRow: EffortRow;
-  #currentEffort: Effort | null;
+  #nameInput!: HTMLInputElement;
+  #descInput!: HTMLTextAreaElement;
+  #modelSelect!: HTMLSelectElement;
+  #effortRow!: EffortRow;
+  #currentEffort!: Effort | null;
   #executeOnNote: boolean = true;
   #kb: KeyboardController;
 
-  constructor({ contentEl, scope, callbacks, defaults }: ForgeSentinelDetailParams) {
+  constructor(scope: Scope) {
     this.#kb = new KeyboardController(scope);
+  }
+
+
+  render({ contentEl, callbacks, defaults }: ForgeSentinelDetailParams): void {
     this.#buildBackButton(contentEl, callbacks.onBack);
     const form = this.#buildForm(contentEl);
     this.#nameInput = this.#buildNameField(form);

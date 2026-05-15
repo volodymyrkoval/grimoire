@@ -1,11 +1,19 @@
 import type { Sentinel } from "../../domain/spells/Spell";
 
 export class SentinelRow {
-  readonly el: HTMLElement;
+  el!: HTMLElement;
 
-  constructor(container: HTMLElement, sentinel: Sentinel, selected: boolean) {
+  render(container: HTMLElement, sentinel: Sentinel, selected: boolean): void {
     this.el = container.createDiv({ cls: "sentinel-row" });
-    if (selected) this.el.addClass("is-selected");
-    this.el.createSpan({ cls: "sentinel-name", text: sentinel.name });
+    if (selected) this.#markSelected();
+    this.#appendName(sentinel.name);
+  }
+
+  #markSelected(): void {
+    this.el.addClass("is-selected");
+  }
+
+  #appendName(name: string): void {
+    this.el.createSpan({ cls: "sentinel-name", text: name });
   }
 }

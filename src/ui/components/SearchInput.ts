@@ -1,23 +1,22 @@
-import type { TabPanel } from "../tabs/TabPanel";
+import type { NavigablePanel } from "../tabs/TabPanel";
 
 type FilterCallback = (query: string, selectedIndex: number) => void;
 
 export class SearchInput {
-  constructor(
+  render(
     container: HTMLElement,
-    panel: TabPanel,
+    panel: NavigablePanel,
     initialQuery: string,
     initialSelectedIndex: number,
     onFilter: FilterCallback
-  ) {
+  ): void {
     const input = this.#createInput(container, panel, initialQuery);
-    panel.mount(container);
     this.#restoreSelection(panel, initialSelectedIndex);
     this.#applyInitialFilter(panel, initialQuery, initialSelectedIndex, onFilter);
     this.#bindInputHandler(input, panel, onFilter);
   }
 
-  #createInput(container: HTMLElement, panel: TabPanel, initialQuery: string): HTMLInputElement {
+  #createInput(container: HTMLElement, panel: NavigablePanel, initialQuery: string): HTMLInputElement {
     const input = container.createEl("input", { type: "text", cls: "grimoire-search-input" });
     input.placeholder = `Search ${panel.id}…`;
     input.value = initialQuery;
@@ -25,14 +24,14 @@ export class SearchInput {
     return input;
   }
 
-  #restoreSelection(panel: TabPanel, selectedIndex: number): void {
+  #restoreSelection(panel: NavigablePanel, selectedIndex: number): void {
     if (selectedIndex !== 0) {
       panel.updateSelection(0, selectedIndex);
     }
   }
 
   #applyInitialFilter(
-    panel: TabPanel,
+    panel: NavigablePanel,
     initialQuery: string,
     initialSelectedIndex: number,
     onFilter: FilterCallback
@@ -43,7 +42,7 @@ export class SearchInput {
     onFilter(initialQuery, initialSelectedIndex);
   }
 
-  #bindInputHandler(input: HTMLInputElement, panel: TabPanel, onFilter: FilterCallback): void {
+  #bindInputHandler(input: HTMLInputElement, panel: NavigablePanel, onFilter: FilterCallback): void {
     input.oninput = () => {
       const query = input.value.toLowerCase();
       onFilter(query, panel.filter(query));

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { KeyboardController } from '../src/ui/KeyboardController';
+import { KeyboardController } from '../src/infra/KeyboardController';
 
 const makeScope = () => {
   const handlers: Map<string, Function> = new Map();

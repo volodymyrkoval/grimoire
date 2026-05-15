@@ -1,10 +1,11 @@
 import { App, Modal } from "obsidian";
-import { KeyboardController } from "./KeyboardController";
+import { KeyboardController } from "../infra/KeyboardController";
 import type { Spell, Sentinel } from "../domain/spells/Spell";
 import { TabBar } from "./components/TabBar";
 import { SearchInput } from "./components/SearchInput";
 import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
 import type { TabPanel } from "./tabs/TabPanel";
+import { isNavigable } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
 import { CastLogPanel } from "./tabs/CastLogPanel";
 import type { CastLogPanelDeps } from "./tabs/CastLogPanel";
@@ -40,6 +41,7 @@ export class CommandPopup extends Modal {
   // eslint-disable-next-line no-restricted-syntax -- accessed via bracket notation in tests
   private readonly panels: readonly TabPanel[];
   #activePanel: TabPanel;
+  readonly #spellsPanel: SpellsPanel;
   #tabBar: TabBar | null = null;
   #kb = new KeyboardController(this.scope);
   #onDetailBack: (() => void) | null = null;
@@ -59,13 +61,16 @@ export class CommandPopup extends Modal {
     this.#sessionMap = params.sessionMap;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
-      openLink: (path) => {
-        void this.app.workspace.openLinkText(path, '', false);
-        this.close();
-      },
+      openLink: (path) => this.openLink(path),
     });
-    this.panels = [this.#createSpellsPanel(params.spellTag), castLogPanel];
+    this.#spellsPanel = this.#createSpellsPanel(params.spellTag);
+    this.panels = [this.#spellsPanel, castLogPanel];
     this.#activePanel = this.panels[0];
+  }
+
+  openLink(path: string): void {
+    void this.app.workspace.openLinkText(path, '', false);
+    this.close();
   }
 
   onOpen(): void {
@@ -90,7 +95,7 @@ export class CommandPopup extends Modal {
     this.#kb.bind([], "ArrowRight", () => {
       if (this.phase !== "search") return false;
       if (this.#activePanel !== this.panels[0]) return false;
-      (this.panels[0] as SpellsPanel).openOptions(this.#selectedIndex);
+      this.#spellsPanel.openOptions(this.#selectedIndex);
       return true;
     });
   }
@@ -119,7 +124,8 @@ export class CommandPopup extends Modal {
   }
 
   #createTabBar(): TabBar {
-    return new TabBar(
+    const bar = new TabBar();
+    bar.render(
       this.contentEl,
       this.panels.map((p) => p.id),
       this.#activePanel.id,
@@ -129,6 +135,7 @@ export class CommandPopup extends Modal {
         if (panel) this.#switchTab(panel);
       }
     );
+    return bar;
   }
 
   #createSpellsPanel(spellTag: string): SpellsPanel {
@@ -152,7 +159,7 @@ export class CommandPopup extends Modal {
   #renderSearch(): void {
     this.phase = "search";
     this.#reattachTabBar();
-    this.#mountSearchInput();
+    this.#mountActivePanel();
   }
 
   #reattachTabBar(): void {
@@ -161,11 +168,14 @@ export class CommandPopup extends Modal {
     if (barEl) this.contentEl.appendChild(barEl);
   }
 
-  #mountSearchInput(): void {
-    new SearchInput(this.contentEl, this.#activePanel, this.#searchQuery, this.#selectedIndex, (query, idx) => {
-      this.#searchQuery = query;
-      this.#selectedIndex = idx;
-    });
+  #mountActivePanel(): void {
+    this.#activePanel.mount(this.contentEl);
+    if (isNavigable(this.#activePanel)) {
+      new SearchInput().render(this.contentEl, this.#activePanel, this.#searchQuery, this.#selectedIndex, (query, idx) => {
+        this.#searchQuery = query;
+        this.#selectedIndex = idx;
+      });
+    }
   }
 
   #exitDetail(): void {
@@ -190,9 +200,9 @@ export class CommandPopup extends Modal {
   #renderForgeSentinelDetail(): void {
     this.#kb.suspend();
     const exit = () => this.#exitDetail();
-    this.#activeDetail = new ForgeSentinelDetail({
+    const detail = new ForgeSentinelDetail(this.scope);
+    detail.render({
       contentEl: this.contentEl,
-      scope: this.scope,
       callbacks: {
         onBack: exit,
         onSubmit: (snapshot) => {
@@ -202,6 +212,7 @@ export class CommandPopup extends Modal {
       },
       defaults: this.#formDefaults,
     });
+    this.#activeDetail = detail;
     this.#onDetailBack = exit;
   }
 
@@ -210,7 +221,8 @@ export class CommandPopup extends Modal {
     this.#reattachTabBar();
     this.#kb.suspend();
     const exit = () => this.#exitDetail();
-    this.#activeDetail = new SpellOptionsDetail({
+    const detail = new SpellOptionsDetail();
+    detail.render({
       contentEl: this.contentEl,
       scope: this.scope,
       spell,
@@ -221,8 +233,9 @@ export class CommandPopup extends Modal {
       models: SUPPORTED_MODELS,
       onBack: exit,
       onCast: (snap) => this.#castAction(spell, snap),
-      onOverrideChanged: () => (this.panels[0] as SpellsPanel).refreshOverrides(),
+      onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
     });
+    this.#activeDetail = detail;
     this.#onDetailBack = exit;
   }
 
@@ -239,15 +252,15 @@ export class CommandPopup extends Modal {
   }
 
   #move(delta: number): void {
-    if (this.phase !== "search" || this.#activePanel.length === 0) return;
-
+    if (this.phase !== "search" || !isNavigable(this.#activePanel)) return;
+    if (this.#activePanel.length === 0) return;
     const prev = this.#selectedIndex;
     this.#selectedIndex = this.#activePanel.move(delta, this.#selectedIndex);
     this.#activePanel.updateSelection(prev, this.#selectedIndex);
   }
 
   #confirm(): void {
-    if (this.phase !== "search") return;
+    if (this.phase !== "search" || !isNavigable(this.#activePanel)) return;
     this.#activePanel.confirm(this.#selectedIndex);
   }
 
@@ -261,7 +274,7 @@ export class CommandPopup extends Modal {
     this.phase = "search";
     this.#searchQuery = "";
     this.#selectedIndex = 0;
-    panel.reset();
+    if (isNavigable(panel)) panel.reset();
     this.#render();
   }
 }

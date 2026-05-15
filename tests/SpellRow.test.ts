@@ -22,7 +22,8 @@ describe('SpellRow', () => {
     const container = makeMockEl();
     const spell = { name: 'Fire Bolt', path: '/spells/fire.md' };
 
-    const row = new SpellRow(container, spell, false, true);
+    const row = new SpellRow();
+    row.render(container, spell, false, true);
 
     // Check that the row's el has the override dot call
     expect(row.el.createSpan).toHaveBeenCalledWith({ cls: 'grimoire-override-dot' });
@@ -32,7 +33,8 @@ describe('SpellRow', () => {
     const container = makeMockEl();
     const spell = { name: 'Fire Bolt', path: '/spells/fire.md' };
 
-    const row = new SpellRow(container, spell, false, false);
+    const row = new SpellRow();
+    row.render(container, spell, false, false);
 
     const dotCalls = row.el.createSpan.mock.calls.filter(
       (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
@@ -44,7 +46,8 @@ describe('SpellRow', () => {
     const container = makeMockEl();
     const spell = { name: 'Fire Bolt', path: '/spells/fire.md' };
 
-    const row = new SpellRow(container, spell, false);
+    const row = new SpellRow();
+    row.render(container, spell, false);
 
     const dotCalls = row.el.createSpan.mock.calls.filter(
       (call: any[]) => call[0]?.cls === 'grimoire-override-dot'

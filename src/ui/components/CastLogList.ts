@@ -24,81 +24,14 @@ export class CastLogList {
     now: Date,
     onToggle: (castId: string) => void
   ): void {
-    // Handle empty records case
     if (records.length === 0) {
-      if (!this.#isEmptyView) {
-        this.#listWrapper.empty();
-        this.#listWrapper.createSpan({
-          cls: 'text-muted',
-          text: 'No casts yet',
-        });
-        this.#isEmptyView = true;
-        this.#rows = [];
-        this.#rowsById.clear();
-      }
-      this.#header.addClass('is-hidden');
+      this.#showEmptyState();
       return;
     }
-
     this.#isEmptyView = false;
-
-    // Count in-flight records (status is 'casted' or 'in-progress')
-    const inFlightCount = records.filter(
-      (r) => r.status === 'casted' || r.status === 'in-progress'
-    ).length;
-
-    // Show or hide header based on in-flight count
-    if (inFlightCount > 0) {
-      this.#header.textContent = `${inFlightCount} in flight`;
-      this.#header.removeClass('is-hidden');
-    } else {
-      this.#header.addClass('is-hidden');
-    }
-
-    // Track which castIds should exist
-    const recordIds = new Set(records.map((r) => r.castId));
-
-    // Remove rows for records that are no longer present
-    const castIdsToRemove: string[] = [];
-    for (const castId of this.#rowsById.keys()) {
-      if (!recordIds.has(castId)) {
-        castIdsToRemove.push(castId);
-      }
-    }
-    for (const castId of castIdsToRemove) {
-      const row = this.#rowsById.get(castId);
-      if (row) {
-        row.el.remove();
-        this.#rowsById.delete(castId);
-      }
-    }
-
-    // Clear and rebuild rows list in correct order, reusing or creating rows
-    this.#listWrapper.empty();
-    this.#rows = [];
-
-    for (const record of records) {
-      let row = this.#rowsById.get(record.castId);
-
-      if (!row) {
-        // Create new row
-        row = new CastLogRow(
-          this.#listWrapper,
-          record,
-          expandedIds.has(record.castId),
-          now,
-          () => onToggle(record.castId),
-          this.#openLink
-        );
-        this.#rowsById.set(record.castId, row);
-      } else {
-        // Row exists — update record, header, badge, body, and expanded state
-        row.update(record, expandedIds.has(record.castId), now);
-        this.#listWrapper.appendChild(row.el);
-      }
-
-      this.#rows.push(row);
-    }
+    this.#updateHeader(records);
+    this.#removeStaleRows(new Set(records.map((r) => r.castId)));
+    this.#syncRows(records, expandedIds, now, onToggle);
   }
 
   repaintTimes(now: Date): void {
@@ -107,7 +40,59 @@ export class CastLogList {
     }
   }
 
-  getRowCastIds(): string[] {
-    return this.#rows.map((r) => r.castId);
+  #showEmptyState(): void {
+    if (!this.#isEmptyView) {
+      this.#listWrapper.empty();
+      this.#listWrapper.createSpan({ cls: 'text-muted', text: 'No casts yet' });
+      this.#isEmptyView = true;
+      this.#rows = [];
+      this.#rowsById.clear();
+    }
+    this.#header.addClass('is-hidden');
+  }
+
+  #updateHeader(records: CastRecord[]): void {
+    const inFlightCount = records.filter(
+      (r) => r.status === 'casted' || r.status === 'in-progress'
+    ).length;
+    if (inFlightCount > 0) {
+      this.#header.textContent = `${inFlightCount} in flight`;
+      this.#header.removeClass('is-hidden');
+    } else {
+      this.#header.addClass('is-hidden');
+    }
+  }
+
+  #removeStaleRows(recordIds: Set<string>): void {
+    const castIdsToRemove: string[] = [];
+    for (const castId of this.#rowsById.keys()) {
+      if (!recordIds.has(castId)) castIdsToRemove.push(castId);
+    }
+    for (const castId of castIdsToRemove) {
+      this.#rowsById.get(castId)?.el.remove();
+      this.#rowsById.delete(castId);
+    }
+  }
+
+  #syncRows(
+    records: CastRecord[],
+    expandedIds: Set<string>,
+    now: Date,
+    onToggle: (castId: string) => void
+  ): void {
+    this.#listWrapper.empty();
+    this.#rows = [];
+    for (const record of records) {
+      let row = this.#rowsById.get(record.castId);
+      if (!row) {
+        row = new CastLogRow(this.#listWrapper, record, this.#openLink);
+        row.render(expandedIds.has(record.castId), now, () => onToggle(record.castId));
+        this.#rowsById.set(record.castId, row);
+      } else {
+        row.update(record, expandedIds.has(record.castId), now);
+        this.#listWrapper.appendChild(row.el);
+      }
+      this.#rows.push(row);
+    }
   }
 }

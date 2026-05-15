@@ -1,13 +1,29 @@
 import type { Spell } from "../../domain/spells/Spell";
 
 export class SpellRow {
-  readonly el: HTMLElement;
+  el!: HTMLElement;
 
-  constructor(container: HTMLElement, spell: Spell, selected: boolean, hasOverride: boolean = false) {
+  render(container: HTMLElement, spell: Spell, selected: boolean, hasOverride: boolean = false): void {
     this.el = container.createDiv({ cls: "spells-row" });
-    if (selected) this.el.addClass("is-selected");
-    this.el.createSpan({ text: spell.name });
-    if (hasOverride) this.el.createSpan({ cls: "grimoire-override-dot" });
+    if (selected) this.#markSelected();
+    this.#appendName(spell.name);
+    if (hasOverride) this.#appendOverrideDot();
+    this.#appendHint();
+  }
+
+  #markSelected(): void {
+    this.el.addClass("is-selected");
+  }
+
+  #appendName(name: string): void {
+    this.el.createSpan({ text: name });
+  }
+
+  #appendOverrideDot(): void {
+    this.el.createSpan({ cls: "grimoire-override-dot" });
+  }
+
+  #appendHint(): void {
     this.el.createSpan({ cls: "spells-row-hint", text: "↵ cast · → options" });
   }
 }

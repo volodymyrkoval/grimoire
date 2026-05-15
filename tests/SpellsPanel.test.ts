@@ -120,12 +120,12 @@ describe('SpellsPanel.openOptions', () => {
     const panel = makePanel();
     panel.filter('');
     const spy = vi.spyOn(panel.events, 'emit');
-    const firstSpell = panel['filteredSpells'][0];
 
     panel.openOptions(0);
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith('open-options', firstSpell);
+    // Spells are sorted alphabetically; first is 'Banishment Hex'
+    expect(spy).toHaveBeenCalledWith('open-options', expect.objectContaining({ path: spellPath('/spells/banishment.md') }));
   });
 
   it('out-of-range index (>= length) is a no-op', () => {
@@ -133,7 +133,7 @@ describe('SpellsPanel.openOptions', () => {
     panel.filter('protect');
     const spy = vi.spyOn(panel.events, 'emit');
 
-    panel.openOptions(panel['filteredSpells'].length);
+    panel.openOptions(1); // 'protect' matches exactly 1 spell; index 1 is the sentinel boundary
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -142,9 +142,7 @@ describe('SpellsPanel.openOptions', () => {
     const panel = makePanel();
     panel.filter('');
     const spy = vi.spyOn(panel.events, 'emit');
-    const sentinelIndex = panel['filteredSpells'].length;
-
-    panel.openOptions(sentinelIndex);
+    panel.openOptions(DEFAULT_TEST_SPELLS.length); // all 10 spells; index 10 is the sentinel boundary
 
     expect(spy).not.toHaveBeenCalled();
   });
@@ -165,10 +163,9 @@ describe('SpellsPanel with hasOverride predicate', () => {
     const panel = makePanel();
     // Default mount (no predicate)
     const container = makeMockEl();
-    panel['spellList'] = null; // reset
     panel.mount(container);
 
-    const spellListEl = panel['spellList']?.el;
+    const spellListEl = container.createDiv.mock.results[0].value;
     if (spellListEl) {
       // With default predicate, no dots should appear
       let totalDots = 0;
@@ -218,14 +215,13 @@ describe('SpellsPanel with hasOverride predicate', () => {
   it('refreshOverrides re-renders with same selection', () => {
     const panel = makePanel();
     const container = makeMockEl();
-    panel['spellList'] = null; // reset
     panel.mount(container);
 
     // Move selection to index 2
     panel.updateSelection(0, 2);
     panel.move(1, 1); // Move to index 2
 
-    const spellListEl = panel['spellList']?.el;
+    const spellListEl = container.createDiv.mock.results[0].value;
     const getSelectedRowIndex = () => {
       let selectedIndex = -1;
       spellListEl.createDiv.mock.results.forEach((result: any, idx: number) => {

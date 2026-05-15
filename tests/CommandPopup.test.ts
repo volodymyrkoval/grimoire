@@ -20,14 +20,14 @@ vi.mock('../src/ui/widgets/EffortRow', () => ({
 // ForgeSentinelDetail uses document.createElement — stub it to register keyboard
 // handlers on the scope (preserving suspend/resume semantics) without touching DOM.
 vi.mock('../src/ui/components/ForgeSentinelDetail', async (importOriginal) => {
-  const { KeyboardController } = await import('../src/ui/KeyboardController');
+  const { KeyboardController } = await import('../src/infra/KeyboardController');
   return {
     ForgeSentinelDetail: vi.fn().mockImplementation(
-      ({ scope }: any) => {
+      (scope: any) => {
         const kb = new KeyboardController(scope);
         kb.bind([], 'ArrowDown', () => false);
         kb.bind([], 'ArrowUp', () => false);
-        return { destroy: () => kb.unbindAll() };
+        return { destroy: () => kb.unbindAll(), render: vi.fn() };
       },
     ),
   };
@@ -160,9 +160,13 @@ describe('CommandPopup keyboard suspend/resume', () => {
     let capturedOnBack: (() => void) | undefined;
     const OrigFSD = FSDModule.ForgeSentinelDetail;
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
-      function ({ callbacks }: any) {
-        capturedOnBack = callbacks.onBack;
-        return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
+      function () {
+        return Object.assign(Object.create(OrigFSD.prototype), {
+          destroy: vi.fn(),
+          render({ callbacks }: any) {
+            capturedOnBack = callbacks.onBack;
+          },
+        });
       } as any
     );
 
@@ -186,9 +190,13 @@ describe('CommandPopup keyboard suspend/resume', () => {
     let capturedOnSubmit: ((...args: any[]) => void) | undefined;
     const OrigFSD = FSDModule.ForgeSentinelDetail;
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
-      function ({ callbacks }: any) {
-        capturedOnSubmit = callbacks.onSubmit;
-        return Object.assign(Object.create(OrigFSD.prototype), { destroy: vi.fn() });
+      function () {
+        return Object.assign(Object.create(OrigFSD.prototype), {
+          destroy: vi.fn(),
+          render({ callbacks }: any) {
+            capturedOnSubmit = callbacks.onSubmit;
+          },
+        });
       } as any
     );
 
@@ -242,7 +250,7 @@ describe('CommandPopup open-options event → renderOptionsPanel', () => {
     const OrigOP = OptionsPanelModule.OptionsPanel;
     const constructorSpy = vi.spyOn(OptionsPanelModule, 'OptionsPanel' as any).mockImplementationOnce(
       function (..._args: any[]) {
-        return Object.assign(Object.create(OrigOP.prototype), { destroy: vi.fn() });
+        return Object.assign(Object.create(OrigOP.prototype), { destroy: vi.fn(), render: vi.fn() });
       } as any
     );
 
@@ -258,7 +266,7 @@ describe('CommandPopup open-options event → renderOptionsPanel', () => {
 
     vi.spyOn(OptionsPanelModule, 'OptionsPanel' as any).mockImplementationOnce(
       function (..._args: any[]) {
-        return { destroy: vi.fn() };
+        return { destroy: vi.fn(), render: vi.fn() };
       } as any
     );
 
@@ -336,13 +344,8 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
     });
 
-    const panels = (popup as any).panels as any[];
-    const logsPanel = panels.find((p: any) => p.id === 'logs');
-    // Access the openLink fn stored in the panel's deps
-    const openLink: (path: string) => void = logsPanel.deps.openLink;
-
     const closeSpy = vi.spyOn(popup, 'close').mockImplementation(() => {});
-    openLink('Notes/result.md');
+    popup.openLink('Notes/result.md');
 
     expect(app.workspace.openLinkText).toHaveBeenCalledWith('Notes/result.md', '', false);
     expect(closeSpy).toHaveBeenCalledOnce();

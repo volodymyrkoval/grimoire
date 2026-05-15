@@ -45,9 +45,9 @@ function buildDetail(opts: BuildOpts = {}) {
     onSubmit: opts.onSubmit ?? vi.fn(),
   };
 
-  new ForgeSentinelDetail({
+  const detail = new ForgeSentinelDetail(scope);
+  detail.render({
     contentEl: container,
-    scope,
     callbacks,
     defaults: {
       defaultModel: opts.defaultModel ?? 'claude-sonnet-4-5',
@@ -85,14 +85,14 @@ describe('ForgeSentinelDetail', () => {
     document.body.innerHTML = '';
   });
 
-  it('focuses the name input immediately on construction', () => {
+  it('focuses the name input immediately on render', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus');
 
-    new ForgeSentinelDetail({
+    const detail = new ForgeSentinelDetail(makeScope());
+    detail.render({
       contentEl: container,
-      scope: makeScope(),
       callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
       defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: null },
     });

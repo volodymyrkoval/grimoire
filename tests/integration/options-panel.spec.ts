@@ -75,7 +75,8 @@ function mountPanel(overrideInitial?: {
 
   const app = new App() as any;
 
-  const panel = new OptionsPanel(contentEl, scope, formState, snapshot, {
+  const panel = new OptionsPanel(scope);
+  panel.render(contentEl, formState, snapshot, {
     app,
     overrides,
     sessionMap,

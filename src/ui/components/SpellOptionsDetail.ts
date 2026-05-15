@@ -25,9 +25,9 @@ export interface SpellOptionsDetailParams {
 
 /** Detail panel for a spell's options: resolves defaults, builds form state, mounts OptionsPanel. */
 export class SpellOptionsDetail {
-  readonly #panel: OptionsPanel;
+  #panel!: OptionsPanel;
 
-  constructor(params: SpellOptionsDetailParams) {
+  render(params: SpellOptionsDetailParams): void {
     const resolved = this.#resolveOptions(params);
     const formState = this.#buildFormState(resolved, params);
     this.#panel = this.#createPanel(resolved, formState, params);
@@ -74,7 +74,8 @@ export class SpellOptionsDetail {
 
   #createPanel(resolved: ReturnType<typeof resolveSpellOptions>, formState: OptionsFormState, params: SpellOptionsDetailParams) {
     const snapshot = { model: resolved.model, effort: resolved.effort };
-    return new OptionsPanel(params.contentEl, params.scope, formState, snapshot, {
+    const panel = new OptionsPanel(params.scope);
+    panel.render(params.contentEl, formState, snapshot, {
       app: params.app,
       overrides: params.overrides,
       sessionMap: params.sessionMap,
@@ -83,5 +84,6 @@ export class SpellOptionsDetail {
       onOverrideChanged: params.onOverrideChanged,
       onBack: params.onBack,
     });
+    return panel;
   }
 }

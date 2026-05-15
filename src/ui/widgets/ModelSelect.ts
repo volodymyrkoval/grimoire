@@ -1,4 +1,4 @@
-import type { KeyboardController } from '../KeyboardController';
+import type { KeyboardController } from '../../infra/KeyboardController';
 import type { SupportedModel } from '../../domain/settings/Settings';
 
 export interface ModelSelectOptions {

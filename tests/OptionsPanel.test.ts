@@ -57,7 +57,8 @@ function mountPanel(overrides?: Partial<{
   const onBack = vi.fn();
   const onOverrideChanged = vi.fn();
 
-  const panel = new OptionsPanel(contentEl, scope, formState, snapshot, {
+  const panel = new OptionsPanel(scope);
+  panel.render(contentEl, formState, snapshot, {
     app: new App() as any,
     overrides: overridesStore,
     sessionMap,
