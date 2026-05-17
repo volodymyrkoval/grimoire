@@ -375,4 +375,51 @@ describe('CastLogPanel', () => {
       expect(rowBAfter!.classList.contains('is-expanded')).toBe(false);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // A7 — vaultRootAbs threading through panel → list → row
+  // -------------------------------------------------------------------------
+
+  describe('A7 — vaultRootAbs threading', () => {
+    it('uses vaultRootAbs from deps so that legacy absolute paths display as basenames', async () => {
+      const container = document.createElement('div');
+      const source = new FakeCastLogSource([
+        {
+          castId: 'cast-vault-root',
+          status: 'done',
+          spellPath: 'Spells/Test.md',
+          model: 'claude-opus-4-7',
+          effort: null,
+          contextNotes: [],
+          // Legacy absolute path — should render as 'bar.md' when vaultRootAbs='/vault'
+          affectedFiles: ['/vault/Notes/bar.md'],
+          castedTs: new Date(NOW_MS - 60_000).toISOString(),
+        },
+      ]);
+      const refresh = new FakeRefreshCoordinator();
+      const tick = new FakeTickCoordinator();
+
+      const panel = new CastLogPanel({
+        source,
+        refresh,
+        tick,
+        openLink: vi.fn(),
+        now: () => new Date(),
+        vaultRootAbs: '/vault',
+      });
+      panel.mount(container);
+      await flushPromises();
+
+      // Expand the row to see the body
+      const row = container.querySelector('.cast-log-row') as HTMLElement | null;
+      expect(row).toBeTruthy();
+      row!.querySelector('.cast-log-row-header')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      const link = container.querySelector('.cast-log-affected-files a') as HTMLAnchorElement | null;
+      expect(link).toBeTruthy();
+      // If vaultRootAbs was NOT forwarded: full path '/vault/Notes/bar.md'
+      // If it WAS forwarded: basename 'bar.md'
+      expect(link!.textContent).toBe('bar.md');
+    });
+  });
 });

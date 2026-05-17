@@ -231,6 +231,98 @@ describe('stop.sh', () => {
     expect(entry.affectedFiles).toEqual([]);
   });
 
+  // ── D10: vaultRootAbs prefix stripping ───────────────────────────────────────
+
+  it('strips vault root prefix from affected files when vaultRootAbs is provided', async () => {
+    const logPath = path.join(tempDir, 'cast-log.jsonl');
+    const scratchDir = path.join(tempDir, 'scratch');
+    await fs.promises.mkdir(scratchDir, { recursive: true });
+
+    // Pre-populate scratch with paths that have the vault root prefix
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    await fs.promises.writeFile(
+      scratchFile,
+      '/vault/docs/a.md\n/vault/src/b.ts\na-relative.md\n',
+      'utf-8',
+    );
+
+    const content = renderStopScript({
+      logPathAbs: logPath,
+      scratchDirAbs: scratchDir,
+      vaultRootAbs: '/vault',
+    });
+    const scriptPath = await materializeScript(tempDir, 'stop.sh', content);
+
+    const { status } = runShell(scriptPath, { env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const lines = readLog(logPath);
+    expect(lines).toHaveLength(1);
+    const entry = lines[0] as { stage: string; affectedFiles: string[] };
+    expect(entry.stage).toBe('done');
+    // Paths with vault root prefix stripped; path without prefix passes through unchanged
+    // sort -u orders by path with slashes, then prefixes are stripped (order preserved from sort)
+    expect(entry.affectedFiles).toEqual(['docs/a.md', 'src/b.ts', 'a-relative.md']);
+  });
+
+  it('preserves paths without vault prefix when vaultRootAbs is provided', async () => {
+    const logPath = path.join(tempDir, 'cast-log.jsonl');
+    const scratchDir = path.join(tempDir, 'scratch');
+    await fs.promises.mkdir(scratchDir, { recursive: true });
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    await fs.promises.writeFile(scratchFile, 'relative/path.md\nother.txt\n', 'utf-8');
+
+    const content = renderStopScript({
+      logPathAbs: logPath,
+      scratchDirAbs: scratchDir,
+      vaultRootAbs: '/vault',
+    });
+    const scriptPath = await materializeScript(tempDir, 'stop.sh', content);
+
+    const { status } = runShell(scriptPath, { env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const lines = readLog(logPath);
+    const entry = lines[0] as { affectedFiles: string[] };
+    expect(entry.affectedFiles).toEqual(['other.txt', 'relative/path.md']);
+  });
+
+  it('backward compat: empty vaultRootAbs produces byte-identical script to pre-change baseline', async () => {
+    const logPath = path.join(tempDir, 'cast-log.jsonl');
+    const scratchDir = path.join(tempDir, 'scratch');
+    await fs.promises.mkdir(scratchDir, { recursive: true });
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    await fs.promises.writeFile(scratchFile, 'file1.md\nfile2.ts\n', 'utf-8');
+
+    // Call with explicit empty string
+    const contentWithEmpty = renderStopScript({
+      logPathAbs: logPath,
+      scratchDirAbs: scratchDir,
+      vaultRootAbs: '',
+    });
+
+    // Call without the optional param (simulating old caller)
+    const contentWithoutParam = renderStopScript({
+      logPathAbs: logPath,
+      scratchDirAbs: scratchDir,
+    });
+
+    // Scripts should be byte-identical
+    expect(contentWithEmpty).toBe(contentWithoutParam);
+
+    // Both should execute identically
+    const scriptPath1 = await materializeScript(tempDir, 'stop1.sh', contentWithEmpty);
+    const scriptPath2 = await materializeScript(tempDir, 'stop2.sh', contentWithoutParam);
+
+    const result1 = runShell(scriptPath1, { env: { CAST_ID: 'cast1' } });
+    const result2 = runShell(scriptPath2, { env: { CAST_ID: 'cast2' } });
+
+    expect(result1.status).toBe(0);
+    expect(result2.status).toBe(0);
+  });
+
   // ── D9: edge — two concurrent castIds ──────────────────────────────────────
 
   it('keeps each castId scratch isolated when two casts run concurrently', async () => {
@@ -273,5 +365,66 @@ describe('stop.sh', () => {
     // Both scratch files cleaned up
     expect(fs.existsSync(path.join(scratchDir, 'castA.paths'))).toBe(false);
     expect(fs.existsSync(path.join(scratchDir, 'castB.paths'))).toBe(false);
+  });
+
+  // ── B5b: glob metacharacter in vault root ───────────────────────────────────
+
+  it('strips prefix when vaultRootAbs contains glob metacharacters like [', async () => {
+    const logPath = path.join(tempDir, 'cast-log.jsonl');
+    const scratchDir = path.join(tempDir, 'scratch');
+    await fs.promises.mkdir(scratchDir, { recursive: true });
+
+    const vaultRoot = '/Users/alice/Vault [2024]';
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    await fs.promises.writeFile(
+      scratchFile,
+      `${vaultRoot}/notes/foo.md\n${vaultRoot}/src/bar.ts\n`,
+      'utf-8',
+    );
+
+    const content = renderStopScript({
+      logPathAbs: logPath,
+      scratchDirAbs: scratchDir,
+      vaultRootAbs: vaultRoot,
+    });
+    const scriptPath = await materializeScript(tempDir, 'stop.sh', content);
+
+    const { status } = runShell(scriptPath, { env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const lines = readLog(logPath);
+    const entry = lines[0] as { affectedFiles: string[] };
+    // Unquoted ${line#$VAULT_ROOT/} would silently fail on paths containing [ ] * ?
+    expect(entry.affectedFiles).toEqual(['notes/foo.md', 'src/bar.ts']);
+  });
+
+  // ── B5: degenerate case — path equals vault root exactly ────────────────────
+
+  it('preserves path that equals vault root exactly (no trailing slash)', async () => {
+    const logPath = path.join(tempDir, 'cast-log.jsonl');
+    const scratchDir = path.join(tempDir, 'scratch');
+    await fs.promises.mkdir(scratchDir, { recursive: true });
+
+    // Pre-populate scratch with a path that equals the vault root exactly
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    await fs.promises.writeFile(scratchFile, '/vault\n', 'utf-8');
+
+    const content = renderStopScript({
+      logPathAbs: logPath,
+      scratchDirAbs: scratchDir,
+      vaultRootAbs: '/vault',
+    });
+    const scriptPath = await materializeScript(tempDir, 'stop.sh', content);
+
+    const { status } = runShell(scriptPath, { env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const lines = readLog(logPath);
+    expect(lines).toHaveLength(1);
+    const entry = lines[0] as { stage: string; affectedFiles: string[] };
+    expect(entry.stage).toBe('done');
+    // Path does not have trailing slash, so ${line#"$VAULT_ROOT/"} does not match
+    // and /vault passes through unchanged
+    expect(entry.affectedFiles).toEqual(['/vault']);
   });
 });

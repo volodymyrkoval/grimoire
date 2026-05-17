@@ -292,4 +292,146 @@ describe('CastLogRow', () => {
       expect(body.textContent).not.toContain('Runs on note:');
     });
   });
+
+  describe('path normalisation — basename rendering and label rename (A1 red specs)', () => {
+    it('(a) renders basenames as link text and calls onOpenLink with normalised vault-relative path', () => {
+      const container = document.createElement('div');
+      const record: CastRecord = {
+        castId: 'cast-normalise',
+        status: 'done',
+        spellPath: 'Spells/Test.md',
+        model: 'claude-opus-4-7',
+        effort: null,
+        contextNotes: [],
+        // 'Notes/foo.md' is already vault-relative; '/vault/Notes/bar.md' is an absolute legacy path
+        affectedFiles: ['Notes/foo.md', '/vault/Notes/bar.md'],
+        castedTs: NOW.toISOString(),
+      };
+
+      const openLink = vi.fn();
+      const vaultRootAbs = '/vault';
+      const row = new CastLogRow(container, record, openLink, vaultRootAbs);
+      row.render(true, NOW, () => {});
+
+      const body = container.querySelector('.cast-log-row-body') as HTMLElement;
+      const filesRow = body.querySelector('.cast-log-affected-files-row');
+      expect(filesRow).toBeTruthy();
+
+      const links = filesRow!.querySelectorAll('a');
+      expect(links).toHaveLength(2);
+
+      // Link text must be basename only
+      expect(links[0].textContent).toBe('foo.md');
+      expect(links[1].textContent).toBe('bar.md');
+
+      // href must be '#' for both
+      expect(links[0].getAttribute('href')).toBe('#');
+      expect(links[1].getAttribute('href')).toBe('#');
+
+      // Click first link — onOpenLink should receive the vault-relative path (already relative, unchanged)
+      links[0].click();
+      expect(openLink).toHaveBeenCalledWith('Notes/foo.md');
+
+      // Click second link — onOpenLink should receive the stripped vault-relative path
+      links[1].click();
+      expect(openLink).toHaveBeenCalledWith('Notes/bar.md');
+    });
+
+    it('(b) renders Affected notes: as the label (not Affected files:)', () => {
+      const container = document.createElement('div');
+      const record: CastRecord = {
+        castId: 'cast-label',
+        status: 'done',
+        spellPath: 'Spells/Test.md',
+        model: 'claude-opus-4-7',
+        effort: null,
+        contextNotes: [],
+        affectedFiles: ['Output.md'],
+        castedTs: NOW.toISOString(),
+      };
+
+      const vaultRootAbs = '/vault';
+      const row = new CastLogRow(container, record, () => {}, vaultRootAbs);
+      row.render(true, NOW, () => {});
+
+      const body = container.querySelector('.cast-log-row-body') as HTMLElement;
+      const filesRow = body.querySelector('.cast-log-affected-files-row');
+      expect(filesRow).toBeTruthy();
+
+      const label = filesRow!.querySelector('.cast-log-field-label');
+      expect(label?.textContent).toBe('Affected notes:');
+    });
+
+    it('(c) context notes row renders basename as link text', () => {
+      const container = document.createElement('div');
+      const record: CastRecord = {
+        castId: 'cast-context-basename',
+        status: 'done',
+        spellPath: 'Spells/Test.md',
+        model: 'claude-opus-4-7',
+        effort: null,
+        // 'Notes/context.md' is vault-relative; '/vault/Notes/other.md' is a legacy absolute path
+        contextNotes: ['Notes/context.md', '/vault/Notes/other.md'],
+        castedTs: NOW.toISOString(),
+      };
+
+      const openLink = vi.fn();
+      const vaultRootAbs = '/vault';
+      const row = new CastLogRow(container, record, openLink, vaultRootAbs);
+      row.render(true, NOW, () => {});
+
+      const body = container.querySelector('.cast-log-row-body') as HTMLElement;
+      const notesRow = body.querySelector('.cast-log-context-notes-row');
+      expect(notesRow).toBeTruthy();
+
+      const links = notesRow!.querySelectorAll('a');
+      expect(links).toHaveLength(2);
+
+      // Link text must be basename only
+      expect(links[0].textContent).toBe('context.md');
+      expect(links[1].textContent).toBe('other.md');
+
+      // Click first — vault-relative path (unchanged)
+      links[0].click();
+      expect(openLink).toHaveBeenCalledWith('Notes/context.md');
+
+      // Click second — stripped vault-relative path
+      links[1].click();
+      expect(openLink).toHaveBeenCalledWith('Notes/other.md');
+    });
+
+    it('(d) absolute path with different root renders as basename and passes raw path to onOpenLink', () => {
+      const container = document.createElement('div');
+      const record: CastRecord = {
+        castId: 'cast-other-root',
+        status: 'done',
+        spellPath: 'Spells/Test.md',
+        model: 'claude-opus-4-7',
+        effort: null,
+        contextNotes: [],
+        // '/other/abs/x.md' does NOT start with '/vault' — pass-through
+        affectedFiles: ['/other/abs/x.md'],
+        castedTs: NOW.toISOString(),
+      };
+
+      const openLink = vi.fn();
+      const vaultRootAbs = '/vault';
+      const row = new CastLogRow(container, record, openLink, vaultRootAbs);
+      row.render(true, NOW, () => {});
+
+      const body = container.querySelector('.cast-log-row-body') as HTMLElement;
+      const filesRow = body.querySelector('.cast-log-affected-files-row');
+      expect(filesRow).toBeTruthy();
+
+      const links = filesRow!.querySelectorAll('a');
+      expect(links).toHaveLength(1);
+
+      // Link text is basename of the unchanged path
+      expect(links[0].textContent).toBe('x.md');
+
+      // onOpenLink receives the raw path (no stripping — different machine root)
+      links[0].click();
+      expect(openLink).toHaveBeenCalledWith('/other/abs/x.md');
+    });
+  });
 });

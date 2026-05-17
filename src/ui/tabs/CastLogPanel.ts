@@ -9,6 +9,7 @@ import type { TabPanel } from './TabPanel';
  * Dependencies for CastLogPanel.
  * The panel orchestrates source (data loading), refresh (vault-modify events),
  * and tick (1s interval) coordinators, plus the openLink callback and now() clock.
+ * vaultRootAbs is forwarded to each row for legacy absolute-path normalisation.
  */
 export interface CastLogPanelDeps {
   source: CastLogSource;
@@ -16,6 +17,7 @@ export interface CastLogPanelDeps {
   tick: TickCoordinator;
   openLink: (vaultPath: string) => void;
   now: () => Date;
+  vaultRootAbs?: string;
 }
 
 /**
@@ -55,7 +57,7 @@ export class CastLogPanel implements TabPanel {
   }
 
   #initList(container: HTMLElement): void {
-    this.#list = new CastLogList(container, this.#deps.openLink);
+    this.#list = new CastLogList(container, this.#deps.openLink, this.#deps.vaultRootAbs ?? '');
   }
 
   #startRefresh(): void {

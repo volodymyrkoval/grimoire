@@ -18,6 +18,7 @@ type MaterializerPorts = {
   adapter: DataAdapter;
   getPluginDirAbs: () => string;
   getLogPathAbs: () => string;
+  getVaultRootAbs: () => string;
   hooksDir?: string;
 };
 
@@ -110,6 +111,7 @@ export class CastLogModule {
       }),
       tick: new IntervalTickCoordinator({ intervalMs: 1000 }),
       now: () => new Date(),
+      vaultRootAbs: this.#getSettings().vaultMountPath,
     };
   }
 
@@ -137,6 +139,7 @@ export class CastLogModule {
       adapter,
       getPluginDirAbs: () => this.#paths.pluginDirAbs(),
       getLogPathAbs: () => this.#paths.agentLogPath(),
+      getVaultRootAbs: () => this.#getSettings().vaultMountPath,
       hooksDir: 'agent-hooks',
     });
     await remoteMaterializer.run();

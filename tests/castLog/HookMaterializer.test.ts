@@ -11,6 +11,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
         getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
         writeFile,
         mkdir,
       });
@@ -33,6 +34,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
         getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
         writeFile,
         mkdir,
       });
@@ -50,6 +52,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
         getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
         writeFile,
         mkdir,
       });
@@ -67,6 +70,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
         getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
         writeFile,
         mkdir,
       });
@@ -88,6 +92,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
         getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
         writeFile,
         mkdir,
       });
@@ -104,6 +109,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/tmp/plugin',
         getLogPathAbs: () => '/tmp/plugin/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
       });
 
       // Constructor should complete without error
@@ -117,6 +123,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
         getLogPathAbs: () => '/p/cast-log-agent.jsonl',
+        getVaultRootAbs: () => '',
         writeFile,
         mkdir,
         hooksDir: 'agent-hooks',
@@ -137,6 +144,7 @@ describe('HookMaterializer', () => {
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p/', // trailing slash
         getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
         writeFile,
         mkdir,
       });
@@ -147,6 +155,50 @@ describe('HookMaterializer', () => {
       expect(writeFile.mock.calls[0][0]).toBe('/p/hooks/session-start.sh');
       expect(writeFile.mock.calls[1][0]).toBe('/p/hooks/post-tool-use.sh');
       expect(writeFile.mock.calls[2][0]).toBe('/p/hooks/stop.sh');
+    });
+
+    it('should write stop.sh with content matching renderStopScript when getVaultRootAbs returns /vault', async () => {
+      const mkdir = vi.fn().mockResolvedValue(undefined);
+      const writeFile = vi.fn().mockResolvedValue(undefined);
+
+      const mat = new HookMaterializer({
+        getPluginDirAbs: () => '/p',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '/vault',
+        writeFile,
+        mkdir,
+      });
+
+      await mat.run();
+
+      const expectedContent = renderStopScript({
+        logPathAbs: '/p/cast-log-plugin.jsonl',
+        scratchDirAbs: '/p/cast-log-scratch',
+        vaultRootAbs: '/vault',
+      });
+      expect(writeFile).toHaveBeenNthCalledWith(3, '/p/hooks/stop.sh', expectedContent);
+    });
+
+    it('should write stop.sh with content matching renderStopScript when getVaultRootAbs returns empty string', async () => {
+      const mkdir = vi.fn().mockResolvedValue(undefined);
+      const writeFile = vi.fn().mockResolvedValue(undefined);
+
+      const mat = new HookMaterializer({
+        getPluginDirAbs: () => '/p',
+        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getVaultRootAbs: () => '',
+        writeFile,
+        mkdir,
+      });
+
+      await mat.run();
+
+      const expectedContent = renderStopScript({
+        logPathAbs: '/p/cast-log-plugin.jsonl',
+        scratchDirAbs: '/p/cast-log-scratch',
+        vaultRootAbs: '',
+      });
+      expect(writeFile).toHaveBeenNthCalledWith(3, '/p/hooks/stop.sh', expectedContent);
     });
   });
 });

@@ -5,6 +5,8 @@ import { formatDuration } from '../../castLog/format/duration';
 import { resolveDisplayName } from '../../castLog/format/displayName';
 import { statusBadge } from './statusBadge';
 import { durationMs } from '../../castLog/format/durationMs';
+import { toDisplayPath } from '../../castLog/format/toDisplayPath';
+import { basename } from '../../castLog/format/basename';
 
 /**
  * Renders a single cast record as an expandable row with header and body sections.
@@ -20,10 +22,17 @@ export class CastLogRow {
   #modelBadgeSpan!: HTMLElement;
   #bodyEl!: HTMLElement;
   readonly #onOpenLink: (path: string) => void;
+  readonly #vaultRootAbs: string;
 
-  constructor(container: HTMLElement, record: CastRecord, onOpenLink: (path: string) => void) {
+  constructor(
+    container: HTMLElement,
+    record: CastRecord,
+    onOpenLink: (path: string) => void,
+    vaultRootAbs = '',
+  ) {
     this.#record = record;
     this.#onOpenLink = onOpenLink;
+    this.#vaultRootAbs = vaultRootAbs;
     this.el = container.createDiv({ cls: 'cast-log-row' });
   }
 
@@ -70,8 +79,8 @@ export class CastLogRow {
 
   #renderBody(record: CastRecord): void {
     appendCastIdRow(this.#bodyEl, record);
-    appendContextNotesRow(this.#bodyEl, record, this.#onOpenLink);
-    appendAffectedFilesRow(this.#bodyEl, record, this.#onOpenLink);
+    appendContextNotesRow(this.#bodyEl, record, this.#onOpenLink, this.#vaultRootAbs);
+    appendAffectedFilesRow(this.#bodyEl, record, this.#onOpenLink, this.#vaultRootAbs);
     appendFollowUpRow(this.#bodyEl, record);
     appendExecuteOnNoteRow(this.#bodyEl, record);
   }
@@ -149,38 +158,69 @@ function appendCastIdRow(body: HTMLElement, record: CastRecord): void {
   row.createEl('code', { cls: 'cast-log-castid', text: record.castId }).addClass('is-selectable');
 }
 
+interface PathLinkListOptions {
+  label: string;
+  cssRowClass: string;
+  cssSectionClass: string;
+  paths: string[];
+  vaultRootAbs: string;
+  onOpenLink: (path: string) => void;
+}
+
+/**
+ * Appends a labelled list of clickable path links to body.
+ * Link text is the basename of the display-normalised path.
+ * The click handler passes the display-normalised path to onOpenLink.
+ */
+function appendPathLinkList(body: HTMLElement, opts: PathLinkListOptions): void {
+  const { label, cssRowClass, cssSectionClass, paths, vaultRootAbs, onOpenLink } = opts;
+  const row = body.createDiv({ cls: `${cssRowClass} cast-log-field-row` });
+  row.createSpan({ cls: 'cast-log-field-label', text: label });
+  const section = row.createDiv({ cls: cssSectionClass });
+  for (const rawPath of paths) {
+    const displayPath = toDisplayPath(rawPath, vaultRootAbs);
+    const linkText = vaultRootAbs !== '' ? basename(displayPath) : displayPath;
+    const link = section.createEl('a', { text: linkText });
+    link.href = '#';
+    link.addEventListener('click', (e) => { e.preventDefault(); onOpenLink(displayPath); });
+  }
+}
+
 /** Appends context notes as clickable links if any exist. */
 function appendContextNotesRow(
   body: HTMLElement,
   record: CastRecord,
-  onOpenLink: (path: string) => void
+  onOpenLink: (path: string) => void,
+  vaultRootAbs: string,
 ): void {
   if (record.contextNotes.length === 0) return;
-  const row = body.createDiv({ cls: 'cast-log-context-notes-row cast-log-field-row' });
-  row.createSpan({ cls: 'cast-log-field-label', text: 'Context notes:' });
-  const section = row.createDiv({ cls: 'cast-log-context-notes' });
-  for (const notePath of record.contextNotes) {
-    const link = section.createEl('a', { text: notePath });
-    link.href = '#';
-    link.addEventListener('click', (e) => { e.preventDefault(); onOpenLink(notePath); });
-  }
+  appendPathLinkList(body, {
+    label: 'Context notes:',
+    cssRowClass: 'cast-log-context-notes-row',
+    cssSectionClass: 'cast-log-context-notes',
+    paths: record.contextNotes,
+    vaultRootAbs,
+    onOpenLink,
+  });
 }
 
 /** Appends affected files as clickable links if any exist. */
 function appendAffectedFilesRow(
   body: HTMLElement,
   record: CastRecord,
-  onOpenLink: (path: string) => void
+  onOpenLink: (path: string) => void,
+  vaultRootAbs: string,
 ): void {
   if (!record.affectedFiles || record.affectedFiles.length === 0) return;
-  const row = body.createDiv({ cls: 'cast-log-affected-files-row cast-log-field-row' });
-  row.createSpan({ cls: 'cast-log-field-label', text: 'Affected files:' });
-  const section = row.createDiv({ cls: 'cast-log-affected-files' });
-  for (const filePath of record.affectedFiles) {
-    const link = section.createEl('a', { text: filePath });
-    link.href = '#';
-    link.addEventListener('click', (e) => { e.preventDefault(); onOpenLink(filePath); });
-  }
+  const label = vaultRootAbs !== '' ? 'Affected notes:' : 'Affected files:';
+  appendPathLinkList(body, {
+    label,
+    cssRowClass: 'cast-log-affected-files-row',
+    cssSectionClass: 'cast-log-affected-files',
+    paths: record.affectedFiles,
+    vaultRootAbs,
+    onOpenLink,
+  });
 }
 
 /** Appends follow-up instruction text if present. */

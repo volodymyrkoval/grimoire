@@ -37,6 +37,34 @@ describe('CastLogModule', () => {
     expect(deps.now).toBeDefined();
   });
 
+  it('buildCastLogPanelDeps includes vaultRootAbs sourced from getSettings().vaultMountPath', () => {
+    const getSettings = vi.fn<[], ForgeSystemPromptInput>(() => ({
+      spellTag: '#spell',
+      forgeOutputFolder: 'Spells',
+      vaultMountPath: '/my/vault',
+    }));
+
+    const module = new CastLogModule({ app, paths, getSettings });
+
+    const deps = module.buildCastLogPanelDeps();
+
+    expect(deps.vaultRootAbs).toBe('/my/vault');
+  });
+
+  it('buildCastLogPanelDeps returns empty string for vaultRootAbs when vaultMountPath is empty', () => {
+    const getSettings = vi.fn<[], ForgeSystemPromptInput>(() => ({
+      spellTag: '#spell',
+      forgeOutputFolder: 'Spells',
+      vaultMountPath: '',
+    }));
+
+    const module = new CastLogModule({ app, paths, getSettings });
+
+    const deps = module.buildCastLogPanelDeps();
+
+    expect(deps.vaultRootAbs).toBe('');
+  });
+
   it('activeLogStore writes recordCasted to pluginLogPath (and never to agentLogPath)', async () => {
     const module = new CastLogModule({ app, paths });
 
@@ -186,6 +214,33 @@ describe('CastLogModule', () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('RefineMaterializer'), expect.any(Error));
 
     consoleSpy.mockRestore();
+  });
+
+  it('initStartupMaintenance calls materializerFactory with ports whose getVaultRootAbs returns vaultMountPath', async () => {
+    const runMock = vi.fn().mockResolvedValue(undefined);
+    const factorySpy = vi.fn(() => ({ run: runMock }));
+    const getSettings = vi.fn<[], ForgeSystemPromptInput>(() => ({
+      spellTag: '#spell',
+      forgeOutputFolder: 'Spells',
+      vaultMountPath: '/my/vault',
+    }));
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: factorySpy,
+      sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
+      forgeMaterializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      refineMaterializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      getSettings,
+    });
+
+    await module.initStartupMaintenance();
+
+    expect(factorySpy).toHaveBeenCalledTimes(1);
+
+    const capturedPorts = factorySpy.mock.calls[0][0];
+    expect(capturedPorts.getVaultRootAbs()).toBe('/my/vault');
   });
 
 });

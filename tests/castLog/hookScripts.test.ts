@@ -67,6 +67,73 @@ describe('hookScripts', () => {
   });
 
   describe('renderStopScript', () => {
+    it('when vaultRootAbs is non-empty, includes VAULT_ROOT variable definition', () => {
+      const result = renderStopScript({
+        logPathAbs: '/abs/log.jsonl',
+        scratchDirAbs: '/abs/scratch',
+        vaultRootAbs: '/vault',
+      });
+      expect(result).toContain('VAULT_ROOT="/vault"');
+    });
+
+    it('strips trailing slash from vaultRootAbs', () => {
+      const result = renderStopScript({
+        logPathAbs: '/abs/log.jsonl',
+        scratchDirAbs: '/abs/scratch',
+        vaultRootAbs: '/vault/',
+      });
+      expect(result).toContain('VAULT_ROOT="/vault"');
+      expect(result).not.toContain('VAULT_ROOT="/vault/"');
+    });
+
+    it('escapes double-quotes in vaultRootAbs', () => {
+      const result = renderStopScript({
+        logPathAbs: '/abs/log.jsonl',
+        scratchDirAbs: '/abs/scratch',
+        vaultRootAbs: '/vault/my"path',
+      });
+      expect(result).toContain('VAULT_ROOT="/vault/my\\"path"');
+    });
+
+    it('places while read filter between sort -u and python3 when vaultRootAbs is non-empty', () => {
+      const result = renderStopScript({
+        logPathAbs: '/abs/log.jsonl',
+        scratchDirAbs: '/abs/scratch',
+        vaultRootAbs: '/vault',
+      });
+      // Check that sort -u appears before while IFS
+      const sortIndex = result.indexOf('sort -u');
+      const whileIndex = result.indexOf('while IFS=');
+      const pythonIndex = result.indexOf("python3 -c");
+      expect(sortIndex).toBeGreaterThan(-1);
+      expect(whileIndex).toBeGreaterThan(-1);
+      expect(pythonIndex).toBeGreaterThan(-1);
+      expect(sortIndex).toBeLessThan(whileIndex);
+      expect(whileIndex).toBeLessThan(pythonIndex);
+    });
+
+    it('omits while read filter when vaultRootAbs is empty', () => {
+      const result = renderStopScript({
+        logPathAbs: '/abs/log.jsonl',
+        scratchDirAbs: '/abs/scratch',
+        vaultRootAbs: '',
+      });
+      expect(result).not.toContain('while IFS=');
+    });
+
+    it('backward compat: empty vaultRootAbs produces byte-identical output to baseline', () => {
+      const result = renderStopScript({
+        logPathAbs: '/abs/log.jsonl',
+        scratchDirAbs: '/abs/scratch',
+        vaultRootAbs: '',
+      });
+      const baseline = renderStopScript({
+        logPathAbs: '/abs/log.jsonl',
+        scratchDirAbs: '/abs/scratch',
+      });
+      expect(result).toBe(baseline);
+    });
+
     it('contains the absolute log path', () => {
       const result = renderStopScript({ logPathAbs: '/abs/log.jsonl', scratchDirAbs: '/abs/scratch' });
       expect(result).toContain('/abs/log.jsonl');

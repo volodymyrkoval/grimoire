@@ -12,6 +12,7 @@ import {
 export interface HookMaterializerPorts {
   getPluginDirAbs: () => string;
   getLogPathAbs: () => string;
+  getVaultRootAbs: () => string;
   writeFile?: (filePath: string, content: string) => Promise<void>;
   mkdir?: (dir: string) => Promise<void>;
   adapter?: DataAdapter;
@@ -65,7 +66,7 @@ export class HookMaterializer {
   async #materializeScripts(logPathAbs: string, scratchDirAbs: string): Promise<void> {
     await this.#writeScript(HookMaterializer.SESSION_START_SCRIPT, renderSessionStartScript({ logPathAbs }));
     await this.#writeScript(HookMaterializer.POST_TOOL_USE_SCRIPT, renderPostToolUseScript({ scratchDirAbs }));
-    await this.#writeScript(HookMaterializer.STOP_SCRIPT, renderStopScript({ logPathAbs, scratchDirAbs }));
+    await this.#writeScript(HookMaterializer.STOP_SCRIPT, renderStopScript({ logPathAbs, scratchDirAbs, vaultRootAbs: this.#ports.getVaultRootAbs() }));
   }
 
   async #writeScript(filename: string, content: string): Promise<void> {

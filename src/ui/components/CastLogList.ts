@@ -12,9 +12,11 @@ export class CastLogList {
   #rowsById: Map<string, CastLogRow> = new Map();
   #isEmptyView = false;
   readonly #openLink: (path: string) => void;
+  readonly #vaultRootAbs: string;
 
-  constructor(container: HTMLElement, openLink: (path: string) => void) {
+  constructor(container: HTMLElement, openLink: (path: string) => void, vaultRootAbs = '') {
     this.#openLink = openLink;
+    this.#vaultRootAbs = vaultRootAbs;
     this.#header = container.createDiv({ cls: 'cast-log-header is-hidden' });
     this.#listWrapper = container.createDiv({ cls: 'cast-log-list' });
   }
@@ -86,7 +88,7 @@ export class CastLogList {
     for (const record of records) {
       let row = this.#rowsById.get(record.castId);
       if (!row) {
-        row = new CastLogRow(this.#listWrapper, record, this.#openLink);
+        row = new CastLogRow(this.#listWrapper, record, this.#openLink, this.#vaultRootAbs);
         row.render(expandedIds.has(record.castId), now, () => onToggle(record.castId));
         this.#rowsById.set(record.castId, row);
       } else {
