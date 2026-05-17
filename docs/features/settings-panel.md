@@ -4,9 +4,11 @@
 
 ## What it does
 
-Users can now open **Settings → Community plugins → Grimoire** and edit the plugin's seven core configuration fields: spell tag, CLI command, binary path, forge output folder, vault mount path, default model, and default effort. Edits write through to the in-memory settings object on every keystroke and persist to disk through a 500 ms debounced saver. The plugin flushes any pending write on unload, so closing Obsidian never loses a change.
+Users can now open **Settings → Community plugins → Grimoire** and edit plugin configuration across three main sections. The **General** section contains seven core fields: spell tag, CLI command, binary path, forge output folder, vault mount path, default model, and default effort. Edits write through to the in-memory settings object on every keystroke and persist to disk through a 500 ms debounced saver. The plugin flushes any pending write on unload, so closing Obsidian never loses a change.
 
 The default-effort row is conditional: when the selected model has no effort options (Haiku), the segmented control disappears; when the model has options (Sonnet, Opus), it re-appears with that model's effort levels. The Command Popup also now reads the user-configured spell tag instead of a hardcoded literal, so changing "Spell tag" in settings immediately changes which vault notes the popup considers spells.
+
+The **Custom Refine spell** section (added in `plan-029`) contains a dropdown listing all vault notes marked with `sentinel: refine` in their frontmatter, with `Default (built-in)` pinned first. Users can select a custom variant to change which prompt template Refine uses. A "Create from default" button materialises a new note in the forge output folder with the bundled Refine body and the sentinel marker, making it easy to author a vault-specific variant. An "Open" link appears only when a custom Refine is selected, navigating directly to that note. See `plan-029-custom-refine-spell` for the full integration with the Refine OptionsPanel.
 
 Alongside the visible feature, the iteration backfilled characterisation tests across roughly ten previously-uncovered domain, infra, and widget modules — debounced saver, hydration, vault-mount default, spell-override store, options resolver, segmented control, effort row, options form state, session map, snapshot equality. The codebase enters the next iteration test-clean.
 
@@ -21,13 +23,19 @@ Alongside the visible feature, the iteration backfilled characterisation tests a
 
 ## Scope
 
-**In:**
+**In (dev-done-002):**
 
 - `GrimoireSettingTab` rendering five text rows + one model dropdown + one conditional effort row.
 - Plugin wiring: `data`, `saver`, `overrides`, `addSettingTab`, `onunload` flush, non-async `save()` shim.
 - Unit tests covering every `if`/`else` arm in the frozen PoC modules listed above.
 - One UI integration test pinning the settings-tab seam: row count, text-input write-through + save, dropdown → effort hide / lazy-remount, effort click → save.
 - Obsidian mock additions: `Plugin`, `PluginSettingTab`, `Setting`, `TextInputComponent`, `DropdownComponent`, `Platform`, `FileSystemAdapter`.
+
+**In (plan-029):**
+
+- `CustomRefineSection` rendering the Custom Refine variant dropdown (with "Default (built-in)" pinned), "Create from default" button, and conditional "Open" link.
+- `GrimoireSettings` extended with optional `activeRefinePath` field; `hydrate` reads and validates it.
+- Integration with the spell scanner: custom Refine files (those with `sentinel: refine` frontmatter) are excluded from the Spell Picker scan even if tagged.
 
 **Out:**
 

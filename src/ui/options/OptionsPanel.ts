@@ -7,6 +7,8 @@ import type { OptionsSessionMap } from './OptionsSessionMap';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { SpellPath } from '../../domain/spells/SpellPath';
 import { CastModelSection } from './CastModelSection';
+import { RefineVariantSelect } from './RefineVariantSelect';
+import type { RefineVariantSelectDeps } from './RefineVariantSelect';
 
 export interface OptionsPanelDeps {
   app: App;
@@ -17,6 +19,8 @@ export interface OptionsPanelDeps {
   onOverrideChanged: () => void;
   onBack: () => void;
   showExecuteOnNote?: boolean;
+  /** Optional variant selector for the Refine sentinel panel. Omit for spell panels. */
+  refineVariantSelectDeps?: RefineVariantSelectDeps;
 }
 
 /**
@@ -28,6 +32,7 @@ export class OptionsPanel {
   #kb: KeyboardController;
   #contextNotesInput: ContextNotesInput;
   #castModelSection: CastModelSection;
+  #refineVariantSelect: RefineVariantSelect | null = null;
 
   constructor(scope: Scope) {
     this.#kb = new KeyboardController(scope);
@@ -51,6 +56,7 @@ export class OptionsPanel {
     this.#kb.unbindAll();
     this.#castModelSection.destroy();
     this.#contextNotesInput.detach();
+    this.#refineVariantSelect?.destroy();
   }
 
   /** Creates the back button that dismisses the detail panel. */
@@ -98,6 +104,10 @@ export class OptionsPanel {
     this.#bindCastKey(cast);
     const resetBtn = this.#buildResetButton(buttonRow);
     this.#bindReset(resetBtn, snapshot, formState, deps, textarea, eonCheckbox, initialExecuteOnNote, showExecuteOnNote);
+    if (deps.refineVariantSelectDeps) {
+      this.#refineVariantSelect = new RefineVariantSelect();
+      this.#refineVariantSelect.mount(form, deps.refineVariantSelectDeps);
+    }
   }
 
   /** Renders a small hint/label text above form sections. */

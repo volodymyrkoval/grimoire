@@ -402,6 +402,39 @@ class DropdownComponent {
 }
 
 /**
+ * Mock of Obsidian's ButtonComponent.
+ * Wraps a <button> element with builder pattern methods (setButtonText, onClick).
+ */
+class ButtonComponent {
+  private clickHandler: (() => void | Promise<void>) | null = null;
+  readonly buttonEl: HTMLButtonElement | any;
+
+  constructor(containerEl: HTMLElement | any) {
+    if (typeof document !== 'undefined') {
+      this.buttonEl = document.createElement('button');
+      containerEl.appendChild(this.buttonEl);
+    } else {
+      this.buttonEl = createMockElement();
+    }
+  }
+
+  setButtonText(text: string): this {
+    if (typeof document !== 'undefined') {
+      this.buttonEl.textContent = text;
+    }
+    return this;
+  }
+
+  onClick(handler: () => void | Promise<void>): this {
+    this.clickHandler = handler;
+    if (typeof document !== 'undefined') {
+      this.buttonEl.addEventListener('click', handler);
+    }
+    return this;
+  }
+}
+
+/**
  * Mock of Obsidian's ToggleComponent.
  * Wraps a <input type="checkbox"> element with builder pattern methods (setValue, onChange).
  * __triggerChange() is a test helper to programmatically fire the onChange callback.
@@ -517,6 +550,12 @@ export class Setting {
   addToggle(callback: (component: ToggleComponent) => void): this {
     const toggleComponent = new ToggleComponent(this.controlEl);
     callback(toggleComponent);
+    return this;
+  }
+
+  addButton(callback: (component: ButtonComponent) => void): this {
+    const buttonComponent = new ButtonComponent(this.controlEl);
+    callback(buttonComponent);
     return this;
   }
 }

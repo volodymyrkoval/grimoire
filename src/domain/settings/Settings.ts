@@ -21,6 +21,8 @@ export interface GrimoireSettings {
   portalPath: string;
   portalAuthUser: string;
   portalAuthPassword: string;
+  /** Vault-relative path of the user's active Refine spell template; null = bundled default. */
+  activeRefinePath: string | null;
 }
 
 /** Per-spell model and effort overrides that take precedence over global settings. */
@@ -50,6 +52,7 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
   portalPath: '',
   portalAuthUser: '',
   portalAuthPassword: '',
+  activeRefinePath: null,
 };
 
 /** Metadata for a model supported by the Claude API, including its effort parameter support. */

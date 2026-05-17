@@ -10,6 +10,8 @@ import { OptionsFormState } from '../options/OptionsFormState';
 import type { OptionsFormSnapshot } from '../options/OptionsFormState';
 import { OptionsPanel } from '../options/OptionsPanel';
 import type { OptionsSessionMap } from '../options/OptionsSessionMap';
+import { getRefineSentinels } from '../../refine/refineSentinelScanner';
+import type { RefineVariantSelectDeps } from '../options/RefineVariantSelect';
 
 /**
  * Discriminant that parameterizes OptionsDetail.
@@ -34,6 +36,12 @@ export interface OptionsDetailParams {
   onCast: (snapshot: OptionsFormSnapshot) => void;
   onOverrideChanged: () => void;
   kind: OptionsDetailKind;
+  /**
+   * Vault-relative path of the settings-level active Refine spell.
+   * Used to pre-select the variant dropdown when no per-session override is present.
+   * null = built-in default. Only meaningful when kind === 'refine'.
+   */
+  settingsActiveRefinePath?: string | null;
 }
 
 /**
@@ -94,6 +102,25 @@ export class OptionsDetail {
     // showExecuteOnNote: spell panels show the toggle; refine panels hide it (sentinel has no note).
     const showExecuteOnNote = params.kind.kind === 'spell';
     const snapshot = { model: resolved.model, effort: resolved.effort };
+
+    // Variant selector is only relevant for the Refine sentinel and only when sentinels exist.
+    const refineSentinels = getRefineSentinels(params.app);
+    const refineVariantSelectDeps: RefineVariantSelectDeps | undefined =
+      params.kind.kind === 'refine' && refineSentinels.length > 0
+        ? {
+            variants: refineSentinels,
+            // Session override takes priority; fall through to settings default; null = built-in.
+            initialPath: params.sessionMap.get(REFINE_SENTINEL_PATH)?.refinePathOverride ?? params.settingsActiveRefinePath ?? null,
+            onChange: (path: string | null) => {
+              const current = formState.snapshot();
+              params.sessionMap.put(REFINE_SENTINEL_PATH, {
+                ...current,
+                refinePathOverride: path,
+              });
+            },
+          }
+        : undefined;
+
     const panel = new OptionsPanel(params.scope);
     panel.render(params.contentEl, formState, snapshot, {
       app: params.app,
@@ -104,6 +131,7 @@ export class OptionsDetail {
       onOverrideChanged: params.onOverrideChanged,
       onBack: params.onBack,
       showExecuteOnNote,
+      refineVariantSelectDeps,
     });
     return panel;
   }

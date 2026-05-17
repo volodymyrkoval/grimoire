@@ -2,6 +2,7 @@ import { App, TFile } from 'obsidian';
 import type { Spell } from '../domain/spells/Spell';
 import { EXECUTE_ON_NOTE_KEY } from '../domain/spells/Spell';
 import { spellPath } from '../domain/spells/SpellPath';
+import { isRefineSentinel } from '../refine/refineSentinelScanner';
 
 /** Compares tag values with optional leading # stripped. */
 function tagMatches(tagValue: string, targetTag: string): boolean {
@@ -36,6 +37,8 @@ export function getSpells(app: App, tag: string): Spell[] {
   return app.vault
     .getMarkdownFiles()
     .filter((file) => hasTag(app, file, tag))
+    // Sentinel-marked notes are excluded from the spell list even if tagged — single discovery mechanism.
+    .filter((file) => !isRefineSentinel(app, file))
     .map((file) => {
       const cache = app.metadataCache.getFileCache(file);
       const eonValue: unknown = cache?.frontmatter?.[EXECUTE_ON_NOTE_KEY];

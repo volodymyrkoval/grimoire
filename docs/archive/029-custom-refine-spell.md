@@ -436,10 +436,10 @@ Each todo: `- [ ] <id>: <description> — <S|M|L>, <tier>`. Tier groups are disp
 
 **junior-dev**
 
-- [ ] A1: extend `GrimoireSettings` (in `src/domain/settings/Settings.ts`) with `activeRefinePath: string | null`. Add `activeRefinePath: null` to `DEFAULT_SETTINGS`. Add an inline comment: "Vault-relative path of the user's active Refine spell template; null = bundled default." — S, junior-dev
-- [ ] A2: create `src/refine/refineSentinel.ts` exporting two `as const` constants: `SENTINEL_FRONTMATTER_KEY = 'sentinel'` and `REFINE_SENTINEL_FRONTMATTER_VALUE = 'refine'`. JSDoc each — they pin the pitch's no-go (single discovery mechanism) — S, junior-dev
-- [ ] A3: extend `OptionsSessionEntry` in `src/ui/options/OptionsSessionMap.ts` with optional `refinePathOverride?: string | null`. Comment: "Only meaningful for the Refine sentinel entry. undefined = no per-cast choice; null = explicit 'Default (built-in)'." — S, junior-dev
-- [ ] A4: confirm `npm test`, `npm run lint`, `npm run arch:check` all green. No existing test should require changes (the new fields are additive optional/defaulted) — S, junior-dev
+- [x] A1: extend `GrimoireSettings` (in `src/domain/settings/Settings.ts`) with `activeRefinePath: string | null`. Add `activeRefinePath: null` to `DEFAULT_SETTINGS`. Add an inline comment: "Vault-relative path of the user's active Refine spell template; null = bundled default." — S, junior-dev
+- [x] A2: create `src/refine/refineSentinel.ts` exporting two `as const` constants: `SENTINEL_FRONTMATTER_KEY = 'sentinel'` and `REFINE_SENTINEL_FRONTMATTER_VALUE = 'refine'`. JSDoc each — they pin the pitch's no-go (single discovery mechanism) — S, junior-dev
+- [x] A3: extend `OptionsSessionEntry` in `src/ui/options/OptionsSessionMap.ts` with optional `refinePathOverride?: string | null`. Comment: "Only meaningful for the Refine sentinel entry. undefined = no per-cast choice; null = explicit 'Default (built-in)'." — S, junior-dev
+- [x] A4: confirm `npm test`, `npm run lint`, `npm run arch:check` all green. No existing test should require changes (the new fields are additive optional/defaulted) — S, junior-dev
 
 ### B. `refineSentinelScanner` and `getSpells` exclusion
 
@@ -462,11 +462,11 @@ Each todo: `- [ ] <id>: <description> — <S|M|L>, <tier>`. Tier groups are disp
 
 **junior-dev**
 
-- [ ] B1: create `src/refine/refineSentinelScanner.ts` exporting `getRefineSentinels(app: App)` and `isRefineSentinel(app: App, file: TFile)`. Pattern after `getSpells`: iterate `app.vault.getMarkdownFiles()`, check metadata cache, map to `{ name, path }`, sort by name. Strict equality check against `REFINE_SENTINEL_FRONTMATTER_VALUE`. JSDoc both exports — S, junior-dev
-- [ ] B2: write unit tests in `tests/refine/refineSentinelScanner.test.ts` covering: empty vault → []; one marked file → one entry; sentinel value 'forge' → []; missing frontmatter → []; non-string sentinel value (number, array) → []; multiple entries sorted by basename — S, junior-dev
-- [ ] B3: modify `getSpells` in `src/infra/spellScanner.ts` to additionally filter out files where `isRefineSentinel(app, file)` is true. Import the helper from `src/refine/refineSentinelScanner.ts`. Add the inline comment per Section briefing — S, junior-dev
-- [ ] B4: add a unit test in `tests/SpellList.test.ts` (or `tests/spellScanner.test.ts` if it exists) proving that a markdown file with `tags: [grimoire/spell]` AND `sentinel: refine` does NOT appear in `getSpells`'s output. If neither test file targets `getSpells` directly, create `tests/spellScanner.test.ts` with this case + one positive baseline (a tagged-only file does appear) — S, junior-dev
-- [ ] B5: confirm `npm test`, `npm run lint`, `npm run arch:check` all green — S, junior-dev
+- [x] B1: create `src/refine/refineSentinelScanner.ts` exporting `getRefineSentinels(app: App)` and `isRefineSentinel(app: App, file: TFile)`. Pattern after `getSpells`: iterate `app.vault.getMarkdownFiles()`, check metadata cache, map to `{ name, path }`, sort by name. Strict equality check against `REFINE_SENTINEL_FRONTMATTER_VALUE`. JSDoc both exports — S, junior-dev (1214b04)
+- [x] B2: write unit tests in `tests/refine/refineSentinelScanner.test.ts` covering: empty vault → []; one marked file → one entry; sentinel value 'forge' → []; missing frontmatter → []; non-string sentinel value (number, array) → []; multiple entries sorted by basename — S, junior-dev (1214b04)
+- [x] B3: modify `getSpells` in `src/infra/spellScanner.ts` to additionally filter out files where `isRefineSentinel(app, file)` is true. Import the helper from `src/refine/refineSentinelScanner.ts`. Add the inline comment per Section briefing — S, junior-dev (1214b04)
+- [x] B4: add a unit test in `tests/SpellList.test.ts` (or `tests/spellScanner.test.ts` if it exists) proving that a markdown file with `tags: [grimoire/spell]` AND `sentinel: refine` does NOT appear in `getSpells`'s output. If neither test file targets `getSpells` directly, create `tests/spellScanner.test.ts` with this case + one positive baseline (a tagged-only file does appear) — S, junior-dev (1214b04)
+- [x] B5: confirm `npm test`, `npm run lint`, `npm run arch:check` all green — S, junior-dev (1214b04)
 
 ### C. `resolveRefinePath` pure resolver
 
@@ -506,9 +506,9 @@ Note: `'missing'` and `'unreadable'` are reserved reason values; the resolver it
 
 **junior-dev**
 
-- [ ] C1: create `src/refine/resolveRefinePath.ts` with the function, interfaces, and JSDoc. Pure logic per Section briefing. Implementation is a 6-branch switch on (perCast, settingsActive, isSentinel result) — S, junior-dev
-- [ ] C2: write `tests/refine/resolveRefinePath.test.ts` covering the six cases listed in Tests § Unit. Use plain object literals for inputs and a stub `isSentinel` (`(p) => p === 'X'`) — S, junior-dev
-- [ ] C3: confirm `npm test`, `npm run lint`, `npm run arch:check` all green — S, junior-dev
+- [x] C1: create `src/refine/resolveRefinePath.ts` with the function, interfaces, and JSDoc. Pure logic per Section briefing. Implementation is a 6-branch switch on (perCast, settingsActive, isSentinel result) — S, junior-dev
+- [x] C2: write `tests/refine/resolveRefinePath.test.ts` covering the six cases listed in Tests § Unit. Use plain object literals for inputs and a stub `isSentinel` (`(p) => p === 'X'`) — S, junior-dev
+- [x] C3: confirm `npm test`, `npm run lint`, `npm run arch:check` all green — S, junior-dev
 
 ### D. UI integration: Refine OptionsPanel variant select
 
@@ -535,7 +535,7 @@ Note: `'missing'` and `'unreadable'` are reserved reason values; the resolver it
 
 **ui-integration-tester**
 
-- [ ] D0: write `tests/integration/custom-refine-variant-select.spec.ts` covering:
+- [x] D0: write `tests/integration/custom-refine-variant-select.spec.ts` covering:
   - **D0-a (zero entries):** harness with no sentinel-marked file in the metadata cache → open Refine options panel via ArrowRight → no `<select>` with the *Default (built-in)* option appears after the Cast button.
   - **D0-b (one entry visible + initial selection):** harness with one sentinel-marked file (mock `getMarkdownFiles` to include it and `getFileCache` to return `frontmatter: { sentinel: 'refine' }`) and `settings.activeRefinePath = 'spells/My Refine.md'` → open panel → the variant `<select>` appears with `Default (built-in)` + one entry; the entry is selected; changing to `Default` writes `refinePathOverride: null` to the session map (assert via `sessionMap.get(REFINE_SENTINEL_PATH)?.refinePathOverride === null`); changing back to the entry writes the path.
   - **D0-c (Reset clears override):** with override set, click Reset → `sessionMap.get(REFINE_SENTINEL_PATH)` returns undefined.
@@ -544,11 +544,11 @@ Note: `'missing'` and `'unreadable'` are reserved reason values; the resolver it
 
 **senior-dev**
 
-- [ ] D1: create `src/ui/options/RefineVariantSelect.ts` implementing `RefineVariantSelect` class with `mount(parent, deps)` and `destroy()`. Renders the `<label>` and `<select>`. JSDoc the deps interface (already defined in Interfaces). Wire `onChange` to invoke `deps.onChange(value === '' ? null : value)`. No keyboard binding. — S, senior-dev
-- [ ] D2: extend `OptionsPanel.render` (and `OptionsPanelDeps`) to accept optional `refineVariantSelectDeps`. After `#bindReset(...)` in `#buildFormControls`, conditionally mount the `RefineVariantSelect` into the form element. Update destroy() to call the variant select's destroy. — M, senior-dev
-- [ ] D3: extend `OptionsDetail.#createPanel` to construct `refineVariantSelectDeps` only when `params.kind.kind === 'refine'` AND `getRefineSentinels(app).length > 0`. The deps' `onChange` callback reads `formState.snapshot()`, builds a complete `OptionsSessionEntry`, sets `refinePathOverride`, and calls `sessionMap.put(REFINE_SENTINEL_PATH, entry)`. — M, senior-dev (depends on D1, D2)
-- [ ] D4: extend `optionsFormSnapshotFromRefineDefaults` in `src/ui/options/OptionsFormState.ts` so the returned snapshot includes `refinePathOverride: sessionEntry?.refinePathOverride` (passes through whatever the session map holds; undefined when no panel session). Update the function's JSDoc — M, senior-dev
-- [ ] D5: confirm D0 is GREEN, existing `tests/integration/refine-options-panel.spec.ts` is GREEN, `npm test`, `npm run lint`, `npm run arch:check`, `npm run test:integration` all green — S, senior-dev
+- [x] D1: create `src/ui/options/RefineVariantSelect.ts` implementing `RefineVariantSelect` class with `mount(parent, deps)` and `destroy()`. Renders the `<label>` and `<select>`. JSDoc the deps interface (already defined in Interfaces). Wire `onChange` to invoke `deps.onChange(value === '' ? null : value)`. No keyboard binding. — S, senior-dev
+- [x] D2: extend `OptionsPanel.render` (and `OptionsPanelDeps`) to accept optional `refineVariantSelectDeps`. After `#bindReset(...)` in `#buildFormControls`, conditionally mount the `RefineVariantSelect` into the form element. Update destroy() to call the variant select's destroy. — M, senior-dev
+- [x] D3: extend `OptionsDetail.#createPanel` to construct `refineVariantSelectDeps` only when `params.kind.kind === 'refine'` AND `getRefineSentinels(app).length > 0`. The deps' `onChange` callback reads `formState.snapshot()`, builds a complete `OptionsSessionEntry`, sets `refinePathOverride`, and calls `sessionMap.put(REFINE_SENTINEL_PATH, entry)`. — M, senior-dev (depends on D1, D2)
+- [x] D4: extend `optionsFormSnapshotFromRefineDefaults` in `src/ui/options/OptionsFormState.ts` so the returned snapshot includes `refinePathOverride: sessionEntry?.refinePathOverride` (passes through whatever the session map holds; undefined when no panel session). Update the function's JSDoc — M, senior-dev
+- [x] D5: confirm D0 is GREEN, existing `tests/integration/refine-options-panel.spec.ts` is GREEN, `npm test`, `npm run lint`, `npm run arch:check`, `npm run test:integration` all green — S, senior-dev
 
 ### E. UI integration: Custom Refine settings section + seeder
 
@@ -577,7 +577,7 @@ Note: `'missing'` and `'unreadable'` are reserved reason values; the resolver it
 
 **ui-integration-tester**
 
-- [ ] E0: write `tests/integration/custom-refine-settings.spec.ts` covering:
+- [x] E0: write `tests/integration/custom-refine-settings.spec.ts` covering:
   - **E0-a (section rendered, dropdown lists entries):** open Settings tab → section heading visible; dropdown has `Default (built-in)` + N options matching the mocked sentinel-marked files; selecting one writes `activeRefinePath` and triggers `plugin.save`.
   - **E0-b (Create from default writes new file):** Vault mock with `create` spy; click *Create from default* → `vault.create` called with content matching `^---\nsentinel: refine\n---\n\n` and a body containing the bundled-Refine anchors (`'Mode 1: Generate'`, etc.); `activeRefinePath` updated to the new path; dropdown re-renders with the new entry selected.
   - **E0-c (Open link visibility):** with `activeRefinePath === null` → no *Open* button; with non-null → *Open* button present; clicking it calls `openVaultPath` with the active path.
@@ -587,13 +587,13 @@ Note: `'missing'` and `'unreadable'` are reserved reason values; the resolver it
 
 **senior-dev**
 
-- [ ] E1: create `src/refine/CustomRefineSeeder.ts`. Implement `seed(baseName?: string)` with the collision loop and the envelope build. Export a small `stripBundledMaterializerEnvelope(body: string): string` helper (used internally; not exported) or implement inline. Include the safety cap. — M, senior-dev
-- [ ] E2: write unit tests `tests/refine/CustomRefineSeeder.test.ts` covering: writes with default name; envelope shape; body strip (assert against a fixture); collision suffix progression; safety cap throws. — S, senior-dev
-- [ ] E3: create `src/ui/settings/CustomRefineSection.ts` implementing the `CustomRefineSection` class with a single `render(deps)` method. Use `new Setting(el).setName(...).setHeading()` for the section heading (no `createEl('h3', …)`). Dropdown, button, conditional Open button per Section briefing. — M, senior-dev
-- [ ] E4: extend `GrimoireSettingTab` constructor to accept `seeder` and `openVaultPath` deps (optional with safe no-op defaults). In `display()`, between `#renderGeneralSection` and `#renderAdvancedSection`, instantiate `CustomRefineSection` and call `render` with deps wired to `this.#plugin.app`, `() => this.#plugin.data.settings`, `(path) => { this.#plugin.data.settings.activeRefinePath = path; this.#save(); }`, the seeder, `openVaultPath`, and `() => this.display()`. — M, senior-dev (depends on E1, E3)
-- [ ] E5: wire `CustomRefineSeeder` and `openVaultPath` in `src/main.ts` where `GrimoireSettingTab` is constructed. Construct the seeder once with `vault: this.app.vault`, `forgeOutputFolder: () => this.data.settings.forgeOutputFolder`, `renderBody: renderRefineSystemPrompt`. `openVaultPath` is `(p) => void this.app.workspace.openLinkText(p, '', false)`. — S, senior-dev
-- [ ] E6: update `tests/integration/settings-panel.spec.ts`'s `childElementCount` assertion to the new total. Document the new count with a comment naming each section. — S, senior-dev
-- [ ] E7: confirm E0 GREEN, existing settings integration test GREEN, `npm test`, `npm run lint`, `npm run arch:check`, `npm run test:integration` all green. — S, senior-dev
+- [x] E1: create `src/refine/CustomRefineSeeder.ts`. Implement `seed(baseName?: string)` with the collision loop and the envelope build. Export a small `stripBundledMaterializerEnvelope(body: string): string` helper (used internally; not exported) or implement inline. Include the safety cap. — M, senior-dev
+- [x] E2: write unit tests `tests/refine/CustomRefineSeeder.test.ts` covering: writes with default name; envelope shape; body strip (assert against a fixture); collision suffix progression; safety cap throws. — S, senior-dev
+- [x] E3: create `src/ui/settings/CustomRefineSection.ts` implementing the `CustomRefineSection` class with a single `render(deps)` method. Use `new Setting(el).setName(...).setHeading()` for the section heading (no `createEl('h3', …)`). Dropdown, button, conditional Open button per Section briefing. — M, senior-dev
+- [x] E4: extend `GrimoireSettingTab` constructor to accept `seeder` and `openVaultPath` deps (optional with safe no-op defaults). In `display()`, between `#renderGeneralSection` and `#renderAdvancedSection`, instantiate `CustomRefineSection` and call `render` with deps wired to `this.#plugin.app`, `() => this.#plugin.data.settings`, `(path) => { this.#plugin.data.settings.activeRefinePath = path; this.#save(); }`, the seeder, `openVaultPath`, and `() => this.display()`. — M, senior-dev (depends on E1, E3)
+- [x] E5: wire `CustomRefineSeeder` and `openVaultPath` in `src/main.ts` where `GrimoireSettingTab` is constructed. Construct the seeder once with `vault: this.app.vault`, `forgeOutputFolder: () => this.data.settings.forgeOutputFolder`, `renderBody: renderRefineSystemPrompt`. `openVaultPath` is `(p) => void this.app.workspace.openLinkText(p, '', false)`. — S, senior-dev
+- [x] E6: update `tests/integration/settings-panel.spec.ts`'s `childElementCount` assertion to the new total. Document the new count with a comment naming each section. — S, senior-dev
+- [x] E7: confirm E0 GREEN, existing settings integration test GREEN, `npm test`, `npm run lint`, `npm run arch:check`, `npm run test:integration` all green. — S, senior-dev
 
 ### F. Cast resolution wiring + fallback Notice
 
@@ -678,7 +678,7 @@ const refineCastAction: RefineCastAction = (snapshot) => {
 
 **ui-integration-tester**
 
-- [ ] F0: write `tests/integration/custom-refine-cast.spec.ts` covering:
+- [x] F0: write `tests/integration/custom-refine-cast.spec.ts` covering:
   - **F0-a (no custom configured, no per-cast override):** `settings.activeRefinePath === null`, no session override → dispatcher receives `systemPromptFilePath === paths.refineSpellPathVaultRel()`. No Notice posted.
   - **F0-b (Settings-active custom, no per-cast override):** active path is a vault file with `sentinel: refine` → dispatcher receives that path. No Notice.
   - **F0-c (Settings-active custom, file missing or un-marked):** active path is set to a path that `getAbstractFileByPath` returns null OR a TFile without the sentinel frontmatter → dispatcher receives `paths.refineSpellPathVaultRel()`. Notice posted with text `'Custom Refine spell not found — using default'`.
@@ -688,8 +688,8 @@ const refineCastAction: RefineCastAction = (snapshot) => {
 
 **senior-dev**
 
-- [ ] F1: modify `src/ui/popup/CommandPopupBuilder.ts` to implement the new `refineCastAction` shape per Section briefing. Import `resolveRefinePath` from `src/refine/resolveRefinePath.ts`, `isRefineSentinel` from `src/refine/refineSentinelScanner.ts`, and `TFile` from `obsidian`. — M, senior-dev
-- [ ] F2: confirm F0 GREEN, existing `tests/integration/refine-cast.spec.ts` GREEN, `npm test`, `npm run lint`, `npm run arch:check`, `npm run test:integration` all green. — S, senior-dev
+- [x] F1: modify `src/ui/popup/CommandPopupBuilder.ts` to implement the new `refineCastAction` shape per Section briefing. Import `resolveRefinePath` from `src/refine/resolveRefinePath.ts`, `isRefineSentinel` from `src/refine/refineSentinelScanner.ts`, and `TFile` from `obsidian`. — M, senior-dev
+- [x] F2: confirm F0 GREEN, existing `tests/integration/refine-cast.spec.ts` GREEN, `npm test`, `npm run lint`, `npm run arch:check`, `npm run test:integration` all green. — S, senior-dev
 
 ### G. Documentation drift sweep
 
@@ -711,8 +711,8 @@ Likely patches:
 
 **junior-dev**
 
-- [ ] G1: read each of the four files. Identify drift. Apply minimal in-place edits. Do not invent new sections; keep each edit a sentence or short paragraph that links to plan-029 by number. — S, junior-dev
-- [ ] G2: confirm `npm run lint` still passes (markdown is not linted, but the safety check is cheap). — S, junior-dev
+- [x] G1: read each of the four files. Identify drift. Apply minimal in-place edits. Do not invent new sections; keep each edit a sentence or short paragraph that links to plan-029 by number. — S, junior-dev
+- [x] G2: confirm `npm run lint` still passes (markdown is not linted, but the safety check is cheap). — S, junior-dev
 
 ---
 
@@ -750,3 +750,13 @@ If a parallel-execution opportunity arises, B and C can run concurrently after A
 - `tests/refine/refineSentinelScanner.test.ts`, `tests/refine/resolveRefinePath.test.ts`, `tests/refine/CustomRefineSeeder.test.ts` all green. Three new integration specs (`custom-refine-variant-select`, `custom-refine-settings`, `custom-refine-cast`) all green. Existing `tests/integration/refine-cast.spec.ts`, `tests/integration/refine-options-panel.spec.ts`, `tests/integration/settings-panel.spec.ts` still green (with the one expected element-count update in settings-panel).
 - `npm test`, `npm run lint`, `npm run arch:check`, `npm run test:integration` all green.
 - `docs/features/refine-cast.md` and `docs/features/settings-panel.md` describe the new cascade and Settings section (drift patched in G).
+
+reviewed @ 9cfdeb4
+
+## Review fixes applied
+
+- [x] W1: pre-select dropdown from `settings.activeRefinePath` when no session entry — fix, senior-dev (78fe902)
+- [x] W2: hoist `getRefineSentinels` call in `OptionsDetail.#createPanel` — refactor, senior-dev (37283d0)
+- [x] S3: remove dead `export type { RefineSentinelEntry }` from `RefineVariantSelect.ts` — refactor, senior-dev (37283d0)
+- [x] S1: extract `RefineSeeder` interface to eliminate double-cast in `#makeNoopSeeder` — refactor, senior-dev (6f0e470)
+- [x] S2: verify/fix eslint-disable comment in `CustomRefineSection.ts` — refactor, senior-dev (08fd8f6)

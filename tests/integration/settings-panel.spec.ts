@@ -27,9 +27,12 @@ describe('GrimoireSettingTab seam', () => {
     tab.display();
   });
 
-  // (i) 13 rows (7 existing + 5 Advanced text/password + 1 toggle) + 1 <hr> + 1 <h3> = 28 children
-  it('renders 13 setting rows + hr + h3 (28 child elements in containerEl)', () => {
-    expect(tab.containerEl.childElementCount).toBe(28);
+  // (i) 13 rows (7 general + 5 Advanced text/password + 1 toggle)
+  //   + 2 <hr>+<h3> section headings (Custom Refine spell + Advanced)
+  //   + 2 Custom Refine section rows (Active Refine dropdown + Create from default button)
+  //   = 28 original + 6 new = 34 children
+  it('renders setting rows + section headings (34 child elements in containerEl)', () => {
+    expect(tab.containerEl.childElementCount).toBe(34);
   });
 
   // (ii) Text input write-through — spell-tag (index 0)
@@ -161,9 +164,10 @@ describe('GrimoireSettingTab seam', () => {
   });
 
   it('containerEl has an <h3> element with text "Advanced" in the Advanced section', () => {
-    const h3 = tab.containerEl.querySelector('h3');
-    expect(h3).not.toBeNull();
-    expect(h3!.textContent).toBe('Advanced');
+    const h3s = Array.from(tab.containerEl.querySelectorAll('h3'));
+    const advancedH3 = h3s.find(h => h.textContent === 'Advanced');
+    expect(advancedH3).not.toBeUndefined();
+    expect(advancedH3!.textContent).toBe('Advanced');
   });
 
   it('<hr> and <h3> appear after the 7th existing Setting children and before the Advanced rows', () => {

@@ -39,6 +39,10 @@ Refine requires an open markdown file: if the user presses Enter and no `.md` fi
 - Custom Refine Script — prompt is hardcoded in plugin source; user-authored prompt body waits for a second use case.
 - Re-cast affordance on Refine entries in Cast Log — pitch explicitly defers; existing log row behaviour applies unchanged.
 
+## Resolution rules
+
+The Refine prompt file is resolved at dispatch time following a cascade: per-cast override (from the Refine OptionsPanel's variant selector) → Settings' active Refine path → bundled default at `<pluginDir>/refine.md`. If the per-cast or Settings choice points to a file that is missing, unreadable, or no longer marked with `sentinel: refine` in its frontmatter, a `Notice` displays `"Custom Refine spell not found — using default"` and the cast proceeds with the bundled default. The cascade ensures graceful fallback without halting the cast or requiring the user to open Settings. See `plan-029-custom-refine-spell` for the full Settings and OptionsPanel integration.
+
 ## Relationship to existing system
 
 - **Extends `cast-unification` (014).** Both spell casting and Refine casting now flow through the shared `CastDispatcher` with identical `castId` threading and log-record discipline.

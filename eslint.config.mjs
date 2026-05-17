@@ -24,6 +24,8 @@ export default [
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
+      // 'Refine' and 'Forge' are proper-noun feature names in Grimoire — treat them as brands to preserve casing
+      "obsidianmd/ui/sentence-case": ["error", { brands: ["Refine", "Forge"] }],
       "@typescript-eslint/explicit-module-boundary-types": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
       "no-unused-vars": "off",

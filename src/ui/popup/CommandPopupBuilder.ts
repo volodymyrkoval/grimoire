@@ -1,4 +1,4 @@
-import { App, Notice } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import { CommandPopup } from '../CommandPopup';
 import type { RefineCastAction } from '../CommandPopup';
 import { obsidianRanker } from '../../infra/obsidianRanker';
@@ -10,6 +10,8 @@ import type { GrimoireData } from '../../domain/settings/Settings';
 import type { CastDispatcher } from '../../cast/CastDispatcher';
 import type { PluginPaths } from '../../infra/PluginPaths';
 import { refineCastSpell } from '../../refine/refineCastSpell';
+import { resolveRefinePath } from '../../refine/resolveRefinePath';
+import { isRefineSentinel } from '../../refine/refineSentinelScanner';
 
 export interface CommandPopupBuilderDeps {
   app: App;
@@ -41,16 +43,32 @@ export class CommandPopupBuilder {
         new Notice('Refine needs an open note');
         return;
       }
+      const bundled = this.#deps.paths.refineSpellPathVaultRel();
+      const settings = this.#deps.plugin.data.settings;
+      const isSentinel = (p: string): boolean => {
+        const file = this.#deps.app.vault.getAbstractFileByPath(p);
+        if (!(file instanceof TFile)) return false;
+        return isRefineSentinel(this.#deps.app, file);
+      };
+      const resolved = resolveRefinePath({
+        perCast: snapshot.refinePathOverride,
+        settingsActive: settings.activeRefinePath,
+        bundledDefaultVaultRel: bundled,
+        isSentinel,
+      });
+      if (resolved.isFallback) {
+        new Notice('Custom Refine spell not found — using default');
+      }
       dispatcher.dispatch({
         spell: refineCastSpell(),
         model: snapshot.model,
         effort: snapshot.effort,
         contextNotePaths: snapshot.contextNotePaths,
         followUp: snapshot.followUp,
-        settings: this.#deps.plugin.data.settings,
+        settings,
         activeFilePath: activeFile.path,
         executeOnNote: true,           // Refine always targets active note; snapshot value ignored
-        systemPromptFilePath: this.#deps.paths.refineSpellPathVaultRel(),
+        systemPromptFilePath: resolved.path,
       });
       popup.dismiss();  // fully closes after dispatch; idempotent if dispatcher's close() already ran
     };
@@ -82,6 +100,7 @@ export class CommandPopupBuilder {
       overrides: this.#deps.plugin.overrides,
       sessionMap: this.#deps.sessionMap,
       castLogPanelDeps: this.#deps.castLogPanelDeps,
+      settingsActiveRefinePath: this.#deps.plugin.data.settings.activeRefinePath,
     });
 
     dispatcher = this.#deps.createDispatcher(() => popup.close());

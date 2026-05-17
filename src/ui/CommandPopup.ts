@@ -33,6 +33,9 @@ export type { FormDefaults } from "../domain/settings/FormDefaults";
  * - `overrides`: Per-spell option overrides (persisted, mutable).
  * - `sessionMap`: Ephemeral form state per spell during popup lifetime.
  * - `castLogPanelDeps`: Shared dependencies for the cast log panel.
+ * - `settingsActiveRefinePath`: Vault-relative path of the settings-level active Refine spell;
+ *   used to pre-select the variant dropdown when no per-session override exists. Optional — omitting
+ *   it is equivalent to passing `null` (no custom active Refine).
  */
 export interface CommandPopupParams {
   app: App;
@@ -45,6 +48,8 @@ export interface CommandPopupParams {
   overrides: SpellOverrideStore;
   sessionMap: OptionsSessionMap;
   castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'>;
+  /** Vault-relative path of the settings-level active Refine spell; null = built-in default. */
+  settingsActiveRefinePath?: string | null;
 }
 
 /**
@@ -129,6 +134,7 @@ export class CommandPopup extends Modal {
       imprintAction: this.#imprintAction,
       castAction: this.#castAction,
       refineCastAction: this.#refineCastAction,
+      settingsActiveRefinePath: params.settingsActiveRefinePath ?? null,
       onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
       onEnterDetail: (detail, onBack) => this.#enterDetail(detail, onBack),
       onExit: () => this.#exitDetail(),

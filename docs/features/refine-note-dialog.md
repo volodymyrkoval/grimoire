@@ -6,6 +6,8 @@
 
 In the Spells tab of the Command Popup, the Refine sentinel row now advertises the same `↵ cast · → options` chip as a spell row. Pressing `ArrowRight` while it is highlighted slides into the same options form that authored spells use — model, effort, context notes, follow-up, executeOnNote, and the conditional "Set as default" checkbox. The Forge sentinel is unchanged and does not display the chip.
 
+Since `plan-029` (custom-refine-spell), the Refine OptionsPanel includes a conditional dropdown below the Cast button that lists all sentinel-marked custom Refine variants (with `Default (built-in)` pinned first), visible only when at least one custom variant exists. This selector is outside the keyboard flow and allows the user to override the Settings default for the current cast only. The core dialog/panel relationship (Right arrow, Cast, modal dismiss) remains unchanged.
+
 Persistence flows through the existing `SpellOverrideStore`: toggling "Set as default" stores model + effort under a reserved synthetic path so re-opening Refine pre-fills with the user's last default. Re-opening within the same Obsidian session also restores last-cast values via the existing session map.
 
 Activation closes the popup. In this iteration only, `Enter` on the Refine row dismisses the modal directly (no cast dispatch). Cast (button click or `Cmd/Ctrl+Enter`) from inside the Refine options panel also fully dismisses the modal without dispatching a cast, writing a cast record, generating a `castId`, or invoking Claude Code. The dismissal is the only side effect on the cast surface this iteration — both paths are no-ops at the dispatch level.

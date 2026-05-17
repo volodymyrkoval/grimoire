@@ -8,6 +8,8 @@ export interface OptionsSessionEntry {
   contextNotePaths: readonly string[];
   followUp: string;
   executeOnNote: boolean;
+  // Only meaningful for the Refine sentinel entry. undefined = no per-cast choice; null = explicit 'Default (built-in)'.
+  refinePathOverride?: string | null;
 }
 
 /**

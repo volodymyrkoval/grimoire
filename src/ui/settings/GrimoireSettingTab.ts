@@ -2,21 +2,34 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import { GrimoireData, SUPPORTED_MODELS } from '../../domain/settings/Settings';
 import { EffortRow } from '../widgets/EffortRow';
 import { modelId } from '../../domain/settings/ModelId';
+import { RefineSeeder } from '../../refine/CustomRefineSeeder';
+import { CustomRefineSection } from './CustomRefineSection';
 
 /**
  * Plugin settings UI rendered in Obsidian's Settings modal.
- * Groups general settings (spell tag, CLI, binary path, vault mount) and advanced settings
- * (remote execution, portal config, auth) with reactive persistence via plugin.save().
+ * Groups general settings (spell tag, CLI, binary path, vault mount), the Custom Refine
+ * spell section, and advanced settings (remote execution, portal config, auth) with
+ * reactive persistence via plugin.save().
  */
 export class GrimoireSettingTab extends PluginSettingTab {
   readonly #plugin: { app: App; data: GrimoireData; save(): void };
   readonly #onSettingsSaved: () => void;
+  readonly #seeder: RefineSeeder;
+  readonly #openVaultPath: (path: string) => void;
 
-  constructor(app: App, plugin: { app: App; data: GrimoireData; save(): void }, onSettingsSaved?: () => void) {
+  constructor(
+    app: App,
+    plugin: { app: App; data: GrimoireData; save(): void },
+    onSettingsSaved?: () => void,
+    seeder?: RefineSeeder,
+    openVaultPath?: (path: string) => void,
+  ) {
     // plugin satisfies PluginSettingTab structurally; 'as any' bridges the nominal Obsidian Plugin type
     super(app, plugin as unknown as import('obsidian').Plugin);
     this.#plugin = plugin;
     this.#onSettingsSaved = onSettingsSaved ?? (() => {});
+    this.#seeder = seeder ?? this.#makeNoopSeeder();
+    this.#openVaultPath = openVaultPath ?? (() => {});
   }
 
   /** Saves plugin data and fires the onSettingsSaved callback (fire-and-forget). */
@@ -28,6 +41,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
   display(): void {
     this.containerEl.empty();
     this.#renderGeneralSection();
+    this.#renderCustomRefineSection();
     this.#renderAdvancedSection();
   }
 
@@ -42,6 +56,33 @@ export class GrimoireSettingTab extends PluginSettingTab {
     const effortRow = new EffortRow();
     this.#addModelField(effortRow);
     this.#addEffortField(effortRow);
+  }
+
+  #renderCustomRefineSection(): void {
+    const section = new CustomRefineSection();
+    section.render({
+      containerEl: this.containerEl,
+      app: this.#plugin.app,
+      getSettings: () => this.#plugin.data.settings,
+      setActiveRefinePath: (path) => {
+        this.#plugin.data.settings.activeRefinePath = path;
+        this.#save();
+      },
+      seeder: this.#seeder,
+      openVaultPath: this.#openVaultPath,
+      refresh: () => {
+        const scrollTop = this.containerEl.scrollTop;
+        this.display();
+        this.containerEl.scrollTop = scrollTop;
+      },
+    });
+  }
+
+  #makeNoopSeeder(): RefineSeeder {
+    // Returns a RefineSeeder-shaped object that rejects immediately — safe fallback when no seeder is wired in
+    return {
+      seed: () => Promise.reject(new Error('No seeder configured')),
+    };
   }
 
   #renderAdvancedSection(): void {

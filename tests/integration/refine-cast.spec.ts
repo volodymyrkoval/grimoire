@@ -42,6 +42,7 @@ const BASE_SETTINGS: GrimoireData['settings'] = {
   portalPath: '',
   portalAuthUser: '',
   portalAuthPassword: '',
+  activeRefinePath: null,
 };
 
 // ─── harness factory ─────────────────────────────────────────────────────────

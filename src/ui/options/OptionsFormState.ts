@@ -13,6 +13,8 @@ export interface OptionsFormSnapshot {
   contextNotePaths: readonly string[];
   followUp: string;
   executeOnNote: boolean;
+  /** Only set for the Refine sentinel. undefined = no choice yet; null = explicit "Default (built-in)". */
+  refinePathOverride?: string | null;
 }
 
 /**
@@ -36,6 +38,7 @@ export function optionsFormSnapshotFromDefaults(
  * Creates an initial form snapshot for the Refine sentinel from defaults, overrides, and session state.
  * Resolves Refine-specific options (model, effort) from overrides and defaults,
  * pulls context notes and follow-up from the session map, and forces executeOnNote to true.
+ * Also restores `refinePathOverride` from the session entry when present.
  */
 export function optionsFormSnapshotFromRefineDefaults(
   defaults: FormDefaults,
@@ -62,6 +65,7 @@ export function optionsFormSnapshotFromRefineDefaults(
     contextNotePaths: sessionEntry?.contextNotePaths ?? [],
     followUp: sessionEntry?.followUp ?? '',
     executeOnNote: true,
+    refinePathOverride: sessionEntry?.refinePathOverride,
   };
 }
 

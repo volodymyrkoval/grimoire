@@ -8,6 +8,8 @@ import { GrimoireSettingTab } from './ui/settings/GrimoireSettingTab';
 import { CastLogModule } from './main/CastLogModule';
 import { PopupModule } from './main/PopupModule';
 import { refineMarkerExtension } from './editor/refineMarkerExtension';
+import { CustomRefineSeeder } from './refine/CustomRefineSeeder';
+import { renderRefineSystemPrompt } from './refine/refineTemplate';
 
 /**
  * Obsidian plugin entry point for Grimoire (spell management and casting).
@@ -70,9 +72,15 @@ export default class GrimoirePlugin extends Plugin {
   }
 
   #registerUI(castLog: CastLogModule, popupModule: PopupModule): void {
+    const seeder = new CustomRefineSeeder({
+      vault: this.app.vault,
+      forgeOutputFolder: () => this.data.settings.forgeOutputFolder,
+      renderBody: renderRefineSystemPrompt,
+    });
+    const openVaultPath = (p: string): void => void this.app.workspace.openLinkText(p, '', false);
     this.addSettingTab(new GrimoireSettingTab(this.app, this, () => {
       castLog.materializeForge().catch(console.error);
-    }));
+    }, seeder, openVaultPath));
     popupModule.register(this);
     try {
       this.registerEditorExtension(refineMarkerExtension());

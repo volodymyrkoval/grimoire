@@ -31,6 +31,8 @@ export interface DetailPanelRouterDeps {
   imprintAction: ImprintAction;
   castAction: CastAction;
   refineCastAction: RefineCastAction;
+  /** Vault-relative path of the settings-level active Refine spell; null = built-in default. */
+  settingsActiveRefinePath: string | null;
   onOverrideChanged: () => void;
   /** Called after constructing a detail component; lets the host enter detail phase. */
   onEnterDetail: (detail: { destroy(): void }, onBack: () => void) => void;
@@ -112,6 +114,7 @@ export class DetailPanelRouter {
       onCast: (snap) => this.#deps.refineCastAction(snap),
       onOverrideChanged: this.#deps.onOverrideChanged,
       kind: { kind: 'refine' },
+      settingsActiveRefinePath: this.#deps.settingsActiveRefinePath,
     });
     this.#deps.onEnterDetail(detail, exit);
   }
