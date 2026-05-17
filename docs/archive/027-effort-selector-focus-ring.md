@@ -97,12 +97,12 @@ N/A. CSS rule with no logic — the only failure mode is a community theme overr
 
 **junior-dev**
 
-- [ ] A1: Add a vitest unit test `tests/segmented-focus-ring.test.ts` that reads `src/main.css` and asserts the focus-visible rule exists with the right shape. Use the helper pattern from `tests/integration/options-chip-click.spec.ts:207–209` (`fs.readFileSync(path.resolve(__dirname, '../src/main.css'), 'utf8')`) — note the relative path is `../src/main.css` because this test lives in `tests/`, not `tests/integration/`. Three assertions in one or three `it` blocks (executor's call — both are fine, single block is leaner):
+- [x] A1: Add a vitest unit test `tests/segmented-focus-ring.test.ts` that reads `src/main.css` and asserts the focus-visible rule exists with the right shape. Use the helper pattern from `tests/integration/options-chip-click.spec.ts:207–209` (`fs.readFileSync(path.resolve(__dirname, '../src/main.css'), 'utf8')`) — note the relative path is `../src/main.css` because this test lives in `tests/`, not `tests/integration/`. Three assertions in one or three `it` blocks (executor's call — both are fine, single block is leaner):
   - `expect(css).toMatch(/\.grimoire-segmented__btn:focus-visible\s*\{[^}]*outline:\s*[12]px\s+solid\s+var\(--interactive-accent\)[^}]*\}/s)`
   - `expect(css).toMatch(/\.grimoire-segmented__btn:focus-visible\s*\{[^}]*outline-offset:\s*[1-9]\d*px[^}]*\}/s)`
   - Negative: `expect(css).not.toMatch(/\.grimoire-segmented__btn:focus(?!-visible)/)` — guards the pitch's "no plain `:focus`" rabbit hole; if a future executor weakens the rule to `:focus`, this fires.
   Verify the test is red before A2 (rule does not yet exist). — S, junior-dev
-- [ ] A2: In `src/main.css`, append the rule immediately after the `.grimoire-segmented__btn.is-active` block (after the closing `}` of line 326, before the `/* CastLogPanel */` comment on line 328). Exact rule body:
+- [x] A2: In `src/main.css`, append the rule immediately after the `.grimoire-segmented__btn.is-active` block (after the closing `}` of line 326, before the `/* CastLogPanel */` comment on line 328). Exact rule body:
   ```css
   .grimoire-segmented__btn:focus-visible {
       outline: 2px solid var(--interactive-accent);
@@ -110,7 +110,7 @@ N/A. CSS rule with no logic — the only failure mode is a community theme overr
   }
   ```
   No `!important`. Match the four-space indentation used throughout `src/main.css`. Run `npm test` — A1's three assertions all pass. Run `npm run lint` and `npm run arch:check` — both pass (TypeScript surface unchanged). — S, junior-dev
-- [ ] A3: Smoke `npm run build`. Confirm it exits 0 and that the emitted `styles.css` contains the new rule (search for the selector `grimoire-segmented__btn:focus-visible`). Do not commit `styles.css` — it is build output. If `styles.css` is tracked in git but auto-regenerates, that is a pre-existing project condition; do not change tracking behaviour in this iteration. — S, junior-dev
+- [x] A3: Smoke `npm run build`. Confirm it exits 0 and that the emitted `styles.css` contains the new rule (search for the selector `grimoire-segmented__btn:focus-visible`). Do not commit `styles.css` — it is build output. If `styles.css` is tracked in git but auto-regenerates, that is a pre-existing project condition; do not change tracking behaviour in this iteration. — S, junior-dev
 
 ### Overall effort summary
 
