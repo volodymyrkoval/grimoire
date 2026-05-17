@@ -18,14 +18,14 @@ Each dispatch generates a UUID via `crypto.randomUUID`, threads it through the r
 - **`castId` is required on `CastRunInput` and on both dispatcher deps.** Optional would invite drift where some paths skip log entries — exactly the failure mode the contract prevents.
 - **Dispatchers own id generation, not `main.ts`.** Generating after each dispatcher's guard passes means a guard-blocked cast never gets an id and never gets a `casted` event.
 - **Runner stays oblivious to the store.** It threads `castId` into env and surfaces failures via its existing `onFailure(msg)` callback; the dispatcher/imprinter writes `error` from inside that callback. Preserves runner's single responsibility.
-- **`FORGE_SPELL_PATH = '<forge>'` and `REFINE_SPELL_PATH = '<refine>'` live in the log types module**, not in `forge/` or `refine/`, because they are properties of the log contract and future readers will render them specially. Each sentinel identifies casts originating from the corresponding trigger (Forge form vs. Refine sentinel).
+- **`FORGE_SPELL_PATH = '<forge>'` and `REFINE_SPELL_PATH = '<refine>'`** identify casts originating from the corresponding trigger (Forge form vs. Refine sentinel). Originally exported from the cast-log types module; relocated to `domain/spells/SystemSpellPaths.ts` in `audit-002-rework` to close cross-module boundary violations (forge / refine / castLog all consume the constants).
 - **No schema-version field yet.** Deferred to the first breaking change. Adding `schemaVersion: 1` now would lock the format earlier than necessary.
 
 ## Scope
 
 **In:**
 
-- `CastLogEvent` discriminated union (`casted` / `error` / `in-progress` / `done`) and the `FORGE_SPELL_PATH` sentinel, exported from a new `castLog` module.
+- `CastLogEvent` discriminated union (`casted` / `error` / `in-progress` / `done`), exported from a new `castLog` module. (The `FORGE_SPELL_PATH` sentinel was originally exported here too; `audit-002-rework` later moved the sentinels to `domain/spells/SystemSpellPaths.ts`.)
 - `CastLogStore` class with `recordCasted` and `recordError`, lazy path resolution, injectable `appendLine` / `getBasePath` / `now` / `generateId` ports for testability.
 - `castId: string` threaded through `CastDispatchInput`, `CastRunInput`, and into the spawned subprocess env as `CAST_ID`.
 - Both dispatch sites (`CastDispatcher.dispatch`, `ForgeImprinter.imprint`) generate `castId` after their guards pass, write `casted` before the spawn, and write `error` from the failure callback.

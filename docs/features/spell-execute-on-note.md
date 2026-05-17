@@ -17,13 +17,13 @@ The flag flows through four layers — Forge UI sets it, the forge system prompt
 |---|---|---|
 | `EXECUTE_ON_NOTE_KEY` | `src/domain/spells/Spell.ts` | The frontmatter key constant `'grimoire-execute-on-note'` |
 | `Spell.executeOnNote` | `src/domain/spells/Spell.ts` | Boolean field on the `Spell` interface |
-| `getSpells` | `src/domain/spells/spellScanner.ts` | Reads `frontmatter[EXECUTE_ON_NOTE_KEY]`; coerces non-strict-bool values to `true` |
+| `getSpells` | `src/infra/spellScanner.ts` | Reads `frontmatter[EXECUTE_ON_NOTE_KEY]`; coerces non-strict-bool values to `true`. (Moved to `infra/` in `audit-002-rework`.) |
 | `renderForgeSystemPrompt` / `buildForgeUserPrompt` | `src/forge/forgeTemplate.ts`, `src/forge/buildForgeUserPrompt.ts` | System prompt emits step-3 frontmatter instruction `${EXECUTE_ON_NOTE_KEY}: <value>`; user prompt carries the per-cast `executeOnNote` value (see `forge-spell-materialization`) |
 | `ForgeFormSnapshot.executeOnNote` | `src/forge/ForgeFormSnapshot.ts` | Forge form output field |
 | `ForgeSentinelDetail` (checkbox) | `src/ui/components/ForgeSentinelDetail.ts` | "Execute on active note" checkbox, default checked |
 | `OptionsFormSnapshot.executeOnNote` + `setExecuteOnNote` | `src/ui/options/OptionsFormState.ts` | Reactive per-cast override |
 | `OptionsPanel` (checkbox) | `src/ui/options/OptionsPanel.ts` | "Execute on active note" checkbox, always visible, seeded from formState |
-| `SpellOptionsDetail` | `src/ui/components/SpellOptionsDetail.ts` | Seeds form state with `sessionEntry?.executeOnNote ?? spell.executeOnNote` |
+| `OptionsDetail` (spell kind) | `src/ui/components/OptionsDetail.ts` | Seeds form state with `sessionEntry?.executeOnNote ?? spell.executeOnNote`. (Formerly `SpellOptionsDetail`; unified with the refine variant into `OptionsDetail` in `audit-002-rework`.) |
 | `CastDispatchInput.executeOnNote` + `dispatch()` | `src/cast/CastDispatcher.ts` | Conditional bail and conditional prompt prefix |
 
 ## Data flow
@@ -48,7 +48,7 @@ ForgeSentinelDetail                     ---
                                                      │
                                                      ▼ Spell.executeOnNote
 Options panel                          CastDispatcher.dispatch:
-SpellOptionsDetail                       if (executeOnNote && activeFilePath === null)
+OptionsDetail (spell kind)               if (executeOnNote && activeFilePath === null)
   seeds formState with                       → notify "Open a note…" + close + return
     sessionEntry?.eon                      userPrompt =
       ?? spell.executeOnNote                 executeOnNote && activeFilePath !== null

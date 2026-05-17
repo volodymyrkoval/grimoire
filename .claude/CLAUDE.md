@@ -28,7 +28,8 @@ npm run arch:check      # architecture fitness check
 
 - `npm test` — unit tests via vitest (placeholder passes)
 - `npm run lint` — ESLint checks
-- Pre-commit hook enforces lint → test order (see `.claude/lint-cmd` and `.claude/test-cmd`)
+- `npm run arch:check` — dependency-cruiser architecture fitness (restored in `audit-002-rework`)
+- Pre-commit hook enforces `lint → arch:check → test` order (see `.claude/lint-cmd` and `.claude/test-cmd`)
 
 ## Obsidian files
 

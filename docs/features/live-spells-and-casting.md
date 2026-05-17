@@ -15,7 +15,7 @@ This iteration removed the previous placeholder spell-detail view (`<h2>` + Back
 | `CastDispatcher` | `src/cast/CastDispatcher.ts` | Build user prompt, conditional bail when no active note, notify, invoke caster |
 | `Caster` (interface) + `LocalCaster` / `RemoteCaster` | `src/execution/`, `src/cast/local/`, `src/cast/portal/` | Mode-specific execution; see `cast-unification` |
 | `CastRunner` + `CastSpawner` + `buildCastArgs` | `src/cast/local/` | Compose CLI binary + args, spawn subprocess (used internally by `LocalCaster`) |
-| `getSpells` | `src/domain/spells/spellScanner.ts` | Scan `app.vault.getMarkdownFiles()`, filter by tag, read `executeOnNote` from frontmatter |
+| `getSpells` | `src/infra/spellScanner.ts` | Scan `app.vault.getMarkdownFiles()`, filter by tag, read `executeOnNote` from frontmatter. (Moved from `domain/spells/` to `infra/` in `audit-002-rework` — it imports `obsidian` and cannot sit in the pure domain layer.) |
 | `SpellsPanel` | `src/ui/tabs/SpellsPanel.ts` | Hold scanned spells; emit `cast` on `confirm(index)` for spell-row indices |
 | `CastAction` (callback) | `src/ui/CommandPopup.ts` | `(spell: Spell, snapshot: OptionsFormSnapshot) => void` — popup-side seam (single action after `cast-unification`); the popup itself builds the default snapshot for Enter-from-list |
 
