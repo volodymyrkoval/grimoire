@@ -338,6 +338,7 @@
 
 .cast-log-context-notes a,
 .cast-log-affected-files a {
+    display: block;
     color: var(--link-color);
     text-decoration: none;
     font-size: var(--font-ui-smaller);
