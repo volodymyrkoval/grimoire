@@ -66,7 +66,7 @@ Reset (button click):
 2. Press `ArrowRight`. The panel replaces the search view (popup phase = `detail`, search keys suspended).
 3. Edit any control. Click **Cast** (or `Cmd/Ctrl+Enter`) to dispatch with the live values; click **Reset** to restore the open-time defaults; tick **Set as default** to persist model+effort for this spell; click **← Back** (or Escape) to dismiss without casting.
 
-A spell row keyboard hint reads `↵ cast · → options` to advertise both bindings.
+A spell row hint reads `↵ cast · → options` to advertise both bindings; the `→ options` half is also a click target that opens the panel directly (see `clickable-options-chip`).
 
 ## Refine sentinel variant
 
