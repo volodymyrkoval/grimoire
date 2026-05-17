@@ -12,8 +12,9 @@ export class SpellRow {
   render(container: HTMLElement, spell: Spell, selected: boolean, hasOverride: boolean = false): void {
     this.el = container.createDiv({ cls: "spells-row" });
     if (selected) this.#markSelected();
-    this.#appendName(spell.name);
-    if (hasOverride) this.#appendOverrideDot();
+    const nameBlock = this.el.createDiv({ cls: "spells-row-name" });
+    this.#appendName(nameBlock, spell.name);
+    if (hasOverride) this.#appendOverrideDot(nameBlock);
     this.#appendHint();
   }
 
@@ -21,12 +22,12 @@ export class SpellRow {
     this.el.addClass("is-selected");
   }
 
-  #appendName(name: string): void {
-    this.el.createSpan({ text: name });
+  #appendName(parent: HTMLElement, name: string): void {
+    parent.createSpan({ text: name });
   }
 
-  #appendOverrideDot(): void {
-    this.el.createSpan({ cls: "grimoire-override-dot" });
+  #appendOverrideDot(parent: HTMLElement): void {
+    parent.createSpan({ cls: "grimoire-override-dot" });
   }
 
   #appendHint(): void {

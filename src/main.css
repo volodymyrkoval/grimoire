@@ -13,11 +13,22 @@
     border-radius: 4px;
 }
 
+.spells-row-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow-wrap: break-word;
+}
+
 .spells-row-hint {
     font-size: calc(var(--font-ui-small) * 0.9) !important;
     color: var(--text-faint) !important;
     opacity: 0;
     transition: opacity 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .spells-row.is-selected .spells-row-hint,

@@ -83,7 +83,7 @@ None. CSS rules degrade gracefully — if a theme overrides any of the three pro
 **Section-level Red criterion:** A written decision (plus rationale) exists, captured in plan annotation or commit body, before B1 begins. "Done" = the executor of B1 knows whether to touch `SpellRow.ts`.
 
 **junior-dev**
-- [ ] A1: open the popup in a dev build, inspect a spell-row with a persisted override in DevTools, and confirm whether the `.grimoire-override-dot` sits adjacent to the name span or floats in the middle of the row. Record the decision in the B1 commit message body: either "dot already adjacent — CSS-only fix" or "dot floats — introduce `.spells-row-name` wrapper". If the dev build is not readily available, fall back to reasoning from the markup: `.spells-row` is `display: flex` with `justify-content: space-between` and children `[name, dot?, hint]`; with 3 flex children and `space-between`, browsers place items at start, middle, end — so the dot WILL float. In that case, choose the wrapper option. — S, junior-dev
+- [x] A1: open the popup in a dev build, inspect a spell-row with a persisted override in DevTools, and confirm whether the `.grimoire-override-dot` sits adjacent to the name span or floats in the middle of the row. Record the decision in the B1 commit message body: either "dot already adjacent — CSS-only fix" or "dot floats — introduce `.spells-row-name` wrapper". If the dev build is not readily available, fall back to reasoning from the markup: `.spells-row` is `display: flex` with `justify-content: space-between` and children `[name, dot?, hint]`; with 3 flex children and `space-between`, browsers place items at start, middle, end — so the dot WILL float. In that case, choose the wrapper option. — S, junior-dev
 
 ### B. CSS rules + structural assertions
 
@@ -104,13 +104,13 @@ None. CSS rules degrade gracefully — if a theme overrides any of the three pro
 **Section-level Red criterion:** `tests/spell-row-name-wrapping.test.ts` (new) passes asserting: (a) `src/main.css` contains a `.spells-row-hint { ... white-space: nowrap ... flex-shrink: 0 ... }` block (order-agnostic, property-presence only); (b) `.spells-row, .sentinel-row` retains `align-items: center`; (c) if wrapper path: `.spells-row-name` rule exists with `display: flex` and `min-width: 0`. Existing tests (`tests/SpellRow.test.ts`, `tests/SpellList.test.ts`, `tests/SpellsPanel.test.ts`, `tests/integration/options-panel-popup.spec.ts`) all still pass — the override-dot DOM contract is preserved (still `<span class="grimoire-override-dot">`, still findable via `querySelector('.grimoire-override-dot')`).
 
 **junior-dev**
-- [ ] B1: apply the CSS + (conditional) DOM change per A1's decision.
+- [x] B1: apply the CSS + (conditional) DOM change per A1's decision.
   - Always: in `src/main.css`, modify the `.spells-row-hint` rule (currently lines 16–21) to add `white-space: nowrap;` and `flex-shrink: 0;` alongside the existing properties.
   - If A1 = wrapper: add a new rule `.spells-row-name { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1 1 auto; }` immediately after the `.spells-row, .sentinel-row` block. In `src/ui/components/SpellRow.ts`, refactor `render()` so name span + override-dot live inside `this.el.createDiv({ cls: 'spells-row-name' })` instead of being direct children of `this.el`. The hint span (`appendRowHint(this.el)`) stays as a direct child of `this.el`. The override-dot must remain a `<span class="grimoire-override-dot">` (do not rename or restructure beyond the new parent).
   - Run `npm run lint` and `npm test` — fix any failures in `tests/SpellRow.test.ts` so they target the new wrapper instead of `row.el` directly for `name` and `override-dot` `createSpan` calls. The intent of those tests (dot rendered iff `hasOverride: true`) is preserved; only the assertion target changes.
   - — M, junior-dev
 
-- [ ] B2: add `tests/spell-row-name-wrapping.test.ts`. Read `src/main.css` via Node `fs.readFileSync` (relative to repo root). Use a small regex-based helper or substring extraction to assert:
+- [x] B2: add `tests/spell-row-name-wrapping.test.ts`. Read `src/main.css` via Node `fs.readFileSync` (relative to repo root). Use a small regex-based helper or substring extraction to assert:
   1. The `.spells-row-hint` rule body contains both `white-space: nowrap` and `flex-shrink: 0`.
   2. The `.spells-row, .sentinel-row` rule body contains `align-items: center` (regression guard).
   3. **If A1 = wrapper**: a `.spells-row-name` rule exists and contains `display: flex` and `min-width: 0`.
@@ -118,7 +118,7 @@ None. CSS rules degrade gracefully — if a theme overrides any of the three pro
 
   Each assertion in its own `it()` block. Use string `.includes()` or a minimal selector-extraction helper — do not pull in a CSS parser dependency. — S, junior-dev
 
-- [ ] B3: edge-case guards in the same test file:
+- [x] B3: edge-case guards in the same test file:
   - Empty / minimal spell name (one character) still renders: asserts the unit-test snapshot for `SpellRow` with `name: 'x'` produces a `<span>` with text `'x'` (use existing mock-style assertions from `tests/SpellRow.test.ts` as a pattern). Confirms the CSS change doesn't introduce an accidental `display: none` or min-width that hides short names.
   - Very long spell name (single token, no spaces, 200 chars) still renders the chip element. Assertion: after `SpellRow.render(container, { name: 'A'.repeat(200), path: 'x.md' }, false, false)`, the row contains both a name span with the full 200-char text and a `spells-row-hint` span. This is a DOM-presence check, not a layout check — happy-dom limitation acknowledged. — S, junior-dev
 
@@ -135,7 +135,7 @@ None. CSS rules degrade gracefully — if a theme overrides any of the three pro
 **Section-level Red criterion:** the matrix is captured (in commit body or test-file header comment) and every row in it has been ticked off by the executor before C1 is marked done. Each row names: theme, modal width, spell-name length, expected visual outcome.
 
 **junior-dev**
-- [ ] C1: capture the manual verification matrix. Format: a markdown table with columns `Theme | Modal width | Name length | Override dot? | Expected | Verified?`. Rows to include at minimum:
+- [x] C1: capture the manual verification matrix. Format: a markdown table with columns `Theme | Modal width | Name length | Override dot? | Expected | Verified?`. Rows to include at minimum:
   1. Default theme, default width, short name (~20 chars), no dot → single-line row, chip on right, unchanged from before.
   2. Default theme, default width, long name (~80 chars), no dot → name wraps to 2 lines, chip stays one line on right, chip vertically centred.
   3. Default theme, default width, long name, with dot → dot adjacent to name (per A1 decision), chip on right, both vertically centred.
@@ -163,3 +163,5 @@ None. CSS rules degrade gracefully — if a theme overrides any of the three pro
 4. **Existing unit / integration test contracts preserved** — `<span class="grimoire-override-dot">` remains findable via `querySelector('.grimoire-override-dot')`; only its parent flex container may change.
 
 Next: A1 → junior-dev.
+
+reviewed @ f5e5508

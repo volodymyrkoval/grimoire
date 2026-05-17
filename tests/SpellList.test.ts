@@ -2,22 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { SpellList } from '../src/ui/components/SpellList';
 import type { Spell, Sentinel } from '../src/domain/spells/Spell';
 import { spellPath } from '../src/domain/spells/SpellPath';
-
-function makeMockEl(): any {
-  const el: any = {
-    empty: vi.fn(),
-    addClass: vi.fn(),
-    removeClass: vi.fn(),
-    scrollIntoView: vi.fn(),
-    onClickEvent: vi.fn(),
-    style: {},
-    offsetHeight: 0,
-  };
-  el.createEl = vi.fn(() => makeMockEl());
-  el.createDiv = vi.fn(() => makeMockEl());
-  el.createSpan = vi.fn(() => makeMockEl());
-  return el;
-}
+import { makeMockEl } from './helpers/mockEl';
 
 function makeMockEmitter(): any {
   return {
@@ -48,15 +33,18 @@ describe('SpellList.render', () => {
     // The second createDiv call creates the row for second spell with hasOverride=false
     expect(createDivCalls.length).toBeGreaterThanOrEqual(2);
     // Check that first row call included override dot creation
+    // The first row's .spells-row-name wrapper is its first createDiv call
     const firstRowEl = listEl.createDiv.mock.results[0]?.value;
-    const firstRowDotCalls = firstRowEl?.createSpan.mock.calls?.filter(
+    const firstRowNameWrapper = firstRowEl?.createDiv.mock.results[0]?.value;
+    const firstRowDotCalls = firstRowNameWrapper?.createSpan.mock.calls?.filter(
       (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
     ) ?? [];
     expect(firstRowDotCalls.length).toBe(1);
 
     // Check that second row call did NOT include override dot creation
     const secondRowEl = listEl.createDiv.mock.results[1]?.value;
-    const secondRowDotCalls = secondRowEl?.createSpan.mock.calls?.filter(
+    const secondRowNameWrapper = secondRowEl?.createDiv.mock.results[0]?.value;
+    const secondRowDotCalls = secondRowNameWrapper?.createSpan.mock.calls?.filter(
       (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
     ) ?? [];
     expect(secondRowDotCalls.length).toBe(0);
@@ -80,9 +68,10 @@ describe('SpellList.render', () => {
     divCalls.forEach((result: any) => {
       const rowEl = result.value;
       if (rowEl) {
-        const dotCalls = rowEl.createSpan.mock.calls.filter(
+        const wrapper = rowEl.createDiv?.mock?.results?.[0]?.value;
+        const dotCalls = wrapper?.createSpan?.mock?.calls?.filter(
           (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
-        );
+        ) ?? [];
         overrideDotCount += dotCalls.length;
       }
     });
@@ -106,9 +95,10 @@ describe('SpellList.render', () => {
     divCalls.forEach((result: any) => {
       const rowEl = result.value;
       if (rowEl) {
-        const dotCalls = rowEl.createSpan.mock.calls.filter(
+        const wrapper = rowEl.createDiv?.mock?.results?.[0]?.value;
+        const dotCalls = wrapper?.createSpan?.mock?.calls?.filter(
           (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
-        );
+        ) ?? [];
         overrideDotCount += dotCalls.length;
       }
     });

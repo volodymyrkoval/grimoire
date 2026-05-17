@@ -1,24 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { App } from 'obsidian';
 import { SpellsPanel } from '../src/ui/tabs/SpellsPanel';
 import { obsidianRanker } from '../src/infra/obsidianRanker';
 import { spellPath } from '../src/domain/spells/SpellPath';
-
-function makeMockEl(): any {
-  const el: any = {
-    empty: vi.fn(),
-    addClass: vi.fn(),
-    removeClass: vi.fn(),
-    scrollIntoView: vi.fn(),
-    onClickEvent: vi.fn(),
-    style: {},
-    offsetHeight: 0,
-  };
-  el.createEl = vi.fn(() => makeMockEl());
-  el.createDiv = vi.fn(() => makeMockEl());
-  el.createSpan = vi.fn(() => makeMockEl());
-  return el;
-}
+import { makeMockEl } from './helpers/mockEl';
 
 const DEFAULT_TEST_SPELLS = [
   { basename: 'Summoning Circle', path: '/spells/summoning.md' },
@@ -226,7 +211,8 @@ describe('SpellsPanel with hasOverride predicate', () => {
       spellListEl.createDiv.mock.results.forEach((result: any) => {
         const rowEl = result.value;
         if (rowEl) {
-          const dotCalls = rowEl.createSpan.mock.calls?.filter(
+          const wrapper = rowEl.createDiv?.mock?.results?.[0]?.value;
+          const dotCalls = wrapper?.createSpan?.mock?.calls?.filter(
             (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
           ) ?? [];
           totalDots += dotCalls.length;

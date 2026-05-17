@@ -1,21 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { SpellRow } from '../src/ui/components/SpellRow';
-
-function makeMockEl(): any {
-  const el: any = {
-    empty: vi.fn(),
-    addClass: vi.fn(),
-    removeClass: vi.fn(),
-    scrollIntoView: vi.fn(),
-    onClickEvent: vi.fn(),
-    style: {},
-    offsetHeight: 0,
-  };
-  el.createEl = vi.fn(() => makeMockEl());
-  el.createDiv = vi.fn(() => makeMockEl());
-  el.createSpan = vi.fn(() => makeMockEl());
-  return el;
-}
+import { makeMockEl } from './helpers/mockEl';
 
 describe('SpellRow', () => {
   it('with hasOverride: true appends a .grimoire-override-dot span', () => {
@@ -25,8 +10,10 @@ describe('SpellRow', () => {
     const row = new SpellRow();
     row.render(container, spell, false, true);
 
-    // Check that the row's el has the override dot call
-    expect(row.el.createSpan).toHaveBeenCalledWith({ cls: 'grimoire-override-dot' });
+    // Get the .spells-row-name wrapper (first createDiv call on row.el)
+    const nameBlock = row.el.createDiv.mock.results[0]?.value;
+    // Check nameBlock.createSpan for override-dot
+    expect(nameBlock.createSpan).toHaveBeenCalledWith({ cls: 'grimoire-override-dot' });
   });
 
   it('with hasOverride: false does not append .grimoire-override-dot', () => {
@@ -36,9 +23,11 @@ describe('SpellRow', () => {
     const row = new SpellRow();
     row.render(container, spell, false, false);
 
-    const dotCalls = row.el.createSpan.mock.calls.filter(
+    // Get the .spells-row-name wrapper
+    const nameBlock = row.el.createDiv.mock.results[0]?.value;
+    const dotCalls = nameBlock?.createSpan.mock.calls?.filter(
       (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
-    );
+    ) ?? [];
     expect(dotCalls).toHaveLength(0);
   });
 
@@ -49,9 +38,11 @@ describe('SpellRow', () => {
     const row = new SpellRow();
     row.render(container, spell, false);
 
-    const dotCalls = row.el.createSpan.mock.calls.filter(
+    // Get the .spells-row-name wrapper
+    const nameBlock = row.el.createDiv.mock.results[0]?.value;
+    const dotCalls = nameBlock?.createSpan.mock.calls?.filter(
       (call: any[]) => call[0]?.cls === 'grimoire-override-dot'
-    );
+    ) ?? [];
     expect(dotCalls).toHaveLength(0);
   });
 
