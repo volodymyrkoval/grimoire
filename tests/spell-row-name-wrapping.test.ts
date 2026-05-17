@@ -74,10 +74,19 @@ describe('spell-row-name-wrapping: edge-case DOM presence', () => {
       (call: any[]) => call[0]?.text === longName
     ) ?? [];
     expect(nameCalls.length).toBe(1);
-    // hint chip is still on row.el
-    const hintCalls = row.el.createSpan.mock.calls.filter(
+    // hint wrapper is on row.el; cast + options chip are nested inside it
+    const wrapperCalls = row.el.createSpan.mock.calls.filter(
       (call: any[]) => call[0]?.cls === 'spells-row-hint'
     ) ?? [];
-    expect(hintCalls.length).toBe(1);
+    expect(wrapperCalls.length).toBe(1);
+    const wrapperEl = row.el.createSpan.mock.results[0]?.value;
+    const castCalls = wrapperEl?.createSpan.mock.calls.filter(
+      (call: any[]) => call[0]?.cls === 'spells-row-hint-cast'
+    ) ?? [];
+    expect(castCalls.length).toBe(1);
+    const optionsCalls = wrapperEl?.createSpan.mock.calls.filter(
+      (call: any[]) => call[0]?.cls === 'grimoire-options-chip'
+    ) ?? [];
+    expect(optionsCalls.length).toBe(1);
   });
 });

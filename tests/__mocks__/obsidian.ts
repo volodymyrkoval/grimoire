@@ -175,6 +175,7 @@ function createMockElement(): any {
   el.focus = vi.fn();
   el.onClickEvent = vi.fn();
   el.addEventListener = vi.fn();
+  el.setAttribute = vi.fn();
   el.value = '';
   el.placeholder = '';
   el.oninput = null;

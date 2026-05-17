@@ -138,20 +138,117 @@ describe('SpellList.render', () => {
     const forgeRowEl = sentinelDivResults[0]?.value;
     const refineRowEl = sentinelDivResults[1]?.value;
 
-    // Forge should not have hint
+    // Forge should not have hint — no spells-row-hint wrapper
     const forgeHintCalls = forgeRowEl?.createSpan?.mock.calls?.filter(
       (call: any[]) => call[0]?.cls === 'spells-row-hint'
     ) ?? [];
     expect(forgeHintCalls.length).toBe(0);
 
-    // Refine should have exactly one hint
-    const refineHintCalls = refineRowEl?.createSpan?.mock.calls?.filter(
+    // Refine should have the spells-row-hint wrapper
+    const refineWrapperCalls = refineRowEl?.createSpan?.mock.calls?.filter(
       (call: any[]) => call[0]?.cls === 'spells-row-hint'
     ) ?? [];
-    expect(refineHintCalls.length).toBe(1);
-    expect(refineHintCalls[0][0]).toEqual({
-      cls: 'spells-row-hint',
-      text: '↵ cast · → options',
-    });
+    expect(refineWrapperCalls.length).toBe(1);
+
+    // Cast + options chip are nested inside the wrapper
+    const refineWrapperEl = refineRowEl?.createSpan?.mock.results?.find(
+      (r: any) => r.value?.createSpan.mock.calls.length > 0
+    )?.value;
+    const refineCastCalls = refineWrapperEl?.createSpan?.mock.calls?.filter(
+      (call: any[]) => call[0]?.cls === 'spells-row-hint-cast'
+    ) ?? [];
+    expect(refineCastCalls.length).toBe(1);
+    expect(refineCastCalls[0][0]?.text).toEqual('↵ cast · ');
+
+    const refineOptionsCalls = refineWrapperEl?.createSpan?.mock.calls?.filter(
+      (call: any[]) => call[0]?.cls === 'grimoire-options-chip'
+    ) ?? [];
+    expect(refineOptionsCalls.length).toBe(1);
+  });
+
+  it('when spell row options chip is clicked, emits open-options event with the spell (not cast)', () => {
+    const container = makeMockEl();
+    const emitter = makeMockEmitter();
+    const list = new SpellList(container, emitter);
+    const spell = { name: 'Fire Bolt', path: spellPath('/spells/fire.md') };
+    const spells: Spell[] = [spell];
+
+    list.render(spells, 0);
+
+    // The options chip click handler is registered via addEventListener
+    // Capture the click handler so we can invoke it manually
+    const listEl = list.el;
+    const spellRowEl = listEl.createDiv.mock.results[0]?.value;
+    expect(spellRowEl).toBeDefined();
+
+    // spellRowEl.createSpan[0] is the spells-row-hint wrapper
+    // The options chip is wrapper.createSpan[1]
+    const wrapperEl = spellRowEl.createSpan.mock.results[0]?.value;
+    expect(wrapperEl).toBeDefined();
+    const optionsChipEl = wrapperEl.createSpan.mock.results[1]?.value;
+    expect(optionsChipEl).toBeDefined();
+
+    // Find the addEventListener call on options chip for 'click' event
+    const addEventListenerCalls = optionsChipEl.addEventListener.mock.calls;
+    expect(addEventListenerCalls.length).toBeGreaterThan(0);
+
+    // The first (and should be only) addEventListener call is the click handler
+    const clickHandler = addEventListenerCalls[0]?.[1] as (e: Event) => void;
+    expect(clickHandler).toBeDefined();
+
+    // Simulate a click by calling the handler with a mock event
+    const mockEvent = { stopPropagation: vi.fn() };
+    clickHandler(mockEvent as any);
+
+    // Verify the emitter was called with open-options and the spell
+    expect(emitter.emit).toHaveBeenCalledWith('open-options', spell);
+  });
+
+  it('when Refine sentinel row options chip is clicked, emits open-refine-options event (not sentinel)', () => {
+    const container = makeMockEl();
+    const emitter = makeMockEmitter();
+    const sentinels: Sentinel[] = [
+      { kind: 'forge', name: 'Forge' },
+      { kind: 'refine', name: 'Refine' },
+    ];
+    const list = new SpellList(container, emitter, sentinels);
+    const spells: Spell[] = [
+      { name: 'Fire Bolt', path: spellPath('/spells/fire.md') },
+    ];
+
+    list.render(spells, 0);
+
+    const listEl = list.el;
+    const sentinelsSectionEl = listEl.createDiv.mock.results[1]?.value;
+    expect(sentinelsSectionEl).toBeDefined();
+
+    // The Refine row is the second sentinel row (index 1)
+    const sentinelDivResults = sentinelsSectionEl?.createDiv?.mock.results ?? [];
+    expect(sentinelDivResults.length).toBe(2);
+
+    const refineRowEl = sentinelDivResults[1]?.value;
+    expect(refineRowEl).toBeDefined();
+
+    // refineRowEl.createSpan: [0] sentinel-name, [1] spells-row-hint wrapper
+    // wrapper.createSpan: [0] cast hint, [1] options chip
+    const wrapperEl = refineRowEl.createSpan.mock.results[1]?.value;
+    expect(wrapperEl).toBeDefined();
+    const optionsChipEl = wrapperEl.createSpan.mock.results[1]?.value;
+    expect(optionsChipEl).toBeDefined();
+
+    // Find the click handler
+    const clickEventCalls = optionsChipEl.addEventListener.mock.calls.filter(
+      (call: any[]) => call[0] === 'click'
+    );
+    expect(clickEventCalls).toHaveLength(1);
+
+    const clickHandler = clickEventCalls[0][1] as (e: Event) => void;
+    const mockEvent = { stopPropagation: vi.fn() };
+    clickHandler(mockEvent as any);
+
+    // Verify the emitter was called with open-refine-options (not sentinel)
+    expect(emitter.emit).toHaveBeenCalledWith('open-refine-options', undefined);
+    // Ensure it was NOT called with 'sentinel'
+    expect(emitter.emit).not.toHaveBeenCalledWith('sentinel', sentinels[1]);
   });
 });

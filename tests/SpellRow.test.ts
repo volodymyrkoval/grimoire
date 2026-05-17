@@ -46,20 +46,33 @@ describe('SpellRow', () => {
     expect(dotCalls).toHaveLength(0);
   });
 
-  it('renders the keyboard hint span with the correct text', () => {
+  it('renders the keyboard hint spans with correct structure', () => {
     const container = makeMockEl();
     const spell = { name: 'Fire Bolt', path: '/spells/fire.md' };
 
     const row = new SpellRow();
     row.render(container, spell, false);
 
-    const hintCalls = row.el.createSpan.mock.calls.filter(
+    // The wrapper span is the only direct createSpan on row.el (carries spells-row-hint)
+    const wrapperCalls = row.el.createSpan.mock.calls.filter(
       (call: any[]) => call[0]?.cls === 'spells-row-hint'
     );
-    expect(hintCalls).toHaveLength(1);
-    expect(hintCalls[0][0]).toEqual({
-      cls: 'spells-row-hint',
-      text: '↵ cast · → options',
-    });
+    expect(wrapperCalls).toHaveLength(1);
+
+    // Children (cast + options chip) live inside the wrapper, not on row.el directly
+    const wrapper = row.el.createSpan.mock.results.find(
+      (r: any) => r.type === 'return'
+    )?.value;
+
+    const castCalls = wrapper?.createSpan.mock.calls.filter(
+      (call: any[]) => call[0]?.cls === 'spells-row-hint-cast'
+    ) ?? [];
+    expect(castCalls).toHaveLength(1);
+    expect(castCalls[0][0]).toEqual({ cls: 'spells-row-hint-cast', text: '↵ cast · ' });
+
+    const optionsCalls = wrapper?.createSpan.mock.calls.filter(
+      (call: any[]) => call[0]?.cls === 'grimoire-options-chip'
+    ) ?? [];
+    expect(optionsCalls).toHaveLength(1);
   });
 });

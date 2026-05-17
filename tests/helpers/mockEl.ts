@@ -11,6 +11,8 @@ export function makeMockEl(): any {
     removeClass: vi.fn(),
     scrollIntoView: vi.fn(),
     onClickEvent: vi.fn(),
+    setAttribute: vi.fn(),
+    addEventListener: vi.fn(),
     style: {},
     offsetHeight: 0,
   };

@@ -9,11 +9,11 @@ export class SentinelRow {
   el!: HTMLElement;
 
   /** Renders the sentinel row into the container. Sets `this.el` as a side effect. */
-  render(container: HTMLElement, sentinel: Sentinel, selected: boolean, showHint: boolean = false): void {
+  render(container: HTMLElement, sentinel: Sentinel, selected: boolean, showHint: boolean = false, onOptionsClick?: () => void): void {
     this.el = container.createDiv({ cls: "sentinel-row" });
     if (selected) this.#markSelected();
     this.#appendName(sentinel.name);
-    if (showHint) appendRowHint(this.el);
+    if (showHint) appendRowHint(this.el, onOptionsClick);
   }
 
   #markSelected(): void {

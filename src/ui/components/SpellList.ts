@@ -39,7 +39,7 @@ export class SpellList {
   #buildSpellRows(spells: Spell[], selectedIndex: number, hasOverride: (path: SpellPath) => boolean): SpellRow[] {
     return spells.map((spell, i) => {
       const row = new SpellRow();
-      row.render(this.el, spell, i === selectedIndex, hasOverride(spell.path));
+      row.render(this.el, spell, i === selectedIndex, hasOverride(spell.path), () => this.#emitter.emit("open-options", spell));
       row.el.onClickEvent(() => this.#emitter.emit("cast", spell));
       return row;
     });
@@ -54,7 +54,8 @@ export class SpellList {
   #buildSentinelRows(container: HTMLElement, offset: number, selectedIndex: number): SentinelRow[] {
     return this.#sentinels.map((sentinel, i) => {
       const row = new SentinelRow();
-      row.render(container, sentinel, offset + i === selectedIndex, sentinel.kind === 'refine');
+      const onOptionsClick = sentinel.kind === 'refine' ? () => this.#emitter.emit("open-refine-options", undefined) : undefined;
+      row.render(container, sentinel, offset + i === selectedIndex, sentinel.kind === 'refine', onOptionsClick);
       row.el.onClickEvent(() => this.#emitter.emit("sentinel", sentinel));
       return row;
     });

@@ -29,11 +29,53 @@
     transition: opacity 0.1s;
     white-space: nowrap;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    align-self: stretch;
 }
 
 .spells-row.is-selected .spells-row-hint,
 .sentinel-row.is-selected .spells-row-hint {
     opacity: 0.7 !important;
+}
+
+.spells-row:hover .spells-row-hint,
+.sentinel-row:hover .spells-row-hint {
+    opacity: 0.7 !important;
+}
+
+body.is-mobile .spells-row-hint {
+    opacity: 0.7 !important;
+}
+
+.grimoire-options-chip {
+    position: relative !important;
+    border-radius: 3px;
+    padding-inline: 8px;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* hover-only (not keyboard-selected): hide cast hint, show only → options */
+.spells-row:hover:not(.is-selected) .spells-row-hint-cast,
+.sentinel-row:hover:not(.is-selected) .spells-row-hint-cast {
+    display: none;
+}
+
+/* mobile: hide cast hint entirely, even bigger tap target */
+body.is-mobile .spells-row-hint-cast {
+    display: none;
+}
+
+body.is-mobile .grimoire-options-chip {
+    padding-inline: 12px;
+}
+
+.grimoire-options-chip:hover {
+    background: var(--background-modifier-active-hover);
 }
 
 .spells-row:hover {
