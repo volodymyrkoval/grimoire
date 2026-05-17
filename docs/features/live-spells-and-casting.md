@@ -4,7 +4,7 @@
 
 ## What it does
 
-The Spells tab of the Command Popup is now populated by scanning the vault: any markdown file tagged `<spellTag>` (configurable in settings) is a spell. Activating a spell row (mouse click or `Enter` on the highlighted row) closes the popup and casts that spell against the currently-active note via the Claude Code CLI. Toasts surface progress: `Casting '<name>'…` immediately, `Spell cast` on success, `Cast failed: <msg>` on failure. With no active note open, the user sees `Open a note to cast against` and the popup dismisses (assuming the spell is note-bound — see `spell-execute-on-note`).
+The Spells tab of the Command Popup is now populated by scanning the vault: any markdown file tagged `<spellTag>` (configurable in settings) is a spell. *Since `plan-029` (custom-refine-spell), notes whose frontmatter carries `sentinel: refine` are excluded from this list even when tagged — they are Refine variants, not castable spells.* Activating a spell row (mouse click or `Enter` on the highlighted row) closes the popup and casts that spell against the currently-active note via the Claude Code CLI. Toasts surface progress: `Casting '<name>'…` immediately, `Spell cast` on success, `Cast failed: <msg>` on failure. With no active note open, the user sees `Open a note to cast against` and the popup dismisses (assuming the spell is note-bound — see `spell-execute-on-note`).
 
 This iteration removed the previous placeholder spell-detail view (`<h2>` + Back button) entirely. The `cast` event replaced the old `detail` event on `SpellsPanel`. Per-spell options (model, effort, context notes, follow-up) come from the options panel — see `options-panel`.
 

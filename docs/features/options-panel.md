@@ -78,6 +78,8 @@ The Refine sentinel can be opened via `ArrowRight` in search mode (same as a spe
 
 This variant lets the user configure default or override settings for Refine, and (since `refine-cast`) submit the form to dispatch a Refine cast against the active note.
 
+Since `plan-029` (custom-refine-spell), a conditional `RefineVariantSelect` dropdown is mounted below the Cast button when at least one vault note carries `sentinel: refine` in its frontmatter. The dropdown lists *Default (built-in)* plus every sentinel-marked note; selecting one writes a `refinePathOverride` into the Refine session entry, overriding the Settings default for the current cast only. The control sits past the Cast button by design — outside the keyboard flow.
+
 ## Edge cases / invariants
 
 - **`ArrowRight` in detail phase or on the Forge sentinel row** — binding returns `false` (no second mount); the keystroke falls through to platform default. (Refine sentinel is the exception — `ArrowRight` on Refine opens the options panel, as described above.)
