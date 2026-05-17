@@ -59,13 +59,17 @@ body.is-mobile .spells-row-hint {
     cursor: pointer;
 }
 
-/* hover-only (not keyboard-selected): hide cast hint, show only → options */
-.spells-row:hover:not(.is-selected) .spells-row-hint-cast,
-.sentinel-row:hover:not(.is-selected) .spells-row-hint-cast {
+/* Cast hint: hidden by default; only show when keyboard-selected */
+.spells-row-hint-cast {
     display: none;
 }
 
-/* mobile: hide cast hint entirely, even bigger tap target */
+.spells-row.is-selected .spells-row-hint-cast,
+.sentinel-row.is-selected .spells-row-hint-cast {
+    display: inline;
+}
+
+/* mobile: keep cast hint hidden even when selected */
 body.is-mobile .spells-row-hint-cast {
     display: none;
 }
