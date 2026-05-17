@@ -1,5 +1,6 @@
 import { Effort, SupportedModel } from "../../domain/settings/Settings";
 import type { FormDefaults } from "../../domain/settings/FormDefaults";
+import type { ModelId } from "../../domain/settings/ModelId";
 import type { Spell } from "../../domain/spells/Spell";
 import { REFINE_SENTINEL_PATH } from "../../domain/spells/Spell";
 import { resolveSpellOptions } from "../../domain/settings/spellOptionsResolver";
@@ -7,7 +8,7 @@ import type { SpellOverrideStore } from "../../domain/settings/SpellOverrideStor
 import type { OptionsSessionMap } from "./OptionsSessionMap";
 
 export interface OptionsFormSnapshot {
-  model: string;
+  model: ModelId;
   effort: Effort | null;
   contextNotePaths: readonly string[];
   followUp: string;
@@ -49,17 +50,6 @@ export function optionsFormSnapshotFromRefineDefaults(
     settings: {
       defaultModel: defaults.defaultModel,
       defaultEffort: defaults.defaultEffort,
-      spellTag: '',
-      cliCommand: '',
-      binaryPath: '',
-      forgeOutputFolder: '',
-      vaultMountPath: '',
-      executionMode: 'local',
-      portalHost: '',
-      portalPort: '',
-      portalPath: '',
-      portalAuthUser: '',
-      portalAuthPassword: '',
     },
     models,
   });
@@ -81,7 +71,7 @@ export function optionsFormSnapshotFromRefineDefaults(
  * setModel applies effort survival rule: current effort persists if valid for new model.
  */
 export class OptionsFormState {
-  #model: string;
+  #model: ModelId;
   #effort: Effort | null;
   #contextNotePaths: readonly string[];
   #followUp: string;
@@ -97,7 +87,7 @@ export class OptionsFormState {
     this.#listeners = new Set();
   }
 
-  setModel(modelId: string, models: readonly SupportedModel[]): Effort | null {
+  setModel(modelId: ModelId, models: readonly SupportedModel[]): Effort | null {
     // Find the model; fall back to models[0] if not found
     let resolvedModel = models.find((m) => m.id === modelId);
     if (!resolvedModel) {

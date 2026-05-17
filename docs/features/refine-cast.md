@@ -13,7 +13,7 @@ Refine requires an open markdown file: if the user presses Enter and no `.md` fi
 ## Design decisions
 
 - **Guard at builder layer, not dispatcher.** The active-note check fires in `refineCastAction`, before any dispatch input is built, so a missing-note never reaches the log. Prevents unwanted `castId` minting and keeps the Notice semantics (popup stays open) distinct from other guards.
-- **`popup.dismiss()` after dispatch.** When Refine cast is invoked from the dialog (via `RefineOptionsDetail.onCast`), the closure captures `popup.dismiss()` and calls it after the dispatcher closes the modal — full close, no return-to-search. Mirrors the list-Enter path which also closes fully.
+- **`popup.dismiss()` after dispatch.** When Refine cast is invoked from the dialog (via the refine variant of `OptionsDetail`'s `onCast` — formerly `RefineOptionsDetail`, unified in `audit-002-rework`), the closure captures `popup.dismiss()` and calls it after the dispatcher closes the modal — full close, no return-to-search. Mirrors the list-Enter path which also closes fully.
 - **`systemPromptFilePath` override field on `CastDispatchInput`.** Rather than hardcode Refine prompt-assembly in the dispatcher, a new optional field lets the builder pass the materialized file path (`refine.md`). Dispatcher uses it directly instead of computing from `spell.path`. Same pattern as forge.
 - **`<refine>` sentinel distinct from `REFINE_SENTINEL_PATH`.** The cast-log sentinel is `'<refine>'` (for row identity in Cast Log); the override persistence key is `'<grimoire-sentinel:refine>'` (for model/effort storage). Separate namespaces, no collision, both load-bearing.
 - **`optionsFormSnapshotFromRefineDefaults` for list-Enter persistence.** When Enter fires from the spell list (not the dialog), a snapshot is built from the user's persisted Refine defaults + `executeOnNote: true`, then passed to `refineCastAction`. Ensures list-Enter casts carry the same model/effort as the dialog would, without forcing the user to open the panel.
@@ -23,12 +23,12 @@ Refine requires an open markdown file: if the user presses Enter and no `.md` fi
 **In:**
 - `renderRefineSystemPrompt()` in `src/refine/refineTemplate.ts` — pure function returning hardcoded Refine prompt body.
 - `RefineMaterializer` class writing `refine.md` to `<pluginDir>` via `DataAdapter`.
-- `REFINE_SPELL_PATH = '<refine>'` constant in cast-log types module.
+- `REFINE_SPELL_PATH = '<refine>'` constant. Originally co-located with the cast-log types; relocated to `domain/spells/SystemSpellPaths.ts` by `audit-002-rework`.
 - `refineCastSpell()` factory for the dispatch-input builder.
 - `resolveDisplayName` extended to recognize `<refine>` and return `'Refine'`.
 - Active-note guard in `refineCastAction` builder closure (guard → `Notice` + bail-out if missing `.md` file).
 - `CastDispatchInput.systemPromptFilePath?: string` override field.
-- Two trigger paths converging on `refineCastAction`: list-Enter (via `SpellsPanel.confirm` + `'refine-cast'` event) and dialog-Cast (via `RefineOptionsDetail.onCast`).
+- Two trigger paths converging on `refineCastAction`: list-Enter (via `SpellsPanel.confirm` + `'refine-cast'` event) and dialog-Cast (via the refine variant of `OptionsDetail.onCast` — originally a separate `RefineOptionsDetail` class, unified in `audit-002-rework`).
 - `executeOnNote` checkbox hidden in Refine OptionsPanel (`OptionsPanel.render()` receives `showExecuteOnNote: false`).
 - Integration tests covering list-Enter, dialog-Cast, and missing-active-note guard.
 - Live-spec + drift sweep on three existing feature docs.

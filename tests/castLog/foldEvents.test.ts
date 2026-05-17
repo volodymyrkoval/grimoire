@@ -1,3 +1,4 @@
+import { modelId } from '../../src/domain/settings/ModelId';
 import { describe, it, expect } from 'vitest';
 import type { CastLogEvent, CastedEvent, InProgressEvent, DoneEvent, ErrorEvent } from '../../src/castLog/types';
 import { foldEvents } from '../../src/castLog/foldEvents';
@@ -15,7 +16,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: ['Note 1'],
     };
@@ -27,7 +28,7 @@ describe('foldEvents', () => {
       castId: 'cast-1',
       status: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: ['Note 1'],
       castedTs: '2025-05-14T10:00:00Z',
@@ -40,7 +41,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -67,7 +68,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -102,7 +103,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -131,7 +132,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -181,7 +182,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/Spell1.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -191,7 +192,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:01:00Z',
       stage: 'casted',
       spellPath: 'Spells/Spell2.md',
-      model: 'claude',
+      model: modelId('claude'),
       effort: 'M',
       contextNotes: [],
     };
@@ -217,7 +218,7 @@ describe('foldEvents', () => {
       castId: 'cast-1',
       status: 'done',
       spellPath: 'Spells/Spell1.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
     });
 
     const cast2 = result.find(r => r.castId === 'cast-2');
@@ -225,7 +226,7 @@ describe('foldEvents', () => {
       castId: 'cast-2',
       status: 'in-progress',
       spellPath: 'Spells/Spell2.md',
-      model: 'claude',
+      model: modelId('claude'),
       effort: 'M',
     });
   });
@@ -236,7 +237,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/Spell1.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -246,7 +247,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:10:00Z',
       stage: 'casted',
       spellPath: 'Spells/Spell2.md',
-      model: 'claude',
+      model: modelId('claude'),
       effort: null,
       contextNotes: [],
     };
@@ -264,7 +265,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -289,7 +290,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
       portalCastId: 'srv-abc',
@@ -317,7 +318,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -327,7 +328,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:01Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
       portalCastId: 'srv-xyz',
@@ -350,7 +351,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:00Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
     };
@@ -360,7 +361,7 @@ describe('foldEvents', () => {
       ts: '2025-05-14T10:00:01Z',
       stage: 'casted',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
       effort: null,
       contextNotes: [],
       portalCastId: 'srv-patch',
@@ -373,7 +374,7 @@ describe('foldEvents', () => {
       castId: 'cast-1',
       portalCastId: 'srv-patch',
       spellPath: 'Spells/MySpell.md',
-      model: 'gpt-4o',
+      model: modelId('gpt-4o'),
     });
   });
 });

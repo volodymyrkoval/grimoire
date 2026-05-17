@@ -1,3 +1,4 @@
+import { modelId } from '../src/domain/settings/ModelId';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { App } from 'obsidian';
 import { GrimoireSettingTab } from '../src/ui/settings/GrimoireSettingTab';
@@ -102,7 +103,7 @@ describe('GrimoirePlugin', () => {
     expect(typeof params.imprintAction).toBe('function');
     expect(typeof params.castAction).toBe('function');
     expect(params.defaults).toStrictEqual({
-      defaultModel: 'claude-sonnet-4-5',
+      defaultModel: modelId('claude-sonnet-4-5'),
       defaultEffort: 'medium',
     });
     expect(params.overrides).toBe(plugin.overrides);
@@ -130,7 +131,7 @@ describe('GrimoirePlugin', () => {
     const firstDefaults = popupSpy.mock.calls[0][0].defaults;
     expect(firstDefaults.defaultModel).toBe('claude-sonnet-4-5');
 
-    plugin.data.settings.defaultModel = 'claude-opus-4-5';
+    plugin.data.settings.defaultModel = modelId('claude-opus-4-5');
 
     callback();
     const secondDefaults = popupSpy.mock.calls[1][0].defaults;
@@ -159,7 +160,7 @@ describe('GrimoirePlugin', () => {
     commandCall![0].callback();
 
     expect(capturedAction).toBeDefined();
-    const stubSnapshot = { name: 'test', description: 'desc', model: 'claude-sonnet-4-5', effort: 'medium' as const };
+    const stubSnapshot = { name: 'test', description: 'desc', model: modelId('claude-sonnet-4-5'), effort: 'medium' as const };
     capturedAction!(stubSnapshot);
 
     expect(imprintSpy).toHaveBeenCalledOnce();
@@ -239,14 +240,14 @@ describe('GrimoirePlugin', () => {
     );
 
     commandCall![0].callback();
-    plugin.data.settings.defaultModel = 'different-model';
+    plugin.data.settings.defaultModel = modelId('different-model');
     commandCall![0].callback();
 
     expect(capturedCastActions).toHaveLength(2);
 
     const stubSpell = { name: 'Stub Spell', path: 'spells/stub.md' };
     const stubSnapshot = {
-      model: 'some-model',
+      model: modelId('some-model'),
       effort: 'medium' as const,
       contextNotePaths: [],
       followUp: '',
@@ -255,7 +256,7 @@ describe('GrimoirePlugin', () => {
     capturedCastActions[1]!(stubSpell, stubSnapshot);
 
     expect(dispatchSpy).toHaveBeenCalledOnce();
-    expect(dispatchSpy.mock.calls[0][0]).toMatchObject({ model: 'some-model' });
+    expect(dispatchSpy.mock.calls[0][0]).toMatchObject({ model: modelId('some-model') });
 
     dispatchSpy.mockRestore();
   });
@@ -282,7 +283,7 @@ describe('GrimoirePlugin', () => {
     (app as any).workspace.getActiveFile.mockReturnValue({ path: 'notes/active.md', basename: 'active' });
     const stubSpell = { name: 'Test Spell', path: 'spells/test.md' };
     const stubSnapshot = {
-      model: 'claude-opus-4-5',
+      model: modelId('claude-opus-4-5'),
       effort: 'high' as const,
       contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
       followUp: 'This is a follow-up.',
@@ -293,7 +294,7 @@ describe('GrimoirePlugin', () => {
     expect(dispatchSpy).toHaveBeenCalledOnce();
     expect(dispatchSpy).toHaveBeenCalledWith({
       spell: stubSpell,
-      model: 'claude-opus-4-5',
+      model: modelId('claude-opus-4-5'),
       effort: 'high',
       contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
       followUp: 'This is a follow-up.',

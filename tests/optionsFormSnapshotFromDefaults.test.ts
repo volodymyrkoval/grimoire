@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { modelId } from '../src/domain/settings/ModelId';
 import {
   optionsFormSnapshotFromDefaults,
   type OptionsFormSnapshot,
@@ -9,7 +10,7 @@ import type { Spell } from '../src/domain/spells/Spell';
 describe('optionsFormSnapshotFromDefaults', () => {
   it('creates a snapshot with medium effort from defaults', () => {
     const defaults: FormDefaults = {
-      defaultModel: 'claude-opus',
+      defaultModel: modelId('claude-opus'),
       defaultEffort: 'medium',
     };
     const spell: Pick<Spell, 'executeOnNote'> = {
@@ -27,7 +28,7 @@ describe('optionsFormSnapshotFromDefaults', () => {
 
   it('creates a snapshot with null effort from defaults', () => {
     const defaults: FormDefaults = {
-      defaultModel: 'claude-haiku',
+      defaultModel: modelId('claude-haiku'),
       defaultEffort: null,
     };
     const spell: Pick<Spell, 'executeOnNote'> = {
@@ -45,7 +46,7 @@ describe('optionsFormSnapshotFromDefaults', () => {
 
   it('returns a fresh empty array for contextNotePaths on each call', () => {
     const defaults: FormDefaults = {
-      defaultModel: 'claude-opus',
+      defaultModel: modelId('claude-opus'),
       defaultEffort: 'medium',
     };
     const spell: Pick<Spell, 'executeOnNote'> = {

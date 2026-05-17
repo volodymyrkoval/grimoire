@@ -1,3 +1,4 @@
+import { modelId } from '../src/domain/settings/ModelId';
 import { describe, it, expect, vi } from 'vitest';
 import { ForgeImprinter } from '../src/forge/ForgeImprinter';
 import { GrimoireSettings } from '../src/domain/settings/Settings';
@@ -40,7 +41,7 @@ const localBaseSettings: GrimoireSettings = {
   binaryPath: '/usr/bin/claude',
   cliCommand: 'claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: null,
   executionMode: 'local',
   portalHost: '',
@@ -77,7 +78,7 @@ describe('ForgeImprinter', () => {
       {
         name: '<>',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -106,7 +107,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test description',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -133,7 +134,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'Test Spell',
         description: 'A test spell',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -145,7 +146,7 @@ describe('ForgeImprinter', () => {
     const expectedPrompt = buildForgeUserPrompt({
       description: 'A test spell',
       name: 'Test Spell',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       executeOnNote: true,
     });
@@ -168,7 +169,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -193,7 +194,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -219,7 +220,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -247,7 +248,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -274,7 +275,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'Test Spell',
         description: 'A test spell',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -301,7 +302,7 @@ describe('ForgeImprinter', () => {
       {
         name: '<>',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -328,7 +329,7 @@ describe('ForgeImprinter', () => {
     const snapshot = {
       name: 'My Spell',
       description: 'test',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
       executeOnNote: true,
     } as ForgeFormSnapshot;
@@ -362,7 +363,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -390,7 +391,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -424,7 +425,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -453,7 +454,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -484,7 +485,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -517,7 +518,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -549,7 +550,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -579,7 +580,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -613,7 +614,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -640,7 +641,7 @@ describe('ForgeImprinter', () => {
     });
 
     imprinter.imprint(
-      { name: 'My Spell', description: 'desc', model: 'claude-sonnet-4-5', effort: null, executeOnNote: false },
+      { name: 'My Spell', description: 'desc', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false },
       { ...remoteBaseSettings },
       vi.fn()
     );
@@ -664,7 +665,7 @@ describe('ForgeImprinter', () => {
       forgeSpellPaths,
     });
     imprinter2.imprint(
-      { name: 'X', description: 'd', model: 'claude-sonnet-4-5', effort: null, executeOnNote: false },
+      { name: 'X', description: 'd', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false },
       { ...remoteBaseSettings },
       vi.fn()
     );
@@ -688,7 +689,7 @@ describe('ForgeImprinter', () => {
     const snapshot: ForgeFormSnapshot = {
       name: 'My Spell',
       description: 'test',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       executeOnNote: false,
     };

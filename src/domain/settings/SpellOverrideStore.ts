@@ -1,11 +1,11 @@
 import { SpellPath } from "../spells/SpellPath";
 import { GrimoireData, SpellOverride, SUPPORTED_MODELS, Effort } from "./Settings";
-import { DebouncedSaver } from "../../infra/DebouncedSaver";
+import type { SaveScheduler } from "./SaveScheduler";
 
 /** Dependencies for initializing the spell override store. */
 export interface SpellOverrideStoreDeps {
   data: GrimoireData;
-  saver: DebouncedSaver;
+  saver: SaveScheduler;
 }
 
 /**
@@ -14,7 +14,7 @@ export interface SpellOverrideStoreDeps {
  */
 export class SpellOverrideStore {
   #data: GrimoireData;
-  #saver: DebouncedSaver;
+  #saver: SaveScheduler;
 
   constructor(deps: SpellOverrideStoreDeps) {
     this.#data = deps.data;
@@ -32,6 +32,7 @@ export class SpellOverrideStore {
   set(path: SpellPath, override: SpellOverride): void {
     const model = SUPPORTED_MODELS.find((m) => m.id === override.model);
 
+    // UI pre-validates; these guards are defence-in-depth, not the primary check.
     if (!model) {
       console.error(`Unknown model: ${override.model}`);
       return;

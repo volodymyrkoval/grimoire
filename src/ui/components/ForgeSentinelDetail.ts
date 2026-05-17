@@ -5,6 +5,7 @@ import { SUPPORTED_MODELS, Effort } from '../../domain/settings/Settings';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
 import { EffortRow } from '../widgets/EffortRow';
 import { buildModelSelect } from '../widgets/ModelSelect';
+import { modelId, type ModelId } from '../../domain/settings/ModelId';
 
 export interface ForgeSentinelDetailParams {
   contentEl: HTMLElement;
@@ -55,7 +56,7 @@ export class ForgeSentinelDetail {
 
   #applyModelChange(): void {
     this.#currentEffort = null;
-    this.#effortRow.update(this.#modelSelect.value, null);
+    this.#effortRow.update(modelId(this.#modelSelect.value), null);
   }
 
   #buildForm(contentEl: HTMLElement): HTMLFormElement {
@@ -122,7 +123,7 @@ export class ForgeSentinelDetail {
     label.append(' Execute on active note');
   }
 
-  #buildModelSelect(form: HTMLElement, defaultModel: string): HTMLSelectElement {
+  #buildModelSelect(form: HTMLElement, defaultModel: ModelId): HTMLSelectElement {
     const label = form.createEl('label');
     return buildModelSelect({
       container: label,
@@ -139,7 +140,7 @@ export class ForgeSentinelDetail {
       onSubmit({
         name: this.#nameInput.value || '',
         description: this.#descInput.value || '',
-        model: this.#modelSelect.value,
+        model: modelId(this.#modelSelect.value),
         effort: this.#currentEffort,
         executeOnNote: this.#executeOnNote,
       });

@@ -1,4 +1,4 @@
-import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../domain/spells/SystemSpellPaths';
 import type { CastRecord } from '../../castLog/CastRecord';
 
 /**

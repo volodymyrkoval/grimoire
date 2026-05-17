@@ -15,6 +15,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CastDispatcher } from '../../src/cast/CastDispatcher';
+import { modelId } from '../../src/domain/settings/ModelId';
 import type { CastDispatchInput } from '../../src/cast/CastDispatcher';
 import type { CastInput, CastCallbacks, Caster } from '../../src/cast/Caster';
 import type { CastLogWriter } from '../../src/castLog/CastLogWriter';
@@ -27,7 +28,7 @@ const TEST_SETTINGS: GrimoireSettings = {
   binaryPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '/vault',
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: 'medium',
   executionMode: 'local',
   portalHost: '',
@@ -44,7 +45,7 @@ function makeBaseInput(overrides: Partial<CastDispatchInput> = {}): CastDispatch
       path: spellPath('/spells/test.md'),
       executeOnNote: false,
     },
-    model: 'claude-sonnet-4-5',
+    model: modelId('claude-sonnet-4-5'),
     effort: 'medium',
     contextNotePaths: [],
     followUp: '',

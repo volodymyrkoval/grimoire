@@ -1,7 +1,7 @@
 import { App, TFile } from 'obsidian';
-import type { Spell } from './Spell';
-import { EXECUTE_ON_NOTE_KEY } from './Spell';
-import { spellPath } from './SpellPath';
+import type { Spell } from '../domain/spells/Spell';
+import { EXECUTE_ON_NOTE_KEY } from '../domain/spells/Spell';
+import { spellPath } from '../domain/spells/SpellPath';
 
 /** Compares tag values with optional leading # stripped. */
 function tagMatches(tagValue: string, targetTag: string): boolean {

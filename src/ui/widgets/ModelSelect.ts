@@ -1,19 +1,20 @@
 import type { KeyboardController } from '../../infra/KeyboardController';
 import type { SupportedModel } from '../../domain/settings/Settings';
+import { modelId, type ModelId } from '../../domain/settings/ModelId';
 
 export interface ModelSelectOptions {
   container: HTMLElement;
   kb: KeyboardController;
   models: readonly SupportedModel[];
-  initialModel: string;
-  onChange: (modelId: string) => void;
+  initialModel: ModelId;
+  onChange: (id: ModelId) => void;
 }
 
 /** Creates the select element and populates options from the models list. */
 function createModelSelectElement(
   container: HTMLElement,
   models: readonly SupportedModel[],
-  initialModel: string,
+  initialModel: ModelId,
 ): HTMLSelectElement {
   const select = container.createEl('select');
   for (const m of models) {
@@ -28,19 +29,19 @@ function createModelSelectElement(
 function bindModelSelectKeys(
   select: HTMLSelectElement,
   kb: KeyboardController,
-  onChange: (modelId: string) => void,
+  onChange: (id: ModelId) => void,
 ): void {
   kb.bind([], 'ArrowDown', () => {
     if (activeDocument.activeElement !== select) return false;
     select.selectedIndex = (select.selectedIndex + 1) % select.options.length;
-    onChange(select.value);
+    onChange(modelId(select.value));
     return true;
   });
   kb.bind([], 'ArrowUp', () => {
     if (activeDocument.activeElement !== select) return false;
     select.selectedIndex =
       (select.selectedIndex - 1 + select.options.length) % select.options.length;
-    onChange(select.value);
+    onChange(modelId(select.value));
     return true;
   });
 }
@@ -57,7 +58,7 @@ export function buildModelSelect({
   onChange,
 }: ModelSelectOptions): HTMLSelectElement {
   const select = createModelSelectElement(container, models, initialModel);
-  select.addEventListener('change', () => onChange(select.value));
+  select.addEventListener('change', () => onChange(modelId(select.value)));
   bindModelSelectKeys(select, kb, onChange);
   return select;
 }

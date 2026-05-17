@@ -28,4 +28,5 @@ export interface PopupPhase {
   handleTab(): boolean;
   handleArrowRight(): boolean;
   interceptClose(): boolean;
+  disablesTabBar(): boolean;
 }

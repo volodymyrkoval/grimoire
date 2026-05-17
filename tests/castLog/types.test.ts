@@ -1,6 +1,7 @@
+import { modelId } from '../../src/domain/settings/ModelId';
 import { describe, it, expect } from 'vitest';
 import type { CastLogEvent, CastLogStage } from '../../src/castLog/types';
-import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../src/castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../src/domain/spells/SystemSpellPaths';
 
 function assertNever(_x: never): never {
   throw new Error('unhandled CastLogEvent stage');
@@ -23,7 +24,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/test/spell',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
       contextNotes: [],
     };
@@ -73,7 +74,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/test/spell',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       contextNotes: [],
     };
@@ -86,7 +87,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/spell.md',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       contextNotes: [],
       portalCastId: 'srv-1',
@@ -96,7 +97,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/spell.md',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       contextNotes: [],
     };

@@ -1,16 +1,16 @@
 import { GrimoireSettings } from '../domain/settings/Settings';
-import { FORGE_SPELL_PATH } from '../castLog/types';
+import { FORGE_SPELL_PATH } from '../domain/spells/SystemSpellPaths';
 import { sanitiseSpellName } from './sanitiseSpellName';
 import { buildForgeUserPrompt } from './buildForgeUserPrompt';
 import { ForgeFormSnapshot } from './ForgeFormSnapshot';
 import type { Caster } from '../execution/Caster';
-import type { CastLogWriter } from '../castLog/CastLogWriter';
+import type { CastEventSink } from './CastEventSink';
 
 /** Dependencies injected into ForgeImprinter, allowing optional ID generation override for testing. */
 export interface ForgeImprinterDeps {
   notify: (msg: string) => void;
   caster: () => Caster;
-  logWriter: () => CastLogWriter;
+  logWriter: () => CastEventSink;
   /** Returns the materialized forge spell paths: absolute for the local caster, vault-relative for the portal. */
   forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   generateId?: () => string;
@@ -24,7 +24,7 @@ export interface ForgeImprinterDeps {
 export class ForgeImprinter {
   readonly #notify: (msg: string) => void;
   readonly #caster: () => Caster;
-  readonly #logWriter: () => CastLogWriter;
+  readonly #logWriter: () => CastEventSink;
   readonly #forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   readonly #generateId: () => string;
 

@@ -1,14 +1,15 @@
 import { type Spell } from '../domain/spells/Spell';
 import { type Effort, type GrimoireSettings } from '../domain/settings/Settings';
 import type { Caster } from '../execution/Caster';
-import type { CastLogWriter } from '../castLog/CastLogWriter';
+import type { CastResultRecorder } from './CastResultRecorder';
+import type { ModelId } from '../domain/settings/ModelId';
 
 /**
  * Input payload for a spell cast request.
  */
 export interface CastDispatchInput {
   spell: Spell;
-  model: string;
+  model: ModelId;
   effort: Effort | null;
   contextNotePaths: readonly string[];
   followUp: string;
@@ -33,7 +34,7 @@ export interface CastDispatcherDeps {
   notify: (msg: string) => void;
   close: () => void;
   caster: () => Caster;
-  logWriter: () => CastLogWriter;
+  logWriter: () => CastResultRecorder;
   generateId?: () => string;
 }
 
@@ -45,7 +46,7 @@ export class CastDispatcher {
   readonly #notify: (msg: string) => void;
   readonly #close: () => void;
   readonly #caster: () => Caster;
-  readonly #logWriter: () => CastLogWriter;
+  readonly #logWriter: () => CastResultRecorder;
   readonly #generateId: () => string;
 
   constructor(deps: CastDispatcherDeps) {

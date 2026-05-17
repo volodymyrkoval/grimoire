@@ -49,10 +49,10 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 └────────────────────────────────────────────┘
 ```
 
-Detail variants:
-- **Forge sentinel** — `renderForgeSentinelDetail`: kb suspended, `ForgeSentinelDetail` mounted (owns model-select ArrowUp/Down). `destroy()` runs in `exitDetail` before `kb.resume()`.
-- **Spell options panel** — `renderOptionsPanel`: kb suspended, `SpellOptionsDetail` (which mounts `OptionsPanel`) owns its own keys (Cmd+Enter for Cast). `destroy()` runs in `exitDetail` before `kb.resume()`.
-- **Refine sentinel options** — `renderRefineSentinelOptions`: kb suspended, same panel and form as spell options. `onCast` calls `refineCastAction(snapshot)` to dispatch a Refine cast.
+Detail variants (since `audit-002-rework`, dispatched through `DetailPanelRouter`):
+- **Forge sentinel** — `renderForge`: kb suspended, `ForgeSentinelDetail` mounted (owns model-select ArrowUp/Down). `destroy()` runs in `exitDetail` before `kb.resume()`.
+- **Spell options panel** — `renderSpellOptions`: kb suspended, `OptionsDetail` with `kind: { kind: 'spell', spell }` (which mounts `OptionsPanel`) owns its own keys (Cmd+Enter for Cast). `destroy()` runs in `exitDetail` before `kb.resume()`.
+- **Refine sentinel options** — `renderRefineOptions`: kb suspended, same `OptionsDetail` component with `kind: { kind: 'refine' }`. `onCast` calls `refineCastAction(snapshot)` to dispatch a Refine cast.
 
 ## Constructor
 

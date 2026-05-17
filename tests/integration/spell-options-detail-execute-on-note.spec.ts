@@ -9,12 +9,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { App } from 'obsidian';
 import type { Spell } from '../../src/domain/spells/Spell';
 import type { SpellPath } from '../../src/domain/spells/SpellPath';
-import { SpellOptionsDetail } from '../../src/ui/components/SpellOptionsDetail';
+import { OptionsDetail } from '../../src/ui/components/OptionsDetail';
+import { modelId } from '../../src/domain/settings/ModelId';
 import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import { vi as vitestVi } from 'vitest';
 
-describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
+describe('OptionsDetail #buildFormState executeOnNote seeding (spell kind)', () => {
   // Test 1: spell.executeOnNote === false, no session entry → form snapshot has executeOnNote: false
   it('seeds executeOnNote with false when spell.executeOnNote is false and no session entry', () => {
     const spell: Spell = {
@@ -37,19 +38,19 @@ describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
       frontmatter: { tags: ['spell'] },
     });
 
-    const detail = new SpellOptionsDetail();
+    const detail = new OptionsDetail();
     detail.render({
       contentEl,
       scope: { register: vi.fn(), unregister: vi.fn() } as any,
-      spell,
       app,
       overrides,
       sessionMap,
-      formDefaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' },
-      models: [{ id: 'claude-sonnet-4-5', displayName: 'Sonnet', effortOptions: ['medium', 'high'], defaultEffort: 'medium' }],
+      formDefaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+      models: [{ id: modelId('claude-sonnet-4-5'), displayName: 'Sonnet', effortOptions: ['medium', 'high'], defaultEffort: 'medium' }],
       onBack: () => {},
       onCast: onCastCallback,
       onOverrideChanged: () => {},
+      kind: { kind: 'spell', spell },
     });
 
     // Trigger Cast to capture the snapshot
@@ -74,7 +75,7 @@ describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
 
     const sessionMap = new OptionsSessionMap();
     sessionMap.put('test-spell-2.md' as SpellPath, {
-      model: 'claude-opus-4-5',
+      model: modelId('claude-opus-4-5'),
       effort: 'high',
       contextNotePaths: [],
       followUp: '',
@@ -94,19 +95,19 @@ describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
       frontmatter: { tags: ['spell'] },
     });
 
-    const detail = new SpellOptionsDetail();
+    const detail = new OptionsDetail();
     detail.render({
       contentEl,
       scope: { register: vi.fn(), unregister: vi.fn() } as any,
-      spell,
       app,
       overrides,
       sessionMap,
-      formDefaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' },
-      models: [{ id: 'claude-sonnet-4-5', displayName: 'Sonnet', effortOptions: ['medium', 'high'], defaultEffort: 'medium' }],
+      formDefaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+      models: [{ id: modelId('claude-sonnet-4-5'), displayName: 'Sonnet', effortOptions: ['medium', 'high'], defaultEffort: 'medium' }],
       onBack: () => {},
       onCast: onCastCallback,
       onOverrideChanged: () => {},
+      kind: { kind: 'spell', spell },
     });
 
     const form = contentEl.querySelector('form.options-panel') as HTMLFormElement;
@@ -144,19 +145,19 @@ describe('SpellOptionsDetail #buildFormState executeOnNote seeding', () => {
       frontmatter: { tags: ['spell'] },
     });
 
-    const detail = new SpellOptionsDetail();
+    const detail = new OptionsDetail();
     detail.render({
       contentEl,
       scope: { register: vi.fn(), unregister: vi.fn() } as any,
-      spell,
       app,
       overrides,
       sessionMap,
-      formDefaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' },
-      models: [{ id: 'claude-sonnet-4-5', displayName: 'Sonnet', effortOptions: ['medium', 'high'], defaultEffort: 'medium' }],
+      formDefaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+      models: [{ id: modelId('claude-sonnet-4-5'), displayName: 'Sonnet', effortOptions: ['medium', 'high'], defaultEffort: 'medium' }],
       onBack: () => {},
       onCast: onCastCallback,
       onOverrideChanged: () => {},
+      kind: { kind: 'spell', spell },
     });
 
     const form = contentEl.querySelector('form.options-panel') as HTMLFormElement;

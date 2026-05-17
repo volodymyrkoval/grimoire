@@ -19,7 +19,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createPopupHarness } from './harness';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import { REFINE_SENTINEL_PATH } from '../../src/domain/spells/Spell';
-import { RefineOptionsDetail } from '../../src/ui/components/RefineOptionsDetail';
+import { OptionsDetail } from '../../src/ui/components/OptionsDetail';
 
 function navigateToRefine(h: ReturnType<typeof createPopupHarness>): void {
   h.pressKey('ArrowUp'); // index 0 → wraps to 11 (Refine)
@@ -27,8 +27,8 @@ function navigateToRefine(h: ReturnType<typeof createPopupHarness>): void {
 
 describe('refine-options-panel integration — Refine sentinel → OptionsPanel seam', () => {
   // ------------------------------------------------------------------ class shape
-  it('RefineOptionsDetail is a constructable coordinator class with render and destroy', () => {
-    const detail = new RefineOptionsDetail();
+  it('OptionsDetail is a constructable coordinator class with render and destroy', () => {
+    const detail = new OptionsDetail();
     expect(typeof detail.render).toBe('function');
     expect(typeof detail.destroy).toBe('function');
   });

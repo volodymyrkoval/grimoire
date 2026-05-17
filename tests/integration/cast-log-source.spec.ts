@@ -11,6 +11,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { foldEvents } from '../../src/castLog/foldEvents';
+import { modelId } from '../../src/domain/settings/ModelId';
 import type { CastLogEvent } from '../../src/castLog/types';
 import type { CastRecord } from '../../src/castLog/CastRecord';
 // CastLogSource does not exist yet — this import causes the module-not-found red.
@@ -37,7 +38,7 @@ const EVENTS: CastLogEvent[] = [
     stage: 'casted',
     ts: '2024-01-01T11:00:00Z',
     spellPath: 'spells/fireball.md',
-    model: 'claude-sonnet-4-5',
+    model: modelId('claude-sonnet-4-5'),
     effort: 'medium',
     contextNotes: [],
   },
@@ -54,7 +55,7 @@ const EVENTS: CastLogEvent[] = [
     stage: 'casted',
     ts: '2024-01-01T10:00:00Z',
     spellPath: 'spells/shield.md',
-    model: 'claude-sonnet-4-5',
+    model: modelId('claude-sonnet-4-5'),
     effort: 'low',
     contextNotes: [],
   },

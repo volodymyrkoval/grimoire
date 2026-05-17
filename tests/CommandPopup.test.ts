@@ -5,6 +5,7 @@ import { App } from 'obsidian';
 import { CommandPopup } from '../src/ui/CommandPopup';
 import * as FSDModule from '../src/ui/components/ForgeSentinelDetail';
 import * as OptionsPanelModule from '../src/ui/options/OptionsPanel';
+import { modelId } from '../src/domain/settings/ModelId';
 import { SpellOverrideStore } from '../src/domain/settings/SpellOverrideStore';
 import { OptionsSessionMap } from '../src/ui/options/OptionsSessionMap';
 import type { CastLogPanelDeps } from '../src/ui/tabs/CastLogPanel';
@@ -76,7 +77,7 @@ function makePopup(castAction?: CastAction) {
     imprintAction: vi.fn(),
     castAction: castAction ?? vi.fn(),
     refineCastAction: vi.fn(),
-    defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
     overrides: makeStubOverrides(),
     sessionMap: new OptionsSessionMap(),
     castLogPanelDeps: makeFakeCastLogPanelDeps(),
@@ -205,7 +206,7 @@ describe('CommandPopup keyboard suspend/resume', () => {
     spellsPanel.events.emit('sentinel', { kind: 'forge', name: 'My Forge' });
 
     expect(capturedOnSubmit).toBeDefined();
-    capturedOnSubmit!({ name: '', description: '', model: 'sonnet', effort: null });
+    capturedOnSubmit!({ name: '', description: '', model: modelId('sonnet'), effort: null });
 
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
@@ -317,7 +318,7 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       spellTag: 'spell',
       imprintAction: vi.fn(),
       castAction: vi.fn(),
-      defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: fakeDeps,
@@ -339,7 +340,7 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       spellTag: 'spell',
       imprintAction: vi.fn(),
       castAction: vi.fn(),
-      defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
@@ -386,7 +387,7 @@ describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
       spellTag: 'spell',
       imprintAction: vi.fn(),
       castAction: vi.fn(),
-      defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' } satisfies FormDefaults,
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
       overrides: stubOverrides,
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),

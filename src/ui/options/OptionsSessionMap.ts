@@ -1,8 +1,9 @@
 import { SpellPath } from '../../domain/spells/SpellPath';
 import { Effort } from '../../domain/settings/Settings';
+import type { ModelId } from '../../domain/settings/ModelId';
 
 export interface OptionsSessionEntry {
-  model: string;
+  model: ModelId;
   effort: Effort | null;
   contextNotePaths: readonly string[];
   followUp: string;

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TFile } from 'obsidian';
-import { getSpells } from '../src/domain/spells/spellScanner';
+import { getSpells } from '../src/infra/spellScanner';
 import { EXECUTE_ON_NOTE_KEY } from '../src/domain/spells/Spell';
 
 vi.mock('obsidian');

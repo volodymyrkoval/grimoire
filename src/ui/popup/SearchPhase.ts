@@ -62,4 +62,8 @@ export class SearchPhase implements PopupPhase {
   interceptClose(): boolean {
     return false;
   }
+
+  disablesTabBar(): boolean {
+    return false;
+  }
 }

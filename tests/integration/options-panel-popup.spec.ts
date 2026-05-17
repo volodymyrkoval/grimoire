@@ -21,6 +21,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { modelId } from '../../src/domain/settings/ModelId';
 import { createPopupHarness } from './harness';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import type { CastAction } from '../../src/ui/CommandPopup';
@@ -86,7 +87,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
 
     // Second arg: the form snapshot with defaults
     expect(snapshotArg).toMatchObject({
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -113,7 +114,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
     const checkbox = form.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
-    // overrides.set('/spells/banishment.md', { model: 'claude-opus-4-5', effort: 'medium' })
+    // overrides.set('/spells/banishment.md', { model: modelId('claude-opus-4-5'), effort: 'medium' })
     // onOverrideChanged fires → spellsPanel.refreshOverrides() → dot should be queued
 
     // Step 4: exit detail phase (simulating Escape via modal.close())
@@ -148,7 +149,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
       data: {
         settings: {} as any,
         spellOverrides: {
-          '/spells/banishment.md': { model: 'claude-sonnet-4-5', effort: 'medium' },
+          '/spells/banishment.md': { model: modelId('claude-sonnet-4-5'), effort: 'medium' },
         },
       },
       saver: { schedule: vi.fn() } as any,

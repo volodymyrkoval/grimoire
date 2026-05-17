@@ -49,6 +49,10 @@ export class PluginPaths {
   /**
    * Returns the forge spell path relative to the plugin directory root.
    * To obtain the OS-level absolute path, prepend `vaultMountPath`.
+   *
+   * TODO: investigate whether forgeSpellPathPluginRel and forgeSpellPathVaultRel
+   * should differ — plugin-relative and vault-relative paths are distinct concepts,
+   * but both currently return the same value. One of them may be wrong.
    */
   forgeSpellPathPluginRel(): string {
     return normalizePath(`${this.#pluginDir}/forge.md`);
@@ -65,6 +69,9 @@ export class PluginPaths {
   /**
    * Returns the refine spell path relative to the plugin directory root.
    * To obtain the OS-level absolute path, prepend `vaultMountPath`.
+   *
+   * TODO: investigate whether refineSpellPathPluginRel and refineSpellPathVaultRel
+   * should differ — same concern as the forge pair above.
    */
   refineSpellPathPluginRel(): string {
     return normalizePath(`${this.#pluginDir}/refine.md`);

@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { GrimoireData, SUPPORTED_MODELS } from '../../domain/settings/Settings';
 import { EffortRow } from '../widgets/EffortRow';
+import { modelId } from '../../domain/settings/ModelId';
 
 /**
  * Plugin settings UI rendered in Obsidian's Settings modal.
@@ -66,9 +67,9 @@ export class GrimoireSettingTab extends PluginSettingTab {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises -- addOption return is not a real Promise
       SUPPORTED_MODELS.forEach(m => d.addOption(m.id, m.label));
       d.setValue(s.defaultModel);
-      d.onChange(modelId => {
-        s.defaultModel = modelId;
-        effortRow.update(modelId, s.defaultEffort);
+      d.onChange(rawModel => {
+        s.defaultModel = modelId(rawModel);
+        effortRow.update(s.defaultModel, s.defaultEffort);
         this.#save();
       });
     });

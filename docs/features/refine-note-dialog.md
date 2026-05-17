@@ -15,7 +15,7 @@ Activation closes the popup. In this iteration only, `Enter` on the Refine row d
 ## Design decisions
 
 - **Reserved synthetic `SpellPath` (`<grimoire-sentinel:refine>`).** Angle brackets are path-impossible on Windows and avoided elsewhere, so the key cannot collide with a real vault file. Keeps Refine overrides inside the existing `Record<string, SpellOverride>` map — no second persistence pipeline.
-- **Dedicated `RefineOptionsDetail` coordinator, not a synthetic `Spell`.** The plan proposed routing a fake `Spell` through `SpellOptionsDetail`; the shipped implementation split a separate `RefineOptionsDetail` class that mounts the same `OptionsPanel` without inventing a `Spell` object. `OptionsPanel`, `OptionsFormState`, `OptionsSessionMap`, and `SpellOverrideStore` are reused unchanged.
+- **Dedicated Refine coordinator, not a synthetic `Spell`.** The plan proposed routing a fake `Spell` through the spell-options detail; the shipped implementation introduced a separate `RefineOptionsDetail` class that mounted the same `OptionsPanel` without inventing a `Spell` object. (`audit-002-rework` later unified the two coordinators into a single `OptionsDetail` parameterized by `kind: 'spell' | 'refine'`; the no-fake-`Spell` invariant carries over.) `OptionsPanel`, `OptionsFormState`, `OptionsSessionMap`, and `SpellOverrideStore` are reused unchanged.
 - **Shared `appendRowHint(el)` helper.** Both `SpellRow` and the Refine `SentinelRow` draw the chip from one function so chip vocabulary cannot drift between the two row types. Forge keeps no chip via a `showHint: false` default.
 - **`CommandPopup.dismiss()` bypasses the close-override.** The popup's `close()` is intercepted in detail phase to return to search (correct for authored spells, which keep the modal open after a cast). Refine has no follow-up, so its `onCast` calls `dismiss()` to call `super.close()` directly. The authored-spell exit-to-search behavior is untouched.
 - **Hint chip text ships verbatim — no Refine-specific verb.** The chip vocabulary is shared across the picker; the verb mismatch ("cast" vs. dismiss) is intentional visual consistency.
@@ -25,7 +25,7 @@ Activation closes the popup. In this iteration only, `Enter` on the Refine row d
 
 **In:**
 - Hint chip on the Refine sentinel row (rendered via shared helper).
-- `ArrowRight` on Refine → `RefineOptionsDetail` → same `OptionsPanel` form.
+- `ArrowRight` on Refine → Refine variant of `OptionsDetail` (originally `RefineOptionsDetail`) → same `OptionsPanel` form.
 - Per-Refine `model` / `effort` override persistence keyed on the synthetic path.
 - `Enter` on Refine and Cast/`Cmd+Enter` from inside Refine options → modal fully dismissed.
 - Two new no-payload `SpellEvents` (`open-refine-options`, `refine-cast`). (Note: `refine-cast` was initially named `dismiss-refine` but was renamed in 019-refine-cast to better reflect its behavior.)
@@ -36,7 +36,7 @@ Activation closes the popup. In this iteration only, `Enter` on the Refine row d
 - Mode detection from the active note (word count, `@cast` lines) — *the dialog does nothing the user does not directly drive*.
 - `@cast` directive parsing — *the dialog itself does not parse them; the Refine prompt acts on them at cast time. Editor-side `@cast` line decoration shipped separately — see `docs/features/refine-marker-styling.md`.*
 - Refine-specific prompt body — *no prompt is written or referenced this iteration*.
-- A fork of `OptionsPanel` / `SpellOptionsDetail` — *the panel UI is reused unchanged; only the coordinator differs*.
+- A fork of `OptionsPanel` or the spell-options detail component — *the panel UI is reused unchanged; only the coordinator kind differs (see `audit-002-rework` for the eventual `OptionsDetail` unification)*.
 - Override-dot on the Refine row — *`SpellList` paints dots only on `SpellRow`; extending it for a single sentinel is premature*.
 - Chip on the Forge sentinel — *the pitch asks for chips on Refine only; changing Forge would touch shipped, tested UI*.
 

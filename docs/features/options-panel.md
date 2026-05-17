@@ -17,7 +17,7 @@ Cast button (or `Cmd/Ctrl+Enter`) writes the live values to the session map and 
 | `OptionsPanel` | `src/ui/options/OptionsPanel.ts` | Render seven controls, subscribe to `formState.onChange`, wire Cast/Reset/checkbox |
 | `OptionsFormState` | `src/ui/options/OptionsFormState.ts` | Reactive holder for `{ model, effort, contextNotePaths, followUp, executeOnNote }`; effort-survival rule on `setModel` |
 | `OptionsSessionMap` | `src/ui/options/OptionsSessionMap.ts` | Per-spell `OptionsSessionEntry` storage for the Obsidian process lifetime |
-| `SpellOptionsDetail` | `src/ui/components/SpellOptionsDetail.ts` | Resolve via `resolveSpellOptions`, build form state, mount `OptionsPanel` |
+| `OptionsDetail` | `src/ui/components/OptionsDetail.ts` | Resolve via `resolveSpellOptions`, build form state, mount `OptionsPanel`. Parameterized by `OptionsDetailKind = { kind: 'spell'; spell } \| { kind: 'refine' }`. Unifies the former `SpellOptionsDetail` + `RefineOptionsDetail` (see `audit-002-rework`) |
 | `resolveSpellOptions` | `src/domain/settings/spellOptionsResolver.ts` | 3-tier resolver (session → override → settings) with effort clamping |
 | `SpellOverrideStore` | `src/domain/settings/SpellOverrideStore.ts` | Persisted `model+effort` per spell path; rejects Haiku; debounced save |
 | `SpellRow` (modified) | `src/ui/components/SpellRow.ts` | Renders override dot when `hasOverride === true` |
@@ -30,10 +30,10 @@ Cast button (or `Cmd/Ctrl+Enter`) writes the live values to the session map and 
 ArrowRight in search phase, spells tab, selectedIndex on a spell row:
   → CommandPopup binding → spellsPanel.openOptions(selectedIndex)
   → SpellsPanel emits "open-options" with the spell
-  → CommandPopup.renderOptionsPanel(spell):
-      phase = 'detail'; kb.suspend(); mount SpellOptionsDetail({ spell, app, overrides, sessionMap, formDefaults, models, onBack, onCast, onOverrideChanged })
-      → SpellOptionsDetail builds OptionsFormState from resolveSpellOptions + session entry (or spell.executeOnNote default)
-      → SpellOptionsDetail mounts OptionsPanel with snapshot { model: resolved.model, effort: resolved.effort }
+  → CommandPopup → DetailPanelRouter.renderSpellOptions(spell):
+      phase = 'detail'; kb.suspend(); mount OptionsDetail({ kind: { kind: 'spell', spell }, app, overrides, sessionMap, formDefaults, models, onBack, onCast, onOverrideChanged })
+      → OptionsDetail builds OptionsFormState from resolveSpellOptions + session entry (or spell.executeOnNote default)
+      → OptionsDetail mounts OptionsPanel with snapshot { model: resolved.model, effort: resolved.effort }
 
 User edits form:
   control change → formState.set*() → emit → reactive subscribers update
@@ -71,7 +71,7 @@ A spell row keyboard hint reads `↵ cast · → options` to advertise both bind
 ## Refine sentinel variant
 
 The Refine sentinel can be opened via `ArrowRight` in search mode (same as a spell row), mounting the same `OptionsPanel` form via a dedicated coordinator — see `refine-note-dialog` and `refine-cast` for the full features:
-- **Coordinator:** `RefineOptionsDetail` mirrors `SpellOptionsDetail` but takes no `Spell` parameter; it keys session/override/resolver lookups directly on the reserved `REFINE_SENTINEL_PATH`.
+- **Coordinator:** `OptionsDetail` with `kind: { kind: 'refine' }` (originally a separate `RefineOptionsDetail` class, unified in `audit-002-rework`). Takes no `Spell` parameter; it keys session/override/resolver lookups directly on the reserved `REFINE_SENTINEL_PATH`.
 - **Form state:** model, effort, context notes, follow-up — same as spell options. The `executeOnNote` checkbox is hidden (`OptionsPanel` accepts `showExecuteOnNote: false`); Refine always targets the active note, so exposing the toggle would be misleading.
 - **Cast behaviour (since `refine-cast`):** `onCast` invokes `refineCastAction(snapshot)`, which builds a synthetic Refine `Spell`, guards on an active markdown note (`Notice` + bail-out otherwise), dispatches through the shared `CastDispatcher` with `systemPromptFilePath` pointing at the materialized `refine.md`, then calls `popup.dismiss()` to fully close the modal.
 - **Cross-link:** see `command-popup-ui.md` for the keyboard routing (`ArrowRight` on Refine sentinel).

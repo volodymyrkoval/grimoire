@@ -11,6 +11,7 @@ import { OptionsPanel } from '../src/ui/options/OptionsPanel';
 import { OptionsFormState } from '../src/ui/options/OptionsFormState';
 import { OptionsSessionMap } from '../src/ui/options/OptionsSessionMap';
 import type { OptionsSnapshot } from '../src/ui/options/OptionsSnapshot';
+import { modelId, type ModelId } from '../src/domain/settings/ModelId';
 import { SpellOverrideStore } from '../src/domain/settings/SpellOverrideStore';
 import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import { spellPath } from '../src/domain/spells/SpellPath';
@@ -28,13 +29,13 @@ interface MountResult {
 }
 
 function mountPanel(overrides?: Partial<{
-  model: string;
+  model: ModelId;
   effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
   showExecuteOnNote: boolean;
 }>): MountResult {
   const contentEl = document.createElement('div');
   const scope = new Scope();
-  const model = overrides?.model ?? 'claude-sonnet-4-5';
+  const model = overrides?.model ?? modelId('claude-sonnet-4-5');
   const effort = overrides?.effort !== undefined ? overrides.effort : 'medium';
   const showExecuteOnNote = overrides?.showExecuteOnNote !== false;
 
@@ -103,7 +104,7 @@ describe('OptionsPanel — per-control wiring', () => {
 
   it('changing model select calls formState.setModel', () => {
     const { contentEl, formState } = mountPanel({
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
     });
 
@@ -115,14 +116,14 @@ describe('OptionsPanel — per-control wiring', () => {
     select.dispatchEvent(new Event('change', { bubbles: true }));
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith('claude-opus-4-5', SUPPORTED_MODELS);
+    expect(spy).toHaveBeenCalledWith(modelId('claude-opus-4-5'), SUPPORTED_MODELS);
 
     spy.mockRestore();
   });
 
   it('select exists and can be manually navigated by index', () => {
     // Mount with Haiku (index 0) to test wrap-around easily
-    const { contentEl } = mountPanel({ model: 'claude-haiku-4-5', effort: null });
+    const { contentEl } = mountPanel({ model: modelId('claude-haiku-4-5'), effort: null });
 
     const select = contentEl.querySelector<HTMLSelectElement>('select')!;
     expect(select).not.toBeNull();
@@ -175,7 +176,7 @@ describe('OptionsPanel — per-control wiring', () => {
 
   it('destroy() completes without error', () => {
     const { panel } = mountPanel({
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
     });
 
@@ -199,7 +200,7 @@ describe('OptionsPanel — per-control wiring', () => {
     expect(onCast).toHaveBeenCalledOnce();
     expect(onCast).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'claude-sonnet-4-5',
+        model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         followUp: 'my follow-up text',
       })

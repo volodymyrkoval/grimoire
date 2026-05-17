@@ -1,30 +1,48 @@
 module.exports = {
-  extends: "eslint-plugin-import/flat/recommended",
-  rules: {
-    "no-circular": ["error", { severity: "error" }],
-    "no-orphans": ["error", { severity: "error" }],
-  },
+  forbidden: [
+    {
+      name: 'domain-no-obsidian',
+      severity: 'error',
+      from: { path: '^src/domain/' },
+      to: { path: '^obsidian$' },
+    },
+    {
+      name: 'domain-no-infra',
+      severity: 'error',
+      from: { path: '^src/domain/' },
+      to: { path: '^src/infra/' },
+    },
+    {
+      name: 'forge-no-castlog',
+      severity: 'error',
+      from: { path: '^src/forge/' },
+      to: { path: '^src/castLog/' },
+    },
+    {
+      name: 'cast-no-castlog',
+      severity: 'error',
+      from: { path: '^src/cast/' },
+      to: { path: '^src/castLog/' },
+    },
+    {
+      name: 'refine-no-castlog',
+      severity: 'error',
+      from: { path: '^src/refine/' },
+      to: { path: '^src/castLog/' },
+    },
+    {
+      name: 'no-circular',
+      severity: 'error',
+      from: {},
+      to: { circular: true },
+    },
+  ],
   options: {
     doNotFollow: {
-      path: ["node_modules"],
+      path: ['node_modules'],
     },
-    dependencyTypes: [
-      "type",
-      "type-only",
-      "npm",
-      "npm-dev",
-      "npm-optional",
-      "npm-peer",
-      "npm-bundled",
-      "require",
-      "optional",
-      "peer",
-      "module",
-      "local",
-    ],
     tsPreCompilationDeps: true,
     combinedDependencies: true,
     cache: true,
-    reuseExistingCache: true,
   },
 };

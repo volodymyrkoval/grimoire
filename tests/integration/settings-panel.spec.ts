@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App } from 'obsidian';
-import { hydrate } from '../../src/domain/settings/persistence';
+import { hydrate } from '../../src/infra/settingsPersistence';
 import { GrimoireSettingTab } from '../../src/ui/settings/GrimoireSettingTab';
 
-vi.mock('../../src/domain/settings/computeVaultMountDefault', () => ({
+vi.mock('../../src/infra/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
 }));
 

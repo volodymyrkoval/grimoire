@@ -1,4 +1,5 @@
 import type { Effort } from '../domain/settings/Settings';
+import type { ModelId } from '../domain/settings/ModelId';
 
 /** Stages a cast passes through during its lifecycle. */
 export type CastLogStage = 'casted' | 'error' | 'in-progress' | 'done';
@@ -17,7 +18,7 @@ export interface BaseEvent {
 export interface CastedEvent extends BaseEvent {
   readonly stage: 'casted';
   readonly spellPath: string;
-  readonly model: string;
+  readonly model: ModelId;
   readonly effort: Effort | null;
   readonly contextNotes: readonly string[];
   readonly followUp?: string;
@@ -50,13 +51,3 @@ export interface DoneEvent extends BaseEvent {
 
 /** Union of all cast log event types. */
 export type CastLogEvent = CastedEvent | ErrorEvent | InProgressEvent | DoneEvent;
-
-/**
- * Sentinel spell path for casts originating from the Forge (not a live spell).
- */
-export const FORGE_SPELL_PATH = '<forge>' as const;
-
-/**
- * Sentinel spell path for casts originating from the Refine sentinel (not a live spell).
- */
-export const REFINE_SPELL_PATH = '<refine>' as const;
