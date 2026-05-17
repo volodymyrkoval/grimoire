@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App } from 'obsidian';
-import { hydrate } from '../src/domain/settings/persistence';
+import { hydrate } from '../src/infra/settingsPersistence';
 import { DEFAULT_SETTINGS } from '../src/domain/settings/Settings';
 
-vi.mock('../src/domain/settings/computeVaultMountDefault', () => ({
+vi.mock('../src/infra/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/mocked/vault'),
 }));
 
-import { computeVaultMountDefault } from '../src/domain/settings/computeVaultMountDefault';
+import { computeVaultMountDefault } from '../src/infra/computeVaultMountDefault';
 
 describe('persistence.hydrate', () => {
   let app: App;

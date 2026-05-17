@@ -1,3 +1,4 @@
+import { modelId } from '../../src/domain/settings/ModelId';
 import { describe, it, expect, vi } from 'vitest';
 import { createCaster } from '../../src/cast/createCaster';
 import { CastRunner } from '../../src/cast/local/CastRunner';
@@ -11,7 +12,7 @@ const localSettings: GrimoireSettings = {
   binaryPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '/vault',
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: 'medium',
   executionMode: 'local',
   portalHost: '',
@@ -34,7 +35,7 @@ const remoteSettings: GrimoireSettings = {
 const baseCastInput: CastInput = {
   castId: 'cast-1',
   spellPath: 'spell.md',
-  modelId: 'claude-sonnet-4-5',
+  modelId: modelId('claude-sonnet-4-5'),
   effort: 'medium',
   userPrompt: 'Hello',
   vaultMountPath: '/vault',

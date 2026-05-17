@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OptionsFormState, OptionsFormSnapshot } from '../src/ui/options/OptionsFormState';
 import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
+import { modelId } from '../src/domain/settings/ModelId';
 
 describe('OptionsFormState', () => {
   let initialSnapshot: OptionsFormSnapshot;
 
   beforeEach(() => {
     initialSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -41,7 +42,7 @@ describe('OptionsFormState', () => {
     const listener = vi.fn();
 
     state.onChange(listener);
-    const result = state.setModel('claude-opus-4-5', SUPPORTED_MODELS);
+    const result = state.setModel(modelId('claude-opus-4-5'), SUPPORTED_MODELS);
 
     expect(state.snapshot().effort).toBe('medium');
     expect(result).toBe('medium');
@@ -50,7 +51,7 @@ describe('OptionsFormState', () => {
 
   it('setModel to Sonnet falls back to defaultEffort when current effort not in options', () => {
     const stateSnapshot: OptionsFormSnapshot = {
-      model: 'claude-opus-4-5',
+      model: modelId('claude-opus-4-5'),
       effort: 'xhigh',
       contextNotePaths: [],
       followUp: '',
@@ -60,7 +61,7 @@ describe('OptionsFormState', () => {
     const listener = vi.fn();
 
     state.onChange(listener);
-    const result = state.setModel('claude-sonnet-4-5', SUPPORTED_MODELS);
+    const result = state.setModel(modelId('claude-sonnet-4-5'), SUPPORTED_MODELS);
 
     expect(state.snapshot().effort).toBe('medium');
     expect(result).toBe('medium');
@@ -72,7 +73,7 @@ describe('OptionsFormState', () => {
     const listener = vi.fn();
 
     state.onChange(listener);
-    const result = state.setModel('claude-haiku-4-5', SUPPORTED_MODELS);
+    const result = state.setModel(modelId('claude-haiku-4-5'), SUPPORTED_MODELS);
 
     expect(state.snapshot().effort).toBeNull();
     expect(result).toBeNull();
@@ -85,7 +86,7 @@ describe('OptionsFormState', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     state.onChange(listener);
-    const result = state.setModel('unknown-model-id', SUPPORTED_MODELS);
+    const result = state.setModel(modelId('unknown-model-id'), SUPPORTED_MODELS);
 
     expect(state.snapshot().model).toBe('claude-haiku-4-5');
     expect(state.snapshot().effort).toBeNull();

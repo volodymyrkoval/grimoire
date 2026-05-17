@@ -1,5 +1,5 @@
 import { spellPath } from '../domain/spells/SpellPath';
-import { REFINE_SPELL_PATH } from '../castLog/types';
+import { REFINE_SPELL_PATH } from '../domain/spells/SystemSpellPaths';
 import type { Spell } from '../domain/spells/Spell';
 
 /**

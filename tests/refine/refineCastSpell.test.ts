@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { refineCastSpell } from '../../src/refine/refineCastSpell';
-import { REFINE_SPELL_PATH } from '../../src/castLog/types';
+import { REFINE_SPELL_PATH } from '../../src/domain/spells/SystemSpellPaths';
 import { spellPath } from '../../src/domain/spells/SpellPath';
 
 describe('refineCastSpell', () => {

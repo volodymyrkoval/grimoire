@@ -1,3 +1,4 @@
+import { modelId } from '../src/domain/settings/ModelId';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { App } from 'obsidian';
 import { CastLogModule } from '../src/main/CastLogModule';
@@ -42,7 +43,7 @@ describe('CastLogModule', () => {
     await module.activeLogStore().recordCasted({
       castId: 'c1',
       spellPath: 'Spells/T.md',
-      model: 'm',
+      model: modelId('m'),
       effort: null,
       contextNotes: [],
     });

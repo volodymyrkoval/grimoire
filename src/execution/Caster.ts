@@ -1,11 +1,12 @@
 import type { Effort } from '../domain/settings/Settings';
+import type { ModelId } from '../domain/settings/ModelId';
 
 /** Input required to initiate a cast (spell execution). */
 export interface CastInput {
   readonly castId: string;
   /** Spell file path — omitted for inline casts such as forge meta-spells. */
   readonly spellPath?: string;
-  readonly modelId: string;
+  readonly modelId: ModelId;
   readonly effort: Effort | null;
   readonly userPrompt: string;
   readonly systemPromptFile?: string;

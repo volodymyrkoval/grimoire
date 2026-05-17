@@ -1,9 +1,10 @@
 import { SegmentedControl } from './SegmentedControl';
 import { Effort, SupportedModel } from '../../domain/settings/Settings';
+import type { ModelId } from '../../domain/settings/ModelId';
 
 export interface EffortRowOpts {
   models: readonly SupportedModel[];
-  modelId: string;
+  modelId: ModelId;
   effort: Effort | null;
   onChange: (effort: Effort) => void;
 }
@@ -59,7 +60,7 @@ export class EffortRow {
     });
   }
 
-  update(modelId: string, effort: Effort | null): void {
+  update(modelId: ModelId, effort: Effort | null): void {
     // Look up the model
     const model = this.#models.find((m) => m.id === modelId);
     if (!model) {

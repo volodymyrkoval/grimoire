@@ -13,6 +13,7 @@
  *   3. Pre-dispatch guard — empty portalHost blocks dispatch before any I/O.
  */
 
+import { modelId } from '../../src/domain/settings/ModelId';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CastDispatcher } from '../../src/cast/CastDispatcher';
 import { CastRunner } from '../../src/cast/local/CastRunner';
@@ -36,7 +37,7 @@ function makeSettings(overrides: Partial<GrimoireSettings> = {}): GrimoireSettin
     binaryPath: '/usr/bin/claude',
     cliCommand: 'claude',
     forgeOutputFolder: 'Spells/',
-    defaultModel: 'claude-sonnet-4-5',
+    defaultModel: modelId('claude-sonnet-4-5'),
     defaultEffort: null,
     executionMode: 'local',
     portalHost: '',
@@ -98,7 +99,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
 
     dispatcher.dispatch({
       spell: testSpell,
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -122,7 +123,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
     expect(body).toMatchObject({
       castId: 'cast-abc',
       spellPath: 'Spells/Test.md',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
     });
     expect(reqArg.throw).toBe(false);
 
@@ -165,7 +166,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
 
     dispatcher.dispatch({
       spell: testSpell,
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -211,7 +212,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
 
     dispatcher.dispatch({
       spell: testSpell,
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       contextNotePaths: [],
       followUp: '',

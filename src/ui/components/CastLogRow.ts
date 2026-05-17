@@ -1,5 +1,5 @@
 import type { CastRecord } from '../../castLog/CastRecord';
-import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../domain/spells/SystemSpellPaths';
 import { formatRelativeTime } from '../../castLog/format/relativeTime';
 import { formatDuration } from '../../castLog/format/duration';
 import { resolveDisplayName } from '../../castLog/format/displayName';

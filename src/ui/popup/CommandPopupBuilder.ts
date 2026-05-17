@@ -1,6 +1,7 @@
 import { App, Notice } from 'obsidian';
 import { CommandPopup } from '../CommandPopup';
 import type { RefineCastAction } from '../CommandPopup';
+import { obsidianRanker } from '../../infra/obsidianRanker';
 import type { ForgeImprinter } from '../../forge/ForgeImprinter';
 import type { OptionsSessionMap } from '../options/OptionsSessionMap';
 import type { CastLogPanelDeps } from '../tabs/CastLogPanel';
@@ -57,6 +58,7 @@ export class CommandPopupBuilder {
     const popup = new CommandPopup({
       app: this.#deps.app,
       spellTag: this.#deps.plugin.data.settings.spellTag,
+      rankSpells: obsidianRanker,
       imprintAction: (snapshot) => {
         this.#deps.imprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => popup.close());
       },

@@ -1,3 +1,4 @@
+import { modelId } from '../../src/domain/settings/ModelId';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Scope } from 'obsidian';
 import { ForgeSentinelDetail } from '../../src/ui/components/ForgeSentinelDetail';
@@ -18,7 +19,7 @@ function mountDetail(callbacks: {
       onBack: callbacks.onBack ?? vi.fn(),
       onSubmit: callbacks.onSubmit ?? vi.fn(),
     },
-    defaults: { defaultModel: 'claude-sonnet-4-5', defaultEffort: 'medium' },
+    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
   });
   return { contentEl, detail, scope };
 }
@@ -58,7 +59,7 @@ describe('ForgeSentinelDetail component', () => {
 
     form.dispatchEvent(new Event('submit'));
 
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', description: 'Y', model: 'claude-sonnet-4-5', effort: 'high' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', description: 'Y', model: modelId('claude-sonnet-4-5'), effort: 'high' }));
   });
 
   it('D1b-haiku: switching model to Haiku removes effort row from DOM', () => {
@@ -97,7 +98,7 @@ describe('ForgeSentinelDetail component', () => {
     detail.render({
       contentEl,
       callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
-      defaults: { defaultModel: 'claude-haiku-4-5', defaultEffort: null },
+      defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
     });
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
@@ -181,7 +182,7 @@ describe('ForgeSentinelDetail component', () => {
     detail.render({
       contentEl,
       callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
-      defaults: { defaultModel: 'claude-haiku-4-5', defaultEffort: null },
+      defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
     });
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;

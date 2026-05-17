@@ -1,44 +1,24 @@
 import { App, Modal } from "obsidian";
 import { KeyboardController } from "../infra/KeyboardController";
-import type { Spell } from "../domain/spells/Spell";
+import type { RankSpells } from "../domain/spells/RankSpells";
 import { TabBar } from "./components/TabBar";
 import { SearchInput } from "./components/SearchInput";
-import { ForgeSentinelDetail } from "./components/ForgeSentinelDetail";
 import type { TabPanel } from "./tabs/TabPanel";
 import { isNavigable } from "./tabs/TabPanel";
 import { SpellsPanel } from "./tabs/SpellsPanel";
 import { CastLogPanel } from "./tabs/CastLogPanel";
 import type { CastLogPanelDeps } from "./tabs/CastLogPanel";
-import type { ForgeFormSnapshot } from "../forge/ForgeFormSnapshot";
 import { SUPPORTED_MODELS } from "../domain/settings/Settings";
 import type { FormDefaults } from "../domain/settings/FormDefaults";
 import { SpellOverrideStore } from "../domain/settings/SpellOverrideStore";
 import { OptionsSessionMap } from "./options/OptionsSessionMap";
-import type { OptionsFormSnapshot } from "./options/OptionsFormState";
 import { optionsFormSnapshotFromDefaults, optionsFormSnapshotFromRefineDefaults } from "./options/OptionsFormState";
-import { SpellOptionsDetail } from "./components/SpellOptionsDetail";
-import { RefineOptionsDetail } from "./components/RefineOptionsDetail";
 import type { PopupPhase, PopupPhaseContext } from "./popup/PopupPhase";
 import { SearchPhase } from "./popup/SearchPhase";
 import { DetailPhase } from "./popup/DetailPhase";
-
-/**
- * Callback signature for submitting a Forge sentinel form.
- * Called when user completes the new spell creation flow.
- */
-export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
-
-/**
- * Callback signature for casting a spell with resolved options.
- * Called when user confirms a spell execution (in search or detail panel).
- */
-export type CastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
-
-/**
- * Callback signature for casting the Refine sentinel with resolved options.
- * Called when user confirms Refine from list or dialog.
- */
-export type RefineCastAction = (snapshot: OptionsFormSnapshot) => void;
+import { DetailPanelRouter } from "./popup/DetailPanelRouter";
+import type { ImprintAction, CastAction, RefineCastAction } from "./popup/DetailPanelRouter";
+export type { ImprintAction, CastAction, RefineCastAction } from "./popup/DetailPanelRouter";
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
 
@@ -57,6 +37,7 @@ export type { FormDefaults } from "../domain/settings/FormDefaults";
 export interface CommandPopupParams {
   app: App;
   spellTag: string;
+  rankSpells: RankSpells;
   imprintAction: ImprintAction;
   castAction: CastAction;
   refineCastAction: RefineCastAction;
@@ -83,6 +64,7 @@ export class CommandPopup extends Modal {
   readonly #spellsPanel: SpellsPanel;
   #tabBar: TabBar | null = null;
   #kb = new KeyboardController(this.scope);
+  readonly #rankSpells: RankSpells;
   readonly #imprintAction: ImprintAction;
   readonly #castAction: CastAction;
   readonly #refineCastAction: RefineCastAction;
@@ -92,6 +74,7 @@ export class CommandPopup extends Modal {
   readonly #searchPhase: SearchPhase;
   readonly #detailPhase: DetailPhase;
   #currentPhase: PopupPhase;
+  readonly #detailRouter: DetailPanelRouter;
 
   /**
    * Test seam: exposes #panels for bracket-notation access in tests.
@@ -105,14 +88,9 @@ export class CommandPopup extends Modal {
    */
   get currentPhase(): PopupPhase { return this.#currentPhase; }
 
-  /**
-   * Accessor for #refineCastAction to avoid unused-private-class-members error.
-   * TODO: Section D — wire in event handlers.
-   */
-  get refineCastActionForWiring(): RefineCastAction { return this.#refineCastAction; }
-
   constructor(params: CommandPopupParams) {
     super(params.app);
+    this.#rankSpells = params.rankSpells;
     this.#imprintAction = params.imprintAction;
     this.#castAction = params.castAction;
     this.#refineCastAction = params.refineCastAction;
@@ -142,6 +120,20 @@ export class CommandPopup extends Modal {
     this.#searchPhase = new SearchPhase(ctx);
     this.#detailPhase = new DetailPhase(ctx);
     this.#currentPhase = this.#searchPhase;
+    this.#detailRouter = new DetailPanelRouter({
+      formDefaults: this.#formDefaults,
+      overrides: this.#overrides,
+      sessionMap: this.#sessionMap,
+      app: this.app,
+      models: SUPPORTED_MODELS,
+      imprintAction: this.#imprintAction,
+      castAction: this.#castAction,
+      refineCastAction: this.#refineCastAction,
+      onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
+      onEnterDetail: (detail, onBack) => this.#enterDetail(detail, onBack),
+      onExit: () => this.#exitDetail(),
+      reattachTabBar: () => this.#reattachTabBar(),
+    });
   }
 
   openLink(path: string): void {
@@ -202,7 +194,7 @@ export class CommandPopup extends Modal {
       this.contentEl,
       this.#panels.map((p) => p.id),
       this.#activePanel.id,
-      this.#currentPhase.kind === 'detail',
+      this.#currentPhase.disablesTabBar(),
       (id) => {
         const panel = this.#panels.find((p) => p.id === id);
         if (panel) this.#switchTab(panel);
@@ -212,15 +204,15 @@ export class CommandPopup extends Modal {
   }
 
   #createSpellsPanel(spellTag: string): SpellsPanel {
-    const panel = new SpellsPanel(this.app, spellTag);
+    const panel = new SpellsPanel(this.app, spellTag, this.#rankSpells);
     panel.setHasOverride((path) => this.#overrides.has(path));
     panel.events.on("cast", (spell) => {
       const snapshot = optionsFormSnapshotFromDefaults(this.#formDefaults, spell);
       this.#castAction(spell, snapshot);
     });
-    panel.events.on("sentinel", () => { this.#reattachTabBar(); this.#renderForgeSentinelDetail(); });
-    panel.events.on("open-options", (spell) => this.#renderOptionsPanel(spell));
-    panel.events.on("open-refine-options", () => this.#renderRefineOptionsPanel());
+    panel.events.on("sentinel", () => this.#detailRouter.renderForge(this.contentEl, this.scope));
+    panel.events.on("open-options", (spell) => this.#detailRouter.renderSpellOptions(this.contentEl, this.scope, spell));
+    panel.events.on("open-refine-options", () => this.#detailRouter.renderRefineOptions(this.contentEl, this.scope));
     panel.events.on("refine-cast", () => {
       const snapshot = optionsFormSnapshotFromRefineDefaults(
         this.#formDefaults,
@@ -262,70 +254,13 @@ export class CommandPopup extends Modal {
 
   /**
    * Enter detail (Forge/Options/Refine panel) from search.
-   * When suspendKb=true, suspends global keyboard navigation (e.g., in Forge and Options panels),
-   * allowing form inputs to receive key events. DetailPhase still intercepts Escape via close().
-   * When suspendKb=false (not currently used), global nav remains active (for future use).
+   * Suspends global keyboard navigation to allow form inputs to receive key events.
+   * DetailPhase still intercepts Escape via close().
    */
-  #enterDetail(detail: { destroy(): void }, onBack: () => void, opts: { suspendKb: boolean }): void {
-    if (opts.suspendKb) this.#kb.suspend();
+  #enterDetail(detail: { destroy(): void }, onBack: () => void): void {
+    this.#kb.suspend();
     this.#currentPhase = this.#detailPhase;
     this.#detailPhase.setActive(detail, onBack);
-  }
-
-  #renderForgeSentinelDetail(): void {
-    const exit = (): void => this.#exitDetail();
-    const detail = new ForgeSentinelDetail(this.scope);
-    detail.render({
-      contentEl: this.contentEl,
-      callbacks: {
-        onBack: exit,
-        onSubmit: (snapshot) => {
-          this.#imprintAction(snapshot);
-          exit();
-        },
-      },
-      defaults: this.#formDefaults,
-    });
-    this.#enterDetail(detail, exit, { suspendKb: true });
-  }
-
-  #renderOptionsPanel(spell: Spell): void {
-    this.#reattachTabBar();
-    const exit = (): void => this.#exitDetail();
-    const detail = new SpellOptionsDetail();
-    detail.render({
-      contentEl: this.contentEl,
-      scope: this.scope,
-      spell,
-      app: this.app,
-      overrides: this.#overrides,
-      sessionMap: this.#sessionMap,
-      formDefaults: this.#formDefaults,
-      models: SUPPORTED_MODELS,
-      onBack: exit,
-      onCast: (snap) => this.#castAction(spell, snap),
-      onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
-    });
-    this.#enterDetail(detail, exit, { suspendKb: true });
-  }
-
-  #renderRefineOptionsPanel(): void {
-    this.#reattachTabBar();
-    const exit = (): void => this.#exitDetail();
-    const detail = new RefineOptionsDetail();
-    detail.render({
-      contentEl: this.contentEl,
-      scope: this.scope,
-      app: this.app,
-      overrides: this.#overrides,
-      sessionMap: this.#sessionMap,
-      formDefaults: this.#formDefaults,
-      models: SUPPORTED_MODELS,
-      onBack: exit,
-      onCast: (snap) => this.#refineCastAction(snap),
-      onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
-    });
-    this.#enterDetail(detail, exit, { suspendKb: true });
   }
 
   #switchTab(panel: TabPanel): void {

@@ -1,8 +1,9 @@
 import { Effort } from "../../domain/settings/Settings";
 import { OptionsFormSnapshot } from "./OptionsFormState";
+import type { ModelId } from "../../domain/settings/ModelId";
 
 export interface OptionsSnapshot {
-  model: string;
+  model: ModelId;
   effort: Effort | null;
 }
 

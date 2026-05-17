@@ -115,44 +115,62 @@ export class CastLogModule {
 
   /** Runs startup tasks: materializes remote hook scripts, forge spell file, and sweeps stale scratch files. */
   async initStartupMaintenance(): Promise<void> {
-    const adapter = this.#app.vault.adapter;
+    await this.#runOrLog('HookMaterializer (remote)', () => this.#runRemoteHookMaterializer());
+    await this.#runOrLog('ForgeMaterializer', () => this.#runForgeMaterializer());
+    await this.#runOrLog('RefineMaterializer', () => this.#runRefineMaterializer());
+    this.#runScratchSweeper();
+  }
 
+  /** Wraps an async task in try/catch, logging errors with a label. */
+  async #runOrLog(label: string, task: () => Promise<void>): Promise<void> {
+    try {
+      await task();
+    } catch (e) {
+      console.error(`${label} failed`, e);
+    }
+  }
+
+  /** Runs the remote hook materializer. */
+  async #runRemoteHookMaterializer(): Promise<void> {
+    const adapter = this.#app.vault.adapter;
     const remoteMaterializer = this.#materializerFactory({
       adapter,
       getPluginDirAbs: () => this.#paths.pluginDirAbs(),
       getLogPathAbs: () => this.#paths.agentLogPath(),
       hooksDir: 'agent-hooks',
     });
+    await remoteMaterializer.run();
+  }
 
-    try {
-      await remoteMaterializer.run();
-    } catch (e) {
-      console.error('HookMaterializer (remote) failed', e);
-    }
+  /** Runs the forge materializer. */
+  async #runForgeMaterializer(): Promise<void> {
+    const adapter = this.#app.vault.adapter;
+    const forgeMaterializer = this.#buildForgeMaterializer(adapter);
+    await forgeMaterializer.run();
+  }
 
-    const forgeMaterializer = this.#forgeMaterializerFactory({
+  /** Builds a forge materializer with the given adapter. */
+  #buildForgeMaterializer(adapter: DataAdapter) {
+    return this.#forgeMaterializerFactory({
       adapter,
       getForgePathAbs: () => this.#paths.forgeSpellPathPluginRel(),
       getSettings: this.#getSettings,
     });
+  }
 
-    try {
-      await forgeMaterializer.run();
-    } catch (e) {
-      console.error('ForgeMaterializer failed', e);
-    }
-
+  /** Runs the refine materializer. */
+  async #runRefineMaterializer(): Promise<void> {
+    const adapter = this.#app.vault.adapter;
     const refineMaterializer = this.#refineMaterializerFactory({
       adapter,
       getRefinePathAbs: () => this.#paths.refineSpellPathPluginRel(),
     });
+    await refineMaterializer.run();
+  }
 
-    try {
-      await refineMaterializer.run();
-    } catch (e) {
-      console.error('RefineMaterializer failed', e);
-    }
-
+  /** Runs the scratch sweeper (fire-and-forget). */
+  #runScratchSweeper(): void {
+    const adapter = this.#app.vault.adapter;
     const sweeper = this.#sweeperFactory({
       adapter,
       getScratchDirAbs: () => this.#paths.scratchDir(),
@@ -163,11 +181,7 @@ export class CastLogModule {
   /** Re-materializes the forge spell file with current settings. Fire-and-forget safe. */
   materializeForge(): Promise<void> {
     const adapter = this.#app.vault.adapter;
-    const forgeMaterializer = this.#forgeMaterializerFactory({
-      adapter,
-      getForgePathAbs: () => this.#paths.forgeSpellPathPluginRel(),
-      getSettings: this.#getSettings,
-    });
+    const forgeMaterializer = this.#buildForgeMaterializer(adapter);
     return forgeMaterializer.run();
   }
 }

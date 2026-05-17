@@ -1,3 +1,5 @@
+import { modelId, type ModelId } from './ModelId';
+
 /** Execution effort level, mapped to model-specific parameter ranges. */
 export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
@@ -11,7 +13,7 @@ export interface GrimoireSettings {
   binaryPath: string;
   forgeOutputFolder: string;
   vaultMountPath: string;
-  defaultModel: string;
+  defaultModel: ModelId;
   defaultEffort: Effort | null;
   executionMode: ExecutionMode;
   portalHost: string;
@@ -23,7 +25,7 @@ export interface GrimoireSettings {
 
 /** Per-spell model and effort overrides that take precedence over global settings. */
 export interface SpellOverride {
-  model: string;
+  model: ModelId;
   effort: Effort;
 }
 
@@ -40,7 +42,7 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
   binaryPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '',
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: 'medium',
   executionMode: 'local',
   portalHost: '',
@@ -52,7 +54,7 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
 
 /** Metadata for a model supported by the Claude API, including its effort parameter support. */
 export interface SupportedModel {
-  id: string;
+  id: ModelId;
   label: string;
   effortOptions: readonly Effort[] | null;
   defaultEffort: Effort | null;
@@ -60,7 +62,7 @@ export interface SupportedModel {
 
 /** Hardcoded list of models available for selection in forms and casts. */
 export const SUPPORTED_MODELS: readonly SupportedModel[] = [
-  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5', effortOptions: null, defaultEffort: null },
-  { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5', effortOptions: ['low', 'medium', 'high', 'max'], defaultEffort: 'medium' },
-  { id: 'claude-opus-4-5', label: 'Claude Opus 4.5', effortOptions: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'xhigh' },
+  { id: modelId('claude-haiku-4-5'), label: 'Claude Haiku 4.5', effortOptions: null, defaultEffort: null },
+  { id: modelId('claude-sonnet-4-5'), label: 'Claude Sonnet 4.5', effortOptions: ['low', 'medium', 'high', 'max'], defaultEffort: 'medium' },
+  { id: modelId('claude-opus-4-5'), label: 'Claude Opus 4.5', effortOptions: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'xhigh' },
 ];

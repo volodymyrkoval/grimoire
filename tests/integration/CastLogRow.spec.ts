@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { CastRecord } from '../../src/castLog/CastRecord';
 import { CastLogRow } from '../../src/ui/components/CastLogRow';
-import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../src/castLog/types';
+import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../src/domain/spells/SystemSpellPaths';
 
 const NOW = new Date('2026-05-14T12:00:00Z');
 

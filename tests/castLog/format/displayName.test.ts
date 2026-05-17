@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveDisplayName } from '../../../src/castLog/format/displayName';
 import type { CastRecord } from '../../../src/castLog/CastRecord';
-import { REFINE_SPELL_PATH } from '../../../src/castLog/types';
+import { REFINE_SPELL_PATH } from '../../../src/domain/spells/SystemSpellPaths';
 
 describe('resolveDisplayName', () => {
   const baseRecord = {

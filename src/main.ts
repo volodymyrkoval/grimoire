@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
-import { hydrate } from './domain/settings/persistence';
+import { hydrate } from './infra/settingsPersistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
 import { PluginPaths } from './infra/PluginPaths';
 import { SpellOverrideStore } from './domain/settings/SpellOverrideStore';

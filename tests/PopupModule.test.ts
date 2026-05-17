@@ -1,3 +1,4 @@
+import { modelId } from '../src/domain/settings/ModelId';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { App } from 'obsidian';
 
@@ -10,7 +11,7 @@ describe('PopupModule', () => {
 
   const makeSettings = () => ({
     spellTag: 'spell',
-    defaultModel: 'claude-sonnet-4-5',
+    defaultModel: modelId('claude-sonnet-4-5'),
     defaultEffort: 'medium' as const,
     executionMode: 'local' as const,
     cliCommand: '',

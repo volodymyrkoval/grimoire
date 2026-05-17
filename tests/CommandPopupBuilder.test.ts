@@ -1,3 +1,4 @@
+import { modelId } from '../src/domain/settings/ModelId';
 import { vi, describe, it, expect } from 'vitest';
 import { App } from 'obsidian';
 
@@ -39,7 +40,7 @@ describe('CommandPopupBuilder', () => {
       data: {
         settings: {
           spellTag: 'test-tag',
-          defaultModel: 'claude-sonnet-4-5',
+          defaultModel: modelId('claude-sonnet-4-5'),
           defaultEffort: 'medium' as const,
           executionMode: 'local' as const,
         },
@@ -94,7 +95,7 @@ describe('CommandPopupBuilder', () => {
     expect(typeof params.castAction).toBe('function');
     expect(params).toHaveProperty('defaults');
     expect(params.defaults).toEqual({
-      defaultModel: 'claude-sonnet-4-5',
+      defaultModel: modelId('claude-sonnet-4-5'),
       defaultEffort: 'medium',
     });
     expect(params).toHaveProperty('overrides', pluginData.overrides);

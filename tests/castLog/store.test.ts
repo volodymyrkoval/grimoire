@@ -1,3 +1,4 @@
+import { modelId } from '../../src/domain/settings/ModelId';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { CastLogStore } from '../../src/castLog/store';
 
@@ -17,7 +18,7 @@ describe('CastLogStore', () => {
       await store.recordCasted({
         castId: 'u1',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
         followUp: '',
@@ -32,7 +33,7 @@ describe('CastLogStore', () => {
           ts: '2026-01-01T00:00:00.000Z',
           castId: 'u1',
           spellPath: 's.md',
-          model: 'sonnet',
+          model: modelId('sonnet'),
           effort: 'medium',
           contextNotes: [],
           followUp: '',
@@ -89,7 +90,7 @@ describe('CastLogStore', () => {
       await store.recordCasted({
         castId: 'u1',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
         followUp: '',
@@ -113,7 +114,7 @@ describe('CastLogStore', () => {
       await store.recordCasted({
         castId: 'u1',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
         followUp: '',
@@ -123,7 +124,7 @@ describe('CastLogStore', () => {
       await store.recordCasted({
         castId: 'u2',
         spellPath: 's2.md',
-        model: 'opus',
+        model: modelId('opus'),
         effort: 'large',
         contextNotes: ['note1'],
         followUp: 'follow',
@@ -160,7 +161,7 @@ describe('CastLogStore', () => {
       await store.recordCasted({
         castId: 'u1',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
         followUp: '',
@@ -199,7 +200,7 @@ describe('CastLogStore', () => {
       await store.recordCasted({
         castId: 'u1',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
         followUp: '',
@@ -225,7 +226,7 @@ describe('CastLogStore', () => {
       await store.recordCasted({
         castId: 'u1',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
       });

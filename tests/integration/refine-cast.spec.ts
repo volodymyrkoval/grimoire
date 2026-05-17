@@ -19,7 +19,8 @@ import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore
 import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
 import { ForgeImprinter } from '../../src/forge/ForgeImprinter';
 import { REFINE_SENTINEL_PATH } from '../../src/domain/spells/Spell';
-import { REFINE_SPELL_PATH } from '../../src/castLog/types';
+import { modelId } from '../../src/domain/settings/ModelId';
+import { REFINE_SPELL_PATH } from '../../src/domain/spells/SystemSpellPaths';
 import { resolveDisplayName } from '../../src/castLog/format/displayName';
 import type { CastRecord } from '../../src/castLog/CastRecord';
 import type { GrimoireData } from '../../src/domain/settings/Settings';
@@ -33,7 +34,7 @@ const BASE_SETTINGS: GrimoireData['settings'] = {
   binaryPath: '/usr/bin/claude',
   cliCommand: 'claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: 'medium',
   executionMode: 'local',
   portalHost: '',
@@ -305,7 +306,7 @@ describe('refine-cast integration — CommandPopupBuilder → cast pipeline seam
       data: {
         settings: {} as any,
         spellOverrides: {
-          [REFINE_SENTINEL_PATH]: { model: 'claude-opus-4-5', effort: 'high' },
+          [REFINE_SENTINEL_PATH]: { model: modelId('claude-opus-4-5'), effort: 'high' },
         },
       },
       saver: { schedule: vi.fn() } as any,

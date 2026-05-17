@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ForgeImprinter } from '../../src/forge/ForgeImprinter';
 import { createCaster } from '../../src/cast/createCaster';
 import { CastRunner } from '../../src/cast/local/CastRunner';
+import { modelId } from '../../src/domain/settings/ModelId';
 import { requestUrl } from 'obsidian';
 import type { CastLogWriter } from '../../src/castLog/CastLogWriter';
 import type { ForgeFormSnapshot } from '../../src/forge/ForgeFormSnapshot';
@@ -35,7 +36,7 @@ function makeForgeSpellPaths(vaultMountPath: string) {
 const snapshot: ForgeFormSnapshot = {
   name: 'My Spell',
   description: 'Does things',
-  model: 'claude-sonnet-4-5',
+  model: modelId('claude-sonnet-4-5'),
   effort: 'medium',
   executeOnNote: false,
 };
@@ -46,7 +47,7 @@ const localSettings: GrimoireSettings = {
   binaryPath: '/usr/bin/claude',
   cliCommand: 'claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: null,
   executionMode: 'local',
   portalHost: '',

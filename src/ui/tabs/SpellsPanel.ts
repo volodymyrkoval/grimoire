@@ -2,8 +2,8 @@ import { App } from "obsidian";
 import type { NavigablePanel } from "./TabPanel";
 import { type Spell, type Sentinel, isSentinel } from "../../domain/spells/Spell";
 import type { SpellPath } from "../../domain/spells/SpellPath";
-import { fuzzyFilter } from "../../domain/spells/fuzzyFilter";
-import { getSpells } from "../../domain/spells/spellScanner";
+import type { RankSpells } from "../../domain/spells/RankSpells";
+import { getSpells } from "../../infra/spellScanner";
 import { SpellList } from "../components/SpellList";
 import { TypedEmitter } from "../../infra/TypedEmitter";
 import type { SpellEvents } from "../../domain/spells/SpellEvents";
@@ -28,13 +28,15 @@ export class SpellsPanel implements NavigablePanel {
   readonly id = "spells";
   readonly events = new TypedEmitter<SpellEvents>();
   readonly #allSpells: readonly Spell[];
+  readonly #rankSpells: RankSpells;
   #filteredSpells: Spell[];
   #spellList: SpellList | null = null;
   #hasOverride: (path: SpellPath) => boolean = () => false;
   #lastSelectedIndex: number = 0;
 
-  constructor(app: App, tag: string) {
+  constructor(app: App, tag: string, rankSpells: RankSpells) {
     this.#allSpells = getSpells(app, tag);
+    this.#rankSpells = rankSpells;
     this.#filteredSpells = [...this.#allSpells];
   }
 
@@ -61,7 +63,7 @@ export class SpellsPanel implements NavigablePanel {
    * Used by SearchInput to set the cursor position after each keystroke.
    */
   filter(query: string): number {
-    const results = fuzzyFilter(this.#allSpells, SENTINELS, query);
+    const results = this.#rankSpells(this.#allSpells, SENTINELS, query);
     this.#filteredSpells = results.filter((item): item is Spell => !isSentinel(item));
     const initialIndex = this.#sentinelFocusIndex(query);
     this.#lastSelectedIndex = initialIndex;

@@ -1,15 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { snapshotEqualsCurrent, OptionsSnapshot } from '../src/ui/options/OptionsSnapshot';
 import { OptionsFormSnapshot } from '../src/ui/options/OptionsFormState';
+import { modelId } from '../src/domain/settings/ModelId';
 
 describe('snapshotEqualsCurrent', () => {
   it('equal model and effort returns true', () => {
     const snap: OptionsSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
     };
     const current: OptionsFormSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -22,11 +23,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('mismatched model returns false', () => {
     const snap: OptionsSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
     };
     const current: OptionsFormSnapshot = {
-      model: 'claude-opus-4-5',
+      model: modelId('claude-opus-4-5'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -39,11 +40,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('mismatched effort returns false', () => {
     const snap: OptionsSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
     };
     const current: OptionsFormSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'high',
       contextNotePaths: [],
       followUp: '',
@@ -56,11 +57,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('effort null vs medium returns false', () => {
     const snap: OptionsSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
     };
     const current: OptionsFormSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -73,11 +74,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('both efforts null returns true', () => {
     const snap: OptionsSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
     };
     const current: OptionsFormSnapshot = {
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: null,
       contextNotePaths: [],
       followUp: '',

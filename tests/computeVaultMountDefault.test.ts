@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { App, Platform, FileSystemAdapter } from 'obsidian';
-import { computeVaultMountDefault } from '../src/domain/settings/computeVaultMountDefault';
+import { computeVaultMountDefault } from '../src/infra/computeVaultMountDefault';
 
 describe('computeVaultMountDefault', () => {
   let app: App;

@@ -1,3 +1,4 @@
+import { modelId } from '../../src/domain/settings/ModelId';
 import { describe, it, expect, vi } from 'vitest';
 import { CastLogSource } from '../../src/castLog/CastLogSource';
 import type { CastLogReader } from '../../src/castLog/CastLogReader';
@@ -12,7 +13,7 @@ describe('CastLogSource.load', () => {
         stage: 'casted',
         ts: '2026-01-01T00:00:00.000Z',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
       },
@@ -23,7 +24,7 @@ describe('CastLogSource.load', () => {
         castId: 'c1',
         status: 'casted',
         spellPath: 's.md',
-        model: 'sonnet',
+        model: modelId('sonnet'),
         effort: 'medium',
         contextNotes: [],
         castedTs: '2026-01-01T00:00:00.000Z',

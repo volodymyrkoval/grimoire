@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { App } from 'obsidian';
 import { SpellsPanel } from '../src/ui/tabs/SpellsPanel';
+import { obsidianRanker } from '../src/infra/obsidianRanker';
 import { spellPath } from '../src/domain/spells/SpellPath';
 
 function makeMockEl(): any {
@@ -43,7 +44,7 @@ function makeApp(spells: Array<{ basename: string; path: string }> = []) {
 
 function makePanel(spells = DEFAULT_TEST_SPELLS): SpellsPanel {
   const app = makeApp(spells);
-  const panel = new SpellsPanel(app, 'spell');
+  const panel = new SpellsPanel(app, 'spell', obsidianRanker);
   panel.mount(makeMockEl());
   return panel;
 }
@@ -105,7 +106,7 @@ describe('SpellsPanel with vault', () => {
       { basename: 'Not A Spell', path: '/notes/note.md' },
     ]);
     app.metadataCache.getFileCache.mockReturnValue(null);
-    const panel = new SpellsPanel(app, 'spell');
+    const panel = new SpellsPanel(app, 'spell', obsidianRanker);
     panel.mount(makeMockEl());
     panel.filter('');
     expect(panel.length).toBe(2);
@@ -237,7 +238,7 @@ describe('SpellsPanel with hasOverride predicate', () => {
 
   it('mount with hasOverride predicate applies it to render', () => {
     const app = makeApp(DEFAULT_TEST_SPELLS);
-    const panel = new SpellsPanel(app, 'spell');
+    const panel = new SpellsPanel(app, 'spell', obsidianRanker);
     const container = makeMockEl();
     const predicateSpy = vi.fn((path: string) => path === '/spells/summoning.md');
 
@@ -249,7 +250,7 @@ describe('SpellsPanel with hasOverride predicate', () => {
 
   it('filter preserves the hasOverride predicate', () => {
     const app = makeApp(DEFAULT_TEST_SPELLS);
-    const panel = new SpellsPanel(app, 'spell');
+    const panel = new SpellsPanel(app, 'spell', obsidianRanker);
     const container = makeMockEl();
     const predicateSpy = vi.fn((path: string) => path === '/spells/summoning.md');
 
@@ -292,7 +293,7 @@ describe('SpellsPanel with hasOverride predicate', () => {
 
   it('refreshOverrides reflects new override state', () => {
     const app = makeApp(DEFAULT_TEST_SPELLS);
-    const panel = new SpellsPanel(app, 'spell');
+    const panel = new SpellsPanel(app, 'spell', obsidianRanker);
     const container = makeMockEl();
     const predicateSpy = vi.fn((path: string) => path === '/spells/summoning.md');
 

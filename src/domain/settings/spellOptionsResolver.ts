@@ -1,10 +1,11 @@
 import { SpellPath } from '../../domain/spells/SpellPath';
 import { SpellOverrideStore } from './SpellOverrideStore';
-import { GrimoireSettings, Effort, SupportedModel } from './Settings';
+import { Effort, SupportedModel } from './Settings';
+import type { ModelId } from './ModelId';
 
 /** Model and effort selected for a spell within the current session. */
 export interface SpellSessionEntry {
-  model: string;
+  model: ModelId;
   effort: Effort | null;
 }
 
@@ -18,13 +19,13 @@ export interface ResolveOptionsInput {
   spellPath: SpellPath;
   session: SpellSessionReader;
   overrides: SpellOverrideStore;
-  settings: GrimoireSettings;
+  settings: { defaultModel: ModelId; defaultEffort: Effort | null };
   models: readonly SupportedModel[];
 }
 
 /** Final resolved model and effort for a cast, guaranteed to be valid for the model. */
 export interface ResolvedSpellOptions {
-  model: string;
+  model: ModelId;
   effort: Effort | null;
 }
 
@@ -33,7 +34,7 @@ export interface ResolvedSpellOptions {
  * Clamps effort to the selected model's supported range, falling back to the model's default if needed.
  */
 export function resolveSpellOptions(input: ResolveOptionsInput): ResolvedSpellOptions {
-  let selectedModel: string;
+  let selectedModel: ModelId;
   let selectedEffort: Effort | null;
 
   // Tier 1: check session
@@ -56,6 +57,7 @@ export function resolveSpellOptions(input: ResolveOptionsInput): ResolvedSpellOp
 
   // Apply effort-clamping survival rule
   const model = input.models.find((m) => m.id === selectedModel);
+  // Model deprecation — stored id no longer in the supported list; fall back to first supported model.
   const resolvedModel = model || input.models[0];
 
   let resolvedEffort: Effort | null;

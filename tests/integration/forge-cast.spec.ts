@@ -17,13 +17,14 @@ import { ForgeImprinter } from '../../src/forge/ForgeImprinter';
 import { createCaster } from '../../src/cast/createCaster';
 import { CastRunner } from '../../src/cast/local/CastRunner';
 import type { GrimoireSettings } from '../../src/domain/settings/Settings';
+import { modelId } from '../../src/domain/settings/ModelId';
 
 // ─── local harness ────────────────────────────────────────────────────────────
 // D5 will update the shared harness.ts; until then this file wires the popup
 // directly so the test expresses the new 4-arg signature and fails loudly.
 
 const DEFAULT_DEFAULTS: FormDefaults = {
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: 'medium',
 };
 
@@ -111,7 +112,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
 
   it('form pre-selects model and effort from defaults', () => {
     const defaults: FormDefaults = {
-      defaultModel: 'claude-sonnet-4-5',
+      defaultModel: modelId('claude-sonnet-4-5'),
       defaultEffort: 'medium',
     };
     const h = createHarnessWithAction(imprintAction, defaults);
@@ -145,7 +146,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     h.submitForm({
       name: 'My Spell',
       description: 'Do things',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'high',
     });
 
@@ -153,7 +154,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     expect(imprintAction).toHaveBeenCalledWith({
       name: 'My Spell',
       description: 'Do things',
-      model: 'claude-sonnet-4-5',
+      model: modelId('claude-sonnet-4-5'),
       effort: 'high',
       executeOnNote: true,
     });
@@ -167,7 +168,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     h.submitForm({
       name: 'Silent Spell',
       description: 'No effort',
-      model: 'claude-haiku-4-5',
+      model: modelId('claude-haiku-4-5'),
     });
 
     expect(imprintAction).toHaveBeenCalledOnce();
@@ -199,7 +200,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
       binaryPath: '/usr/bin/claude',
       cliCommand: 'claude',
       forgeOutputFolder: 'Spells/',
-      defaultModel: 'claude-sonnet-4-5',
+      defaultModel: modelId('claude-sonnet-4-5'),
       defaultEffort: null,
       executionMode: 'local',
       portalHost: '',

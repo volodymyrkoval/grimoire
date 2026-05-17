@@ -2,7 +2,7 @@ import type { PopupPhase, PopupPhaseContext } from './PopupPhase';
 
 /**
  * Detail phase: all keyboard/navigation events are blocked; only Escape/close will trigger back.
- * Holds the active detail panel (e.g., ForgeSentinelDetail, SpellOptionsDetail) and its destroy hook.
+ * Holds the active detail panel (e.g., ForgeSentinelDetail, OptionsDetail) and its destroy hook.
  */
 export class DetailPhase implements PopupPhase {
   readonly kind = 'detail' as const;
@@ -45,6 +45,10 @@ export class DetailPhase implements PopupPhase {
       return true;
     }
     this.#ctx.exitDetail();
+    return true;
+  }
+
+  disablesTabBar(): boolean {
     return true;
   }
 }

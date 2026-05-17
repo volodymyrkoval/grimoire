@@ -1,6 +1,7 @@
 import { App } from 'obsidian';
-import { DEFAULT_SETTINGS, Effort, GrimoireData, GrimoireSettings, SpellOverride } from './Settings';
+import { DEFAULT_SETTINGS, Effort, GrimoireData, GrimoireSettings, SpellOverride } from '../domain/settings/Settings';
 import { computeVaultMountDefault } from './computeVaultMountDefault';
+import { modelId } from '../domain/settings/ModelId';
 
 const VALID_EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -19,8 +20,15 @@ export function hydrate(saved: unknown, app: App): GrimoireData {
   if (merged.defaultEffort !== null && !VALID_EFFORTS.includes(merged.defaultEffort)) {
     merged.defaultEffort = 'medium';
   }
+  // Re-brand the model string read from disk — trust boundary.
+  merged.defaultModel = modelId(merged.defaultModel);
+  const rawOverrides = s?.spellOverrides ?? {};
+  const brandedOverrides: Record<string, SpellOverride> = {};
+  for (const [key, override] of Object.entries(rawOverrides)) {
+    brandedOverrides[key] = { ...override, model: modelId(override.model) };
+  }
   return {
     settings: merged,
-    spellOverrides: s?.spellOverrides ?? {},
+    spellOverrides: brandedOverrides,
   };
 }
