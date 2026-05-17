@@ -8,6 +8,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
     padding: 4px 8px;
     cursor: pointer;
     border-radius: 4px;
@@ -102,6 +103,16 @@ body.is-mobile .grimoire-options-chip {
 
 .sentinel-row.is-selected {
     background-color: var(--background-modifier-active-hover);
+}
+
+.sentinel-description {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+    font-size: var(--font-ui-smaller);
+    color: var(--text-faint);
 }
 
 .modal-tab-bar {

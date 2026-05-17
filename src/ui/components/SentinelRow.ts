@@ -1,5 +1,10 @@
-import type { Sentinel } from "../../domain/spells/Spell";
+import type { Sentinel, SentinelKind } from "../../domain/spells/Spell";
 import { appendRowHint } from "./rowHint";
+
+const DESCRIPTIONS: Partial<Record<SentinelKind, string>> = {
+  forge: 'Author a new spell from a description',
+  refine: 'Rewrite the active note',
+};
 
 /**
  * Renders a single sentinel row (Forge, Refine) in the spells list.
@@ -13,6 +18,8 @@ export class SentinelRow {
     this.el = container.createDiv({ cls: "sentinel-row" });
     if (selected) this.#markSelected();
     this.#appendName(sentinel.name);
+    const description = DESCRIPTIONS[sentinel.kind];
+    if (description) this.#appendDescription(description);
     if (showHint) appendRowHint(this.el, onOptionsClick);
   }
 
@@ -22,5 +29,9 @@ export class SentinelRow {
 
   #appendName(name: string): void {
     this.el.createSpan({ cls: "sentinel-name", text: name });
+  }
+
+  #appendDescription(text: string): void {
+    this.el.createDiv({ cls: "sentinel-description", text });
   }
 }

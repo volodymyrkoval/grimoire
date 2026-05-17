@@ -137,4 +137,16 @@ describe('SentinelRow', () => {
     expect(mockEvent.stopPropagation).toHaveBeenCalled();
     expect(onOptionsClick).toHaveBeenCalled();
   });
+
+  it('with kind: "separator", no .sentinel-description element is appended', () => {
+    const container = makeMockEl();
+    const sentinel = { kind: 'separator' as const, name: '─' };
+
+    const row = new SentinelRow();
+    row.render(container, sentinel, false, false);
+
+    const createDivCalls = row.el.createDiv.mock.calls;
+    const descriptionCalls = createDivCalls.filter((call: any[]) => call[0]?.cls === 'sentinel-description');
+    expect(descriptionCalls).toHaveLength(0);
+  });
 });

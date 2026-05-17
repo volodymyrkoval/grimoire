@@ -7,7 +7,7 @@
  * - Typed input (type, pressKey)
  * - Tab/row selection (clickTab, clickRow)
  * - Form submission (submitForge, clickBack)
- * - DOM assertions (visibleSpellRows, selectedRow, activeTabId, isInDetail)
+ * - DOM assertions (visibleSpellRows, selectedRow, selectedRowName, activeTabId, isInDetail)
  *
  * All DOM queries are encapsulated; tests interact only through the PopupHarness
  * interface, not the raw contentEl.
@@ -38,6 +38,7 @@ export interface PopupHarness {
 
   visibleSpellRows(): HTMLElement[];
   visibleSentinelRows(): HTMLElement[];
+  /** @deprecated Use selectedRowName() for name assertions — textContent now includes description text. */
   selectedRow(): HTMLElement | null;
   selectedRowName(): string | null;
   activeTabId(): string;

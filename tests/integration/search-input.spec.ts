@@ -25,6 +25,6 @@ describe('search input filtering and navigation', () => {
     h.type('forge');
 
     expect(h.visibleSpellRows().length).toBe(0);
-    expect(h.selectedRow()?.textContent).toBe('Forge');
+    expect(h.selectedRowName()).toBe('Forge');
   });
 });
