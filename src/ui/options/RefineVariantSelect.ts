@@ -22,29 +22,12 @@ export interface RefineVariantSelectDeps {
 export class RefineVariantSelect {
   #mountedEls: HTMLElement[] = [];
 
-  /**
-   * Creates <hr>, <small> label, and <select> as direct children of `parent`.
-   * Sets the initial selected value and wires the change listener.
-   */
+  /** Creates <hr>, <small> label, and <select> as direct children of `parent`. */
   mount(parent: HTMLElement, deps: RefineVariantSelectDeps): void {
-    const hr = parent.createEl('hr');
-    const label = parent.createEl('small', { text: 'Refine variant' });
-    const select = parent.createEl('select');
+    const { hr, label, select } = this.#createElements(parent);
     this.#mountedEls = [hr, label, select];
-
-    // First option: the built-in default
-    const defaultOpt = select.createEl('option', { text: 'Default (built-in)' });
-    defaultOpt.value = '';
-
-    // One option per sentinel entry
-    for (const entry of deps.variants) {
-      const opt = select.createEl('option', { text: entry.name });
-      opt.value = entry.path;
-    }
-
-    // Restore the initial selection
+    this.#populateOptions(select, deps.variants);
     select.value = deps.initialPath ?? '';
-
     select.addEventListener('change', () => {
       deps.onChange(select.value === '' ? null : select.value);
     });
@@ -56,5 +39,22 @@ export class RefineVariantSelect {
       el.remove();
     }
     this.#mountedEls = [];
+  }
+
+  #createElements(parent: HTMLElement): { hr: HTMLElement; label: HTMLElement; select: HTMLSelectElement } {
+    return {
+      hr: parent.createEl('hr'),
+      label: parent.createEl('small', { text: 'Refine variant' }),
+      select: parent.createEl('select'),
+    };
+  }
+
+  #populateOptions(select: HTMLSelectElement, variants: readonly RefineSentinelEntry[]): void {
+    const defaultOpt = select.createEl('option', { text: 'Default (built-in)' });
+    defaultOpt.value = '';
+    for (const entry of variants) {
+      const opt = select.createEl('option', { text: entry.name });
+      opt.value = entry.path;
+    }
   }
 }
