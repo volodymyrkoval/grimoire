@@ -23,10 +23,6 @@ export interface CommandPopupBuilderDeps {
   paths: PluginPaths;
 }
 
-/**
- * Factory for CommandPopup with dependency injection.
- * Wires up imprint and cast actions, bridging the popup to the plugin's core cast/forge engines.
- */
 export class CommandPopupBuilder {
   readonly #deps: CommandPopupBuilderDeps;
 
@@ -36,43 +32,56 @@ export class CommandPopupBuilder {
 
   build(): CommandPopup {
     let dispatcher: CastDispatcher;
+    let popup: CommandPopup;
 
-    const refineCastAction: RefineCastAction = (snapshot) => {
+    const refineCastAction = this.#buildRefineCastAction(() => dispatcher, () => popup);
+    popup = this.#createPopup(refineCastAction, () => dispatcher);
+    dispatcher = this.#deps.createDispatcher(() => popup.close());
+
+    return popup;
+  }
+
+  #buildRefineCastAction(
+    getDispatcher: () => CastDispatcher,
+    getPopup: () => CommandPopup,
+  ): RefineCastAction {
+    return (snapshot) => {
       const activeFile = this.#deps.app.workspace.getActiveFile();
       if (!activeFile || activeFile.extension !== 'md') {
         new Notice('Refine needs an open note');
         return;
       }
-      const bundled = this.#deps.paths.refineSpellPathVaultRel();
-      const settings = this.#deps.plugin.data.settings;
-      const isSentinel = (p: string): boolean => {
-        const file = this.#deps.app.vault.getAbstractFileByPath(p);
-        if (!(file instanceof TFile)) return false;
-        return isRefineSentinel(this.#deps.app, file);
-      };
-      const resolved = resolveRefinePath({
-        perCast: snapshot.refinePathOverride,
-        settingsActive: settings.activeRefinePath,
-        bundledDefaultVaultRel: bundled,
-        isSentinel,
-      });
+      const resolved = this.#resolveRefinePath(snapshot.refinePathOverride);
       if (resolved.isFallback) {
         new Notice('Custom Refine spell not found — using default');
       }
-      dispatcher.dispatch({
+      getDispatcher().dispatch({
         spell: refineCastSpell(),
         model: snapshot.model,
         effort: snapshot.effort,
         contextNotePaths: snapshot.contextNotePaths,
         followUp: snapshot.followUp,
-        settings,
+        settings: this.#deps.plugin.data.settings,
         activeFilePath: activeFile.path,
-        executeOnNote: true,           // Refine always targets active note; snapshot value ignored
+        executeOnNote: true,
         systemPromptFilePath: resolved.path,
       });
-      popup.dismiss();  // fully closes after dispatch; idempotent if dispatcher's close() already ran
+      getPopup().dismiss();
     };
+  }
 
+  #resolveRefinePath(perCast: string | null | undefined) {
+    const bundled = this.#deps.paths.refineSpellPathVaultRel();
+    const { activeRefinePath } = this.#deps.plugin.data.settings;
+    const isSentinel = (p: string): boolean => {
+      const file = this.#deps.app.vault.getAbstractFileByPath(p);
+      if (!(file instanceof TFile)) return false;
+      return isRefineSentinel(this.#deps.app, file);
+    };
+    return resolveRefinePath({ perCast, settingsActive: activeRefinePath, bundledDefaultVaultRel: bundled, isSentinel });
+  }
+
+  #createPopup(refineCastAction: RefineCastAction, getDispatcher: () => CastDispatcher): CommandPopup {
     const popup = new CommandPopup({
       app: this.#deps.app,
       spellTag: this.#deps.plugin.data.settings.spellTag,
@@ -81,7 +90,7 @@ export class CommandPopupBuilder {
         this.#deps.imprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => popup.close());
       },
       castAction: (spell, snap) => {
-        dispatcher.dispatch({
+        getDispatcher().dispatch({
           spell,
           model: snap.model,
           effort: snap.effort,
@@ -102,9 +111,6 @@ export class CommandPopupBuilder {
       castLogPanelDeps: this.#deps.castLogPanelDeps,
       settingsActiveRefinePath: this.#deps.plugin.data.settings.activeRefinePath,
     });
-
-    dispatcher = this.#deps.createDispatcher(() => popup.close());
-
     return popup;
   }
 }
