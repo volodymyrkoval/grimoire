@@ -110,7 +110,15 @@ export class CommandPopup extends Modal {
     this.#panels = [this.#spellsPanel, castLogPanel];
     this.#activePanel = this.#panels[0];
 
-    const ctx: PopupPhaseContext = {
+    const ctx = this.#buildPhaseContext();
+    this.#searchPhase = new SearchPhase(ctx);
+    this.#detailPhase = new DetailPhase(ctx);
+    this.#currentPhase = this.#searchPhase;
+    this.#detailRouter = this.#buildRouter(params);
+  }
+
+  #buildPhaseContext(): PopupPhaseContext {
+    return {
       activePanel: () => this.#activePanel,
       selectedIndex: () => this.#selectedIndex,
       setSelectedIndex: (i) => { this.#selectedIndex = i; },
@@ -122,10 +130,10 @@ export class CommandPopup extends Modal {
       exitDetail: () => this.#exitDetail(),
       renderSearch: () => this.#render(),
     };
-    this.#searchPhase = new SearchPhase(ctx);
-    this.#detailPhase = new DetailPhase(ctx);
-    this.#currentPhase = this.#searchPhase;
-    this.#detailRouter = new DetailPanelRouter({
+  }
+
+  #buildRouter(params: CommandPopupParams): DetailPanelRouter {
+    return new DetailPanelRouter({
       formDefaults: this.#formDefaults,
       overrides: this.#overrides,
       sessionMap: this.#sessionMap,
@@ -140,73 +148,6 @@ export class CommandPopup extends Modal {
       onExit: () => this.#exitDetail(),
       reattachTabBar: () => this.#reattachTabBar(),
     });
-  }
-
-  openLink(path: string): void {
-    void this.app.workspace.openLinkText(path, '', false);
-    this.close();
-  }
-
-  onOpen(): void {
-    this.#selectedIndex = 0;
-    this.#searchQuery = "";
-    this.#activePanel = this.#panels[0];
-    this.#currentPhase = this.#searchPhase;
-    this.#panels.forEach((p) => { if (isNavigable(p)) p.reset(); });
-    this.#render();
-    this.#bindKeys();
-  }
-
-  #bindKeys(): void {
-    this.#kb.bind([], "ArrowDown", () => this.#currentPhase.handleArrow(1));
-    this.#kb.bind([], "ArrowUp", () => this.#currentPhase.handleArrow(-1));
-    this.#kb.bind([], "Enter", () => this.#currentPhase.handleEnter());
-    this.#kb.bind([], "Tab", () => this.#currentPhase.handleTab());
-    this.#kb.bind([], "ArrowRight", () => this.#currentPhase.handleArrowRight());
-  }
-
-  /**
-   * Fully closes the modal regardless of current phase, bypassing the
-   * close-override intercept. Required for paths that must dismiss the modal
-   * unconditionally (e.g. Cast inside the Refine options panel). The
-   * authored-spell cast path still uses `close()` so the intercept routes it
-   * back to search.
-   */
-  dismiss(): void {
-    super.close();
-  }
-
-  // Obsidian's scope system and subcomponents can call close() directly,
-  // bypassing keyboard handlers — intercept here to enforce phase navigation.
-  override close(): void {
-    if (this.#currentPhase.interceptClose()) return;
-    super.close();
-  }
-
-  onClose(): void {
-    this.#panels.forEach((p) => p.unmount?.());
-    this.contentEl.empty();
-  }
-
-  #render(): void {
-    this.contentEl.empty();
-    this.#tabBar = this.#createTabBar();
-    this.#renderSearch();
-  }
-
-  #createTabBar(): TabBar {
-    const bar = new TabBar();
-    bar.render(
-      this.contentEl,
-      this.#panels.map((p) => p.id),
-      this.#activePanel.id,
-      this.#currentPhase.disablesTabBar(),
-      (id) => {
-        const panel = this.#panels.find((p) => p.id === id);
-        if (panel) this.#switchTab(panel);
-      }
-    );
-    return bar;
   }
 
   #createSpellsPanel(spellTag: string): SpellsPanel {
@@ -231,6 +172,73 @@ export class CommandPopup extends Modal {
     return panel;
   }
 
+  onOpen(): void {
+    this.#selectedIndex = 0;
+    this.#searchQuery = "";
+    this.#activePanel = this.#panels[0];
+    this.#currentPhase = this.#searchPhase;
+    this.#panels.forEach((p) => { if (isNavigable(p)) p.reset(); });
+    this.#render();
+    this.#bindKeys();
+  }
+
+  onClose(): void {
+    this.#panels.forEach((p) => p.unmount?.());
+    this.contentEl.empty();
+  }
+
+  // Obsidian's scope system and subcomponents can call close() directly,
+  // bypassing keyboard handlers — intercept here to enforce phase navigation.
+  override close(): void {
+    if (this.#currentPhase.interceptClose()) return;
+    super.close();
+  }
+
+  openLink(path: string): void {
+    void this.app.workspace.openLinkText(path, '', false);
+    this.close();
+  }
+
+  /**
+   * Fully closes the modal regardless of current phase, bypassing the
+   * close-override intercept. Required for paths that must dismiss the modal
+   * unconditionally (e.g. Cast inside the Refine options panel). The
+   * authored-spell cast path still uses `close()` so the intercept routes it
+   * back to search.
+   */
+  dismiss(): void {
+    super.close();
+  }
+
+  #bindKeys(): void {
+    this.#kb.bind([], "ArrowDown", () => this.#currentPhase.handleArrow(1));
+    this.#kb.bind([], "ArrowUp", () => this.#currentPhase.handleArrow(-1));
+    this.#kb.bind([], "Enter", () => this.#currentPhase.handleEnter());
+    this.#kb.bind([], "Tab", () => this.#currentPhase.handleTab());
+    this.#kb.bind([], "ArrowRight", () => this.#currentPhase.handleArrowRight());
+  }
+
+  #render(): void {
+    this.contentEl.empty();
+    this.#tabBar = this.#createTabBar();
+    this.#renderSearch();
+  }
+
+  #createTabBar(): TabBar {
+    const bar = new TabBar();
+    bar.render(
+      this.contentEl,
+      this.#panels.map((p) => p.id),
+      this.#activePanel.id,
+      this.#currentPhase.disablesTabBar(),
+      (id) => {
+        const panel = this.#panels.find((p) => p.id === id);
+        if (panel) this.#switchTab(panel);
+      }
+    );
+    return bar;
+  }
+
   #renderSearch(): void {
     this.#reattachTabBar();
     this.#mountActivePanel();
@@ -252,12 +260,6 @@ export class CommandPopup extends Modal {
     this.#activePanel.mount(this.contentEl);
   }
 
-  #exitDetail(): void {
-    this.#currentPhase = this.#searchPhase;
-    this.#kb.resume();
-    this.#renderSearch();
-  }
-
   /**
    * Enter detail (Forge/Options/Refine panel) from search.
    * Suspends global keyboard navigation to allow form inputs to receive key events.
@@ -267,6 +269,12 @@ export class CommandPopup extends Modal {
     this.#kb.suspend();
     this.#currentPhase = this.#detailPhase;
     this.#detailPhase.setActive(detail, onBack);
+  }
+
+  #exitDetail(): void {
+    this.#currentPhase = this.#searchPhase;
+    this.#kb.resume();
+    this.#renderSearch();
   }
 
   #switchTab(panel: TabPanel): void {
