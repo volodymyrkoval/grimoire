@@ -102,24 +102,7 @@ export class OptionsDetail {
     // showExecuteOnNote: spell panels show the toggle; refine panels hide it (sentinel has no note).
     const showExecuteOnNote = params.kind.kind === 'spell';
     const snapshot = { model: resolved.model, effort: resolved.effort };
-
-    // Variant selector is only relevant for the Refine sentinel and only when sentinels exist.
-    const refineSentinels = getRefineSentinels(params.app);
-    const refineVariantSelectDeps: RefineVariantSelectDeps | undefined =
-      params.kind.kind === 'refine' && refineSentinels.length > 0
-        ? {
-            variants: refineSentinels,
-            // Session override takes priority; fall through to settings default; null = built-in.
-            initialPath: params.sessionMap.get(REFINE_SENTINEL_PATH)?.refinePathOverride ?? params.settingsActiveRefinePath ?? null,
-            onChange: (path: string | null) => {
-              const current = formState.snapshot();
-              params.sessionMap.put(REFINE_SENTINEL_PATH, {
-                ...current,
-                refinePathOverride: path,
-              });
-            },
-          }
-        : undefined;
+    const refineVariantSelectDeps = this.#buildRefineVariantDeps(formState, params);
 
     const panel = new OptionsPanel(params.scope);
     panel.render(params.contentEl, formState, snapshot, {
@@ -134,5 +117,20 @@ export class OptionsDetail {
       refineVariantSelectDeps,
     });
     return panel;
+  }
+
+  #buildRefineVariantDeps(formState: OptionsFormState, params: OptionsDetailParams): RefineVariantSelectDeps | undefined {
+    if (params.kind.kind !== 'refine') return undefined;
+    const variants = getRefineSentinels(params.app);
+    if (variants.length === 0) return undefined;
+    return {
+      variants,
+      // Session override takes priority; fall through to settings default; null = built-in.
+      initialPath: params.sessionMap.get(REFINE_SENTINEL_PATH)?.refinePathOverride ?? params.settingsActiveRefinePath ?? null,
+      onChange: (path: string | null) => {
+        const current = formState.snapshot();
+        params.sessionMap.put(REFINE_SENTINEL_PATH, { ...current, refinePathOverride: path });
+      },
+    };
   }
 }
