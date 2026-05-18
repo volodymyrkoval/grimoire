@@ -4,7 +4,7 @@
 
 ## What it does
 
-From the Spells tab of the Command Popup, pressing `ArrowRight` on a highlighted spell row slides into a detail panel — a form with model select, effort segmented control, context-notes pill input, follow-up textarea, "Execute on active note" checkbox, and (conditionally visible) "Set as default" checkbox plus Cast and Reset buttons.
+From the Spells tab of the Command Popup, pressing `ArrowRight` on a highlighted spell row slides into a detail panel — a form with model select, effort segmented control, context-notes pill input, follow-up textarea, "Execute on active note" checkbox, and (conditionally visible) "Set as default" checkbox plus Cast and Reset buttons. Since `forge-spell-update` (plan 030), a third **Forge** button renders below Cast and Reset for user-authored spells (not for the Refine sentinel) — clicking it dismisses the panel and opens the Forge dialog in update mode against the selected spell.
 
 Pre-fill order is three-tier: **session entry** for this spell (last cast's values, including a fresh override) → **stored override** (model+effort only) → **settings defaults**. The session map lives for the Obsidian process lifetime, so re-opening the popup and re-opening the panel for the same spell pre-fills with the user's last cast values.
 

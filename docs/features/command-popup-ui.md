@@ -1,6 +1,6 @@
 # Command Popup UI
 
-An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activate spells or logs via keyboard-first navigation. Two phases: **search** (list + filter) and **detail** (forge form / options panel / Refine sentinel options).
+An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activate spells or logs via keyboard-first navigation. Two phases: **search** (list + filter) and **detail** (forge create form / options panel / Refine sentinel options / forge update form).
 
 ## User-facing behavior
 
@@ -39,24 +39,26 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
           │   exitDetail()
           ▼  (Escape / Back / close() override / forge submit / panel cast)
 ┌────────────────────────────────────────────┐
-│  DETAIL phase (one of three variants)      │
+│  DETAIL phase (one of four variants)       │
 │  • TabBar disabled                         │
 │  • close() override intercepts Escape      │
 │                                            │
 │  Forge sentinel:  kb.suspend(); FSD owns its own KeyboardController
 │  Options panel:   kb.suspend(); OptionsPanel owns its own KeyboardController
 │  Refine options:  kb.suspend(); same as spell options panel; Cast/Enter dispatches a Refine cast
+│  Forge update:    kb.suspend(); same FSD shell in update mode (see forge-spell-update)
 └────────────────────────────────────────────┘
 ```
 
 Detail variants (since `audit-002-rework`, dispatched through `DetailPanelRouter`):
-- **Forge sentinel** — `renderForge`: kb suspended, `ForgeSentinelDetail` mounted (owns model-select ArrowUp/Down). `destroy()` runs in `exitDetail` before `kb.resume()`.
+- **Forge sentinel** — `renderForge`: kb suspended, `ForgeSentinelDetail` mounted in create mode (owns model-select ArrowUp/Down). `destroy()` runs in `exitDetail` before `kb.resume()`.
 - **Spell options panel** — `renderSpellOptions`: kb suspended, `OptionsDetail` with `kind: { kind: 'spell', spell }` (which mounts `OptionsPanel`) owns its own keys (Cmd+Enter for Cast). `destroy()` runs in `exitDetail` before `kb.resume()`.
 - **Refine sentinel options** — `renderRefineOptions`: kb suspended, same `OptionsDetail` component with `kind: { kind: 'refine' }`. `onCast` calls `refineCastAction(snapshot)` to dispatch a Refine cast.
+- **Forge update** — `renderForgeUpdate`: kb suspended, same `ForgeSentinelDetail` shell mounted in update mode (static name, repurposed description, conditional `Apply @cast directives` checkbox). Reached only via the *Forge* button on a spell's options panel. See `forge-spell-update`.
 
 ## Constructor
 
-`CommandPopup` takes a single params object (`CommandPopupParams`): `app`, `spellTag`, `imprintAction`, `castAction` (single callback of shape `(spell, snapshot) => void` — see `cast-unification`), `defaults` (`{ defaultModel, defaultEffort }`), `overrides` (`SpellOverrideStore`), `sessionMap` (`OptionsSessionMap`), `castLogPanelDeps`. All composition is done in `main.ts`; the popup imports neither `CastDispatcher` nor `ForgeImprinter` nor `Notice`.
+`CommandPopup` takes a single params object (`CommandPopupParams`): `app`, `spellTag`, `imprintAction`, `castAction` (single callback of shape `(spell, snapshot) => void` — see `cast-unification`), `forgeUpdateAction` (since `forge-spell-update`), `spellContentReader` (since `forge-spell-update`), `defaults` (`{ defaultModel, defaultEffort }`), `overrides` (`SpellOverrideStore`), `sessionMap` (`OptionsSessionMap`), `castLogPanelDeps`. All composition is done in `main.ts`; the popup imports neither `CastDispatcher` nor `ForgeImprinter` nor `Notice`.
 
 ## Data flow
 
