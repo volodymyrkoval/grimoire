@@ -1,13 +1,17 @@
-import type { App, Scope } from 'obsidian';
+import { Notice, type App, type Scope } from 'obsidian';
 import type { Spell } from '../../domain/spells/Spell';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { OptionsSessionMap } from '../options/OptionsSessionMap';
 import type { SupportedModel } from '../../domain/settings/Settings';
 import type { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
+import type { ForgeUpdateFormSnapshot } from '../../forge/ForgeUpdateFormSnapshot';
+import type { SpellContentReader } from '../../forge/SpellContentReader';
 import type { OptionsFormSnapshot } from '../options/OptionsFormState';
 import { ForgeSentinelDetail } from '../components/ForgeSentinelDetail';
 import { OptionsDetail } from '../components/OptionsDetail';
+import { countCastDirectives } from '../../forge/castDirectiveExtractor';
+import type { ForgeMode } from '../../forge/ForgeMode';
 
 /** Callback for submitting a Forge sentinel form. */
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
@@ -15,6 +19,8 @@ export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
 export type CastAction = (spell: Spell, snapshot: OptionsFormSnapshot) => void;
 /** Callback for casting the Refine sentinel with resolved options. */
 export type RefineCastAction = (snapshot: OptionsFormSnapshot) => void;
+/** Callback for updating an existing spell via the Forge update flow. */
+export type ForgeUpdateAction = (spell: Spell, snapshot: ForgeUpdateFormSnapshot) => void;
 
 /**
  * Dependencies injected into {@link DetailPanelRouter} at construction time.
@@ -40,6 +46,10 @@ export interface DetailPanelRouterDeps {
   onExit: () => void;
   /** Called before rendering each detail panel to clear content and re-pin the tab bar. */
   reattachTabBar: () => void;
+  /** Callback invoked when the Forge update form is submitted for an existing spell. */
+  forgeUpdateAction: ForgeUpdateAction;
+  /** Reads the raw content of a spell file for directive counting. */
+  spellContentReader: SpellContentReader;
 }
 
 /**
@@ -64,12 +74,14 @@ export class DetailPanelRouter {
     const detail = new ForgeSentinelDetail(scope);
     detail.render({
       contentEl,
+      mode: { kind: 'create' },
       callbacks: {
         onBack: exit,
-        onSubmit: (snapshot) => {
+        onCreateSubmit: (snapshot) => {
           this.#deps.imprintAction(snapshot);
           exit();
         },
+        onUpdateSubmit: () => { /* update path not wired in create-only router */ },
       },
       defaults: this.#deps.formDefaults,
     });
@@ -93,6 +105,48 @@ export class DetailPanelRouter {
       onCast: (snap) => this.#deps.castAction(spell, snap),
       onOverrideChanged: this.#deps.onOverrideChanged,
       kind: { kind: 'spell', spell },
+      onForgeUpdate: (s) => {
+        exit();
+        void this.renderForgeUpdate(contentEl, scope, s);
+      },
+    });
+    this.#deps.onEnterDetail(detail, exit);
+  }
+
+  /** Renders the Forge update detail form for an existing `spell` into `contentEl`. */
+  async renderForgeUpdate(contentEl: HTMLElement, scope: Scope, spell: Spell): Promise<void> {
+    this.#deps.reattachTabBar();
+    const exit = (): void => this.#deps.onExit();
+
+    // Yield to microtask queue to satisfy test harness (vi.waitFor polling granularity);
+    // not required for runtime correctness.
+    await Promise.resolve();
+
+    let content: string;
+    try {
+      content = await this.#deps.spellContentReader.read(spell.path);
+    } catch {
+      new Notice('Could not read spell content');
+      exit();
+      return;
+    }
+
+    const directiveCount = countCastDirectives(content);
+    const mode: ForgeMode = { kind: 'update', spell, directiveCount };
+
+    const detail = new ForgeSentinelDetail(scope);
+    detail.render({
+      contentEl,
+      mode,
+      callbacks: {
+        onBack: exit,
+        onCreateSubmit: () => { /* never called in update mode */ },
+        onUpdateSubmit: (snapshot) => {
+          this.#deps.forgeUpdateAction(spell, snapshot);
+          exit();
+        },
+      },
+      defaults: this.#deps.formDefaults,
     });
     this.#deps.onEnterDetail(detail, exit);
   }

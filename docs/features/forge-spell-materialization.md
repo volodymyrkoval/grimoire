@@ -8,6 +8,8 @@ The Forge sentinel previously assembled a ~60-line meta-spell on every submit an
 
 Each forge cast now sends only a small five-line user prompt (description, name, model, effort, executeOnNote) and points the runner at the materialized file. Local casts pass `--system-prompt-file <abs path>`; remote casts send `spellPath: ".obsidian/plugins/grimoire/forge.md"` plus the same small `userPrompt`. The portal looks the path up the same way it looks up any other spell — no special-case handler.
 
+**Update mode** (plan 030): A second materialization path produces `<pluginDir>/forge-update.md` containing instructions for updating an existing spell. This is rendered identically to the create template but with distinct guidance for edits vs. creation.
+
 Behaviorally, nothing the user clicks changes. The toasts, the form, the sanitisation, the cast log row that shows `<forge>` — all identical. What changes is the wire and argv shape, and the appearance of a new auto-generated file inside the plugin directory.
 
 ## Design decisions

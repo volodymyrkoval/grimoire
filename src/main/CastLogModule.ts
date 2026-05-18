@@ -4,6 +4,7 @@ import type { CastLogWriter } from '../castLog/CastLogWriter';
 import { CastLogStore } from '../castLog/store';
 import { HookMaterializer } from '../castLog/HookMaterializer';
 import { ForgeMaterializer } from '../forge/ForgeMaterializer';
+import { ForgeUpdateMaterializer } from '../forge/ForgeUpdateMaterializer';
 import { RefineMaterializer } from '../refine/RefineMaterializer';
 import { ScratchSweeper } from '../castLog/ScratchSweeper';
 import { CastLogSource } from '../castLog/CastLogSource';
@@ -13,6 +14,7 @@ import { foldEvents } from '../castLog/foldEvents';
 import type { PluginPaths } from '../infra/PluginPaths';
 import type { CastLogPanelDeps } from '../ui/tabs/CastLogPanel';
 import type { ForgeSystemPromptInput } from '../forge/forgeTemplate';
+import type { ForgeUpdateSystemPromptInput } from '../forge/forgeUpdateTemplate';
 
 type MaterializerPorts = {
   adapter: DataAdapter;
@@ -38,6 +40,12 @@ type RefineMaterializerPorts = {
   adapter?: DataAdapter;
 };
 
+type ForgeUpdateMaterializerPorts = {
+  getForgeUpdatePathAbs: () => string;
+  getSettings: () => ForgeUpdateSystemPromptInput;
+  adapter?: DataAdapter;
+};
+
 /**
  * Manages cast log storage, source, and coordination with vault refresh and polling timers.
  * All "casted" events write to the local log regardless of execution mode; the remote log is
@@ -52,7 +60,9 @@ export class CastLogModule {
   readonly #sweeperFactory: (ports: SweeperPorts) => { sweep(): Promise<void> };
   readonly #forgeMaterializerFactory: (ports: ForgeMaterializerPorts) => { run(): Promise<void> };
   readonly #refineMaterializerFactory: (ports: RefineMaterializerPorts) => { run(): Promise<void> };
+  readonly #forgeUpdateMaterializerFactory: (ports: ForgeUpdateMaterializerPorts) => { run(): Promise<void> };
   readonly #getSettings: () => ForgeSystemPromptInput;
+  readonly #getForgeUpdateSettings: () => ForgeUpdateSystemPromptInput;
 
   constructor(deps: {
     app: App;
@@ -61,7 +71,9 @@ export class CastLogModule {
     sweeperFactory?: (ports: SweeperPorts) => { sweep(): Promise<void> };
     forgeMaterializerFactory?: (ports: ForgeMaterializerPorts) => { run(): Promise<void> };
     refineMaterializerFactory?: (ports: RefineMaterializerPorts) => { run(): Promise<void> };
+    forgeUpdateMaterializerFactory?: (ports: ForgeUpdateMaterializerPorts) => { run(): Promise<void> };
     getSettings?: () => ForgeSystemPromptInput;
+    getForgeUpdateSettings?: () => ForgeUpdateSystemPromptInput;
   }) {
     this.#app = deps.app;
     this.#paths = deps.paths;
@@ -69,7 +81,9 @@ export class CastLogModule {
     this.#sweeperFactory = deps.sweeperFactory ?? ((ports) => new ScratchSweeper(ports));
     this.#forgeMaterializerFactory = deps.forgeMaterializerFactory ?? ((ports) => new ForgeMaterializer(ports));
     this.#refineMaterializerFactory = deps.refineMaterializerFactory ?? ((ports) => new RefineMaterializer(ports));
+    this.#forgeUpdateMaterializerFactory = deps.forgeUpdateMaterializerFactory ?? ((ports) => new ForgeUpdateMaterializer(ports));
     this.#getSettings = deps.getSettings ?? (() => ({ spellTag: '', forgeOutputFolder: '', vaultMountPath: '' }));
+    this.#getForgeUpdateSettings = deps.getForgeUpdateSettings ?? (() => ({ vaultMountPath: '' }));
 
     const adapter = this.#app.vault.adapter;
 
@@ -115,11 +129,12 @@ export class CastLogModule {
     };
   }
 
-  /** Runs startup tasks: materializes remote hook scripts, forge spell file, and sweeps stale scratch files. */
+  /** Runs startup tasks: materializes remote hook scripts, forge spell file, forge-update spell file, and sweeps stale scratch files. */
   async initStartupMaintenance(): Promise<void> {
     await this.#runOrLog('HookMaterializer (remote)', () => this.#runRemoteHookMaterializer());
     await this.#runOrLog('ForgeMaterializer', () => this.#runForgeMaterializer());
     await this.#runOrLog('RefineMaterializer', () => this.#runRefineMaterializer());
+    await this.#runOrLog('ForgeUpdateMaterializer', () => this.#runForgeUpdateMaterializer());
     this.#runScratchSweeper();
   }
 
@@ -171,6 +186,22 @@ export class CastLogModule {
     await refineMaterializer.run();
   }
 
+  /** Runs the forge-update materializer. */
+  async #runForgeUpdateMaterializer(): Promise<void> {
+    const adapter = this.#app.vault.adapter;
+    const forgeUpdateMaterializer = this.#buildForgeUpdateMaterializer(adapter);
+    await forgeUpdateMaterializer.run();
+  }
+
+  /** Builds a forge-update materializer with the given adapter. */
+  #buildForgeUpdateMaterializer(adapter: DataAdapter) {
+    return this.#forgeUpdateMaterializerFactory({
+      adapter,
+      getForgeUpdatePathAbs: () => this.#paths.forgeUpdateSpellPathPluginRel(),
+      getSettings: this.#getForgeUpdateSettings,
+    });
+  }
+
   /** Runs the scratch sweeper (fire-and-forget). */
   #runScratchSweeper(): void {
     const adapter = this.#app.vault.adapter;
@@ -186,5 +217,12 @@ export class CastLogModule {
     const adapter = this.#app.vault.adapter;
     const forgeMaterializer = this.#buildForgeMaterializer(adapter);
     return forgeMaterializer.run();
+  }
+
+  /** Re-materializes the forge-update spell file with current settings. Fire-and-forget safe. */
+  materializeForgeUpdate(): Promise<void> {
+    const adapter = this.#app.vault.adapter;
+    const forgeUpdateMaterializer = this.#buildForgeUpdateMaterializer(adapter);
+    return forgeUpdateMaterializer.run();
   }
 }

@@ -1,4 +1,4 @@
-import { Plugin } from 'obsidian';
+import { Plugin, TFile } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './infra/settingsPersistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
@@ -51,6 +51,7 @@ export default class GrimoirePlugin extends Plugin {
         forgeOutputFolder: this.data.settings.forgeOutputFolder,
         vaultMountPath: this.data.settings.vaultMountPath,
       }),
+      getForgeUpdateSettings: () => ({ vaultMountPath: this.data.settings.vaultMountPath }),
     });
     await castLog.initStartupMaintenance();
     return castLog;
@@ -67,6 +68,17 @@ export default class GrimoirePlugin extends Plugin {
         absForCaster: `${this.data.settings.vaultMountPath}/${paths.forgeSpellPathVaultRel()}`,
         vaultRelForPortal: paths.forgeSpellPathVaultRel(),
       }),
+      forgeUpdateSpellPaths: () => ({
+        absForCaster: `${this.data.settings.vaultMountPath}/${paths.forgeUpdateSpellPathVaultRel()}`,
+        vaultRelForPortal: paths.forgeUpdateSpellPathVaultRel(),
+      }),
+      spellContentReader: {
+        read: async (path) => {
+          const file = this.app.vault.getAbstractFileByPath(path);
+          if (!(file instanceof TFile)) throw new Error(`Spell not found: ${path}`);
+          return this.app.vault.cachedRead(file);
+        },
+      },
       paths,
     });
   }
@@ -80,6 +92,7 @@ export default class GrimoirePlugin extends Plugin {
     const openVaultPath = (p: string): void => void this.app.workspace.openLinkText(p, '', false);
     this.addSettingTab(new GrimoireSettingTab(this.app, this, () => {
       castLog.materializeForge().catch(console.error);
+      castLog.materializeForgeUpdate().catch(console.error);
     }, seeder, openVaultPath));
     popupModule.register(this);
     try {

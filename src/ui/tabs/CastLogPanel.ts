@@ -3,6 +3,7 @@ import type { CastLogSource } from '../../castLog/CastLogSource';
 import type { RefreshCoordinator } from '../../castLog/RefreshCoordinator';
 import type { TickCoordinator } from '../../castLog/TickCoordinator';
 import { CastLogList } from '../components/CastLogList';
+import { SystemSpellRegistry } from '../../castLog/SystemSpellRegistry';
 import type { TabPanel } from './TabPanel';
 
 /**
@@ -18,6 +19,8 @@ export interface CastLogPanelDeps {
   openLink: (vaultPath: string) => void;
   now: () => Date;
   vaultRootAbs?: string;
+  /** Registry of system spells for display-name resolution. Defaults to empty when omitted. */
+  registry?: SystemSpellRegistry;
 }
 
 /**
@@ -57,7 +60,12 @@ export class CastLogPanel implements TabPanel {
   }
 
   #initList(container: HTMLElement): void {
-    this.#list = new CastLogList(container, this.#deps.openLink, this.#deps.vaultRootAbs ?? '');
+    this.#list = new CastLogList(
+      container,
+      this.#deps.openLink,
+      this.#deps.vaultRootAbs ?? '',
+      this.#deps.registry,
+    );
   }
 
   #startRefresh(): void {

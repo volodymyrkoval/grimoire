@@ -7,7 +7,7 @@ import type { ForgeFormSnapshot } from '../../src/forge/ForgeFormSnapshot';
 
 function mountDetail(callbacks: {
   onBack?: () => void;
-  onSubmit?: (data: ForgeFormSnapshot) => void;
+  onCreateSubmit?: (data: ForgeFormSnapshot) => void;
 }): { contentEl: HTMLElement; detail: ForgeSentinelDetail; scope: Scope } {
   const contentEl = document.createElement('div');
   document.body.appendChild(contentEl);
@@ -15,9 +15,11 @@ function mountDetail(callbacks: {
   const detail = new ForgeSentinelDetail(scope);
   detail.render({
     contentEl,
+    mode: { kind: 'create' },
     callbacks: {
       onBack: callbacks.onBack ?? vi.fn(),
-      onSubmit: callbacks.onSubmit ?? vi.fn(),
+      onCreateSubmit: callbacks.onCreateSubmit ?? vi.fn(),
+      onUpdateSubmit: vi.fn(),
     },
     defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
   });
@@ -36,10 +38,10 @@ describe('ForgeSentinelDetail component', () => {
     expect(document.activeElement).toBe(nameInput);
   });
 
-  it('D1b: submitting the form calls onSubmit with filled name, description, model, and effort', () => {
-    const onSubmit = vi.fn();
+  it('D1b: submitting the form calls onCreateSubmit with filled name, description, model, and effort', () => {
+    const onCreateSubmit = vi.fn();
     // Mount with Sonnet defaults (has effort options: low/medium/high/max)
-    const { contentEl } = mountDetail({ onSubmit });
+    const { contentEl } = mountDetail({ onCreateSubmit });
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
     const nameInput = form.querySelector('input[type="text"]') as HTMLInputElement;
@@ -59,7 +61,7 @@ describe('ForgeSentinelDetail component', () => {
 
     form.dispatchEvent(new Event('submit'));
 
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', description: 'Y', model: modelId('claude-sonnet-4-5'), effort: 'high' }));
+    expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', description: 'Y', model: modelId('claude-sonnet-4-5'), effort: 'high' }));
   });
 
   it('D1b-haiku: switching model to Haiku removes effort row from DOM', () => {
@@ -97,7 +99,8 @@ describe('ForgeSentinelDetail component', () => {
     const detail = new ForgeSentinelDetail(scope);
     detail.render({
       contentEl,
-      callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
+      mode: { kind: 'create' },
+      callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
       defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
     });
 
@@ -156,22 +159,22 @@ describe('ForgeSentinelDetail component', () => {
   });
 
   it('E0.3: submitting with default checkbox emits executeOnNote: true', () => {
-    const onSubmit = vi.fn();
-    const { contentEl } = mountDetail({ onSubmit });
+    const onCreateSubmit = vi.fn();
+    const { contentEl } = mountDetail({ onCreateSubmit });
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
     form.dispatchEvent(new Event('submit'));
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: true }));
+    expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: true }));
   });
 
   it('E0.4: unchecking then submitting emits executeOnNote: false', () => {
-    const onSubmit = vi.fn();
-    const { contentEl } = mountDetail({ onSubmit });
+    const onCreateSubmit = vi.fn();
+    const { contentEl } = mountDetail({ onCreateSubmit });
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
     const eonCheckbox = form.querySelector<HTMLInputElement>('input[type="checkbox"][data-grimoire="execute-on-note"]')!;
     eonCheckbox.checked = false;
     eonCheckbox.dispatchEvent(new Event('change'));
     form.dispatchEvent(new Event('submit'));
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: false }));
+    expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: false }));
   });
 
   it('E0.5: executeOnNote checkbox does not appear between effort-row and Submit button', () => {
@@ -181,7 +184,8 @@ describe('ForgeSentinelDetail component', () => {
     const detail = new ForgeSentinelDetail(scope);
     detail.render({
       contentEl,
-      callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
+      mode: { kind: 'create' },
+      callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
       defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
     });
 

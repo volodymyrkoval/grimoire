@@ -11,6 +11,10 @@ export interface CastInput {
   readonly userPrompt: string;
   readonly systemPromptFile?: string;
   readonly vaultMountPath: string;
+  /** When true, Claude Code operates on the active note rather than replying in the terminal. */
+  readonly executeOnNote?: boolean;
+  /** Vault-relative path of the note to use as active file when executeOnNote is true. */
+  readonly activeFilePath?: string | null;
 }
 
 /** Info returned when a cast is accepted for execution (e.g., portal job ID). */

@@ -6,6 +6,8 @@
 
 Selecting the **Forge** sentinel from the Command Popup opens a form (name, description, model, effort, "execute on active note" checkbox). On submit, the plugin sanitises the spell name, builds a meta-prompt that instructs Claude Code to write a new spell file, dismisses the popup, and spawns the CLI. Toasts surface progress: `Forging "<name>"…` immediately, then `Spell "<name>" forged` on success or `Forge failed: <stderrTail | exit N>` on failure. An empty-after-sanitise name short-circuits with `Spell name is invalid after sanitisation` and no spawn.
 
+**Forge update mode** (plan 030): Clicking the **Forge** button in a spell's options panel opens the ForgeSentinelDetail in `update` mode, allowing edits to an existing spell. The update flow mirrors create but writes to `<pluginDir>/forge-update.md` and records the cast with `spellPath: '<forge:update>'` for cast-log tracking.
+
 The forged spell file lands at `<forgeOutputFolder><name>.md` with frontmatter containing `tags: [<spellTag>]` and `grimoire-execute-on-note: <bool>` — the latter making the new spell scannable as note-bound or note-free per the user's toggle (see `spell-execute-on-note`).
 
 ## Key components

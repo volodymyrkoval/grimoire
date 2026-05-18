@@ -3,6 +3,7 @@ import { FORGE_SPELL_PATH, REFINE_SPELL_PATH } from '../../domain/spells/SystemS
 import { formatRelativeTime } from '../../castLog/format/relativeTime';
 import { formatDuration } from '../../castLog/format/duration';
 import { resolveDisplayName } from '../../castLog/format/displayName';
+import { SystemSpellRegistry } from '../../castLog/SystemSpellRegistry';
 import { statusBadge } from './statusBadge';
 import { durationMs } from '../../castLog/format/durationMs';
 import { toDisplayPath } from '../../castLog/format/toDisplayPath';
@@ -23,16 +24,19 @@ export class CastLogRow {
   #bodyEl!: HTMLElement;
   readonly #onOpenLink: (path: string) => void;
   readonly #vaultRootAbs: string;
+  readonly #registry: SystemSpellRegistry;
 
   constructor(
     container: HTMLElement,
     record: CastRecord,
     onOpenLink: (path: string) => void,
     vaultRootAbs = '',
+    registry = new SystemSpellRegistry(),
   ) {
     this.#record = record;
     this.#onOpenLink = onOpenLink;
     this.#vaultRootAbs = vaultRootAbs;
+    this.#registry = registry;
     this.el = container.createDiv({ cls: 'cast-log-row' });
   }
 
@@ -50,7 +54,7 @@ export class CastLogRow {
   /** Called by CastLogList when the same castId receives an updated record. */
   update(record: CastRecord, expanded: boolean, now: Date): void {
     this.#record = record;
-    updateNameSpan(this.#nameSpan, record);
+    updateNameSpan(this.#nameSpan, record, this.#registry);
     updateModelBadgeSpan(this.#modelBadgeSpan, record);
     updateStartedSpan(this.#startedSpan, record, now);
     updateDurationSpan(this.#durationSpan, record, now);
@@ -70,7 +74,7 @@ export class CastLogRow {
   #buildHeader(record: CastRecord, now: Date, onToggle: () => void): void {
     const header = this.el.createDiv({ cls: 'cast-log-row-header' });
     header.addEventListener('click', onToggle);
-    this.#nameSpan = buildNameSpan(header, record);
+    this.#nameSpan = buildNameSpan(header, record, this.#registry);
     this.#modelBadgeSpan = buildModelBadgeSpan(header, record);
     this.#startedSpan = buildStartedSpan(header, record, now);
     this.#durationSpan = buildDurationSpan(header, record, now);
@@ -87,8 +91,8 @@ export class CastLogRow {
 }
 
 /** Builds and returns the spell name span for the row header. */
-function buildNameSpan(header: HTMLElement, record: CastRecord): HTMLElement {
-  const displayName = resolveDisplayName(record);
+function buildNameSpan(header: HTMLElement, record: CastRecord, registry: SystemSpellRegistry): HTMLElement {
+  const displayName = resolveDisplayName(record, registry);
   const span = header.createSpan({ cls: 'cast-log-display-name', text: displayName });
   span.title = displayName;
   return span;
@@ -123,8 +127,8 @@ function buildStatusBadgeSpan(header: HTMLElement, record: CastRecord): HTMLElem
 }
 
 /** Updates the name span text and title in place. */
-function updateNameSpan(span: HTMLElement, record: CastRecord): void {
-  const displayName = resolveDisplayName(record);
+function updateNameSpan(span: HTMLElement, record: CastRecord, registry: SystemSpellRegistry): void {
+  const displayName = resolveDisplayName(record, registry);
   span.textContent = displayName;
   span.title = displayName;
 }

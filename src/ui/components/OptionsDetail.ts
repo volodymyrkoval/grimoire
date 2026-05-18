@@ -42,6 +42,8 @@ export interface OptionsDetailParams {
    * null = built-in default. Only meaningful when kind === 'refine'.
    */
   settingsActiveRefinePath?: string | null;
+  /** Called when the user clicks the Forge button to update the spell. Only passed for spell panels. */
+  onForgeUpdate?: (spell: Spell) => void;
 }
 
 /**
@@ -104,6 +106,13 @@ export class OptionsDetail {
     const snapshot = { model: resolved.model, effort: resolved.effort };
     const refineVariantSelectDeps = this.#buildRefineVariantDeps(formState, params);
 
+    let onForgeUpdate: (() => void) | undefined;
+    if (params.kind.kind === 'spell' && params.onForgeUpdate) {
+      const spell = params.kind.spell;
+      const handler = params.onForgeUpdate;
+      onForgeUpdate = () => handler(spell);
+    }
+
     const panel = new OptionsPanel(params.scope);
     panel.render(params.contentEl, formState, snapshot, {
       app: params.app,
@@ -115,6 +124,7 @@ export class OptionsDetail {
       onBack: params.onBack,
       showExecuteOnNote,
       refineVariantSelectDeps,
+      onForgeUpdate,
     });
     return panel;
   }

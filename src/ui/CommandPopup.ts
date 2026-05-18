@@ -17,8 +17,9 @@ import type { PopupPhase, PopupPhaseContext } from "./popup/PopupPhase";
 import { SearchPhase } from "./popup/SearchPhase";
 import { DetailPhase } from "./popup/DetailPhase";
 import { DetailPanelRouter } from "./popup/DetailPanelRouter";
-import type { ImprintAction, CastAction, RefineCastAction } from "./popup/DetailPanelRouter";
-export type { ImprintAction, CastAction, RefineCastAction } from "./popup/DetailPanelRouter";
+import type { ImprintAction, CastAction, RefineCastAction, ForgeUpdateAction } from "./popup/DetailPanelRouter";
+import type { SpellContentReader } from "../forge/SpellContentReader";
+export type { ImprintAction, CastAction, RefineCastAction, ForgeUpdateAction } from "./popup/DetailPanelRouter";
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
 
@@ -50,6 +51,10 @@ export interface CommandPopupParams {
   castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'>;
   /** Vault-relative path of the settings-level active Refine spell; null = built-in default. */
   settingsActiveRefinePath?: string | null;
+  /** Callback invoked when the Forge update form is submitted for an existing spell. */
+  forgeUpdateAction: ForgeUpdateAction;
+  /** Reads the raw content of a spell file for directive counting during Forge update. */
+  spellContentReader: SpellContentReader;
 }
 
 /**
@@ -80,6 +85,8 @@ export class CommandPopup extends Modal {
   readonly #detailPhase: DetailPhase;
   #currentPhase: PopupPhase;
   readonly #detailRouter: DetailPanelRouter;
+  readonly #forgeUpdateAction: ForgeUpdateAction;
+  readonly #spellContentReader: SpellContentReader;
 
   /**
    * Test seam: exposes #panels for bracket-notation access in tests.
@@ -102,6 +109,8 @@ export class CommandPopup extends Modal {
     this.#formDefaults = params.defaults;
     this.#overrides = params.overrides;
     this.#sessionMap = params.sessionMap;
+    this.#forgeUpdateAction = params.forgeUpdateAction;
+    this.#spellContentReader = params.spellContentReader;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
       openLink: (path) => this.openLink(path),
@@ -147,6 +156,8 @@ export class CommandPopup extends Modal {
       onEnterDetail: (detail, onBack) => this.#enterDetail(detail, onBack),
       onExit: () => this.#exitDetail(),
       reattachTabBar: () => this.#reattachTabBar(),
+      forgeUpdateAction: this.#forgeUpdateAction,
+      spellContentReader: this.#spellContentReader,
     });
   }
 
@@ -271,7 +282,13 @@ export class CommandPopup extends Modal {
     this.#detailPhase.setActive(detail, onBack);
   }
 
+  // Symmetric teardown for every detail handoff (detail → search or detail →
+  // detail). DetailPhase.clearActive() destroys the outgoing detail so its
+  // component-owned keyboard bindings cannot leak onto Modal.scope past their
+  // owner's lifetime. Idempotent — safe when clearActive has already run via
+  // DetailPhase.interceptClose (Escape path).
   #exitDetail(): void {
+    this.#detailPhase.clearActive();
     this.#currentPhase = this.#searchPhase;
     this.#kb.resume();
     this.#renderSearch();

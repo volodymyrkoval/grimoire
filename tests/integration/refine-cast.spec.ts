@@ -22,6 +22,7 @@ import { REFINE_SENTINEL_PATH } from '../../src/domain/spells/Spell';
 import { modelId } from '../../src/domain/settings/ModelId';
 import { REFINE_SPELL_PATH } from '../../src/domain/spells/SystemSpellPaths';
 import { resolveDisplayName } from '../../src/castLog/format/displayName';
+import { SystemSpellRegistry } from '../../src/castLog/SystemSpellRegistry';
 import type { CastRecord } from '../../src/castLog/CastRecord';
 import type { GrimoireData } from '../../src/domain/settings/Settings';
 import type { CastLogWriter } from '../../src/castLog/CastLogWriter';
@@ -352,6 +353,8 @@ describe('refine-cast integration — CommandPopupBuilder → cast pipeline seam
       castedTs: new Date().toISOString(),
     };
 
-    expect(resolveDisplayName(stubRecord)).toBe('Refine');
+    const registry = new SystemSpellRegistry();
+    registry.register(REFINE_SPELL_PATH, { label: 'Refine' });
+    expect(resolveDisplayName(stubRecord, registry)).toBe('Refine');
   });
 });

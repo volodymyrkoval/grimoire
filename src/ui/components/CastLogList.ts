@@ -1,5 +1,6 @@
 import type { CastRecord } from '../../castLog/CastRecord';
 import { CastLogRow } from './CastLogRow';
+import { SystemSpellRegistry } from '../../castLog/SystemSpellRegistry';
 
 /**
  * Renders a list of cast records with per-row expansion state and time-display updates.
@@ -13,10 +14,17 @@ export class CastLogList {
   #isEmptyView = false;
   readonly #openLink: (path: string) => void;
   readonly #vaultRootAbs: string;
+  readonly #registry: SystemSpellRegistry;
 
-  constructor(container: HTMLElement, openLink: (path: string) => void, vaultRootAbs = '') {
+  constructor(
+    container: HTMLElement,
+    openLink: (path: string) => void,
+    vaultRootAbs = '',
+    registry = new SystemSpellRegistry(),
+  ) {
     this.#openLink = openLink;
     this.#vaultRootAbs = vaultRootAbs;
+    this.#registry = registry;
     this.#header = container.createDiv({ cls: 'cast-log-header is-hidden' });
     this.#listWrapper = container.createDiv({ cls: 'cast-log-list' });
   }
@@ -88,7 +96,7 @@ export class CastLogList {
     for (const record of records) {
       let row = this.#rowsById.get(record.castId);
       if (!row) {
-        row = new CastLogRow(this.#listWrapper, record, this.#openLink, this.#vaultRootAbs);
+        row = new CastLogRow(this.#listWrapper, record, this.#openLink, this.#vaultRootAbs, this.#registry);
         row.render(expandedIds.has(record.castId), now, () => onToggle(record.castId));
         this.#rowsById.set(record.castId, row);
       } else {

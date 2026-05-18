@@ -1,8 +1,10 @@
 import { App, Notice, TFile } from 'obsidian';
 import { CommandPopup } from '../CommandPopup';
-import type { RefineCastAction } from '../CommandPopup';
+import type { RefineCastAction, ForgeUpdateAction } from '../CommandPopup';
 import { obsidianRanker } from '../../infra/obsidianRanker';
 import type { ForgeImprinter } from '../../forge/ForgeImprinter';
+import type { ForgeUpdateImprinter } from '../../forge/ForgeUpdateImprinter';
+import type { SpellContentReader } from '../../forge/SpellContentReader';
 import type { OptionsSessionMap } from '../options/OptionsSessionMap';
 import type { CastLogPanelDeps } from '../tabs/CastLogPanel';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
@@ -17,6 +19,8 @@ export interface CommandPopupBuilderDeps {
   app: App;
   plugin: { data: GrimoireData; overrides: SpellOverrideStore };
   imprinter: ForgeImprinter;
+  updateImprinter: ForgeUpdateImprinter;
+  spellContentReader: SpellContentReader;
   sessionMap: OptionsSessionMap;
   castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'>;
   createDispatcher: (close: () => void) => CastDispatcher;
@@ -35,7 +39,10 @@ export class CommandPopupBuilder {
     let popup: CommandPopup;
 
     const refineCastAction = this.#buildRefineCastAction(() => dispatcher, () => popup);
-    popup = this.#createPopup(refineCastAction, () => dispatcher);
+    const forgeUpdateAction: ForgeUpdateAction = (spell, snapshot) => {
+      this.#deps.updateImprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => popup.close());
+    };
+    popup = this.#createPopup(refineCastAction, forgeUpdateAction, () => dispatcher);
     dispatcher = this.#deps.createDispatcher(() => popup.close());
 
     return popup;
@@ -81,7 +88,11 @@ export class CommandPopupBuilder {
     return resolveRefinePath({ perCast, settingsActive: activeRefinePath, bundledDefaultVaultRel: bundled, isSentinel });
   }
 
-  #createPopup(refineCastAction: RefineCastAction, getDispatcher: () => CastDispatcher): CommandPopup {
+  #createPopup(
+    refineCastAction: RefineCastAction,
+    forgeUpdateAction: ForgeUpdateAction,
+    getDispatcher: () => CastDispatcher,
+  ): CommandPopup {
     const popup = new CommandPopup({
       app: this.#deps.app,
       spellTag: this.#deps.plugin.data.settings.spellTag,
@@ -102,6 +113,8 @@ export class CommandPopupBuilder {
         });
       },
       refineCastAction,
+      forgeUpdateAction,
+      spellContentReader: this.#deps.spellContentReader,
       defaults: {
         defaultModel: this.#deps.plugin.data.settings.defaultModel,
         defaultEffort: this.#deps.plugin.data.settings.defaultEffort,

@@ -81,6 +81,8 @@ function makePopup(castAction?: CastAction) {
     overrides: makeStubOverrides(),
     sessionMap: new OptionsSessionMap(),
     castLogPanelDeps: makeFakeCastLogPanelDeps(),
+    forgeUpdateAction: vi.fn(),
+    spellContentReader: { read: vi.fn(async () => '') },
   });
 }
 
@@ -182,21 +184,21 @@ describe('CommandPopup keyboard suspend/resume', () => {
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
 
-  it('resumes keyboard bindings when forge sentinel onSubmit fires', () => {
+  it('resumes keyboard bindings when forge sentinel onCreateSubmit fires', () => {
     const popup = makePopup();
     const scope = (popup as any).scope as { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
 
     popup.onOpen();
     const countAfterOpen = scope.register.mock.calls.length;
 
-    let capturedOnSubmit: ((...args: any[]) => void) | undefined;
+    let capturedOnCreateSubmit: ((...args: any[]) => void) | undefined;
     const OrigFSD = FSDModule.ForgeSentinelDetail;
     vi.spyOn(FSDModule, 'ForgeSentinelDetail' as any).mockImplementationOnce(
       function () {
         return Object.assign(Object.create(OrigFSD.prototype), {
           destroy: vi.fn(),
           render({ callbacks }: any) {
-            capturedOnSubmit = callbacks.onSubmit;
+            capturedOnCreateSubmit = callbacks.onCreateSubmit;
           },
         });
       } as any
@@ -205,8 +207,8 @@ describe('CommandPopup keyboard suspend/resume', () => {
     const spellsPanel = (popup as any).panels[0];
     spellsPanel.events.emit('sentinel', { kind: 'forge', name: 'My Forge' });
 
-    expect(capturedOnSubmit).toBeDefined();
-    capturedOnSubmit!({ name: '', description: '', model: modelId('sonnet'), effort: null });
+    expect(capturedOnCreateSubmit).toBeDefined();
+    capturedOnCreateSubmit!({ name: '', description: '', model: modelId('sonnet'), effort: null });
 
     expect(scope.register.mock.calls.length).toBeGreaterThan(countAfterOpen);
   });
@@ -322,6 +324,8 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: fakeDeps,
+      forgeUpdateAction: vi.fn(),
+      spellContentReader: { read: vi.fn(async () => '') },
     });
 
     const panels = (popup as any).panels as any[];
@@ -344,6 +348,8 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
+      forgeUpdateAction: vi.fn(),
+      spellContentReader: { read: vi.fn(async () => '') },
     });
 
     const closeSpy = vi.spyOn(popup, 'close').mockImplementation(() => {});
@@ -391,6 +397,8 @@ describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
       overrides: stubOverrides,
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
+      forgeUpdateAction: vi.fn(),
+      spellContentReader: { read: vi.fn(async () => '') },
     });
 
     const spellsPanel = (popup as any).panels[0];

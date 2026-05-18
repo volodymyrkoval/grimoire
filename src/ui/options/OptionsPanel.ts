@@ -21,6 +21,8 @@ export interface OptionsPanelDeps {
   showExecuteOnNote?: boolean;
   /** Optional variant selector for the Refine sentinel panel. Omit for spell panels. */
   refineVariantSelectDeps?: RefineVariantSelectDeps;
+  /** Called when the user clicks the Forge button to update this spell. Omit for Refine sentinel panels. */
+  onForgeUpdate?: () => void;
 }
 
 /**
@@ -107,6 +109,12 @@ export class OptionsPanel {
     if (deps.refineVariantSelectDeps) {
       this.#refineVariantSelect = new RefineVariantSelect();
       this.#refineVariantSelect.mount(form, deps.refineVariantSelectDeps);
+    }
+    if (deps.onForgeUpdate) {
+      const forgeRow = form.createDiv({ cls: 'grimoire-forge-update-row' });
+      const forgeBtn = forgeRow.createEl('button', { text: 'Forge' });
+      forgeBtn.type = 'button';
+      forgeBtn.addEventListener('click', () => deps.onForgeUpdate?.());
     }
   }
 

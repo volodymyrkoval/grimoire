@@ -19,6 +19,19 @@ export class DetailPhase implements PopupPhase {
     this.#activeDetail = detail;
   }
 
+  /**
+   * Tear down the currently-active detail (if any) and forget its back callback.
+   * Idempotent — safe to call when there is no active detail. Used to ensure
+   * every detail-to-detail and detail-to-search handoff goes through a single
+   * symmetric teardown path, so component-owned keyboard bindings cannot leak
+   * past their owner's lifetime.
+   */
+  clearActive(): void {
+    this.#activeDetail?.destroy?.();
+    this.#activeDetail = null;
+    this.#onDetailBack = null;
+  }
+
   handleArrow(_delta: -1 | 1): boolean {
     return false;
   }
@@ -38,9 +51,7 @@ export class DetailPhase implements PopupPhase {
   interceptClose(): boolean {
     if (this.#onDetailBack) {
       const back = this.#onDetailBack;
-      this.#onDetailBack = null;
-      this.#activeDetail?.destroy?.();
-      this.#activeDetail = null;
+      this.clearActive();
       back();
       return true;
     }

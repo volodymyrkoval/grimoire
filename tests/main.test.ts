@@ -574,6 +574,46 @@ describe('GrimoirePlugin', () => {
     expect(plugin.registerEditorExtension).toHaveBeenCalledWith(expect.anything());
   });
 
+  it('onload constructs ForgeUpdateMaterializer exactly once and awaits its run()', async () => {
+    const ForgeUpdateMaterializerModule = await import('../src/forge/ForgeUpdateMaterializer');
+    const OriginalForgeUpdateMaterializer = ForgeUpdateMaterializerModule.ForgeUpdateMaterializer;
+    let capturedRunSpy: ReturnType<typeof vi.fn> | undefined;
+    const forgeUpdateMaterializerSpy = vi.spyOn(ForgeUpdateMaterializerModule, 'ForgeUpdateMaterializer').mockImplementation((ports: any) => {
+      const inst = new OriginalForgeUpdateMaterializer(ports);
+      capturedRunSpy = vi.spyOn(inst, 'run').mockResolvedValue(undefined);
+      return inst;
+    });
+
+    await plugin.onload();
+
+    expect(forgeUpdateMaterializerSpy).toHaveBeenCalledTimes(1);
+    expect(capturedRunSpy).toHaveBeenCalledTimes(1);
+
+    forgeUpdateMaterializerSpy.mockRestore();
+  });
+
+  it('onload wiring: popup command opens without throwing when forge-update deps are provided', async () => {
+    await plugin.onload();
+
+    const CommandPopupModule = await import('../src/ui/CommandPopup');
+    const popupSpy = vi.spyOn(CommandPopupModule, 'CommandPopup').mockImplementation(function() {
+      return { open: vi.fn(), close: vi.fn(), scope: { register: vi.fn(), unregister: vi.fn() }, contentEl: {}, onOpen: vi.fn(), onClose: vi.fn() } as any;
+    } as any);
+
+    const commandCall = (plugin.addCommand as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: any[]) => c[0].id === 'open-popup',
+    );
+    expect(commandCall).toBeDefined();
+    expect(() => commandCall![0].callback()).not.toThrow();
+
+    const params = popupSpy.mock.calls[0][0] as any;
+    expect(typeof params.forgeUpdateAction).toBe('function');
+    expect(params.spellContentReader).toBeDefined();
+    expect(typeof params.spellContentReader.read).toBe('function');
+
+    popupSpy.mockRestore();
+  });
+
   it('CastDispatcher and ForgeImprinter caster thunks invoke createCaster with current settings', async () => {
     const createCasterModule = await import('../src/cast/createCaster');
     const createCasterSpy = vi.spyOn(createCasterModule, 'createCaster');

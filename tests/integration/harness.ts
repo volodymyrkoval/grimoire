@@ -16,7 +16,8 @@
 import { App } from 'obsidian';
 import { vi } from 'vitest';
 import { CommandPopup } from '../../src/ui/CommandPopup';
-import type { ImprintAction, FormDefaults, CastAction, RefineCastAction } from '../../src/ui/CommandPopup';
+import type { ImprintAction, FormDefaults, CastAction, RefineCastAction, ForgeUpdateAction } from '../../src/ui/CommandPopup';
+import type { SpellContentReader } from '../../src/forge/SpellContentReader';
 import { obsidianRanker } from '../../src/infra/obsidianRanker';
 import type { Scope } from 'obsidian';
 import type { Effort } from '../../src/domain/settings/Settings';
@@ -62,6 +63,8 @@ export function createPopupHarness(options?: {
   defaults?: FormDefaults;
   overrides?: SpellOverrideStore;
   sessionMap?: OptionsSessionMap;
+  forgeUpdateAction?: ForgeUpdateAction;
+  spellContentReader?: SpellContentReader;
 }): PopupHarness {
   const app = new App() as any;
   const imprintAction = options?.imprintAction ?? vi.fn();
@@ -89,7 +92,9 @@ export function createPopupHarness(options?: {
   app.metadataCache.getFileCache.mockReturnValue({
     frontmatter: { tags: ['spell'] },
   });
-  const modal = new CommandPopup({ app, spellTag: 'spell', rankSpells: obsidianRanker, imprintAction, castAction, refineCastAction, defaults, overrides, sessionMap, castLogPanelDeps: makeFakeCastLogPanelDeps() });
+  const forgeUpdateAction = options?.forgeUpdateAction ?? vi.fn();
+  const spellContentReader = options?.spellContentReader ?? { read: vi.fn(async () => '') };
+  const modal = new CommandPopup({ app, spellTag: 'spell', rankSpells: obsidianRanker, imprintAction, castAction, refineCastAction, defaults, overrides, sessionMap, castLogPanelDeps: makeFakeCastLogPanelDeps(), forgeUpdateAction, spellContentReader });
   modal.open();
   const { contentEl } = modal;
 

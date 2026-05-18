@@ -84,4 +84,24 @@ export class PluginPaths {
   refineSpellPathVaultRel(): string {
     return normalizePath(`${this.#pluginDir}/refine.md`);
   }
+
+  /**
+   * Returns the forge-update spell path relative to the plugin directory root.
+   * To obtain the OS-level absolute path, prepend `vaultMountPath`.
+   *
+   * TODO: investigate whether forgeUpdateSpellPathPluginRel and forgeUpdateSpellPathVaultRel
+   * should differ — plugin-relative and vault-relative paths are distinct concepts,
+   * but both currently return the same value. One of them may be wrong.
+   */
+  forgeUpdateSpellPathPluginRel(): string {
+    return normalizePath(`${this.#pluginDir}/forge-update.md`);
+  }
+
+  /**
+   * Returns the forge-update spell path expressed relative to the vault root,
+   * suitable for sending to the portal as `spellPath`.
+   */
+  forgeUpdateSpellPathVaultRel(): string {
+    return normalizePath(`${this.#pluginDir}/forge-update.md`);
+  }
 }

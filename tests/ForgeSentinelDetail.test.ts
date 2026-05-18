@@ -32,7 +32,7 @@ interface BuildOpts {
   defaultModel?: ModelId;
   defaultEffort?: Effort | null;
   onBack?: ReturnType<typeof vi.fn>;
-  onSubmit?: ReturnType<typeof vi.fn>;
+  onCreateSubmit?: ReturnType<typeof vi.fn>;
   scope?: ScopeMock;
 }
 
@@ -43,12 +43,14 @@ function buildDetail(opts: BuildOpts = {}) {
 
   const callbacks = {
     onBack: opts.onBack ?? vi.fn(),
-    onSubmit: opts.onSubmit ?? vi.fn(),
+    onCreateSubmit: opts.onCreateSubmit ?? vi.fn(),
+    onUpdateSubmit: vi.fn(),
   };
 
   const detail = new ForgeSentinelDetail(scope);
   detail.render({
     contentEl: container,
+    mode: { kind: 'create' },
     callbacks,
     defaults: {
       defaultModel: opts.defaultModel ?? modelId('claude-sonnet-4-5'),
@@ -94,7 +96,8 @@ describe('ForgeSentinelDetail', () => {
     const detail = new ForgeSentinelDetail(makeScope());
     detail.render({
       contentEl: container,
-      callbacks: { onBack: vi.fn(), onSubmit: vi.fn() },
+      mode: { kind: 'create' },
+      callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
       defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null },
     });
 
@@ -180,15 +183,15 @@ describe('ForgeSentinelDetail', () => {
     });
 
     it('effort reported by EffortRow onChange is used in the next submit', () => {
-      const onSubmit = vi.fn();
-      const { submitForm } = buildDetail({ onSubmit, defaultEffort: 'medium' });
+      const onCreateSubmit = vi.fn();
+      const { submitForm } = buildDetail({ onCreateSubmit, defaultEffort: 'medium' });
 
       // Simulate the user clicking a different segment in the EffortRow
       const [, mountOpts] = mockEffortMount.mock.calls[0] as [unknown, { onChange: (e: Effort) => void }];
       mountOpts.onChange('high');
 
       submitForm();
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ effort: 'high' }));
+      expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ effort: 'high' }));
     });
   });
 
@@ -196,10 +199,10 @@ describe('ForgeSentinelDetail', () => {
   // Form submission
   // -------------------------------------------------------------------------
   describe('form submission', () => {
-    it('passes name, description, model, and effort snapshot to onSubmit', () => {
-      const onSubmit = vi.fn();
+    it('passes name, description, model, and effort snapshot to onCreateSubmit', () => {
+      const onCreateSubmit = vi.fn();
       const { nameInput, descInput, modelSelect, submitForm } = buildDetail({
-        onSubmit,
+        onCreateSubmit,
         defaultModel: modelId('claude-sonnet-4-5'),
         defaultEffort: 'low',
       });
@@ -209,7 +212,7 @@ describe('ForgeSentinelDetail', () => {
 
       submitForm();
 
-      expect(onSubmit).toHaveBeenCalledWith({
+      expect(onCreateSubmit).toHaveBeenCalledWith({
         name: 'My Forge',
         description: 'A description',
         model: 'claude-opus-4-5',
@@ -219,44 +222,44 @@ describe('ForgeSentinelDetail', () => {
     });
 
     it('passes null effort when model has no default effort (haiku)', () => {
-      const onSubmit = vi.fn();
+      const onCreateSubmit = vi.fn();
       const { submitForm } = buildDetail({
-        onSubmit,
+        onCreateSubmit,
         defaultModel: modelId('claude-haiku-4-5'),
         defaultEffort: null,
       });
       submitForm();
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ effort: null }));
+      expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ effort: null }));
     });
 
     it('passes modelSelect.value directly without fallback', () => {
-      const onSubmit = vi.fn();
-      const { modelSelect, submitForm } = buildDetail({ onSubmit });
+      const onCreateSubmit = vi.fn();
+      const { modelSelect, submitForm } = buildDetail({ onCreateSubmit });
       // In happy-dom, setting value to empty string on a select with options
       // won't actually change the value; use the first option's value
       modelSelect.value = modelSelect.options[0].value;
       submitForm();
-      expect(onSubmit).toHaveBeenCalledWith(
+      expect(onCreateSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ model: modelSelect.value }),
       );
     });
 
     it('includes executeOnNote: true by default on submit', () => {
-      const onSubmit = vi.fn();
-      const { submitForm } = buildDetail({ onSubmit });
+      const onCreateSubmit = vi.fn();
+      const { submitForm } = buildDetail({ onCreateSubmit });
       submitForm();
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: true }));
+      expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: true }));
     });
 
     it('includes executeOnNote: false after unchecking the checkbox', () => {
-      const onSubmit = vi.fn();
-      const { form, submitForm } = buildDetail({ onSubmit });
+      const onCreateSubmit = vi.fn();
+      const { form, submitForm } = buildDetail({ onCreateSubmit });
       const eonCheckbox = form.querySelector<HTMLInputElement>('input[type="checkbox"][data-grimoire="execute-on-note"]')!;
       expect(eonCheckbox).not.toBeNull();
       eonCheckbox.checked = false;
       eonCheckbox.dispatchEvent(new Event('change'));
       submitForm();
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: false }));
+      expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ executeOnNote: false }));
     });
   });
 

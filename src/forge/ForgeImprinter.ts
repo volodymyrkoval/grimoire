@@ -5,6 +5,7 @@ import { buildForgeUserPrompt } from './buildForgeUserPrompt';
 import { ForgeFormSnapshot } from './ForgeFormSnapshot';
 import type { Caster } from '../execution/Caster';
 import type { CastEventSink } from './CastEventSink';
+import type { SpellImprinter } from './SpellImprinter';
 
 /** Dependencies injected into ForgeImprinter, allowing optional ID generation override for testing. */
 export interface ForgeImprinterDeps {
@@ -21,7 +22,7 @@ export interface ForgeImprinterDeps {
  * Handles both local and remote execution modes, with appropriate user notifications.
  * System-prompt content lives in the materialized forge.md file; the user prompt carries only the five per-cast values.
  */
-export class ForgeImprinter {
+export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
   readonly #notify: (msg: string) => void;
   readonly #caster: () => Caster;
   readonly #logWriter: () => CastEventSink;
