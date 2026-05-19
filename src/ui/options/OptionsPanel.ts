@@ -10,7 +10,7 @@ import { CastModelSection } from './CastModelSection';
 import { RefineVariantSelect } from './RefineVariantSelect';
 import type { RefineVariantSelectDeps } from './RefineVariantSelect';
 
-interface EonState {
+interface ExecuteOnNoteState {
   checkbox: HTMLInputElement | null;
   initialValue: boolean;
   visible: boolean;
@@ -55,7 +55,7 @@ export class OptionsPanel {
     deps: OptionsPanelDeps,
   ): void {
     const backBtn = this.#buildBackButton(contentEl);
-    this.#bindBack(backBtn, deps.onBack);
+    this.#bindBackButton(backBtn, deps.onBack);
     const form = this.#buildForm(contentEl);
     this.#buildFormControls(form, formState, snapshot, deps);
   }
@@ -67,34 +67,31 @@ export class OptionsPanel {
     this.#refineVariantSelect?.destroy();
   }
 
-  /** Creates the back button that dismisses the detail panel. */
   #buildBackButton(container: HTMLElement): HTMLButtonElement {
     const backBtn = container.createEl('button', { text: '← back' });
     backBtn.type = 'button';
     return backBtn;
   }
 
-  #bindBack(button: HTMLButtonElement, onBack: () => void): void {
+  #bindBackButton(button: HTMLButtonElement, onBack: () => void): void {
     button.addEventListener('click', () => onBack());
   }
 
-  /** Creates and returns the form container element. */
   #buildForm(contentEl: HTMLElement): HTMLFormElement {
     return contentEl.createEl('form', { cls: 'options-panel' });
   }
 
-  /** Populates the form with context notes, follow-up, executeOnNote checkbox, model/effort section, and submit/reset buttons. */
   #buildFormControls(
     form: HTMLFormElement,
     formState: OptionsFormState,
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
   ): void {
-    this.#buildHint(form, 'Context notes');
+    form.createEl('small', { text: 'Context notes' });
     this.#buildContextNotes(form, formState, deps.app);
     const followUpInput = this.#buildFollowUpInput(form, formState.snapshot().followUp);
     this.#bindFollowUpInput(followUpInput, formState);
-    const eonState: EonState = {
+    const eonState: ExecuteOnNoteState = {
       initialValue: formState.snapshot().executeOnNote,
       visible: deps.showExecuteOnNote !== false,
       checkbox: null,
@@ -127,11 +124,6 @@ export class OptionsPanel {
     }
   }
 
-  /** Renders a small hint/label text above form sections. */
-  #buildHint(form: HTMLFormElement, text: string): void {
-    form.createEl('small', { text });
-  }
-
   /** Mounts the context notes input widget and populates it with any existing session paths. */
   #buildContextNotes(form: HTMLFormElement, formState: OptionsFormState, app: App): void {
     const contextContainer = form.createDiv();
@@ -160,7 +152,6 @@ export class OptionsPanel {
     });
   }
 
-  /** Creates the execute-on-note checkbox with label. */
   #buildExecuteOnNoteCheckbox(form: HTMLFormElement, initialValue: boolean): HTMLInputElement {
     const container = form.createDiv({ cls: 'grimoire-checkbox-row' });
     const checkbox = container.createEl('input');
@@ -173,20 +164,17 @@ export class OptionsPanel {
     return checkbox;
   }
 
-  /** Binds checkbox changes to form state updates. */
   #bindExecuteOnNote(checkbox: HTMLInputElement, formState: OptionsFormState): void {
     checkbox.addEventListener('change', () => {
       formState.setExecuteOnNote(checkbox.checked);
     });
   }
 
-  /** Creates the submit button for casting. */
   #buildCastButton(container: HTMLElement): void {
     const castBtn = container.createEl('button', { text: 'Cast' });
     castBtn.type = 'submit';
   }
 
-  /** Binds form submission to cast action. */
   #bindFormSubmit(form: HTMLFormElement, cast: () => void): void {
     form.onsubmit = (e) => {
       e.preventDefault();
@@ -194,7 +182,6 @@ export class OptionsPanel {
     };
   }
 
-  /** Binds Mod+Enter keyboard shortcut to cast action. */
   #bindCastKey(cast: () => void): void {
     this.#kb.bind(['Mod'], 'Enter', () => {
       cast();
@@ -202,21 +189,19 @@ export class OptionsPanel {
     });
   }
 
-  /** Creates the reset button that clears form to initial snapshot state. */
   #buildResetButton(container: HTMLElement): HTMLButtonElement {
     const resetBtn = container.createEl('button', { text: 'Reset' });
     resetBtn.type = 'button';
     return resetBtn;
   }
 
-  /** Binds reset button to clear form state to initial snapshot values and session map. */
   #bindReset(
     button: HTMLButtonElement,
     snapshot: OptionsSnapshot,
     formState: OptionsFormState,
     deps: OptionsPanelDeps,
     followUpInput: HTMLTextAreaElement,
-    eonState: EonState,
+    eonState: ExecuteOnNoteState,
   ): void {
     button.addEventListener('click', () => {
       this.#castModelSection.resetToSnapshot(snapshot, formState);
