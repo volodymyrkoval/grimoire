@@ -37,6 +37,18 @@ export class ContextNotesInput {
       if (e.key === 'Backspace' && this.#searchInput!.value === '') {
         e.preventDefault();
       }
+      // Enter selects the first dropdown item (keyboard shortcut for the first suggestion)
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const firstBtn = this.#dropdown?.querySelector<HTMLButtonElement>('button[data-path]');
+        if (firstBtn) {
+          const path = firstBtn.getAttribute('data-path');
+          const basename = firstBtn.textContent ?? '';
+          if (path) {
+            this.#addPill(path, basename);
+          }
+        }
+      }
     });
   }
 
@@ -56,9 +68,18 @@ export class ContextNotesInput {
     for (const file of matches) {
       const btn = this.#dropdown.createEl('button', { text: file.basename });
       btn.type = 'button';
+      // data-path allows search input's Enter handler to find and activate the first button
+      btn.setAttribute('data-path', file.path);
       btn.addEventListener('mousedown', (e: MouseEvent) => {
         e.preventDefault();
         this.#addPill(file.path, file.basename);
+      });
+      // Enter on a focused button selects it (mousedown only handles click, not Enter)
+      btn.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.#addPill(file.path, file.basename);
+        }
       });
     }
   }
