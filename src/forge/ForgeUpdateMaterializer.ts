@@ -24,17 +24,7 @@ export class ForgeUpdateMaterializer {
 
   constructor(ports: ForgeUpdateMaterializerPorts) {
     this.#ports = ports;
-    const adapter = ports.adapter;
-
-    // Guard: ensure we have either adapter or explicit writeFile+mkdir ports
-    if (!ports.writeFile && !ports.mkdir && !adapter) {
-      throw new Error('ForgeUpdateMaterializer: provide either adapter or writeFile+mkdir ports');
-    }
-
-    this.#writeFile = ports.writeFile ?? (async (path, content) => {
-      await adapter!.write(path, content);
-    });
-    this.#mkdir = ports.mkdir ?? ((dir) => adapter!.mkdir(dir));
+    ({ writeFile: this.#writeFile, mkdir: this.#mkdir } = ForgeUpdateMaterializer.#resolvePorts(ports));
   }
 
   /**
@@ -43,12 +33,24 @@ export class ForgeUpdateMaterializer {
   async run(): Promise<void> {
     const forgeUpdatePath = normalizePath(this.#ports.getForgeUpdatePathAbs());
     const settings = this.#ports.getSettings();
-
-    // Extract parent directory from the forge-update path
     const parentDir = forgeUpdatePath.substring(0, forgeUpdatePath.lastIndexOf('/'));
 
     await this.#mkdir(parentDir);
     const content = renderForgeUpdateSystemPrompt(settings);
     await this.#writeFile(forgeUpdatePath, content);
+  }
+
+  static #resolvePorts(ports: ForgeUpdateMaterializerPorts): {
+    writeFile: (path: string, content: string) => Promise<void>;
+    mkdir: (dir: string) => Promise<void>;
+  } {
+    const { adapter } = ports;
+    if (!ports.writeFile && !ports.mkdir && !adapter) {
+      throw new Error('ForgeUpdateMaterializer: provide either adapter or writeFile+mkdir ports');
+    }
+    return {
+      writeFile: ports.writeFile ?? ((path, content) => adapter!.write(path, content)),
+      mkdir: ports.mkdir ?? ((dir) => adapter!.mkdir(dir)),
+    };
   }
 }
