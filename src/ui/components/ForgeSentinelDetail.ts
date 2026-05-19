@@ -37,7 +37,6 @@ export class ForgeSentinelDetail {
     this.#kb = new KeyboardController(scope);
   }
 
-
   render({ contentEl, mode, callbacks, defaults }: ForgeSentinelDetailParams): void {
     this.#mode = mode;
     // In update mode with no directives, the checkbox is absent — default to false
@@ -76,36 +75,14 @@ export class ForgeSentinelDetail {
     this.#kb.unbindAll();
   }
 
-  #applyModelChange(): void {
-    this.#currentEffort = null;
-    this.#effortRow.update(modelId(this.#modelSelect.value), null);
-  }
-
-  #buildForm(contentEl: HTMLElement): HTMLFormElement {
-    return contentEl.createEl('form', { cls: 'forge-sentinel-form' });
-  }
-
-  #resolveInitialEffort(defaults: FormDefaults): Effort | null {
-    const initialModel = SUPPORTED_MODELS.find((m) => m.id === defaults.defaultModel);
-    return defaults.defaultEffort ?? (initialModel?.defaultEffort ?? null);
-  }
-
-  #initEffortRow(form: HTMLElement, defaults: FormDefaults): EffortRow {
-    const effortContainer = form.createDiv();
-    const row = new EffortRow();
-    row.mount(effortContainer, {
-      models: SUPPORTED_MODELS,
-      modelId: defaults.defaultModel,
-      effort: this.#currentEffort,
-      onChange: (effort) => { this.#currentEffort = effort; },
-    });
-    return row;
-  }
-
   #buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
     const back = contentEl.createEl('button', { text: '← back' });
     back.type = 'button';
     back.addEventListener('click', () => onBack());
+  }
+
+  #buildForm(contentEl: HTMLElement): HTMLFormElement {
+    return contentEl.createEl('form', { cls: 'forge-sentinel-form' });
   }
 
   #buildNameField(form: HTMLElement): HTMLInputElement {
@@ -141,18 +118,6 @@ export class ForgeSentinelDetail {
     // update mode with directiveCount === 0: no checkbox
   }
 
-  #buildSubmitButton(form: HTMLFormElement): HTMLButtonElement {
-    const buttonRow = form.createDiv({ cls: 'grimoire-button-row' });
-    const submitBtn = buttonRow.createEl('button', { text: 'Submit' });
-    submitBtn.type = 'submit';
-    return submitBtn;
-  }
-
-  #buildModelSectionHeader(form: HTMLElement): void {
-    form.createEl('hr');
-    form.createEl('small', { text: 'Forging model settings' });
-  }
-
   #buildExecuteOnNoteCheckbox(form: HTMLElement): void {
     const label = form.createEl('label');
     const input = label.createEl('input');
@@ -179,6 +144,11 @@ export class ForgeSentinelDetail {
     });
   }
 
+  #buildModelSectionHeader(form: HTMLElement): void {
+    form.createEl('hr');
+    form.createEl('small', { text: 'Forging model settings' });
+  }
+
   #buildModelSelect(form: HTMLElement, defaultModel: ModelId): HTMLSelectElement {
     const label = form.createEl('label');
     return buildModelSelect({
@@ -190,10 +160,33 @@ export class ForgeSentinelDetail {
     });
   }
 
-  #updateSubmitButtonState(description: string, applyCastDirectives: boolean, directiveCount: number): void {
-    if (this.#mode.kind !== 'update') return;
-    const enabled = description.trim().length > 0 || (applyCastDirectives && directiveCount > 0);
-    this.#submitBtn.disabled = !enabled;
+  #applyModelChange(): void {
+    this.#currentEffort = null;
+    this.#effortRow.update(modelId(this.#modelSelect.value), null);
+  }
+
+  #resolveInitialEffort(defaults: FormDefaults): Effort | null {
+    const initialModel = SUPPORTED_MODELS.find((m) => m.id === defaults.defaultModel);
+    return defaults.defaultEffort ?? (initialModel?.defaultEffort ?? null);
+  }
+
+  #initEffortRow(form: HTMLElement, defaults: FormDefaults): EffortRow {
+    const effortContainer = form.createDiv();
+    const row = new EffortRow();
+    row.mount(effortContainer, {
+      models: SUPPORTED_MODELS,
+      modelId: defaults.defaultModel,
+      effort: this.#currentEffort,
+      onChange: (effort) => { this.#currentEffort = effort; },
+    });
+    return row;
+  }
+
+  #buildSubmitButton(form: HTMLFormElement): HTMLButtonElement {
+    const buttonRow = form.createDiv({ cls: 'grimoire-button-row' });
+    const submitBtn = buttonRow.createEl('button', { text: 'Submit' });
+    submitBtn.type = 'submit';
+    return submitBtn;
   }
 
   #wireSubmitHandler(
@@ -204,24 +197,38 @@ export class ForgeSentinelDetail {
     form.onsubmit = (e: Event): void => {
       e.preventDefault();
       if (mode.kind === 'create') {
-        callbacks.onCreateSubmit({
-          name: this.#nameInput.value || '',
-          description: this.#descInput.value || '',
-          model: modelId(this.#modelSelect.value),
-          effort: this.#currentEffort,
-          executeOnNote: this.#executeOnNote,
-        });
+        callbacks.onCreateSubmit(this.#snapshotCreate());
       } else {
-        callbacks.onUpdateSubmit({
-          spellPath: mode.spell.path,
-          spellName: mode.spell.name,
-          description: this.#descInput.value || '',
-          model: modelId(this.#modelSelect.value),
-          effort: this.#currentEffort,
-          applyCastDirectives: this.#applyCastDirectives,
-          directiveCount: mode.directiveCount,
-        });
+        callbacks.onUpdateSubmit(this.#snapshotUpdate(mode));
       }
     };
+  }
+
+  #snapshotCreate(): ForgeFormSnapshot {
+    return {
+      name: this.#nameInput.value || '',
+      description: this.#descInput.value || '',
+      model: modelId(this.#modelSelect.value),
+      effort: this.#currentEffort,
+      executeOnNote: this.#executeOnNote,
+    };
+  }
+
+  #snapshotUpdate(mode: Extract<ForgeMode, { kind: 'update' }>): ForgeUpdateFormSnapshot {
+    return {
+      spellPath: mode.spell.path,
+      spellName: mode.spell.name,
+      description: this.#descInput.value || '',
+      model: modelId(this.#modelSelect.value),
+      effort: this.#currentEffort,
+      applyCastDirectives: this.#applyCastDirectives,
+      directiveCount: mode.directiveCount,
+    };
+  }
+
+  #updateSubmitButtonState(description: string, applyCastDirectives: boolean, directiveCount: number): void {
+    if (this.#mode.kind !== 'update') return;
+    const enabled = description.trim().length > 0 || (applyCastDirectives && directiveCount > 0);
+    this.#submitBtn.disabled = !enabled;
   }
 }
