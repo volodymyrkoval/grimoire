@@ -92,8 +92,8 @@ export class OptionsPanel {
   ): void {
     this.#buildHint(form, 'Context notes');
     this.#buildContextNotes(form, formState, deps.app);
-    const textarea = this.#buildTextarea(form, formState.snapshot().followUp);
-    this.#bindTextarea(textarea, formState);
+    const followUpInput = this.#buildFollowUpInput(form, formState.snapshot().followUp);
+    this.#bindFollowUpInput(followUpInput, formState);
     const eonState: EonState = {
       initialValue: formState.snapshot().executeOnNote,
       visible: deps.showExecuteOnNote !== false,
@@ -114,7 +114,7 @@ export class OptionsPanel {
     this.#bindFormSubmit(form, cast);
     this.#bindCastKey(cast);
     const resetBtn = this.#buildResetButton(buttonRow);
-    this.#bindReset(resetBtn, snapshot, formState, deps, textarea, eonState);
+    this.#bindReset(resetBtn, snapshot, formState, deps, followUpInput, eonState);
     if (deps.refineVariantSelectDeps) {
       this.#refineVariantSelect = new RefineVariantSelect();
       this.#refineVariantSelect.mount(form, deps.refineVariantSelectDeps);
@@ -147,18 +147,16 @@ export class OptionsPanel {
     }
   }
 
-  /** Creates the follow-up instruction textarea with initial value. */
-  #buildTextarea(form: HTMLFormElement, followUp: string): HTMLTextAreaElement {
-    const textarea = form.createEl('textarea');
-    textarea.placeholder = 'Follow-up';
-    textarea.value = followUp;
-    return textarea;
+  #buildFollowUpInput(form: HTMLFormElement, followUp: string): HTMLTextAreaElement {
+    const followUpInput = form.createEl('textarea');
+    followUpInput.placeholder = 'Follow-up';
+    followUpInput.value = followUp;
+    return followUpInput;
   }
 
-  /** Binds textarea input changes to form state updates. */
-  #bindTextarea(textarea: HTMLTextAreaElement, formState: OptionsFormState): void {
-    textarea.addEventListener('input', () => {
-      formState.setFollowUp(textarea.value);
+  #bindFollowUpInput(followUpInput: HTMLTextAreaElement, formState: OptionsFormState): void {
+    followUpInput.addEventListener('input', () => {
+      formState.setFollowUp(followUpInput.value);
     });
   }
 
@@ -217,13 +215,13 @@ export class OptionsPanel {
     snapshot: OptionsSnapshot,
     formState: OptionsFormState,
     deps: OptionsPanelDeps,
-    textarea: HTMLTextAreaElement,
+    followUpInput: HTMLTextAreaElement,
     eonState: EonState,
   ): void {
     button.addEventListener('click', () => {
       this.#castModelSection.resetToSnapshot(snapshot, formState);
       this.#contextNotesInput.clear();
-      textarea.value = '';
+      followUpInput.value = '';
       formState.setFollowUp('');
       formState.setExecuteOnNote(eonState.initialValue);
       if (eonState.visible && eonState.checkbox) {
