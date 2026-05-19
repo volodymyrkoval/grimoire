@@ -7,6 +7,7 @@ import { ForgeSentinelDetail } from '../src/ui/components/ForgeSentinelDetail';
 import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import type { Effort } from '../src/domain/settings/Settings';
 import { modelId, type ModelId } from '../src/domain/settings/ModelId';
+import { buildHotkeyDirectory } from '../src/forge/HotkeyDirectory';
 
 // EffortRow is mocked so its DOM interactions don't bleed into these unit tests
 const { mockEffortMount, mockEffortUpdate } = vi.hoisted(() => ({
@@ -24,6 +25,12 @@ type ScopeMock = Scope & { register: ReturnType<typeof vi.fn>; unregister: Retur
 
 const makeScope = (): ScopeMock =>
   ({ register: vi.fn(), unregister: vi.fn() }) as unknown as ScopeMock;
+
+/** Minimal hotkey group used by all tests that don't exercise hotkey behaviour. */
+const testHotkey = () => ({
+  directory: buildHotkeyDirectory([]),
+  eraser: vi.fn().mockResolvedValue(undefined),
+});
 
 // ---------------------------------------------------------------------------
 // Shared test-fixture builder
@@ -56,6 +63,7 @@ function buildDetail(opts: BuildOpts = {}) {
       defaultModel: opts.defaultModel ?? modelId('claude-sonnet-4-5'),
       defaultEffort: opts.defaultEffort !== undefined ? opts.defaultEffort : null,
     },
+    hotkey: testHotkey(),
   });
 
   const form = container.querySelector<HTMLFormElement>('form')!;
@@ -99,6 +107,7 @@ describe('ForgeSentinelDetail', () => {
       mode: { kind: 'create' },
       callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
       defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null },
+      hotkey: testHotkey(),
     });
 
     expect(focusSpy).toHaveBeenCalled();
@@ -218,7 +227,6 @@ describe('ForgeSentinelDetail', () => {
         model: 'claude-opus-4-5',
         effort: 'low',
         executeOnNote: true,
-        hotkey: null,
       });
     });
 

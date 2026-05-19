@@ -101,6 +101,9 @@ function createHarnessWithSentinelFromStart(sessionMap: OptionsSessionMap, optio
     sessionMap,
     castLogPanelDeps: makeFakeCastLogPanelDeps(),
     settingsActiveRefinePath: options?.settingsActiveRefinePath ?? null,
+    forgeUpdateAction: vi.fn(),
+    spellContentReader: { read: vi.fn(async () => '') },
+    hotkeyEraser: vi.fn().mockResolvedValue(undefined),
   });
 
   modal.open();

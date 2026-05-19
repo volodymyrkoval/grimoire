@@ -73,7 +73,6 @@ const baseSnapshot: ForgeUpdateFormSnapshot = {
   effort: null,
   applyCastDirectives: false,
   directiveCount: 0,
-  hotkey: null,
 };
 
 describe('ForgeUpdateImprinter', () => {
@@ -378,7 +377,6 @@ describe('ForgeUpdateImprinter', () => {
       directiveCount: 3,
       model: snapshot.model,
       effort: snapshot.effort,
-      hotkey: snapshot.hotkey,
     });
     expect(stubCaster.getInput().userPrompt).toBe(expectedPrompt);
   });
@@ -409,7 +407,6 @@ describe('ForgeUpdateImprinter', () => {
       directiveCount: 0,
       model: snapshot.model,
       effort: snapshot.effort,
-      hotkey: snapshot.hotkey,
     });
     expect(stubCaster.getInput().userPrompt).toBe(expectedPrompt);
   });

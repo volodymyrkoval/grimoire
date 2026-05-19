@@ -14,6 +14,8 @@ import type { PluginPaths } from '../../infra/PluginPaths';
 import { refineCastSpell } from '../../refine/refineCastSpell';
 import { resolveRefinePath } from '../../refine/resolveRefinePath';
 import { isRefineSentinel } from '../../refine/refineSentinelScanner';
+import { HOTKEY_FRONTMATTER_KEY } from '../../domain/spells/Hotkey';
+import type { HotkeyEraser, HotkeyWriter } from '../components/ForgeSentinelDetail';
 
 export interface CommandPopupBuilderDeps {
   app: App;
@@ -93,6 +95,26 @@ export class CommandPopupBuilder {
     forgeUpdateAction: ForgeUpdateAction,
     getDispatcher: () => CastDispatcher,
   ): CommandPopup {
+    const hotkeyEraser: HotkeyEraser = (spellPath) => {
+      const file = this.#deps.app.vault.getAbstractFileByPath(spellPath);
+      if (!(file instanceof TFile)) {
+        return Promise.reject(new Error('spell file not found'));
+      }
+      return this.#deps.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+        delete fm[HOTKEY_FRONTMATTER_KEY];
+      });
+    };
+
+    const hotkeyWriter: HotkeyWriter = (spellPath, hotkey) => {
+      const file = this.#deps.app.vault.getAbstractFileByPath(spellPath);
+      if (!(file instanceof TFile)) {
+        return Promise.reject(new Error('spell file not found'));
+      }
+      return this.#deps.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+        fm[HOTKEY_FRONTMATTER_KEY] = hotkey;
+      });
+    };
+
     const popup = new CommandPopup({
       app: this.#deps.app,
       spellTag: this.#deps.plugin.data.settings.spellTag,
@@ -123,6 +145,8 @@ export class CommandPopupBuilder {
       sessionMap: this.#deps.sessionMap,
       castLogPanelDeps: this.#deps.castLogPanelDeps,
       settingsActiveRefinePath: this.#deps.plugin.data.settings.activeRefinePath,
+      hotkeyEraser,
+      hotkeyWriter,
     });
     return popup;
   }

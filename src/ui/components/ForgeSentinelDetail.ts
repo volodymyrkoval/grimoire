@@ -4,11 +4,20 @@ import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import { ForgeUpdateFormSnapshot } from '../../forge/ForgeUpdateFormSnapshot';
 import { SUPPORTED_MODELS, Effort } from '../../domain/settings/Settings';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
+import type { SpellPath } from '../../domain/spells/SpellPath';
 import { EffortRow } from '../widgets/EffortRow';
 import { buildModelSelect } from '../widgets/ModelSelect';
 import { modelId, type ModelId } from '../../domain/settings/ModelId';
 import type { ForgeMode } from '../../forge/ForgeMode';
-import { parseHotkey } from '../../domain/spells/Hotkey';
+import type { Hotkey } from '../../domain/spells/Hotkey';
+import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
+import { HotkeyCaptureField } from './HotkeyCaptureField';
+
+/** Callback to erase a hotkey binding for a spell. */
+export type HotkeyEraser = (spellPath: SpellPath) => Promise<void>;
+
+/** Callback to write a hotkey binding to a spell's frontmatter. */
+export type HotkeyWriter = (spellPath: SpellPath, hotkey: Hotkey) => Promise<void>;
 
 export interface ForgeSentinelDetailParams {
   contentEl: HTMLElement;
@@ -19,6 +28,12 @@ export interface ForgeSentinelDetailParams {
     onUpdateSubmit: (snapshot: ForgeUpdateFormSnapshot) => void;
   };
   defaults: FormDefaults;
+  hotkey: {
+    directory: HotkeyDirectory;
+    eraser: HotkeyEraser;
+    /** Only used in update mode — auto-saves a new hotkey to frontmatter on commit. */
+    writer?: HotkeyWriter;
+  };
 }
 
 /** Detail panel for the Forge sentinel: name/description/model form with its own keyboard bindings. */
@@ -30,7 +45,7 @@ export class ForgeSentinelDetail {
   #currentEffort!: Effort | null;
   #executeOnNote: boolean = true;
   #applyCastDirectives: boolean = true;
-  #hotkey: string = '';
+  #hotkeyCaptureField!: HotkeyCaptureField;
   #submitBtn!: HTMLButtonElement;
   #mode!: ForgeMode;
   #kb: KeyboardController;
@@ -39,11 +54,17 @@ export class ForgeSentinelDetail {
     this.#kb = new KeyboardController(scope);
   }
 
-  render({ contentEl, mode, callbacks, defaults }: ForgeSentinelDetailParams): void {
+  render({ contentEl, mode, callbacks, defaults, hotkey }: ForgeSentinelDetailParams): void {
     this.#mode = mode;
     // In update mode with no directives, the checkbox is absent — default to false
     this.#applyCastDirectives = mode.kind === 'update' ? mode.directiveCount > 0 : true;
     this.#buildBackButton(contentEl, callbacks.onBack);
+
+    // Hotkey field: update mode only, above the form, auto-saves on commit
+    if (mode.kind === 'update') {
+      this.#buildHotkeyCaptureField(contentEl, mode, hotkey);
+    }
+
     const form = this.#buildForm(contentEl);
 
     if (mode.kind === 'create') {
@@ -53,7 +74,6 @@ export class ForgeSentinelDetail {
     }
 
     this.#descInput = this.#buildDescriptionField(form, mode.kind === 'update' ? 'What should change about this spell?' : 'Description');
-    this.#buildHotkeyField(form, mode);
     this.#buildCheckbox(form, mode);
     this.#buildModelSectionHeader(form);
     this.#modelSelect = this.#buildModelSelect(form, defaults.defaultModel);
@@ -70,11 +90,13 @@ export class ForgeSentinelDetail {
   }
 
   /**
-   * Release component-owned key bindings on the shared scope.
+   * Release component-owned key bindings on the shared scope and tear down the
+   * hotkey capture field's DOM keydown listener.
    * Must be called before the parent re-binds its own keys; otherwise stale
    * ArrowDown/ArrowUp handlers will intercept popup navigation.
    */
   destroy(): void {
+    this.#hotkeyCaptureField?.destroy();
     this.#kb.unbindAll();
   }
 
@@ -112,20 +134,26 @@ export class ForgeSentinelDetail {
     return textarea;
   }
 
-  #buildHotkeyField(form: HTMLElement, mode: ForgeMode): void {
-    if (mode.kind === 'update') {
-      this.#hotkey = mode.spell.hotkey ?? '';
-    }
-    const label = form.createEl('label');
-    const input = label.createEl('input');
-    input.type = 'text';
-    input.maxLength = 2;
-    input.placeholder = 'Hotkey (1-2 letters, optional)';
-    input.value = this.#hotkey;
-    input.addEventListener('input', () => {
-      const filtered = input.value.toLowerCase().replace(/[^a-z]/g, '').slice(0, 2);
-      if (filtered !== input.value) input.value = filtered;
-      this.#hotkey = filtered;
+  #buildHotkeyCaptureField(
+    container: HTMLElement,
+    mode: Extract<ForgeMode, { kind: 'update' }>,
+    hotkey: ForgeSentinelDetailParams['hotkey'],
+  ): void {
+    const initialPersisted = mode.spell.hotkey ?? null;
+    const fieldContainer = container.createDiv();
+    this.#hotkeyCaptureField = new HotkeyCaptureField();
+    this.#hotkeyCaptureField.render({
+      container: fieldContainer,
+      initialPersisted,
+      selfPath: mode.spell.path,
+      directory: hotkey.directory,
+      eraser: hotkey.eraser,
+      onChange: (h) => {
+        if (h !== null && hotkey.writer) {
+          void hotkey.writer(mode.spell.path, h);
+        }
+        // h === null: HotkeyCaptureField already called eraser; nothing extra to do
+      },
     });
   }
 
@@ -231,7 +259,6 @@ export class ForgeSentinelDetail {
       model: modelId(this.#modelSelect.value),
       effort: this.#currentEffort,
       executeOnNote: this.#executeOnNote,
-      hotkey: parseHotkey(this.#hotkey),
     };
   }
 
@@ -244,7 +271,6 @@ export class ForgeSentinelDetail {
       effort: this.#currentEffort,
       applyCastDirectives: this.#applyCastDirectives,
       directiveCount: mode.directiveCount,
-      hotkey: parseHotkey(this.#hotkey),
     };
   }
 

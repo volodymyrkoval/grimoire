@@ -1,5 +1,3 @@
-import { HOTKEY_FRONTMATTER_KEY } from '../domain/spells/Hotkey';
-
 export interface ForgeSystemPromptInput {
   readonly spellTag: string;
   readonly forgeOutputFolder: string;
@@ -45,7 +43,7 @@ Then execute in order:
    - A \`---\` separator
    - Closing \`%%\` block containing only \`Begin execution now.\`
 
-3. Set the file's YAML frontmatter \`tags\` field to \`[${spellTag}]\` and configure the execution metadata based on the user prompt. If a hotkey is provided in the user prompt, also set \`${HOTKEY_FRONTMATTER_KEY}: <hotkey>\` in the frontmatter.
+3. Set the file's YAML frontmatter \`tags\` field to \`[${spellTag}]\` and configure the execution metadata based on the user prompt.
 
 4. Determine the output path: \`${forgeOutputFolder}\` followed by the spell name and \`.md\`. Create the folder if it does not exist.
 

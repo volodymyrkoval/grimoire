@@ -74,6 +74,7 @@ function makePopup(castAction?: CastAction) {
   return new CommandPopup({
     app: makeApp(),
     spellTag: 'spell',
+    rankSpells: () => ({ spells: [], sentinels: [] }),
     imprintAction: vi.fn(),
     castAction: castAction ?? vi.fn(),
     refineCastAction: vi.fn(),
@@ -83,6 +84,7 @@ function makePopup(castAction?: CastAction) {
     castLogPanelDeps: makeFakeCastLogPanelDeps(),
     forgeUpdateAction: vi.fn(),
     spellContentReader: { read: vi.fn(async () => '') },
+    hotkeyEraser: vi.fn().mockResolvedValue(undefined),
   });
 }
 

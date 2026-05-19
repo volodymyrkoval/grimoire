@@ -96,7 +96,6 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
       directiveCount: snapshot.directiveCount,
       model: snapshot.model,
       effort: snapshot.effort,
-      hotkey: snapshot.hotkey,
     });
 
     this.#caster().cast(

@@ -70,12 +70,26 @@ function makeDataAdapterMock() {
 }
 
 /**
+ * Mock of Obsidian's FileManager class.
+ * Provides processFrontMatter for mutating file metadata in place.
+ */
+export class FileManager {
+  processFrontMatter = vi.fn(async (file: TFile & { frontmatter?: Record<string, unknown> }, fn: (fm: Record<string, unknown>) => void) => {
+    fn((file as any).frontmatter ??= {});
+  });
+}
+
+/**
  * Mock of Obsidian's App class.
  * Provides vault (file management), metadataCache, and workspace instances.
  * Includes __fireModify() helper for triggering file change events in tests.
+ * Includes fileManager for frontmatter mutations and __registerFile() for test setup.
  */
 export class App {
   private vaultModifySubscribers = new Map<EventRef, (file: { path: string }) => void>();
+  private __filesByPath = new Map<string, TFile>();
+
+  fileManager = new FileManager();
 
   vault = {
     getMarkdownFiles: vi.fn<() => any[]>(() => []),
@@ -91,6 +105,7 @@ export class App {
     offref: vi.fn((ref: EventRef): void => {
       this.vaultModifySubscribers.delete(ref);
     }),
+    getAbstractFileByPath: (p: string) => this.__filesByPath.get(p) ?? null,
     __fireModify: (path: string): void => {
       for (const cb of this.vaultModifySubscribers.values()) {
         cb({ path });
@@ -101,6 +116,15 @@ export class App {
     getFileCache: vi.fn<(file: any) => any>(() => null),
   };
   workspace = new Workspace();
+
+  /**
+   * Register a TFile in the vault so it can be retrieved via getAbstractFileByPath().
+   * Initialises frontmatter to {} if absent.
+   */
+  __registerFile(file: TFile & { frontmatter?: Record<string, unknown> }): void {
+    if (!(file as any).frontmatter) (file as any).frontmatter = {};
+    this.__filesByPath.set(file.path, file);
+  }
 }
 
 /**

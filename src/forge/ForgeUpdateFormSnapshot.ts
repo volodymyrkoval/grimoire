@@ -1,7 +1,6 @@
 import type { Effort } from '../domain/settings/Settings';
 import type { ModelId } from '../domain/settings/ModelId';
 import type { SpellPath } from '../domain/spells/SpellPath';
-import type { Hotkey } from '../domain/spells/Hotkey';
 
 export interface ForgeUpdateFormSnapshot {
   readonly spellPath: SpellPath;
@@ -11,5 +10,4 @@ export interface ForgeUpdateFormSnapshot {
   readonly effort: Effort | null;
   readonly applyCastDirectives: boolean;
   readonly directiveCount: number;
-  readonly hotkey: Hotkey | null;
 }

@@ -4,6 +4,7 @@ import { Scope } from 'obsidian';
 import { ForgeSentinelDetail } from '../../src/ui/components/ForgeSentinelDetail';
 import { EffortRow } from '../../src/ui/widgets/EffortRow';
 import type { ForgeFormSnapshot } from '../../src/forge/ForgeFormSnapshot';
+import { buildHotkeyDirectory } from '../../src/forge/HotkeyDirectory';
 
 function mountDetail(callbacks: {
   onBack?: () => void;
@@ -22,6 +23,10 @@ function mountDetail(callbacks: {
       onUpdateSubmit: vi.fn(),
     },
     defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+    hotkey: {
+      directory: buildHotkeyDirectory([]),
+      eraser: vi.fn().mockResolvedValue(undefined),
+    },
   });
   return { contentEl, detail, scope };
 }
@@ -102,6 +107,10 @@ describe('ForgeSentinelDetail component', () => {
       mode: { kind: 'create' },
       callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
       defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
+      hotkey: {
+        directory: buildHotkeyDirectory([]),
+        eraser: vi.fn().mockResolvedValue(undefined),
+      },
     });
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
@@ -187,6 +196,10 @@ describe('ForgeSentinelDetail component', () => {
       mode: { kind: 'create' },
       callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
       defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
+      hotkey: {
+        directory: buildHotkeyDirectory([]),
+        eraser: vi.fn().mockResolvedValue(undefined),
+      },
     });
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;

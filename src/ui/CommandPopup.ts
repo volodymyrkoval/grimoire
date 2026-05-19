@@ -25,6 +25,8 @@ import { HotkeyBuffer } from "./popup/hotkey/HotkeyBuffer";
 import { HotkeyCapture } from "./popup/hotkey/HotkeyCapture";
 import type { BufferState } from "./popup/hotkey/HotkeyBuffer";
 import { HotkeyHintSlot } from "./components/HotkeyHintSlot";
+import { buildHotkeyDirectory } from "../forge/HotkeyDirectory";
+import type { HotkeyEraser, HotkeyWriter } from "./components/ForgeSentinelDetail";
 export type { ImprintAction, CastAction, RefineCastAction, ForgeUpdateAction } from "./popup/DetailPanelRouter";
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
@@ -43,6 +45,8 @@ export type { FormDefaults } from "../domain/settings/FormDefaults";
  * - `settingsActiveRefinePath`: Vault-relative path of the settings-level active Refine spell;
  *   used to pre-select the variant dropdown when no per-session override exists. Optional — omitting
  *   it is equivalent to passing `null` (no custom active Refine).
+ * - `hotkeyEraser`: Callback to delete a hotkey binding from a spell's frontmatter.
+ * - `hotkeyWriter`: Callback to write a hotkey binding to a spell's frontmatter.
  */
 export interface CommandPopupParams {
   app: App;
@@ -61,6 +65,10 @@ export interface CommandPopupParams {
   forgeUpdateAction: ForgeUpdateAction;
   /** Reads the raw content of a spell file for directive counting during Forge update. */
   spellContentReader: SpellContentReader;
+  /** Callback to erase a hotkey binding from a spell's frontmatter. */
+  hotkeyEraser: HotkeyEraser;
+  /** Callback to write a hotkey binding to a spell's frontmatter (update mode only). */
+  hotkeyWriter: HotkeyWriter;
 }
 
 /**
@@ -94,9 +102,12 @@ export class CommandPopup extends Modal {
   readonly #forgeUpdateAction: ForgeUpdateAction;
   readonly #spellContentReader: SpellContentReader;
   readonly #spellTag: string;
+  readonly #hotkeyEraser: HotkeyEraser;
+  readonly #hotkeyWriter: HotkeyWriter;
   #hotkeyBuffer: HotkeyBuffer = new HotkeyBuffer();
   #hotkeyCapture: HotkeyCapture | null = null;
   #hintSlot: HotkeyHintSlot | null = null;
+  #hotkeyChangedInDetailPanel = false;
   /**
    * Persistent container element for HotkeyHintSlot, created once in onOpen()
    * and re-appended into each new tab bar's right-slot div on every #render().
@@ -130,6 +141,8 @@ export class CommandPopup extends Modal {
     this.#forgeUpdateAction = params.forgeUpdateAction;
     this.#spellContentReader = params.spellContentReader;
     this.#spellTag = params.spellTag;
+    this.#hotkeyEraser = params.hotkeyEraser;
+    this.#hotkeyWriter = params.hotkeyWriter;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
       openLink: (path) => this.openLink(path),
@@ -161,6 +174,12 @@ export class CommandPopup extends Modal {
   }
 
   #buildRouter(params: CommandPopupParams): DetailPanelRouter {
+    const markChanged = <T extends unknown[]>(fn: (...args: T) => Promise<void>) =>
+      async (...args: T): Promise<void> => {
+        await fn(...args);
+        this.#hotkeyChangedInDetailPanel = true;
+      };
+
     return new DetailPanelRouter({
       formDefaults: this.#formDefaults,
       overrides: this.#overrides,
@@ -177,6 +196,9 @@ export class CommandPopup extends Modal {
       reattachTabBar: () => this.#reattachTabBar(),
       forgeUpdateAction: this.#forgeUpdateAction,
       spellContentReader: this.#spellContentReader,
+      hotkeyDirectoryFactory: () => buildHotkeyDirectory(this.#spellsPanel.spells()),
+      hotkeyEraser: markChanged(this.#hotkeyEraser),
+      hotkeyWriter: markChanged(this.#hotkeyWriter),
     });
   }
 
@@ -389,6 +411,11 @@ export class CommandPopup extends Modal {
   // DetailPhase.interceptClose (Escape path).
   #exitDetail(): void {
     this.#leaveDetailState();
+    if (this.#hotkeyChangedInDetailPanel) {
+      this.#hotkeyChangedInDetailPanel = false;
+      const spells = this.#spellsPanel.refreshSpells(this.app, this.#spellTag);
+      this.#buildHotkeyCapture(spells);
+    }
     this.#renderSearch();
     // Restore hint slot only when returning to the Spells tab.
     if (this.#activePanel === this.#panels[0]) {

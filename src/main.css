@@ -545,3 +545,46 @@ body.is-mobile .spells-row.has-hotkey .spells-row-hint {
     cursor: pointer;
     color: var(--text-muted);
 }
+
+/* ─── Hotkey capture field ────────────────────────────────────────────── */
+
+.grimoire-hotkey-chip {
+    font-family: monospace;
+    color: var(--interactive-accent);
+    background-color: var(--background-modifier-border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-right: 4px;
+    font-size: 0.9em;
+    display: inline-block;
+}
+
+.grimoire-hotkey-chip.is-error {
+    color: var(--text-error);
+    background-color: var(--background-modifier-error);
+}
+
+.grimoire-hotkey-button {
+    margin-right: 4px;
+}
+
+.grimoire-hotkey-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0 4px;
+    font-size: 1.1em;
+    margin-right: 4px;
+}
+
+.grimoire-hotkey-clear:hover {
+    color: var(--text-normal);
+}
+
+.grimoire-hotkey-error {
+    display: block;
+    color: var(--text-error);
+    font-size: 0.85em;
+    margin-top: 2px;
+}

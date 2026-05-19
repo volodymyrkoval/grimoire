@@ -44,7 +44,7 @@ function createHarnessWithAction(
     data: { settings: {} as any, spellOverrides: {} },
     saver: { schedule: vi.fn() } as any,
   });
-  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction: vi.fn(), defaults, overrides: stubOverrides, sessionMap: new OptionsSessionMap() });
+  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction: vi.fn(), defaults, overrides: stubOverrides, sessionMap: new OptionsSessionMap(), rankSpells: () => ({ spells: [], sentinels: [] }), refineCastAction: vi.fn(), forgeUpdateAction: vi.fn(), spellContentReader: { read: vi.fn(async () => '') }, hotkeyEraser: vi.fn().mockResolvedValue(undefined), hotkeyWriter: vi.fn().mockResolvedValue(undefined) });
   modal.open();
   const { contentEl } = modal;
 
@@ -157,7 +157,6 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
       model: modelId('claude-sonnet-4-5'),
       effort: 'high',
       executeOnNote: true,
-      hotkey: null,
     });
   });
 

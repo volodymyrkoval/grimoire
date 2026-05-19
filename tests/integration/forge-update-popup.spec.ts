@@ -107,6 +107,7 @@ function createForgeUpdateHarness(opts: HarnessOptions = {}) {
     castLogPanelDeps: makeFakeCastLogPanelDeps(),
     forgeUpdateAction,
     spellContentReader,
+    hotkeyEraser: vi.fn().mockResolvedValue(undefined),
   });
   modal.open();
 

@@ -7,6 +7,7 @@ import type { ForgeUpdateFormSnapshot } from '../../src/forge/ForgeUpdateFormSna
 import type { ForgeMode } from '../../src/forge/ForgeMode';
 import type { Spell } from '../../src/domain/spells/Spell';
 import { spellPath } from '../../src/domain/spells/SpellPath';
+import { buildHotkeyDirectory } from '../../src/forge/HotkeyDirectory';
 
 // ─── Shared test fixtures ────────────────────────────────────────────────────
 
@@ -47,6 +48,10 @@ function mountCreateMode(callbacks: CreateCallbacks = {}): {
       onUpdateSubmit: callbacks.onUpdateSubmit ?? vi.fn(),
     },
     defaults: DEFAULT_DEFAULTS,
+    hotkey: {
+      directory: buildHotkeyDirectory([]),
+      eraser: vi.fn().mockResolvedValue(undefined),
+    },
   });
   return { contentEl, detail };
 }
@@ -73,6 +78,10 @@ function mountUpdateMode(
       onUpdateSubmit: callbacks.onUpdateSubmit ?? vi.fn(),
     },
     defaults: DEFAULT_DEFAULTS,
+    hotkey: {
+      directory: buildHotkeyDirectory([]),
+      eraser: vi.fn().mockResolvedValue(undefined),
+    },
   });
   return { contentEl, detail };
 }

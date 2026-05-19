@@ -8,10 +8,11 @@ import type { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import type { ForgeUpdateFormSnapshot } from '../../forge/ForgeUpdateFormSnapshot';
 import type { SpellContentReader } from '../../forge/SpellContentReader';
 import type { OptionsFormSnapshot } from '../options/OptionsFormState';
-import { ForgeSentinelDetail } from '../components/ForgeSentinelDetail';
+import { ForgeSentinelDetail, type HotkeyEraser, type HotkeyWriter } from '../components/ForgeSentinelDetail';
 import { OptionsDetail } from '../components/OptionsDetail';
 import { countCastDirectives } from '../../forge/castDirectiveExtractor';
 import type { ForgeMode } from '../../forge/ForgeMode';
+import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
 
 /** Callback for submitting a Forge sentinel form. */
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
@@ -50,6 +51,12 @@ export interface DetailPanelRouterDeps {
   forgeUpdateAction: ForgeUpdateAction;
   /** Reads the raw content of a spell file for directive counting. */
   spellContentReader: SpellContentReader;
+  /** Factory function that creates a HotkeyDirectory from the current spell list. */
+  hotkeyDirectoryFactory: () => HotkeyDirectory;
+  /** Callback to erase a hotkey binding for a spell. */
+  hotkeyEraser: HotkeyEraser;
+  /** Callback to write a hotkey binding to a spell's frontmatter (update mode only). */
+  hotkeyWriter: HotkeyWriter;
 }
 
 /**
@@ -71,6 +78,7 @@ export class DetailPanelRouter {
   renderForge(contentEl: HTMLElement, scope: Scope): void {
     this.#deps.reattachTabBar();
     const exit = (): void => this.#deps.onExit();
+    const directory = this.#deps.hotkeyDirectoryFactory();
     const detail = new ForgeSentinelDetail(scope);
     detail.render({
       contentEl,
@@ -84,6 +92,7 @@ export class DetailPanelRouter {
         onUpdateSubmit: () => { /* update path not wired in create-only router */ },
       },
       defaults: this.#deps.formDefaults,
+      hotkey: { directory, eraser: this.#deps.hotkeyEraser },
     });
     this.#deps.onEnterDetail(detail, exit);
   }
@@ -133,6 +142,7 @@ export class DetailPanelRouter {
 
     const directiveCount = countCastDirectives(content);
     const mode: ForgeMode = { kind: 'update', spell, directiveCount };
+    const directory = this.#deps.hotkeyDirectoryFactory();
 
     const detail = new ForgeSentinelDetail(scope);
     detail.render({
@@ -147,6 +157,7 @@ export class DetailPanelRouter {
         },
       },
       defaults: this.#deps.formDefaults,
+      hotkey: { directory, eraser: this.#deps.hotkeyEraser, writer: this.#deps.hotkeyWriter },
     });
     this.#deps.onEnterDetail(detail, exit);
   }

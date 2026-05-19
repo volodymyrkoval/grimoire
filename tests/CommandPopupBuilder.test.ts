@@ -1,6 +1,6 @@
 import { modelId } from '../src/domain/settings/ModelId';
 import { vi, describe, it, expect } from 'vitest';
-import { App } from 'obsidian';
+import { App, TFile } from 'obsidian';
 
 // Mock CommandPopup and CastDispatcher before importing CommandPopupBuilder
 const commandPopupMock = {
@@ -111,5 +111,130 @@ describe('CommandPopupBuilder', () => {
     vi.clearAllMocks();
     capturedCloseCallback!();
     expect(popup.close).toHaveBeenCalledOnce();
+  });
+
+  it('hotkeyEraser passed to CommandPopup deletes grimoire-hotkey frontmatter via processFrontMatter', async () => {
+    const { CommandPopupBuilder } = await import('../src/ui/popup/CommandPopupBuilder');
+    const { CommandPopup } = await import('../src/ui/CommandPopup');
+    const { OptionsSessionMap } = await import('../src/ui/options/OptionsSessionMap');
+    const { SpellOverrideStore } = await import('../src/domain/settings/SpellOverrideStore');
+
+    const app = new App() as any;
+    const spellFile = new TFile('test-spell.md', 'spells/test-spell.md');
+    app.vault.getAbstractFileByPath = vi.fn((path: string) => {
+      if (path === 'spells/test-spell.md') return spellFile;
+      return null;
+    });
+    app.fileManager = {
+      processFrontMatter: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const pluginData = {
+      data: {
+        settings: {
+          spellTag: 'test-tag',
+          defaultModel: modelId('claude-sonnet-4-5'),
+          defaultEffort: 'medium' as const,
+          executionMode: 'local' as const,
+        },
+      },
+      overrides: new SpellOverrideStore({
+        data: { settings: { spellTag: 'test-tag' } } as any,
+        saver: { schedule: vi.fn() } as any,
+      }),
+    };
+
+    const builder = new CommandPopupBuilder({
+      app,
+      plugin: pluginData as any,
+      imprinter: { imprint: vi.fn() } as any,
+      updateImprinter: { imprint: vi.fn() } as any,
+      spellContentReader: { read: vi.fn(async () => '') } as any,
+      sessionMap: new OptionsSessionMap(),
+      castLogPanelDeps: {
+        source: { poll: vi.fn() },
+        refresh: vi.fn(),
+        tick: vi.fn(),
+        now: vi.fn(),
+      },
+      createDispatcher: vi.fn((close: () => void) => castDispatcherMock),
+      paths: { refineSpellPathVaultRel: vi.fn(() => '.obsidian/plugins/grimoire/refine.md') } as any,
+    });
+
+    vi.clearAllMocks();
+    const popup = builder.build();
+
+    // Extract the hotkeyEraser from the params passed to CommandPopup
+    const params = (CommandPopup as any).mock.calls[0][0];
+    const hotkeyEraser = params.hotkeyEraser;
+
+    expect(hotkeyEraser).toBeDefined();
+    expect(typeof hotkeyEraser).toBe('function');
+
+    // Call the eraser and verify it calls processFrontMatter with the correct callback
+    await hotkeyEraser('spells/test-spell.md');
+
+    expect(app.vault.getAbstractFileByPath).toHaveBeenCalledWith('spells/test-spell.md');
+    expect(app.fileManager.processFrontMatter).toHaveBeenCalledOnce();
+
+    // Verify the callback was passed and would delete the hotkey key
+    const callback = app.fileManager.processFrontMatter.mock.calls[0][1];
+    const mockFrontmatter: Record<string, unknown> = { 'grimoire-hotkey': 'a', other: 'value' };
+    callback(mockFrontmatter);
+
+    expect(mockFrontmatter).toEqual({ other: 'value' });
+    expect(mockFrontmatter['grimoire-hotkey']).toBeUndefined();
+  });
+
+  it('hotkeyEraser rejects when spell file not found', async () => {
+    const { CommandPopupBuilder } = await import('../src/ui/popup/CommandPopupBuilder');
+    const { CommandPopup } = await import('../src/ui/CommandPopup');
+    const { OptionsSessionMap } = await import('../src/ui/options/OptionsSessionMap');
+    const { SpellOverrideStore } = await import('../src/domain/settings/SpellOverrideStore');
+
+    const app = new App() as any;
+    app.vault.getAbstractFileByPath = vi.fn(() => null); // File not found
+    app.fileManager = { processFrontMatter: vi.fn().mockResolvedValue(undefined) };
+
+    const pluginData = {
+      data: {
+        settings: {
+          spellTag: 'test-tag',
+          defaultModel: modelId('claude-sonnet-4-5'),
+          defaultEffort: 'medium' as const,
+          executionMode: 'local' as const,
+        },
+      },
+      overrides: new SpellOverrideStore({
+        data: { settings: { spellTag: 'test-tag' } } as any,
+        saver: { schedule: vi.fn() } as any,
+      }),
+    };
+
+    const builder = new CommandPopupBuilder({
+      app,
+      plugin: pluginData as any,
+      imprinter: { imprint: vi.fn() } as any,
+      updateImprinter: { imprint: vi.fn() } as any,
+      spellContentReader: { read: vi.fn(async () => '') } as any,
+      sessionMap: new OptionsSessionMap(),
+      castLogPanelDeps: {
+        source: { poll: vi.fn() },
+        refresh: vi.fn(),
+        tick: vi.fn(),
+        now: vi.fn(),
+      },
+      createDispatcher: vi.fn((close: () => void) => castDispatcherMock),
+      paths: { refineSpellPathVaultRel: vi.fn(() => '.obsidian/plugins/grimoire/refine.md') } as any,
+    });
+
+    vi.clearAllMocks();
+    const popup = builder.build();
+
+    const params = (CommandPopup as any).mock.calls[0][0];
+    const hotkeyEraser = params.hotkeyEraser;
+
+    await expect(hotkeyEraser('nonexistent/spell.md')).rejects.toThrow('spell file not found');
+    expect(app.fileManager.processFrontMatter).not.toHaveBeenCalled();
   });
 });
