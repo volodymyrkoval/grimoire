@@ -10,6 +10,12 @@ import { CastModelSection } from './CastModelSection';
 import { RefineVariantSelect } from './RefineVariantSelect';
 import type { RefineVariantSelectDeps } from './RefineVariantSelect';
 
+interface EonState {
+  checkbox: HTMLInputElement | null;
+  initialValue: boolean;
+  visible: boolean;
+}
+
 export interface OptionsPanelDeps {
   app: App;
   overrides: SpellOverrideStore;
@@ -88,11 +94,14 @@ export class OptionsPanel {
     this.#buildContextNotes(form, formState, deps.app);
     const textarea = this.#buildTextarea(form, formState.snapshot().followUp);
     this.#bindTextarea(textarea, formState);
-    const initialExecuteOnNote = formState.snapshot().executeOnNote;
-    const showExecuteOnNote = deps.showExecuteOnNote !== false;
-    const eonCheckbox = showExecuteOnNote ? this.#buildExecuteOnNoteCheckbox(form, initialExecuteOnNote) : null;
-    if (eonCheckbox) {
-      this.#bindExecuteOnNote(eonCheckbox, formState);
+    const eonState: EonState = {
+      initialValue: formState.snapshot().executeOnNote,
+      visible: deps.showExecuteOnNote !== false,
+      checkbox: null,
+    };
+    eonState.checkbox = eonState.visible ? this.#buildExecuteOnNoteCheckbox(form, eonState.initialValue) : null;
+    if (eonState.checkbox) {
+      this.#bindExecuteOnNote(eonState.checkbox, formState);
     }
     this.#castModelSection.mount(form, formState, snapshot, deps);
     const cast = () => {
@@ -105,7 +114,7 @@ export class OptionsPanel {
     this.#bindFormSubmit(form, cast);
     this.#bindCastKey(cast);
     const resetBtn = this.#buildResetButton(buttonRow);
-    this.#bindReset(resetBtn, snapshot, formState, deps, textarea, eonCheckbox, initialExecuteOnNote, showExecuteOnNote);
+    this.#bindReset(resetBtn, snapshot, formState, deps, textarea, eonState);
     if (deps.refineVariantSelectDeps) {
       this.#refineVariantSelect = new RefineVariantSelect();
       this.#refineVariantSelect.mount(form, deps.refineVariantSelectDeps);
@@ -209,19 +218,16 @@ export class OptionsPanel {
     formState: OptionsFormState,
     deps: OptionsPanelDeps,
     textarea: HTMLTextAreaElement,
-    eonCheckbox: HTMLInputElement | null,
-    initialExecuteOnNote: boolean,
-    showExecuteOnNote: boolean,
+    eonState: EonState,
   ): void {
     button.addEventListener('click', () => {
       this.#castModelSection.resetToSnapshot(snapshot, formState);
       this.#contextNotesInput.clear();
       textarea.value = '';
       formState.setFollowUp('');
-      // executeOnNote was captured at panel construction, same as snapshot for model/effort
-      formState.setExecuteOnNote(initialExecuteOnNote);
-      if (showExecuteOnNote && eonCheckbox) {
-        eonCheckbox.checked = initialExecuteOnNote;
+      formState.setExecuteOnNote(eonState.initialValue);
+      if (eonState.visible && eonState.checkbox) {
+        eonState.checkbox.checked = eonState.initialValue;
       }
       deps.sessionMap.delete(deps.spellPath);
     });
