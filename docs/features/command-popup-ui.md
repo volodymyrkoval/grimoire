@@ -8,15 +8,17 @@ An Obsidian modal (`CommandPopup`) that lets the user search, browse, and activa
 |---|---|
 | Open modal | Spells tab active, cursor in search input, first spell selected |
 | Type in search | List filters live; if query matches no spells but matches a sentinel name, that sentinel is auto-selected |
-| `ArrowDown` / `ArrowUp` | Move selection, wrapping at both ends |
+| `ArrowDown` / `ArrowUp` | Move selection, wrapping at both ends; also clears the hotkey buffer when non-empty (see `spell-hotkeys`) |
 | `Tab` | Cycle Spells → Logs → Spells; clears query and resets index |
 | Click tab | Same as Tab, but direct |
+| `Shift + letter` (Spells tab, search phase) | Feed letter into the hotkey buffer; exact match jumps selection to the target row, clears the search query, and clears the buffer (see `spell-hotkeys`) |
 | `Enter` on spell row | Cast that spell against the active note (see `live-spells-and-casting`) |
 | `ArrowRight` on spell row | Open the options panel for that spell (see `options-panel`) |
 | Click on spell row | Same as Enter |
-| `Enter` on Forge sentinel | Open Forge form (name/desc/executeOnNote/model/effort, focused on name) |
+| `Enter` on Forge sentinel | Open Forge form (name/desc/hotkey/executeOnNote/model/effort, focused on name) |
 | `Enter` on Refine sentinel | Dispatch a Refine cast against the active note; Notice if no active note open |
 | `ArrowRight` on Refine sentinel | Open the options panel (same as authored spell); Cast/Mod+Enter inside dispatches a Refine cast and fully closes the modal |
+| `Escape` (search phase, hotkey buffer non-empty) | Clear the buffer; modal stays open (see `spell-hotkeys`) |
 | `Escape` or `close()` in detail | Run `exitDetail()` — destroy active detail, resume keys, return to search |
 | Back button click | Same as Escape in detail |
 | Submit Forge form | Invoke `imprintAction(snapshot)` then `exitDetail()` |

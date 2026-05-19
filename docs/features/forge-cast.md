@@ -4,7 +4,7 @@
 
 ## What it does
 
-Selecting the **Forge** sentinel from the Command Popup opens a form (name, description, model, effort, "execute on active note" checkbox). On submit, the plugin sanitises the spell name, builds a meta-prompt that instructs Claude Code to write a new spell file, dismisses the popup, and spawns the CLI. Toasts surface progress: `Forging "<name>"…` immediately, then `Spell "<name>" forged` on success or `Forge failed: <stderrTail | exit N>` on failure. An empty-after-sanitise name short-circuits with `Spell name is invalid after sanitisation` and no spawn.
+Selecting the **Forge** sentinel from the Command Popup opens a form (name, description, optional hotkey, model, effort, "execute on active note" checkbox). On submit, the plugin sanitises the spell name, builds a meta-prompt that instructs Claude Code to write a new spell file, dismisses the popup, and spawns the CLI. The optional hotkey is threaded into the meta-spell user prompt and the new file's `grimoire-hotkey` frontmatter key (see `spell-hotkeys`). Toasts surface progress: `Forging "<name>"…` immediately, then `Spell "<name>" forged` on success or `Forge failed: <stderrTail | exit N>` on failure. An empty-after-sanitise name short-circuits with `Spell name is invalid after sanitisation` and no spawn.
 
 **Forge update mode** (plan 030): Clicking the **Forge** button in a spell's options panel opens the ForgeSentinelDetail in `update` mode, allowing edits to an existing spell. The update flow mirrors create but writes to `<pluginDir>/forge-update.md` and records the cast with `spellPath: '<forge:update>'` for cast-log tracking.
 
@@ -19,7 +19,7 @@ The forged spell file lands at `<forgeOutputFolder><name>.md` with frontmatter c
 | `buildForgeUserPrompt` | `src/forge/buildForgeUserPrompt.ts` | Build the small per-cast user prompt (description, name, model, effort, executeOnNote) |
 | `ForgeMaterializer` | `src/forge/ForgeMaterializer.ts` | Write the rendered system prompt to `<pluginDir>/forge.md` on plugin load and settings save |
 | `sanitiseSpellName` | `src/forge/sanitiseSpellName.ts` | Strip illegal filename chars (`<>:"/\|?*` + control chars), collapse dashes, trim |
-| `ForgeSentinelDetail` | `src/ui/components/ForgeSentinelDetail.ts` | Render the form (name, description, executeOnNote checkbox, model, effort), emit `ForgeFormSnapshot` |
+| `ForgeSentinelDetail` | `src/ui/components/ForgeSentinelDetail.ts` | Render the form (name, description, optional hotkey, executeOnNote checkbox, model, effort), emit `ForgeFormSnapshot` |
 | `Caster` (interface) + `LocalCaster` / `RemoteCaster` | `src/execution/`, `src/cast/local/`, `src/cast/portal/` | Mode-specific execution; see `cast-unification` |
 | `CastRunner` + `CastSpawner` | `src/cast/local/` | Compose CLI binary + args, spawn subprocess (used internally by `LocalCaster`) |
 | `ImprintAction` (callback) | `src/ui/CommandPopup.ts` | `(snapshot: ForgeFormSnapshot) => void` — popup-side seam, wired in `main.ts` |
@@ -30,7 +30,7 @@ The forged spell file lands at `<forgeOutputFolder><name>.md` with frontmatter c
 Forge sentinel selected → CommandPopup.renderForgeSentinelDetail()
   → kb.suspend() + new ForgeSentinelDetail({ ..., callbacks.onSubmit })
   → user fills form, clicks Submit
-  → onSubmit(ForgeFormSnapshot { name, description, model, effort, executeOnNote })
+  → onSubmit(ForgeFormSnapshot { name, description, hotkey, model, effort, executeOnNote })
   → imprintAction(snapshot)  // closure built in main.ts
       → ForgeImprinter.imprint(snapshot, settings, close)
           ├── sanitiseSpellName → "" ? notify "invalid" + close + return
