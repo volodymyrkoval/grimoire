@@ -89,6 +89,7 @@ export class ContextNotesInput {
 
     if (this.#searchInput) this.#searchInput.value = '';
     this.#rebuildDropdown('');
+    this.#searchInput?.focus();
 
     this.#props!.onChange([...this.#pillPaths]);
   }

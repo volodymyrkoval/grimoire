@@ -135,4 +135,35 @@ describe('ContextNotesInput keyboard selection', () => {
 
     expect(preventDefaultSpy).toHaveBeenCalled();
   });
+
+  // ------------------------------------------------------------------ A6
+  it('focus returns to search input after selecting via button Enter', () => {
+    document.body.appendChild(container);
+
+    const searchInput = container.querySelector<HTMLInputElement>('input.context-notes-search')!;
+    searchInput.value = 'Notes';
+    searchInput.dispatchEvent(new Event('input'));
+
+    const firstBtn = container.querySelector<HTMLButtonElement>('div.context-notes-dropdown button')!;
+    firstBtn.focus();
+    firstBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(document.activeElement).toBe(searchInput);
+    document.body.removeChild(container);
+  });
+
+  // ------------------------------------------------------------------ A7
+  it('focus returns to search input after selecting via search input Enter', () => {
+    document.body.appendChild(container);
+
+    const searchInput = container.querySelector<HTMLInputElement>('input.context-notes-search')!;
+    searchInput.value = 'Notes';
+    searchInput.dispatchEvent(new Event('input'));
+
+    searchInput.focus();
+    searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(document.activeElement).toBe(searchInput);
+    document.body.removeChild(container);
+  });
 });
