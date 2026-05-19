@@ -157,6 +157,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
       model: modelId('claude-sonnet-4-5'),
       effort: 'high',
       executeOnNote: true,
+      hotkey: null,
     });
   });
 

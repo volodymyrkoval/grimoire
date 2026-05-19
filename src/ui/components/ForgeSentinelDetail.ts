@@ -8,6 +8,7 @@ import { EffortRow } from '../widgets/EffortRow';
 import { buildModelSelect } from '../widgets/ModelSelect';
 import { modelId, type ModelId } from '../../domain/settings/ModelId';
 import type { ForgeMode } from '../../forge/ForgeMode';
+import { parseHotkey } from '../../domain/spells/Hotkey';
 
 export interface ForgeSentinelDetailParams {
   contentEl: HTMLElement;
@@ -29,6 +30,7 @@ export class ForgeSentinelDetail {
   #currentEffort!: Effort | null;
   #executeOnNote: boolean = true;
   #applyCastDirectives: boolean = true;
+  #hotkey: string = '';
   #submitBtn!: HTMLButtonElement;
   #mode!: ForgeMode;
   #kb: KeyboardController;
@@ -51,6 +53,7 @@ export class ForgeSentinelDetail {
     }
 
     this.#descInput = this.#buildDescriptionField(form, mode.kind === 'update' ? 'What should change about this spell?' : 'Description');
+    this.#buildHotkeyField(form, mode);
     this.#buildCheckbox(form, mode);
     this.#buildModelSectionHeader(form);
     this.#modelSelect = this.#buildModelSelect(form, defaults.defaultModel);
@@ -107,6 +110,23 @@ export class ForgeSentinelDetail {
     const textarea = label.createEl('textarea');
     textarea.placeholder = placeholder;
     return textarea;
+  }
+
+  #buildHotkeyField(form: HTMLElement, mode: ForgeMode): void {
+    if (mode.kind === 'update') {
+      this.#hotkey = mode.spell.hotkey ?? '';
+    }
+    const label = form.createEl('label');
+    const input = label.createEl('input');
+    input.type = 'text';
+    input.maxLength = 2;
+    input.placeholder = 'Hotkey (1-2 letters, optional)';
+    input.value = this.#hotkey;
+    input.addEventListener('input', () => {
+      const filtered = input.value.toLowerCase().replace(/[^a-z]/g, '').slice(0, 2);
+      if (filtered !== input.value) input.value = filtered;
+      this.#hotkey = filtered;
+    });
   }
 
   #buildCheckbox(form: HTMLElement, mode: ForgeMode): void {
@@ -211,6 +231,7 @@ export class ForgeSentinelDetail {
       model: modelId(this.#modelSelect.value),
       effort: this.#currentEffort,
       executeOnNote: this.#executeOnNote,
+      hotkey: parseHotkey(this.#hotkey),
     };
   }
 
@@ -223,6 +244,7 @@ export class ForgeSentinelDetail {
       effort: this.#currentEffort,
       applyCastDirectives: this.#applyCastDirectives,
       directiveCount: mode.directiveCount,
+      hotkey: parseHotkey(this.#hotkey),
     };
   }
 

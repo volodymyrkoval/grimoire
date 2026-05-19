@@ -208,10 +208,10 @@ describe('D0-b: clicking Forge reads spell content and mounts update-mode dialog
     // read was called with Banishment Hex's path (first spell alphabetically)
     expect(spellContentReader.read).toHaveBeenCalledWith('/spells/banishment.md');
 
-    // Dialog must be mounted in update mode: no <input type="text"> for name
+    // Dialog must be mounted in update mode: no <input placeholder="Name"> for name
     const forgeForm = h.contentEl.querySelector('form.forge-sentinel-form');
     expect(forgeForm).not.toBeNull();
-    const nameInput = forgeForm?.querySelector('input[type="text"]');
+    const nameInput = forgeForm?.querySelector('input[placeholder="Name"]');
     expect(nameInput).toBeNull();
 
     // Description textarea placeholder identifies update mode

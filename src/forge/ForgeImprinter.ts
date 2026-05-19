@@ -64,6 +64,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
       model: snapshot.model,
       effort: snapshot.effort,
       executeOnNote: snapshot.executeOnNote,
+      hotkey: snapshot.hotkey,
     });
 
     logWriter

@@ -85,7 +85,7 @@ describe('forge-update end-to-end', () => {
 
     // Verify update-mode dialog: no name input (static), correct placeholder
     const form = h.contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
-    expect(form.querySelector('input[type="text"]')).toBeNull();
+    expect(form.querySelector('input[placeholder="Name"]')).toBeNull();
     const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
     expect(textarea.placeholder).toBe('What should change about this spell?');
 

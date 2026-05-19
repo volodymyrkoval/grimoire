@@ -1,6 +1,7 @@
-import { App, Modal } from "obsidian";
+import { App, Modal, Notice } from "obsidian";
 import { KeyboardController } from "../infra/KeyboardController";
 import type { RankSpells } from "../domain/spells/RankSpells";
+import type { Spell } from "../domain/spells/Spell";
 import { TabBar } from "./components/TabBar";
 import { SearchInput } from "./components/SearchInput";
 import type { TabPanel } from "./tabs/TabPanel";
@@ -19,6 +20,11 @@ import { DetailPhase } from "./popup/DetailPhase";
 import { DetailPanelRouter } from "./popup/DetailPanelRouter";
 import type { ImprintAction, CastAction, RefineCastAction, ForgeUpdateAction } from "./popup/DetailPanelRouter";
 import type { SpellContentReader } from "../forge/SpellContentReader";
+import { HotkeyRegistry } from "./popup/hotkey/HotkeyRegistry";
+import { HotkeyBuffer } from "./popup/hotkey/HotkeyBuffer";
+import { HotkeyCapture } from "./popup/hotkey/HotkeyCapture";
+import type { BufferState } from "./popup/hotkey/HotkeyBuffer";
+import { HotkeyHintSlot } from "./components/HotkeyHintSlot";
 export type { ImprintAction, CastAction, RefineCastAction, ForgeUpdateAction } from "./popup/DetailPanelRouter";
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
@@ -87,6 +93,18 @@ export class CommandPopup extends Modal {
   readonly #detailRouter: DetailPanelRouter;
   readonly #forgeUpdateAction: ForgeUpdateAction;
   readonly #spellContentReader: SpellContentReader;
+  readonly #spellTag: string;
+  #hotkeyBuffer: HotkeyBuffer = new HotkeyBuffer();
+  #hotkeyCapture: HotkeyCapture | null = null;
+  #hintSlot: HotkeyHintSlot | null = null;
+  /**
+   * Persistent container element for HotkeyHintSlot, created once in onOpen()
+   * and re-appended into each new tab bar's right-slot div on every #render().
+   * Keeping one container alive means the slot instance never needs replacement.
+   */
+  #hintSlotContainer: HTMLElement | null = null;
+  /** Guards the collision Notice so it fires at most once per popup session. */
+  #hasShownCollisionNotice = false;
 
   /**
    * Test seam: exposes #panels for bracket-notation access in tests.
@@ -111,6 +129,7 @@ export class CommandPopup extends Modal {
     this.#sessionMap = params.sessionMap;
     this.#forgeUpdateAction = params.forgeUpdateAction;
     this.#spellContentReader = params.spellContentReader;
+    this.#spellTag = params.spellTag;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
       openLink: (path) => this.openLink(path),
@@ -188,9 +207,44 @@ export class CommandPopup extends Modal {
     this.#searchQuery = "";
     this.#activePanel = this.#panels[0];
     this.#currentPhase = this.#searchPhase;
+    // refreshSpells returns the scanned spell list so #buildHotkeyCapture can
+    // reuse it without triggering a second vault scan.
+    const spells = this.#spellsPanel.refreshSpells(this.app, this.#spellTag);
     this.#panels.forEach((p) => { if (isNavigable(p)) p.reset(); });
+    this.#buildHotkeyCapture(spells);
+    // Reset hint slot so #createTabBar() initialises it fresh for this open.
+    this.#hintSlot = null;
+    this.#hintSlotContainer = null;
     this.#render();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    this.#hintSlot?.renderHint();
     this.#bindKeys();
+    this.#hotkeyCapture?.install();
+  }
+
+  /**
+   * Rebuilds the HotkeyBuffer, HotkeyRegistry, and HotkeyCapture on each popup open.
+   * Accepts the already-scanned spell list from refreshSpells() to avoid a second
+   * vault scan.
+   */
+  #buildHotkeyCapture(spells: readonly Spell[]): void {
+    this.#hotkeyCapture?.uninstall();
+    this.#hotkeyBuffer = new HotkeyBuffer();
+    this.#hotkeyBuffer.on('change', (state) => this.#onBufferChange(state));
+    const { registry, collisions } = HotkeyRegistry.build(spells, this.#spellsPanel.sentinels());
+    if (collisions.dropped.length > 0 && !this.#hasShownCollisionNotice) {
+      const list = collisions.dropped
+        .map((d) => `'${d.hotkey}' on '${d.ownerName}' (${d.reason})`)
+        .join(', ');
+      new Notice(`Hotkey collisions: ${list}`);
+      this.#hasShownCollisionNotice = true;
+    }
+    this.#hotkeyCapture = new HotkeyCapture({
+      kb: this.#kb,
+      buffer: this.#hotkeyBuffer,
+      registry,
+      focusRow: (i) => this.#focusRow(i),
+    });
   }
 
   onClose(): void {
@@ -199,8 +253,20 @@ export class CommandPopup extends Modal {
   }
 
   // Obsidian's scope system and subcomponents can call close() directly,
-  // bypassing keyboard handlers — intercept here to enforce phase navigation.
+  // bypassing keyboard handlers — intercept here to enforce phase navigation
+  // and to absorb Escape while a hotkey sequence is in progress.
+  //
+  // Why the buffer check lives here (not only in the #bindKeys() Escape handler):
+  // real Obsidian's Modal binds Escape→this.close() inside its constructor (before
+  // onOpen() runs), and Scope dispatches FIFO. The built-in handler therefore runs
+  // first and calls close() directly — our #bindKeys() Escape binding is never
+  // reached. Intercepting here is the single chokepoint that catches all close()
+  // entry paths (built-in Escape, programmatic, sub-component dismiss).
   override close(): void {
+    if (this.#hotkeyBuffer.state().status !== 'empty') {
+      this.#hotkeyBuffer.clear();
+      return;
+    }
     if (this.#currentPhase.interceptClose()) return;
     super.close();
   }
@@ -222,11 +288,26 @@ export class CommandPopup extends Modal {
   }
 
   #bindKeys(): void {
-    this.#kb.bind([], "ArrowDown", () => this.#currentPhase.handleArrow(1));
-    this.#kb.bind([], "ArrowUp", () => this.#currentPhase.handleArrow(-1));
+    this.#kb.bind([], "ArrowDown", () => {
+      if (this.#hotkeyBuffer.state().status !== 'empty') this.#hotkeyBuffer.clear();
+      return this.#currentPhase.handleArrow(1);
+    });
+    this.#kb.bind([], "ArrowUp", () => {
+      if (this.#hotkeyBuffer.state().status !== 'empty') this.#hotkeyBuffer.clear();
+      return this.#currentPhase.handleArrow(-1);
+    });
     this.#kb.bind([], "Enter", () => this.#currentPhase.handleEnter());
     this.#kb.bind([], "Tab", () => this.#currentPhase.handleTab());
     this.#kb.bind([], "ArrowRight", () => this.#currentPhase.handleArrowRight());
+    // Defensive Escape binding: in real Obsidian, Modal's built-in Escape→close()
+    // (registered FIFO from the constructor) fires first and routes through our
+    // close() override — which already handles the non-empty-buffer case. This
+    // binding remains for environments where no earlier Escape handler exists
+    // (e.g. unit tests that don't simulate the built-in handler).
+    this.#kb.bind([], "Escape", () => {
+      this.close();
+      return true;
+    });
   }
 
   #render(): void {
@@ -245,8 +326,24 @@ export class CommandPopup extends Modal {
       (id) => {
         const panel = this.#panels.find((p) => p.id === id);
         if (panel) this.#switchTab(panel);
-      }
+      },
+      /* withRightSlot */ true,
     );
+    if (bar.rightSlotEl) {
+      if (this.#hintSlot && this.#hintSlotContainer) {
+        // Reuse the existing slot — move its container into the new tab bar's
+        // right-slot div so the slot instance (and its rendered content) survives
+        // across #render() calls within the same popup session.
+        bar.rightSlotEl.appendChild(this.#hintSlotContainer);
+      } else {
+        // First render of this popup session: create the slot once.
+        this.#hintSlotContainer = bar.rightSlotEl.createDiv();
+        this.#hintSlot = new HotkeyHintSlot({
+          container: this.#hintSlotContainer,
+          onClear: () => this.#hotkeyBuffer.clear(),
+        });
+      }
+    }
     return bar;
   }
 
@@ -266,6 +363,7 @@ export class CommandPopup extends Modal {
       new SearchInput().render(this.contentEl, this.#activePanel, this.#searchQuery, this.#selectedIndex, (query, idx) => {
         this.#searchQuery = query;
         this.#selectedIndex = idx;
+        this.#hotkeyBuffer.clear();
       });
     }
     this.#activePanel.mount(this.contentEl);
@@ -277,6 +375,8 @@ export class CommandPopup extends Modal {
    * DetailPhase still intercepts Escape via close().
    */
   #enterDetail(detail: { destroy(): void }, onBack: () => void): void {
+    this.#hotkeyBuffer.clear();
+    this.#hintSlot?.hide();
     this.#kb.suspend();
     this.#currentPhase = this.#detailPhase;
     this.#detailPhase.setActive(detail, onBack);
@@ -292,6 +392,39 @@ export class CommandPopup extends Modal {
     this.#currentPhase = this.#searchPhase;
     this.#kb.resume();
     this.#renderSearch();
+    // Restore hint slot only when returning to the Spells tab.
+    if (this.#activePanel === this.#panels[0]) {
+      this.#hintSlot?.renderHint();
+    }
+  }
+
+  /**
+   * Focuses the given global row index in the spells panel.
+   * Clears the search query first so filtered-out rows become visible,
+   * then delegates selection update to SpellsPanel.focusByRowIndex.
+   */
+  #focusRow(index: number): void {
+    this.#searchQuery = '';
+    this.#spellsPanel.reset();
+    this.#selectedIndex = index;
+    this.#render();
+    this.#spellsPanel.focusByRowIndex(index);
+  }
+
+  /**
+   * Reacts to HotkeyBuffer state changes.
+   * Delegates rendering to HotkeyHintSlot based on the new state.
+   */
+  #onBufferChange(state: BufferState): void {
+    if (!this.#hintSlot) return;
+    if (state.status === 'empty') {
+      // Only show hint when on Spells tab
+      if (this.#activePanel === this.#panels[0]) {
+        this.#hintSlot.renderHint();
+      }
+    } else {
+      this.#hintSlot.renderIndicator(state.letters, state.status);
+    }
   }
 
   #switchTab(panel: TabPanel): void {
@@ -305,5 +438,14 @@ export class CommandPopup extends Modal {
     this.#selectedIndex = 0;
     if (isNavigable(panel)) panel.reset();
     this.#render();
+    // Update capture installation and hint slot visibility based on active tab.
+    if (panel === this.#panels[0]) {
+      this.#hotkeyCapture?.install();
+      this.#hotkeyBuffer.clear();
+      this.#hintSlot?.renderHint();
+    } else {
+      this.#hotkeyCapture?.uninstall();
+      this.#hintSlot?.hide();
+    }
   }
 }

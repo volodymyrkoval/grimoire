@@ -25,6 +25,7 @@ describe('refineCastSpell', () => {
       name: 'Refine',
       path: spellPath('<refine>'),
       executeOnNote: true,
+      hotkey: null,
     });
   });
 });

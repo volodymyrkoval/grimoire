@@ -1,4 +1,5 @@
 import { Effort } from '../domain/settings/Settings';
+import type { Hotkey } from '../domain/spells/Hotkey';
 
 export interface ForgeUserPromptInput {
   readonly description: string;
@@ -6,11 +7,12 @@ export interface ForgeUserPromptInput {
   readonly model: string;
   readonly effort: Effort | null;
   readonly executeOnNote: boolean;
+  readonly hotkey: Hotkey | null;
 }
 
-/** Builds the small per-cast user prompt carrying the five forge inputs. Pure function; no I/O. */
+/** Builds the small per-cast user prompt carrying the forge inputs. Pure function; no I/O. */
 export function buildForgeUserPrompt(input: ForgeUserPromptInput): string {
-  const { description, name, model, effort, executeOnNote } = input;
+  const { description, name, model, effort, executeOnNote, hotkey } = input;
   const effortDisplay = effort ?? 'n/a';
 
   return `Follow the workflow in your system prompt for these inputs:
@@ -19,5 +21,6 @@ export function buildForgeUserPrompt(input: ForgeUserPromptInput): string {
 - **Name:** ${name}
 - **Model:** ${model}
 - **Effort:** ${effortDisplay}
-- **Execute on note:** ${executeOnNote}`;
+- **Execute on note:** ${executeOnNote}
+- **Hotkey:** ${hotkey ?? 'none'}`;
 }

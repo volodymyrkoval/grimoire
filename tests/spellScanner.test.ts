@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TFile } from 'obsidian';
 import { getSpells } from '../src/infra/spellScanner';
 import { EXECUTE_ON_NOTE_KEY } from '../src/domain/spells/Spell';
+import { HOTKEY_FRONTMATTER_KEY } from '../src/domain/spells/Hotkey';
 import { SENTINEL_FRONTMATTER_KEY, REFINE_SENTINEL_FRONTMATTER_VALUE } from '../src/refine/refineSentinel';
 
 describe('getSpells', () => {
@@ -148,5 +149,55 @@ describe('getSpells', () => {
 
     expect(spells).toHaveLength(1);
     expect(spells[0].name).toBe('regular-spell');
+  });
+
+  it('reads grimoire-hotkey from frontmatter', () => {
+    const file = new TFile('test-spell', 'spells/test-spell.md');
+    app.vault.getMarkdownFiles.mockReturnValue([file]);
+    app.metadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        tags: 'spell',
+        [HOTKEY_FRONTMATTER_KEY]: 'g',
+      },
+      tags: [{ tag: '#spell', position: { start: { line: 0, col: 0 }, end: { line: 0, col: 5 } } }],
+    });
+
+    const spells = getSpells(app, 'spell');
+
+    expect(spells).toHaveLength(1);
+    expect(spells[0].hotkey).toBe('g');
+  });
+
+  it('rejects invalid grimoire-hotkey value', () => {
+    const file = new TFile('test-spell', 'spells/test-spell.md');
+    app.vault.getMarkdownFiles.mockReturnValue([file]);
+    app.metadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        tags: 'spell',
+        [HOTKEY_FRONTMATTER_KEY]: 'GO',
+      },
+      tags: [{ tag: '#spell', position: { start: { line: 0, col: 0 }, end: { line: 0, col: 5 } } }],
+    });
+
+    const spells = getSpells(app, 'spell');
+
+    expect(spells).toHaveLength(1);
+    expect(spells[0].hotkey).toBeNull();
+  });
+
+  it('treats missing grimoire-hotkey as null', () => {
+    const file = new TFile('test-spell', 'spells/test-spell.md');
+    app.vault.getMarkdownFiles.mockReturnValue([file]);
+    app.metadataCache.getFileCache.mockReturnValue({
+      frontmatter: {
+        tags: 'spell',
+      },
+      tags: [{ tag: '#spell', position: { start: { line: 0, col: 0 }, end: { line: 0, col: 5 } } }],
+    });
+
+    const spells = getSpells(app, 'spell');
+
+    expect(spells).toHaveLength(1);
+    expect(spells[0].hotkey).toBeNull();
   });
 });

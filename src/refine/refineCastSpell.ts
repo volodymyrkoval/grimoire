@@ -12,5 +12,6 @@ export function refineCastSpell(): Spell {
     name: 'Refine',
     path: spellPath(REFINE_SPELL_PATH),
     executeOnNote: true,
+    hotkey: null,
   };
 }

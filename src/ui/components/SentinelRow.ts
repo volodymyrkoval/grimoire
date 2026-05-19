@@ -1,4 +1,5 @@
 import type { Sentinel, SentinelKind } from "../../domain/spells/Spell";
+import type { Hotkey } from "../../domain/spells/Hotkey";
 import { appendRowHint } from "./rowHint";
 
 const DESCRIPTIONS: Partial<Record<SentinelKind, string>> = {
@@ -14,10 +15,11 @@ export class SentinelRow {
   el!: HTMLElement;
 
   /** Renders the sentinel row into the container. Sets `this.el` as a side effect. */
-  render(container: HTMLElement, sentinel: Sentinel, selected: boolean, showHint: boolean = false, onOptionsClick?: () => void): void {
+  render(container: HTMLElement, sentinel: Sentinel, selected: boolean, showHint: boolean = false, onOptionsClick?: () => void, hotkey: Hotkey | null = null): void {
     this.el = container.createDiv({ cls: "sentinel-row" });
     if (selected) this.#markSelected();
     this.#appendName(sentinel.name);
+    if (hotkey !== null) this.#appendHotkeyBadge(hotkey);
     const description = DESCRIPTIONS[sentinel.kind];
     if (description) this.#appendDescription(description);
     if (showHint) appendRowHint(this.el, onOptionsClick);
@@ -29,6 +31,10 @@ export class SentinelRow {
 
   #appendName(name: string): void {
     this.el.createSpan({ cls: "sentinel-name", text: name });
+  }
+
+  #appendHotkeyBadge(hotkey: Hotkey): void {
+    this.el.createSpan({ cls: "spell-hotkey-badge", text: hotkey });
   }
 
   #appendDescription(text: string): void {

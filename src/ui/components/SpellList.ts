@@ -2,6 +2,7 @@ import type { Spell, Sentinel } from "../../domain/spells/Spell";
 import type { SpellPath } from "../../domain/spells/SpellPath";
 import type { TypedEmitter } from "../../infra/TypedEmitter";
 import type { SpellEvents } from "../../domain/spells/SpellEvents";
+import { SENTINEL_HOTKEYS } from "../../domain/spells/Hotkey";
 import { SpellRow } from "./SpellRow";
 import { SentinelRow } from "./SentinelRow";
 
@@ -55,7 +56,8 @@ export class SpellList {
     return this.#sentinels.map((sentinel, i) => {
       const row = new SentinelRow();
       const onOptionsClick = sentinel.kind === 'refine' ? () => this.#emitter.emit("open-refine-options", undefined) : undefined;
-      row.render(container, sentinel, offset + i === selectedIndex, sentinel.kind === 'refine', onOptionsClick);
+      const hotkey = sentinel.kind === 'separator' ? null : SENTINEL_HOTKEYS[sentinel.kind];
+      row.render(container, sentinel, offset + i === selectedIndex, sentinel.kind === 'refine', onOptionsClick, hotkey);
       row.el.onClickEvent(() => this.#emitter.emit("sentinel", sentinel));
       return row;
     });

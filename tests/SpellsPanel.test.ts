@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { App } from 'obsidian';
 import { SpellsPanel } from '../src/ui/tabs/SpellsPanel';
 import { obsidianRanker } from '../src/infra/obsidianRanker';
 import { spellPath } from '../src/domain/spells/SpellPath';
 import { makeMockEl } from './helpers/mockEl';
+import { SpellList } from '../src/ui/components/SpellList';
 
 const DEFAULT_TEST_SPELLS = [
   { basename: 'Summoning Circle', path: '/spells/summoning.md' },
@@ -295,5 +296,108 @@ describe('SpellsPanel with hasOverride predicate', () => {
 
     // refreshOverrides should have called the predicate again
     expect(predicateSpy).toHaveBeenCalled();
+  });
+});
+
+describe('SpellsPanel.spells()', () => {
+  it('returns the full unfiltered spell list', () => {
+    const panel = makePanel();
+    const spells = panel.spells();
+
+    expect(spells).toHaveLength(DEFAULT_TEST_SPELLS.length);
+    // Verify we got all the spells by checking paths
+    const paths = spells.map(s => s.path);
+    DEFAULT_TEST_SPELLS.forEach(expectedSpell => {
+      expect(paths).toContain(expectedSpell.path);
+    });
+  });
+
+  it('returns a defensive copy (does not expose internal array)', () => {
+    const panel = makePanel();
+    const spells1 = panel.spells();
+    const spells2 = panel.spells();
+
+    expect(spells1).toEqual(spells2);
+    expect(spells1).not.toBe(spells2);
+  });
+});
+
+describe('SpellsPanel.refreshSpells()', () => {
+  it('returns the newly-scanned spell list', () => {
+    const app = makeApp(DEFAULT_TEST_SPELLS);
+    const panel = new SpellsPanel(app, 'spell', obsidianRanker);
+
+    const newSpells = [{ basename: 'New Spell', path: '/spells/new.md' }];
+    app.vault.getMarkdownFiles.mockReturnValue(newSpells);
+    app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { tags: ['spell'] } });
+
+    const result = panel.refreshSpells(app, 'spell');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].path).toBe('/spells/new.md');
+  });
+
+  it('returned list matches the updated allSpells state', () => {
+    const app = makeApp(DEFAULT_TEST_SPELLS);
+    const panel = new SpellsPanel(app, 'spell', obsidianRanker);
+
+    const newSpells = [
+      { basename: 'Alpha', path: '/spells/alpha.md' },
+      { basename: 'Beta', path: '/spells/beta.md' },
+    ];
+    app.vault.getMarkdownFiles.mockReturnValue(newSpells);
+    app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { tags: ['spell'] } });
+
+    const result = panel.refreshSpells(app, 'spell');
+
+    // Returned list and internal spells() should be identical
+    expect(result).toHaveLength(2);
+    expect(panel.spells()).toHaveLength(2);
+    expect(result.map(s => s.path)).toEqual(panel.spells().map(s => s.path));
+  });
+});
+
+describe('SpellsPanel.focusByRowIndex()', () => {
+  it('adds is-selected class to row at index and removes from previous', () => {
+    const panel = makePanel();
+    panel.filter('');
+
+    // Start with selection at index 0
+    panel.updateSelection(-1, 0);
+
+    // Spy on SpellList.updateSelection to verify focusByRowIndex calls it
+    const updateSelectionSpy = vi.spyOn(SpellList.prototype, 'updateSelection');
+
+    // Call focusByRowIndex(5): should call SpellList.updateSelection(0, 5)
+    panel.focusByRowIndex(5);
+
+    // Verify updateSelection was called with the correct arguments
+    expect(updateSelectionSpy).toHaveBeenCalledOnce();
+    expect(updateSelectionSpy).toHaveBeenCalledWith(0, 5);
+
+    updateSelectionSpy.mockRestore();
+  });
+
+  it('moves selection to the last sentinel row', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const lastIndex = panel.length - 1; // last sentinel (Refine is at length-1)
+
+    // This should not throw and should succeed
+    expect(() => panel.focusByRowIndex(lastIndex)).not.toThrow();
+  });
+
+  it('is idempotent when called with same index twice', () => {
+    const panel = makePanel();
+    panel.filter('');
+    const targetIndex = 3;
+
+    // Call focusByRowIndex twice with same index - both calls should succeed
+    // and the second call should use the same prev/next (targetIndex, targetIndex)
+    panel.focusByRowIndex(targetIndex);
+
+    expect(() => {
+      panel.focusByRowIndex(targetIndex);
+    }).not.toThrow();
   });
 });

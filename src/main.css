@@ -452,3 +452,96 @@ body.is-mobile .grimoire-options-chip {
     color: var(--interactive-accent);
     font-weight: 600;
 }
+
+.spell-hotkey-badge {
+    font-family: var(--font-monospace);
+    color: var(--interactive-accent);
+    font-size: var(--font-ui-smaller);
+    padding: 0 4px;
+    border-radius: 3px;
+    background: transparent;
+}
+
+/* Hide badge when selected or hovered — show hint chip instead */
+.spells-row.is-selected .spell-hotkey-badge,
+.spells-row:hover .spell-hotkey-badge,
+.sentinel-row.is-selected .spell-hotkey-badge,
+.sentinel-row:hover .spell-hotkey-badge {
+    display: none;
+}
+
+/* Badge floats to the far right: margin-left:auto pushes it past any abs-positioned
+   description text. flex-shrink:0 prevents compression when the hint re-enters. */
+.sentinel-row > .spell-hotkey-badge {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Hint is hidden by default on sentinel rows so the flex layout has only 2 items
+   (name + badge), keeping the badge at the right edge — not buried in the center.
+   Show the hint (and hide the badge via the rule above) on hover/selection. */
+.sentinel-row .spells-row-hint {
+    display: none;
+}
+.sentinel-row.is-selected .spells-row-hint,
+.sentinel-row:hover .spells-row-hint {
+    display: inline-flex !important;
+    opacity: 0.7 !important;
+}
+body.is-mobile .sentinel-row .spells-row-hint {
+    display: inline-flex !important;
+    opacity: 0.7 !important;
+}
+
+/* Spell rows with a hotkey: hide hint by default, show on hover/selected.
+   Badge is a direct flex child of .spells-row with margin-left:auto (see below),
+   so it reaches the far right edge when the hint is not visible. */
+.spells-row.has-hotkey .spells-row-hint {
+    display: none;
+}
+.spells-row.has-hotkey:hover .spells-row-hint,
+.spells-row.has-hotkey.is-selected .spells-row-hint {
+    display: inline-flex !important;
+    opacity: 0.7 !important;
+}
+body.is-mobile .spells-row.has-hotkey .spells-row-hint {
+    display: inline-flex !important;
+    opacity: 0.7 !important;
+}
+
+/* Badge on spell rows mirrors sentinel-row badge: margin-left:auto pushes it
+   to the far right edge of the flex container. */
+.spells-row.has-hotkey > .spell-hotkey-badge {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.modal-tab-bar-right {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hotkey-hint {
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+}
+
+.hotkey-buffer-indicator {
+    font-family: var(--font-monospace);
+    color: var(--interactive-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hotkey-buffer-indicator.is-error {
+    color: var(--color-red);
+}
+
+.hotkey-buffer-clear {
+    all: unset;
+    cursor: pointer;
+    color: var(--text-muted);
+}

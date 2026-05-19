@@ -1,6 +1,7 @@
 import { App, TFile } from 'obsidian';
 import type { Spell } from '../domain/spells/Spell';
 import { EXECUTE_ON_NOTE_KEY } from '../domain/spells/Spell';
+import { HOTKEY_FRONTMATTER_KEY, parseHotkey } from '../domain/spells/Hotkey';
 import { spellPath } from '../domain/spells/SpellPath';
 import { isRefineSentinel } from '../refine/refineSentinelScanner';
 
@@ -43,10 +44,12 @@ export function getSpells(app: App, tag: string): Spell[] {
       const cache = app.metadataCache.getFileCache(file);
       const eonValue: unknown = cache?.frontmatter?.[EXECUTE_ON_NOTE_KEY];
       const executeOnNote = eonValue === true ? true : eonValue === false ? false : true;
+      const hotkey = parseHotkey(cache?.frontmatter?.[HOTKEY_FRONTMATTER_KEY]);
       return {
         name: file.basename,
         path: spellPath(file.path),
         executeOnNote,
+        hotkey,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));

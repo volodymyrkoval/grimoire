@@ -123,7 +123,11 @@ function scopeKey(modifiers: string[], key: string): string {
 
 /**
  * Mock of Obsidian's Scope class.
- * Manages keyboard event handlers with LIFO dispatch (most-recently-registered wins).
+ * Manages keyboard event handlers with FIFO dispatch (earliest-registered wins) —
+ * matching real Obsidian's dispatch order. This is load-bearing: Modal binds
+ * Escape→close() inside its constructor (before subclass onOpen() runs), so any
+ * later-registered Escape handler is only reached if the earlier handler returns
+ * truthy (does not consume the event).
  * Provides vi.fn() wrappers for register/unregister to allow spying; dispatch() is a test helper.
  */
 export class Scope {
@@ -133,7 +137,7 @@ export class Scope {
   register = vi.fn((modifiers: string[], key: string, handler: RegisteredHandler): RegisteredHandler => {
     const k = scopeKey(modifiers, key);
     const bucket = this.handlers.get(k) ?? [];
-    bucket.unshift(handler); // LIFO
+    bucket.push(handler); // FIFO — matches real Obsidian dispatch order
     this.handlers.set(k, bucket);
     return handler;
   });

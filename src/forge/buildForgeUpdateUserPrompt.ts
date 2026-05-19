@@ -1,5 +1,6 @@
 import { Effort } from '../domain/settings/Settings';
 import type { SpellPath } from '../domain/spells/SpellPath';
+import type { Hotkey } from '../domain/spells/Hotkey';
 
 export interface ForgeUpdateUserPromptInput {
   readonly spellPath: SpellPath;
@@ -9,11 +10,12 @@ export interface ForgeUpdateUserPromptInput {
   readonly directiveCount: number;
   readonly model: string;
   readonly effort: Effort | null;
+  readonly hotkey: Hotkey | null;
 }
 
 /** Builds the per-update user prompt carrying the forge-update inputs. Pure function; no I/O. */
 export function buildForgeUpdateUserPrompt(input: ForgeUpdateUserPromptInput): string {
-  const { spellPath, spellName, description, applyCastDirectives, directiveCount, model, effort } = input;
+  const { spellPath, spellName, description, applyCastDirectives, directiveCount, model, effort, hotkey } = input;
   const effortDisplay = effort ?? 'n/a';
 
   const castDirectiveInstruction = applyCastDirectives
@@ -29,6 +31,7 @@ export function buildForgeUpdateUserPrompt(input: ForgeUpdateUserPromptInput): s
 - **Apply @cast directives:** ${applyCastDirectives}
 ${castDirectiveInstruction}
 - **Directive count:** ${directiveCount}
+- **Hotkey:** ${hotkey ?? 'none'}
 
 **Description:**
 > ${description}`;

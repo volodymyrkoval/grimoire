@@ -133,11 +133,11 @@ describe('ForgeSentinelDetail — create mode', () => {
 // ─── Assertion 2: update mode, directiveCount === 0 ──────────────────────────
 
 describe('ForgeSentinelDetail — update mode (0 directives)', () => {
-  it('A2a: renders a static div for name, NOT an <input type="text">', () => {
+  it('A2a: renders a static div for name, NOT an <input type="text"> with placeholder "Name"', () => {
     const { contentEl } = mountUpdateMode(testSpell, 0);
     const form = contentEl.querySelector('form.forge-sentinel-form')!;
     // Name should be shown as static text, not an editable input
-    const nameInput = form.querySelector('input[type="text"]');
+    const nameInput = form.querySelector('input[placeholder="Name"]');
     expect(nameInput).toBeNull();
     // A div (or span) carrying the spell name should be present
     const nameDisplay = form.querySelector('[data-grimoire="spell-name"]');

@@ -149,6 +149,7 @@ describe('ForgeImprinter', () => {
       model: modelId('claude-sonnet-4-5'),
       effort: null,
       executeOnNote: true,
+      hotkey: null,
     });
     expect(input.userPrompt).toBe(expectedPrompt);
     // Specifically does NOT contain system-prompt content

@@ -27,7 +27,7 @@ const SENTINELS: readonly Sentinel[] = [
 export class SpellsPanel implements NavigablePanel {
   readonly id = "spells";
   readonly events = new TypedEmitter<SpellEvents>();
-  readonly #allSpells: readonly Spell[];
+  #allSpells: readonly Spell[];
   readonly #rankSpells: RankSpells;
   #filteredSpells: Spell[];
   #spellList: SpellList | null = null;
@@ -38,6 +38,19 @@ export class SpellsPanel implements NavigablePanel {
     this.#allSpells = getSpells(app, tag);
     this.#rankSpells = rankSpells;
     this.#filteredSpells = [...this.#allSpells];
+  }
+
+  /**
+   * Updates the spell list by re-scanning from the vault and returns the new list.
+   * Called on each modal open to ensure hotkeys and other metadata are refreshed.
+   * Returns the freshly-scanned spells so callers can reuse them (e.g. to build
+   * HotkeyRegistry) without triggering a second vault scan.
+   */
+  refreshSpells(app: App, tag: string): readonly Spell[] {
+    this.#allSpells = getSpells(app, tag);
+    this.#filteredSpells = [...this.#allSpells];
+    this.#lastSelectedIndex = 0;
+    return this.#allSpells;
   }
 
   /**
@@ -134,6 +147,35 @@ export class SpellsPanel implements NavigablePanel {
   reset(): void {
     this.#filteredSpells = [...this.#allSpells];
     this.#lastSelectedIndex = 0;
+  }
+
+  /**
+   * Returns a snapshot of the full (unfiltered) spell list.
+   */
+  spells(): readonly Spell[] {
+    return [...this.#allSpells];
+  }
+
+  /**
+   * Returns the sentinel list used by this panel.
+   * Consumed by CommandPopup to build the HotkeyRegistry with consistent row indices.
+   */
+  sentinels(): readonly Sentinel[] {
+    return SENTINELS;
+  }
+
+  /**
+   * Moves the selection cursor to the given global row index without re-rendering
+   * the full list. Index semantics: spells occupy [0, allSpells.length);
+   * sentinels occupy [allSpells.length, allSpells.length + sentinelCount).
+   *
+   * Called after #focusRow clears the search query and resets the filter, so
+   * #filteredSpells === #allSpells at this point.
+   */
+  focusByRowIndex(index: number): void {
+    const prev = this.#lastSelectedIndex;
+    this.#lastSelectedIndex = index;
+    this.#spellList?.updateSelection(prev, index);
   }
 
   /**

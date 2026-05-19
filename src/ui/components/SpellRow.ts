@@ -15,6 +15,10 @@ export class SpellRow {
     const nameBlock = this.el.createDiv({ cls: "spells-row-name" });
     this.#appendName(nameBlock, spell.name);
     if (hasOverride) this.#appendOverrideDot(nameBlock);
+    if (spell.hotkey !== null) {
+      this.el.addClass("has-hotkey");
+      this.#appendHotkeyBadge(this.el, spell.hotkey);
+    }
     this.#appendHint(onOptionsClick);
   }
 
@@ -24,6 +28,10 @@ export class SpellRow {
 
   #appendName(parent: HTMLElement, name: string): void {
     parent.createSpan({ text: name });
+  }
+
+  #appendHotkeyBadge(parent: HTMLElement, hotkey: string): void {
+    parent.createSpan({ cls: "spell-hotkey-badge", text: hotkey });
   }
 
   #appendOverrideDot(parent: HTMLElement): void {

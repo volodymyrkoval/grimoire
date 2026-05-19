@@ -170,7 +170,7 @@ describe('SpellList.render', () => {
     const container = makeMockEl();
     const emitter = makeMockEmitter();
     const list = new SpellList(container, emitter);
-    const spell = { name: 'Fire Bolt', path: spellPath('/spells/fire.md') };
+    const spell = { name: 'Fire Bolt', path: spellPath('/spells/fire.md'), hotkey: null } as unknown as Spell;
     const spells: Spell[] = [spell];
 
     list.render(spells, 0);
@@ -229,9 +229,9 @@ describe('SpellList.render', () => {
     const refineRowEl = sentinelDivResults[1]?.value;
     expect(refineRowEl).toBeDefined();
 
-    // refineRowEl.createSpan: [0] sentinel-name, [1] spells-row-hint wrapper
+    // refineRowEl.createSpan: [0] sentinel-name, [1] spell-hotkey-badge, [2] spells-row-hint wrapper
     // wrapper.createSpan: [0] cast hint, [1] options chip
-    const wrapperEl = refineRowEl.createSpan.mock.results[1]?.value;
+    const wrapperEl = refineRowEl.createSpan.mock.results[2]?.value;
     expect(wrapperEl).toBeDefined();
     const optionsChipEl = wrapperEl.createSpan.mock.results[1]?.value;
     expect(optionsChipEl).toBeDefined();

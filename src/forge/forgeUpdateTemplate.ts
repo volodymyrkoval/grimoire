@@ -1,3 +1,5 @@
+import { HOTKEY_FRONTMATTER_KEY } from '../domain/spells/Hotkey';
+
 export interface ForgeUpdateSystemPromptInput {
   readonly vaultMountPath: string;
 }
@@ -35,7 +37,8 @@ Then execute in order:
 1. Read the current spell file from the vault using Obsidian MCP tools (or the filesystem path under VAULT_MOUNT_PATH if MCP is unavailable).
 
 2. Apply the rewrite workflow to the spell body:
-   - Preserve the YAML frontmatter exactly — including \`tags\`, \`grimoire-execute-on-note\`, and any other keys — unless the user's description explicitly requests changes to it.
+   - Preserve the YAML frontmatter exactly — including \`tags\`, \`grimoire-execute-on-note\`, and any other keys — unless the user's description explicitly requests changes to it or the hotkey value is specified in the user prompt.
+   - If the hotkey value in the user prompt is \`none\`, remove the \`${HOTKEY_FRONTMATTER_KEY}\` key from the frontmatter; otherwise set it to the provided value.
    - Replace content according to the user's description.
 
 3. **Prefer line-level patches** when the change is local: replacing specific lines, inserting specific lines, fixing specific phrases, adding paragraphs at specific anchors. Leave everything else untouched.

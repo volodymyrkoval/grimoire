@@ -1,5 +1,6 @@
 import type { SpellPath } from './SpellPath';
 import { spellPath } from './SpellPath';
+import type { Hotkey } from './Hotkey';
 
 /** Frontmatter key that controls whether a spell auto-executes when opened. */
 export const EXECUTE_ON_NOTE_KEY = 'grimoire-execute-on-note';
@@ -13,6 +14,7 @@ export interface Spell {
   readonly name: string;
   readonly path: SpellPath;
   readonly executeOnNote: boolean;
+  readonly hotkey: Hotkey | null;
 }
 
 /** Action sentinels that appear in the spell list (forge, refine) or layout (separators). */

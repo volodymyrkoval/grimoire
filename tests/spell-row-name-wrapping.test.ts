@@ -67,7 +67,7 @@ describe('spell-row-name-wrapping: edge-case DOM presence', () => {
     const longName = 'A'.repeat(200);
     const container = makeMockEl();
     const row = new SpellRow();
-    row.render(container, { name: longName, path: 'x.md' }, false, false);
+    row.render(container, { name: longName, path: 'x.md', hotkey: null } as any, false, false);
     // name-block wrapper is first createDiv on row.el
     const nameBlock = row.el.createDiv.mock.results[0]?.value;
     const nameCalls = nameBlock?.createSpan.mock.calls.filter(

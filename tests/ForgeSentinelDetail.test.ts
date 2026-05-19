@@ -218,6 +218,7 @@ describe('ForgeSentinelDetail', () => {
         model: 'claude-opus-4-5',
         effort: 'low',
         executeOnNote: true,
+        hotkey: null,
       });
     });
 
