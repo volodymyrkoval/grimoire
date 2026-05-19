@@ -61,10 +61,13 @@ describe('HotkeyCapture — S1: accepts injected KeyboardController', () => {
     expect(bindSpy.mock.calls[0][1]).toBe('a');           // first letter
   });
 
-  it('uninstall() calls unbindAll on the injected kb', () => {
+  it('uninstall() releases only the capture bindings, leaving other bindings on the shared kb intact', () => {
     const scope = new Scope();
     const kb = new KeyboardController(scope);
-    const unbindSpy = vi.spyOn(kb, 'unbindAll');
+
+    // Pre-existing binding that simulates the popup's own nav keys (Tab/Arrow/etc.).
+    kb.bind([], 'Tab', () => true);
+    const tabRegistration = scope.register.mock.results.at(-1)!.value;
 
     const capture = new HotkeyCapture({
       kb,
@@ -76,7 +79,11 @@ describe('HotkeyCapture — S1: accepts injected KeyboardController', () => {
     capture.install();
     capture.uninstall();
 
-    expect(unbindSpy).toHaveBeenCalledTimes(1);
+    // uninstall() must unregister exactly the 26 capture bindings — never the
+    // pre-existing Tab binding, which represents the popup's own nav keys.
+    expect(scope.unregister).toHaveBeenCalledTimes(26);
+    const unregisteredArgs = scope.unregister.mock.calls.map((c: unknown[]) => c[0]);
+    expect(unregisteredArgs).not.toContain(tabRegistration);
   });
 
   it('suspend() on the injected kb unregisters capture bindings from the scope', () => {

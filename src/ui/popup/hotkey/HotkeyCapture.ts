@@ -1,4 +1,4 @@
-import { KeyboardController } from '../../../infra/KeyboardController';
+import { KeyboardController, type BindingRelease } from '../../../infra/KeyboardController';
 import type { HotkeyBuffer } from './HotkeyBuffer';
 import type { HotkeyRegistry } from './HotkeyRegistry';
 
@@ -40,6 +40,7 @@ export class HotkeyCapture {
   readonly #buffer: HotkeyBuffer;
   readonly #registry: HotkeyRegistry;
   readonly #focusRow: (rowIndex: number) => void;
+  #releases: BindingRelease[] = [];
 
   constructor(deps: HotkeyCaptureDeps) {
     this.#kb = deps.kb;
@@ -51,23 +52,30 @@ export class HotkeyCapture {
   /**
    * Registers Shift+a through Shift+z bindings on the scope.
    * Each binding feeds the pressed letter to #feed and returns true (consumed).
+   * Release tokens are retained so uninstall() can remove ONLY these 26
+   * bindings, leaving any other bindings (e.g. the popup's navigation keys)
+   * on the shared controller intact.
    */
   install(): void {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     for (const letter of letters) {
       const captured = letter;
-      this.#kb.bind(['Shift'], captured, () => {
+      const release = this.#kb.bind(['Shift'], captured, () => {
         this.#feed(captured);
         return true;
       });
+      this.#releases.push(release);
     }
   }
 
   /**
-   * Unregisters all 26 Shift+letter bindings from the scope.
+   * Releases the 26 Shift+letter bindings registered by install(), leaving any
+   * other bindings on the shared controller untouched. Idempotent — safe to
+   * call when nothing is installed.
    */
   uninstall(): void {
-    this.#kb.unbindAll();
+    for (const release of this.#releases) release.release();
+    this.#releases = [];
   }
 
   /**

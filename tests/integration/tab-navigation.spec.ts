@@ -39,4 +39,15 @@ describe('tab navigation', () => {
     expect(h.selectedRowName()).toBe('Banishment Hex');
   });
 
+  it('B4: after switching to logs and back to spells, Tab key still cycles tabs', () => {
+    h.clickTab('logs');
+    h.clickTab('spells');
+    expect(h.activeTabId()).toBe('spells');
+
+    const handled = h.pressKey('Tab');
+
+    expect(handled).toBe(true);
+    expect(h.activeTabId()).toBe('logs');
+  });
+
 });

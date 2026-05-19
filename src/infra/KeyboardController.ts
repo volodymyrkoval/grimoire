@@ -4,21 +4,44 @@ export type KeyHandler = () => boolean;
 
 type Binding = { modifiers: Modifier[]; key: string; handler: KeyHandler };
 
-/** Manages key bindings on an Obsidian `Scope`, with support for suspend/resume and focus-trap bindings. */
+/**
+ * Opaque release token returned by `bind()`. Calling `release()` removes only
+ * that one binding (both its active scope registration and its stored spec, so
+ * subsequent `suspend()`/`resume()` cycles do not bring it back).
+ */
+export interface BindingRelease {
+  release(): void;
+}
+
+/**
+ * Manages key bindings on an Obsidian `Scope`, with support for suspend/resume,
+ * scoped release, and focus-trap bindings.
+ *
+ * Internal invariant: `#bindings[i]` and `#registered[i]` are aligned by index —
+ * the i-th binding spec corresponds to the currently-active KeymapEventHandler
+ * at `#registered[i]`. `suspend()` clears `#registered` and `resume()` rebuilds
+ * it from `#bindings`, preserving the alignment. `release()` uses the binding
+ * spec's array index to tear down both rows together.
+ */
 export class KeyboardController {
   #bindings: Binding[] = [];
   #registered: KeymapEventHandler[] = [];
 
   constructor(private readonly scope: Scope) {}
 
-  bind(modifiers: Modifier[], key: string, handler: KeyHandler): void {
-    this.#bindings.push({ modifiers, key, handler });
-    const reg = this.scope.register(modifiers, key, (e: KeyboardEvent) => {
-      if (!handler()) return true;
-      e.preventDefault();
-      return false;
-    });
-    this.#registered.push(reg);
+  bind(modifiers: Modifier[], key: string, handler: KeyHandler): BindingRelease {
+    const binding: Binding = { modifiers, key, handler };
+    this.#bindings.push(binding);
+    this.#registered.push(this.#registerBinding(binding));
+    return {
+      release: () => {
+        const i = this.#bindings.indexOf(binding);
+        if (i < 0) return;
+        this.#bindings.splice(i, 1);
+        const [reg] = this.#registered.splice(i, 1);
+        if (reg) this.scope.unregister(reg);
+      },
+    };
   }
 
   suspend(): void {
@@ -27,20 +50,21 @@ export class KeyboardController {
   }
 
   resume(): void {
-    this.#bindings.forEach(({ modifiers, key, handler }) => {
-      const reg = this.scope.register(modifiers, key, (e: KeyboardEvent) => {
-        if (!handler()) return true;
-        e.preventDefault();
-        return false;
-      });
-      this.#registered.push(reg);
-    });
+    this.#registered = this.#bindings.map((b) => this.#registerBinding(b));
   }
 
   unbindAll(): void {
     this.#registered.forEach((cb) => this.scope.unregister(cb));
     this.#registered = [];
     this.#bindings = [];
+  }
+
+  #registerBinding({ modifiers, key, handler }: Binding): KeymapEventHandler {
+    return this.scope.register(modifiers, key, (e: KeyboardEvent) => {
+      if (!handler()) return true;
+      e.preventDefault();
+      return false;
+    });
   }
 
   /**
