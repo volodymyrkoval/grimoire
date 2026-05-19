@@ -388,14 +388,23 @@ export class CommandPopup extends Modal {
   // owner's lifetime. Idempotent — safe when clearActive has already run via
   // DetailPhase.interceptClose (Escape path).
   #exitDetail(): void {
-    this.#detailPhase.clearActive();
-    this.#currentPhase = this.#searchPhase;
-    this.#kb.resume();
+    this.#leaveDetailState();
     this.#renderSearch();
     // Restore hint slot only when returning to the Spells tab.
     if (this.#activePanel === this.#panels[0]) {
       this.#hintSlot?.renderHint();
     }
+  }
+
+  // Phase-and-keyboard half of the detail-exit transition, with no rendering.
+  // Used by #exitDetail (which then re-renders search) and by #switchTab (which
+  // re-renders the newly-active tab itself). Splitting avoids a double render
+  // and avoids rendering the search phase while the tab is actually switching
+  // to Logs.
+  #leaveDetailState(): void {
+    this.#detailPhase.clearActive();
+    this.#currentPhase = this.#searchPhase;
+    this.#kb.resume();
   }
 
   /**
@@ -428,6 +437,15 @@ export class CommandPopup extends Modal {
   }
 
   #switchTab(panel: TabPanel): void {
+    // Exit detail phase first — a tab click while a detail panel is open must
+    // dismiss the detail before re-rendering, otherwise #render() rebuilds the
+    // tab bar with disablesTabBar()=true (both tabs dimmed and click-gated) and
+    // leaves the keyboard scope suspended — a fully frozen popup. resume()
+    // must precede the unmount/render below so the 26 Shift+letter bindings
+    // are live for hotkeyCapture.uninstall() to tear down cleanly.
+    if (this.#currentPhase === this.#detailPhase) {
+      this.#leaveDetailState();
+    }
     // Tear down the outgoing panel before swapping — otherwise re-entering it
     // (Spells → Logs → Spells) re-runs mount() on a panel that's still
     // holding live coordinators (e.g. CastLogPanel re-starting an already-

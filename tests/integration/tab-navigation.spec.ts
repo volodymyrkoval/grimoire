@@ -50,4 +50,27 @@ describe('tab navigation', () => {
     expect(h.activeTabId()).toBe('logs');
   });
 
+  // B5 — regression: clicking a tab while a detail panel is open used to leave
+  // the popup in detail phase, which made #render() re-create the tab bar with
+  // disablesTabBar()=true. Both tabs ended up dimmed and the keyboard scope
+  // stayed suspended — a fully frozen popup. The switchTab handler must exit
+  // detail phase first so the tab bar renders enabled and the keyboard resumes.
+  it('B5: clicking logs tab while in detail phase switches tabs and restores keyboard', () => {
+    h.pressKey('ArrowRight'); // open spell options → detail phase
+    expect(h.contentEl.querySelector('form.options-panel')).not.toBeNull();
+
+    h.clickTab('logs');
+
+    // Options panel must be torn down — otherwise detail phase is leaked.
+    expect(h.contentEl.querySelector('form.options-panel')).toBeNull();
+    expect(h.activeTabId()).toBe('logs');
+    // Tabs must not be disabled — a frozen popup leaves both tabs with is-disabled.
+    const disabledTabs = h.contentEl.querySelectorAll('.modal-tab.is-disabled');
+    expect(disabledTabs.length).toBe(0);
+    // Keyboard scope must be resumed — Tab key cycles back to spells.
+    const handled = h.pressKey('Tab');
+    expect(handled).toBe(true);
+    expect(h.activeTabId()).toBe('spells');
+  });
+
 });
