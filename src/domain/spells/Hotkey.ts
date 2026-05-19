@@ -18,8 +18,11 @@ export function parseHotkey(raw: unknown): Hotkey | null {
   return raw as Hotkey;
 }
 
+export const FORGE_SENTINEL_KEY = 'f' as const;
+export const REFINE_SENTINEL_KEY = 'r' as const;
+
 /** Sentinel hotkeys: hard-coded defaults for Forge and Refine sentinels. */
 export const SENTINEL_HOTKEYS = {
-  forge: parseHotkey('f')!,
-  refine: parseHotkey('r')!,
+  forge: parseHotkey(FORGE_SENTINEL_KEY)!,
+  refine: parseHotkey(REFINE_SENTINEL_KEY)!,
 } as const;

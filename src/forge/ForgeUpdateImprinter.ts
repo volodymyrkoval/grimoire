@@ -48,14 +48,17 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
 
     const castId = this.#generateId();
     this.#recordCast(logWriter, castId, snapshot);
-
-    const noticeText = isRemote
-      ? `Updating '${snapshot.spellName}' on portal…`
-      : `Updating '${snapshot.spellName}'…`;
-    this.#notify(noticeText);
+    this.#notifyUpdateStarted(snapshot.spellName, isRemote);
     close();
 
     this.#dispatchCast(castId, snapshot, settings, logWriter, isRemote);
+  }
+
+  #notifyUpdateStarted(spellName: string, isRemote: boolean): void {
+    const text = isRemote
+      ? `Updating '${spellName}' on portal…`
+      : `Updating '${spellName}'…`;
+    this.#notify(text);
   }
 
   #recordCast(

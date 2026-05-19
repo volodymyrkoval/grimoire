@@ -34,66 +34,50 @@ export class HotkeyRegistry {
       reason: 'sentinel-takes-precedence' | 'first-spell-wins';
     }> = [];
 
-    // Step 1: Register sentinels first (they never get dropped)
-    sentinels.forEach((sentinel, sentinelIndex) => {
-      if (sentinel.kind === 'separator') {
-        return; // Skip separators, they have no hotkey
-      }
+    HotkeyRegistry.#registerSentinels(registry, spells, sentinels);
+    HotkeyRegistry.#registerSpells(registry, spells, dropped);
 
+    return { registry, collisions: { dropped } };
+  }
+
+  static #registerSentinels(
+    registry: HotkeyRegistry,
+    spells: readonly Spell[],
+    sentinels: readonly Sentinel[]
+  ): void {
+    sentinels.forEach((sentinel, sentinelIndex) => {
+      if (sentinel.kind === 'separator') return;
       const hotkey = SENTINEL_HOTKEYS[sentinel.kind];
       const rowIndex = spells.length + sentinelIndex;
-      const target: RegistryTarget = {
-        kind: 'sentinel',
-        sentinel,
-        rowIndex,
-      };
-
-      registry.#map.set(hotkey, target);
+      registry.#map.set(hotkey, { kind: 'sentinel', sentinel, rowIndex });
     });
+  }
 
-    // Step 2: Register spells (with conflict detection)
+  static #registerSpells(
+    registry: HotkeyRegistry,
+    spells: readonly Spell[],
+    dropped: Array<{ hotkey: Hotkey; ownerName: string; reason: 'sentinel-takes-precedence' | 'first-spell-wins' }>
+  ): void {
     spells.forEach((spell, spellIndex) => {
-      if (spell.hotkey === null) {
-        return; // Skip spells with no hotkey
-      }
-
+      if (spell.hotkey === null) return;
       const hotkey = spell.hotkey;
 
-      // Check for exact-string collision. Prefix overlap is allowed: lookup()
-      // already disambiguates one-letter exact matches from two-letter
-      // extensions (exact wins; a follow-up keypress promotes the buffer to a
-      // two-letter exact hit). This lets the user press Shift+f to fire Forge
-      // and Shift+f-then-Shift+d to fire a separately registered 'fd' spell.
-      let shouldDrop = false;
-      let dropReason: 'sentinel-takes-precedence' | 'first-spell-wins' | null = null;
-
       if (registry.#map.has(hotkey)) {
+        // Check for exact-string collision. Prefix overlap is allowed: lookup()
+        // already disambiguates one-letter exact matches from two-letter
+        // extensions (exact wins; a follow-up keypress promotes the buffer to a
+        // two-letter exact hit). This lets the user press Shift+f to fire Forge
+        // and Shift+f-then-Shift+d to fire a separately registered 'fd' spell.
         const existing = registry.#map.get(hotkey)!;
-        dropReason =
-          existing.kind === 'sentinel' ? 'sentinel-takes-precedence' : 'first-spell-wins';
-        shouldDrop = true;
-      }
-
-      if (shouldDrop && dropReason) {
         dropped.push({
           hotkey,
           ownerName: spell.name,
-          reason: dropReason,
+          reason: existing.kind === 'sentinel' ? 'sentinel-takes-precedence' : 'first-spell-wins',
         });
-      } else if (!shouldDrop) {
-        const target: RegistryTarget = {
-          kind: 'spell',
-          spell,
-          rowIndex: spellIndex,
-        };
-        registry.#map.set(hotkey, target);
+      } else {
+        registry.#map.set(hotkey, { kind: 'spell', spell, rowIndex: spellIndex });
       }
     });
-
-    return {
-      registry,
-      collisions: { dropped },
-    };
   }
 
   size(): number {
