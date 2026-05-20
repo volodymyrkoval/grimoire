@@ -40,14 +40,8 @@ export class CommandPopupBuilder {
   build(): CommandPopup {
     let dispatcher: CastDispatcher;
     let popup: CommandPopup;
-
-    const refineCastAction = this.#buildRefineCastAction(() => dispatcher, () => popup);
-    const forgeUpdateAction: ForgeUpdateAction = (spell, snapshot) => {
-      this.#deps.updateImprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => popup.close());
-    };
-    popup = this.#createPopup(refineCastAction, forgeUpdateAction, () => dispatcher, () => popup);
+    popup = this.#createPopup(() => dispatcher, () => popup);
     dispatcher = this.#deps.createDispatcher(() => popup.close());
-
     return popup;
   }
 
@@ -136,12 +130,18 @@ export class CommandPopupBuilder {
     };
   }
 
+  #buildForgeUpdateAction(getPopup: () => CommandPopup): ForgeUpdateAction {
+    return (_spell, snapshot) => {
+      this.#deps.updateImprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => getPopup().close());
+    };
+  }
+
   #createPopup(
-    refineCastAction: RefineCastAction,
-    forgeUpdateAction: ForgeUpdateAction,
     getDispatcher: () => CastDispatcher,
     getPopup: () => CommandPopup,
   ): CommandPopup {
+    const refineCastAction = this.#buildRefineCastAction(getDispatcher, getPopup);
+    const forgeUpdateAction = this.#buildForgeUpdateAction(getPopup);
     return new CommandPopup({
       app: this.#deps.app,
       spellTag: this.#deps.plugin.data.settings.spellTag,
