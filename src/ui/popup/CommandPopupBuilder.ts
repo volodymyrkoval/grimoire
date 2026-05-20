@@ -45,6 +45,34 @@ export class CommandPopupBuilder {
     return popup;
   }
 
+  #createPopup(
+    getDispatcher: () => CastDispatcher,
+    getPopup: () => CommandPopup,
+  ): CommandPopup {
+    const refineCastAction = this.#buildRefineCastAction(getDispatcher, getPopup);
+    const forgeUpdateAction = this.#buildForgeUpdateAction(getPopup);
+    return new CommandPopup({
+      app: this.#deps.app,
+      spellTag: this.#deps.plugin.data.settings.spellTag,
+      rankSpells: obsidianRanker,
+      imprintAction: this.#buildImprintAction(getPopup),
+      castAction: this.#buildCastAction(getDispatcher),
+      refineCastAction,
+      forgeUpdateAction,
+      spellContentReader: this.#deps.spellContentReader,
+      defaults: {
+        defaultModel: this.#deps.plugin.data.settings.defaultModel,
+        defaultEffort: this.#deps.plugin.data.settings.defaultEffort,
+      },
+      overrides: this.#deps.plugin.overrides,
+      sessionMap: this.#deps.sessionMap,
+      castLogPanelDeps: this.#deps.castLogPanelDeps,
+      settingsActiveRefinePath: this.#deps.plugin.data.settings.activeRefinePath,
+      hotkeyEraser: this.#buildHotkeyEraser(),
+      hotkeyWriter: this.#buildHotkeyWriter(),
+    });
+  }
+
   #buildRefineCastAction(
     getDispatcher: () => CastDispatcher,
     getPopup: () => CommandPopup,
@@ -85,6 +113,33 @@ export class CommandPopupBuilder {
     return resolveRefinePath({ perCast, settingsActive: activeRefinePath, bundledDefaultVaultRel: bundled, isSentinel });
   }
 
+  #buildForgeUpdateAction(getPopup: () => CommandPopup): ForgeUpdateAction {
+    return (_spell, snapshot) => {
+      this.#deps.updateImprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => getPopup().close());
+    };
+  }
+
+  #buildImprintAction(getPopup: () => CommandPopup): ImprintAction {
+    return (snapshot) => {
+      this.#deps.imprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => getPopup().close());
+    };
+  }
+
+  #buildCastAction(getDispatcher: () => CastDispatcher): CastAction {
+    return (spell, snap) => {
+      getDispatcher().dispatch({
+        spell,
+        model: snap.model,
+        effort: snap.effort,
+        contextNotePaths: snap.contextNotePaths,
+        followUp: snap.followUp,
+        settings: this.#deps.plugin.data.settings,
+        activeFilePath: this.#deps.app.workspace.getActiveFile()?.path ?? null,
+        executeOnNote: snap.executeOnNote,
+      });
+    };
+  }
+
   #buildHotkeyEraser(): HotkeyEraser {
     return (spellPath) => {
       const file = this.#deps.app.vault.getAbstractFileByPath(spellPath);
@@ -107,60 +162,5 @@ export class CommandPopupBuilder {
         fm[HOTKEY_FRONTMATTER_KEY] = hotkey;
       });
     };
-  }
-
-  #buildCastAction(getDispatcher: () => CastDispatcher): CastAction {
-    return (spell, snap) => {
-      getDispatcher().dispatch({
-        spell,
-        model: snap.model,
-        effort: snap.effort,
-        contextNotePaths: snap.contextNotePaths,
-        followUp: snap.followUp,
-        settings: this.#deps.plugin.data.settings,
-        activeFilePath: this.#deps.app.workspace.getActiveFile()?.path ?? null,
-        executeOnNote: snap.executeOnNote,
-      });
-    };
-  }
-
-  #buildImprintAction(getPopup: () => CommandPopup): ImprintAction {
-    return (snapshot) => {
-      this.#deps.imprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => getPopup().close());
-    };
-  }
-
-  #buildForgeUpdateAction(getPopup: () => CommandPopup): ForgeUpdateAction {
-    return (_spell, snapshot) => {
-      this.#deps.updateImprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => getPopup().close());
-    };
-  }
-
-  #createPopup(
-    getDispatcher: () => CastDispatcher,
-    getPopup: () => CommandPopup,
-  ): CommandPopup {
-    const refineCastAction = this.#buildRefineCastAction(getDispatcher, getPopup);
-    const forgeUpdateAction = this.#buildForgeUpdateAction(getPopup);
-    return new CommandPopup({
-      app: this.#deps.app,
-      spellTag: this.#deps.plugin.data.settings.spellTag,
-      rankSpells: obsidianRanker,
-      imprintAction: this.#buildImprintAction(getPopup),
-      castAction: this.#buildCastAction(getDispatcher),
-      refineCastAction,
-      forgeUpdateAction,
-      spellContentReader: this.#deps.spellContentReader,
-      defaults: {
-        defaultModel: this.#deps.plugin.data.settings.defaultModel,
-        defaultEffort: this.#deps.plugin.data.settings.defaultEffort,
-      },
-      overrides: this.#deps.plugin.overrides,
-      sessionMap: this.#deps.sessionMap,
-      castLogPanelDeps: this.#deps.castLogPanelDeps,
-      settingsActiveRefinePath: this.#deps.plugin.data.settings.activeRefinePath,
-      hotkeyEraser: this.#buildHotkeyEraser(),
-      hotkeyWriter: this.#buildHotkeyWriter(),
-    });
   }
 }
