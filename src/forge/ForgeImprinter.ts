@@ -17,6 +17,15 @@ export interface ForgeImprinterDeps {
   generateId?: () => string;
 }
 
+/** All values needed to call caster.cast and handle its callbacks, assembled once in imprint. */
+interface DispatchContext {
+  castId: string;
+  sanitised: string;
+  snapshot: ForgeFormSnapshot;
+  settings: GrimoireSettings;
+  isRemote: boolean;
+}
+
 /**
  * Orchestrates spell forging: validates input, builds the per-cast user prompt, logs the cast, and dispatches execution.
  * Handles both local and remote execution modes, with appropriate user notifications.
@@ -39,25 +48,52 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
 
   /**
    * Initiates spell forging from a form submission.
-   * Validates name sanitisation, logs the initial cast record, and starts execution.
+   * Validates remote config and name sanitisation, logs the initial cast record, and starts execution.
    */
   imprint(snapshot: ForgeFormSnapshot, settings: GrimoireSettings, close: () => void): void {
     const isRemote = settings.executionMode === 'remote';
-    const logWriter = this.#logWriter();
 
-    if (isRemote && settings.portalHost.trim() === '') {
-      this.#notify('Configure portal host in settings before casting remotely.');
-      return;
-    }
+    const configErr = this.#remoteConfigError(settings);
+    if (configErr) { this.#notify(configErr); return; }
 
     const sanitised = sanitiseSpellName(snapshot.name);
-    if (sanitised === '') {
-      this.#notify('Spell name is invalid after sanitisation');
-      close();
-      return;
-    }
+    const nameErr = this.#spellNameError(sanitised);
+    if (nameErr) { this.#notify(nameErr); close(); return; }
 
     const castId = this.#generateId();
+
+    this.#logInitialCast(castId, snapshot);
+    this.#notifyLaunch(sanitised, isRemote);
+    close();
+
+    this.#dispatchCast({ castId, sanitised, snapshot, settings, isRemote });
+  }
+
+  /** Returns the error message when remote mode is misconfigured, or undefined when config is valid. */
+  #remoteConfigError(settings: GrimoireSettings): string | undefined {
+    if (settings.executionMode === 'remote' && settings.portalHost.trim() === '') {
+      return 'Configure portal host in settings before casting remotely.';
+    }
+    return undefined;
+  }
+
+  #spellNameError(sanitised: string): string | undefined {
+    return sanitised === '' ? 'Spell name is invalid after sanitisation' : undefined;
+  }
+
+  #logInitialCast(castId: string, snapshot: ForgeFormSnapshot): void {
+    this.#logWriter()
+      .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [] })
+      .catch(console.error);
+  }
+
+  #notifyLaunch(sanitised: string, isRemote: boolean): void {
+    this.#notify(isRemote ? `Forging '${sanitised}' on portal…` : `Forging '${sanitised}'…`);
+  }
+
+  /** Invokes caster.cast and wires the onAccepted / onFailure callbacks. */
+  #dispatchCast(ctx: DispatchContext): void {
+    const { castId, sanitised, snapshot, settings } = ctx;
     const userPrompt = buildForgeUserPrompt({
       description: snapshot.description,
       name: sanitised,
@@ -65,15 +101,6 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
       effort: snapshot.effort,
       executeOnNote: snapshot.executeOnNote,
     });
-
-    logWriter
-      .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [] })
-      .catch(console.error);
-
-    const noticeText = isRemote ? `Forging '${sanitised}' on portal…` : `Forging '${sanitised}'…`;
-    this.#notify(noticeText);
-    close();
-
     const paths = this.#forgeSpellPaths();
     const caster = this.#caster();
     caster.cast(
@@ -87,19 +114,27 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
         vaultMountPath: settings.vaultMountPath,
       },
       {
-        onAccepted: ({ jobId }) => {
-          if (jobId !== undefined) {
-            logWriter
-              .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [], portalCastId: jobId })
-              .catch(console.error);
-          }
-          if (!isRemote) this.#notify(`Spell "${sanitised}" forged`);
-        },
-        onFailure: (msg) => {
-          logWriter.recordError({ castId, message: msg }).catch(console.error);
-          this.#notify(isRemote ? msg : `Forge failed: ${msg}`);
-        },
+        onAccepted: ({ jobId }) => this.#onCastAccepted(ctx, jobId),
+        onFailure: (msg) => this.#onCastFailed(ctx, msg),
       },
     );
+  }
+
+  /** Logs the updated cast record with portalCastId when present, and notifies when running locally. */
+  #onCastAccepted(ctx: DispatchContext, jobId: string | undefined): void {
+    const { castId, sanitised, snapshot, isRemote } = ctx;
+    if (jobId !== undefined) {
+      this.#logWriter()
+        .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [], portalCastId: jobId })
+        .catch(console.error);
+    }
+    if (!isRemote) this.#notify(`Spell "${sanitised}" forged`);
+  }
+
+  /** Logs the cast error and notifies the user with an appropriate message. */
+  #onCastFailed(ctx: DispatchContext, msg: string): void {
+    const { castId, isRemote } = ctx;
+    this.#logWriter().recordError({ castId, message: msg }).catch(console.error);
+    this.#notify(isRemote ? msg : `Forge failed: ${msg}`);
   }
 }
