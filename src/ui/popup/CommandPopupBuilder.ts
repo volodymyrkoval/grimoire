@@ -1,6 +1,7 @@
 import { App, Notice, TFile } from 'obsidian';
 import { CommandPopup } from '../CommandPopup';
 import type { RefineCastAction, ForgeUpdateAction } from '../CommandPopup';
+import type { CastAction, ImprintAction } from '../CommandPopup';
 import { obsidianRanker } from '../../infra/obsidianRanker';
 import type { ForgeImprinter } from '../../forge/ForgeImprinter';
 import type { ForgeUpdateImprinter } from '../../forge/ForgeUpdateImprinter';
@@ -44,7 +45,7 @@ export class CommandPopupBuilder {
     const forgeUpdateAction: ForgeUpdateAction = (spell, snapshot) => {
       this.#deps.updateImprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => popup.close());
     };
-    popup = this.#createPopup(refineCastAction, forgeUpdateAction, () => dispatcher);
+    popup = this.#createPopup(refineCastAction, forgeUpdateAction, () => dispatcher, () => popup);
     dispatcher = this.#deps.createDispatcher(() => popup.close());
 
     return popup;
@@ -90,12 +91,8 @@ export class CommandPopupBuilder {
     return resolveRefinePath({ perCast, settingsActive: activeRefinePath, bundledDefaultVaultRel: bundled, isSentinel });
   }
 
-  #createPopup(
-    refineCastAction: RefineCastAction,
-    forgeUpdateAction: ForgeUpdateAction,
-    getDispatcher: () => CastDispatcher,
-  ): CommandPopup {
-    const hotkeyEraser: HotkeyEraser = (spellPath) => {
+  #buildHotkeyEraser(): HotkeyEraser {
+    return (spellPath) => {
       const file = this.#deps.app.vault.getAbstractFileByPath(spellPath);
       if (!(file instanceof TFile)) {
         return Promise.reject(new Error('spell file not found'));
@@ -104,8 +101,10 @@ export class CommandPopupBuilder {
         delete fm[HOTKEY_FRONTMATTER_KEY];
       });
     };
+  }
 
-    const hotkeyWriter: HotkeyWriter = (spellPath, hotkey) => {
+  #buildHotkeyWriter(): HotkeyWriter {
+    return (spellPath, hotkey) => {
       const file = this.#deps.app.vault.getAbstractFileByPath(spellPath);
       if (!(file instanceof TFile)) {
         return Promise.reject(new Error('spell file not found'));
@@ -114,26 +113,41 @@ export class CommandPopupBuilder {
         fm[HOTKEY_FRONTMATTER_KEY] = hotkey;
       });
     };
+  }
 
-    const popup = new CommandPopup({
+  #buildCastAction(getDispatcher: () => CastDispatcher): CastAction {
+    return (spell, snap) => {
+      getDispatcher().dispatch({
+        spell,
+        model: snap.model,
+        effort: snap.effort,
+        contextNotePaths: snap.contextNotePaths,
+        followUp: snap.followUp,
+        settings: this.#deps.plugin.data.settings,
+        activeFilePath: this.#deps.app.workspace.getActiveFile()?.path ?? null,
+        executeOnNote: snap.executeOnNote,
+      });
+    };
+  }
+
+  #buildImprintAction(getPopup: () => CommandPopup): ImprintAction {
+    return (snapshot) => {
+      this.#deps.imprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => getPopup().close());
+    };
+  }
+
+  #createPopup(
+    refineCastAction: RefineCastAction,
+    forgeUpdateAction: ForgeUpdateAction,
+    getDispatcher: () => CastDispatcher,
+    getPopup: () => CommandPopup,
+  ): CommandPopup {
+    return new CommandPopup({
       app: this.#deps.app,
       spellTag: this.#deps.plugin.data.settings.spellTag,
       rankSpells: obsidianRanker,
-      imprintAction: (snapshot) => {
-        this.#deps.imprinter.imprint(snapshot, this.#deps.plugin.data.settings, () => popup.close());
-      },
-      castAction: (spell, snap) => {
-        getDispatcher().dispatch({
-          spell,
-          model: snap.model,
-          effort: snap.effort,
-          contextNotePaths: snap.contextNotePaths,
-          followUp: snap.followUp,
-          settings: this.#deps.plugin.data.settings,
-          activeFilePath: this.#deps.app.workspace.getActiveFile()?.path ?? null,
-          executeOnNote: snap.executeOnNote,
-        });
-      },
+      imprintAction: this.#buildImprintAction(getPopup),
+      castAction: this.#buildCastAction(getDispatcher),
       refineCastAction,
       forgeUpdateAction,
       spellContentReader: this.#deps.spellContentReader,
@@ -145,9 +159,8 @@ export class CommandPopupBuilder {
       sessionMap: this.#deps.sessionMap,
       castLogPanelDeps: this.#deps.castLogPanelDeps,
       settingsActiveRefinePath: this.#deps.plugin.data.settings.activeRefinePath,
-      hotkeyEraser,
-      hotkeyWriter,
+      hotkeyEraser: this.#buildHotkeyEraser(),
+      hotkeyWriter: this.#buildHotkeyWriter(),
     });
-    return popup;
   }
 }
