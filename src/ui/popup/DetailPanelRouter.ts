@@ -69,38 +69,45 @@ export interface DetailPanelRouterDeps {
  */
 export class DetailPanelRouter {
   readonly #deps: DetailPanelRouterDeps;
+  // Transient render-call context — set at the top of each render method,
+  // consumed by the handler arrow fields below.
+  #contentEl!: HTMLElement;
+  #scope!: Scope;
+  #spell!: Spell;
 
   constructor(deps: DetailPanelRouterDeps) {
     this.#deps = deps;
   }
 
+  // ── Public render methods ────────────────────────────────────────────────────
+
   /** Renders the Forge sentinel detail form into `contentEl`. */
   renderForge(contentEl: HTMLElement, scope: Scope): void {
+    this.#contentEl = contentEl;
+    this.#scope = scope;
     this.#deps.reattachTabBar();
-    const exit = (): void => this.#deps.onExit();
     const directory = this.#deps.hotkeyDirectoryFactory();
     const detail = new ForgeSentinelDetail(scope);
     detail.render({
       contentEl,
       mode: { kind: 'create' },
       callbacks: {
-        onBack: exit,
-        onCreateSubmit: (snapshot) => {
-          this.#deps.imprintAction(snapshot);
-          exit();
-        },
-        onUpdateSubmit: () => { /* update path not wired in create-only router */ },
+        onBack: this.#deps.onExit,
+        onCreateSubmit: this.#handleForgeCreateSubmit,
+        onUpdateSubmit: this.#noOp,
       },
       defaults: this.#deps.formDefaults,
       hotkey: { directory, eraser: this.#deps.hotkeyEraser },
     });
-    this.#deps.onEnterDetail(detail, exit);
+    this.#deps.onEnterDetail(detail, this.#deps.onExit);
   }
 
   /** Renders the spell-options detail panel for `spell` into `contentEl`. */
   renderSpellOptions(contentEl: HTMLElement, scope: Scope, spell: Spell): void {
+    this.#contentEl = contentEl;
+    this.#scope = scope;
+    this.#spell = spell;
     this.#deps.reattachTabBar();
-    const exit = (): void => this.#deps.onExit();
     const detail = new OptionsDetail();
     detail.render({
       contentEl,
@@ -110,22 +117,21 @@ export class DetailPanelRouter {
       sessionMap: this.#deps.sessionMap,
       formDefaults: this.#deps.formDefaults,
       models: this.#deps.models,
-      onBack: exit,
-      onCast: (snap) => this.#deps.castAction(spell, snap),
+      onBack: this.#deps.onExit,
+      onCast: this.#handleSpellCast,
       onOverrideChanged: this.#deps.onOverrideChanged,
       kind: { kind: 'spell', spell },
-      onForgeUpdate: (s) => {
-        exit();
-        void this.renderForgeUpdate(contentEl, scope, s);
-      },
+      onForgeUpdate: this.#handleForgeUpdateTransition,
     });
-    this.#deps.onEnterDetail(detail, exit);
+    this.#deps.onEnterDetail(detail, this.#deps.onExit);
   }
 
   /** Renders the Forge update detail form for an existing `spell` into `contentEl`. */
   async renderForgeUpdate(contentEl: HTMLElement, scope: Scope, spell: Spell): Promise<void> {
+    this.#contentEl = contentEl;
+    this.#scope = scope;
+    this.#spell = spell;
     this.#deps.reattachTabBar();
-    const exit = (): void => this.#deps.onExit();
 
     // Yield to microtask queue to satisfy test harness (vi.waitFor polling granularity);
     // not required for runtime correctness.
@@ -136,7 +142,7 @@ export class DetailPanelRouter {
       content = await this.#deps.spellContentReader.read(spell.path);
     } catch {
       new Notice('Could not read spell content');
-      exit();
+      this.#deps.onExit();
       return;
     }
 
@@ -149,23 +155,21 @@ export class DetailPanelRouter {
       contentEl,
       mode,
       callbacks: {
-        onBack: exit,
-        onCreateSubmit: () => { /* never called in update mode */ },
-        onUpdateSubmit: (snapshot) => {
-          this.#deps.forgeUpdateAction(spell, snapshot);
-          exit();
-        },
+        onBack: this.#deps.onExit,
+        onCreateSubmit: this.#noOp,
+        onUpdateSubmit: this.#handleForgeUpdateSubmit,
       },
       defaults: this.#deps.formDefaults,
       hotkey: { directory, eraser: this.#deps.hotkeyEraser, writer: this.#deps.hotkeyWriter },
     });
-    this.#deps.onEnterDetail(detail, exit);
+    this.#deps.onEnterDetail(detail, this.#deps.onExit);
   }
 
   /** Renders the Refine sentinel options panel into `contentEl`. */
   renderRefineOptions(contentEl: HTMLElement, scope: Scope): void {
+    this.#contentEl = contentEl;
+    this.#scope = scope;
     this.#deps.reattachTabBar();
-    const exit = (): void => this.#deps.onExit();
     const detail = new OptionsDetail();
     detail.render({
       contentEl,
@@ -175,12 +179,40 @@ export class DetailPanelRouter {
       sessionMap: this.#deps.sessionMap,
       formDefaults: this.#deps.formDefaults,
       models: this.#deps.models,
-      onBack: exit,
-      onCast: (snap) => this.#deps.refineCastAction(snap),
+      onBack: this.#deps.onExit,
+      onCast: this.#handleRefineCast,
       onOverrideChanged: this.#deps.onOverrideChanged,
       kind: { kind: 'refine' },
       settingsActiveRefinePath: this.#deps.settingsActiveRefinePath,
     });
-    this.#deps.onEnterDetail(detail, exit);
+    this.#deps.onEnterDetail(detail, this.#deps.onExit);
   }
+
+  // ── Event handlers ───────────────────────────────────────────────────────────
+
+  /** Satisfies a callback slot that is never triggered for the current render mode. */
+  #noOp = (): void => {};
+
+  #handleForgeCreateSubmit = (snapshot: ForgeFormSnapshot): void => {
+    this.#deps.imprintAction(snapshot);
+    this.#deps.onExit();
+  };
+
+  #handleSpellCast = (snapshot: OptionsFormSnapshot): void => {
+    this.#deps.castAction(this.#spell, snapshot);
+  };
+
+  #handleForgeUpdateTransition = (spell: Spell): void => {
+    this.#deps.onExit();
+    void this.renderForgeUpdate(this.#contentEl, this.#scope, spell);
+  };
+
+  #handleForgeUpdateSubmit = (snapshot: ForgeUpdateFormSnapshot): void => {
+    this.#deps.forgeUpdateAction(this.#spell, snapshot);
+    this.#deps.onExit();
+  };
+
+  #handleRefineCast = (snapshot: OptionsFormSnapshot): void => {
+    this.#deps.refineCastAction(snapshot);
+  };
 }
