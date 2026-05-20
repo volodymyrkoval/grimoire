@@ -103,7 +103,9 @@ export class OptionsPanel {
     this.#castModelSection.mount(form, formState, snapshot, deps);
     const cast = () => {
       const current = formState.snapshot();
-      deps.sessionMap.put(deps.spellPath, current);
+      deps.sessionMap.put(deps.spellPath, { ...current, followUp: '' });
+      followUpInput.value = '';
+      formState.setFollowUp('');
       deps.onCast(current);
     };
     const buttonRow = form.createDiv({ cls: 'grimoire-button-row' });

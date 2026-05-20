@@ -185,4 +185,31 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
     // The panel element should be the same (not replaced)
     expect(panelsAfter[0]).toBe(panelsBefore[0]);
   });
+
+  // ------------------------------------------------------------------ A7
+  it('follow-up is cleared after casting — reopening options panel shows empty follow-up', () => {
+    const h = createPopupHarness();
+
+    // Open options panel for Banishment Hex (index 0)
+    h.pressKey('ArrowRight');
+
+    const form = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
+    const followUpTextarea = form.querySelector('textarea') as HTMLTextAreaElement;
+
+    // Type a follow-up
+    followUpTextarea.value = 'Ask again';
+    followUpTextarea.dispatchEvent(new Event('input'));
+
+    // Cast
+    form.dispatchEvent(new Event('submit'));
+
+    // Go back to search phase, then reopen options panel for the same spell
+    h.clickBack();
+    h.pressKey('ArrowRight');
+
+    const form2 = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
+    const followUpTextarea2 = form2.querySelector('textarea') as HTMLTextAreaElement;
+
+    expect(followUpTextarea2.value).toBe('');
+  });
 });

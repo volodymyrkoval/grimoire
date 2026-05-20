@@ -202,7 +202,7 @@ describe('OptionsPanel integration', () => {
   });
 
   // ------------------------------------------------------------------ A4
-  it('Cast stores session via sessionMap.put and calls onCast with current formState snapshot', () => {
+  it('Cast calls onCast with the typed follow-up; session is saved with follow-up cleared', () => {
     const { contentEl, sessionMap, onCast } = mountPanel();
 
     const putSpy = vi.spyOn(sessionMap, 'put');
@@ -215,6 +215,7 @@ describe('OptionsPanel integration', () => {
 
     form.dispatchEvent(new Event('submit'));
 
+    // onCast receives the user's follow-up text
     expect(onCast).toHaveBeenCalledOnce();
     expect(onCast).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -225,13 +226,14 @@ describe('OptionsPanel integration', () => {
       })
     );
 
+    // session is saved with follow-up cleared so next open starts fresh
     expect(putSpy).toHaveBeenCalledOnce();
     expect(putSpy).toHaveBeenCalledWith(
       TEST_SPELL_PATH,
       expect.objectContaining({
         model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
-        followUp: 'my followup',
+        followUp: '',
         contextNotePaths: [],
       })
     );
