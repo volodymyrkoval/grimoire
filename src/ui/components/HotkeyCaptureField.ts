@@ -64,26 +64,10 @@ export class HotkeyCaptureField {
   render(params: HotkeyCaptureFieldParams): void {
     this.#params = params;
     this.#state = { phase: 'default', persisted: params.initialPersisted };
-
     params.container.dataset['grimoire'] = 'hotkey-field';
-
-    // Stable layout: [pre-area] [button] [post-area].
-    // pre-area and post-area are emptied and rebuilt on each sync.
-    this.#preArea = params.container.createDiv();
-    const btn = params.container.createEl('button', { cls: 'grimoire-hotkey-button' });
-    btn.type = 'button';
-    btn.textContent = 'Hotkey';
-    btn.addEventListener('click', () => this.#handleHotkeyBtnClick());
-    this.#hotkeyBtn = btn;
-    this.#postArea = params.container.createDiv();
-
+    this.#buildLayout(params.container);
+    this.#attachListeners(params.container);
     this.#syncDOM();
-
-    this.#keydownHandler = (e: KeyboardEvent) => this.#handleKeydown(e);
-    this.#focusoutHandler = (e: FocusEvent) => this.#handleFocusout(e);
-    params.container.addEventListener('keydown', this.#keydownHandler);
-    params.container.addEventListener('focusout', this.#focusoutHandler);
-
     params.onChange(params.initialPersisted);
   }
 
@@ -95,6 +79,24 @@ export class HotkeyCaptureField {
     if (this.#focusoutHandler) {
       this.#params?.container.removeEventListener('focusout', this.#focusoutHandler);
     }
+  }
+
+  /** Stable layout: [pre-area] [button] [post-area]. pre/post are emptied and rebuilt on each sync. */
+  #buildLayout(container: HTMLElement): void {
+    this.#preArea = container.createDiv();
+    const btn = container.createEl('button', { cls: 'grimoire-hotkey-button' });
+    btn.type = 'button';
+    btn.textContent = 'Hotkey';
+    btn.addEventListener('click', () => this.#handleHotkeyBtnClick());
+    this.#hotkeyBtn = btn;
+    this.#postArea = container.createDiv();
+  }
+
+  #attachListeners(container: HTMLElement): void {
+    this.#keydownHandler = (e: KeyboardEvent) => this.#handleKeydown(e);
+    this.#focusoutHandler = (e: FocusEvent) => this.#handleFocusout(e);
+    container.addEventListener('keydown', this.#keydownHandler);
+    container.addEventListener('focusout', this.#focusoutHandler);
   }
 
   // ─── DOM sync ──────────────────────────────────────────────────────────────
