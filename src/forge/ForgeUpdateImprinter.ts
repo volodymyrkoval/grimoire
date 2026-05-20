@@ -39,7 +39,6 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
 
   imprint(snapshot: ForgeUpdateFormSnapshot, settings: GrimoireSettings, close: () => void): void {
     const isRemote = settings.executionMode === 'remote';
-    const logWriter = this.#logWriter();
 
     if (isRemote && settings.portalHost.trim() === '') {
       this.#notify('Configure portal host in settings before casting remotely.');
@@ -47,11 +46,11 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
     }
 
     const castId = this.#generateId();
-    this.#recordCast(logWriter, castId, snapshot);
+    this.#recordCast(castId, snapshot);
     this.#notifyUpdateStarted(snapshot.spellName, isRemote);
     close();
 
-    this.#dispatchCast(castId, snapshot, settings, logWriter, isRemote);
+    this.#dispatchCast(castId, snapshot, settings, isRemote);
   }
 
   #notifyUpdateStarted(spellName: string, isRemote: boolean): void {
@@ -61,13 +60,8 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
     this.#notify(text);
   }
 
-  #recordCast(
-    logWriter: CastEventSink,
-    castId: string,
-    snapshot: ForgeUpdateFormSnapshot,
-    portalCastId?: string,
-  ): void {
-    logWriter
+  #recordCast(castId: string, snapshot: ForgeUpdateFormSnapshot, portalCastId?: string): void {
+    this.#logWriter()
       .recordCasted({
         castId,
         spellPath: FORGE_UPDATE_SPELL_PATH,
@@ -84,7 +78,6 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
     castId: string,
     snapshot: ForgeUpdateFormSnapshot,
     settings: GrimoireSettings,
-    logWriter: CastEventSink,
     isRemote: boolean,
   ): void {
     const paths = this.#forgeUpdateSpellPaths();
@@ -111,27 +104,26 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
         activeFilePath: snapshot.spellPath,
       },
       {
-        onAccepted: ({ jobId }) => this.#handleAccepted(logWriter, castId, snapshot, jobId, isRemote),
-        onFailure: (msg) => this.#handleFailure(logWriter, castId, msg, isRemote),
+        onAccepted: ({ jobId }) => this.#handleAccepted(castId, snapshot, jobId, isRemote),
+        onFailure: (msg) => this.#handleFailure(castId, msg, isRemote),
       },
     );
   }
 
   #handleAccepted(
-    logWriter: CastEventSink,
     castId: string,
     snapshot: ForgeUpdateFormSnapshot,
     jobId: string | undefined,
     isRemote: boolean,
   ): void {
     if (jobId !== undefined) {
-      this.#recordCast(logWriter, castId, snapshot, jobId);
+      this.#recordCast(castId, snapshot, jobId);
     }
     if (!isRemote) this.#notify(`Spell '${snapshot.spellName}' updated`);
   }
 
-  #handleFailure(logWriter: CastEventSink, castId: string, msg: string, isRemote: boolean): void {
-    logWriter.recordError({ castId, message: msg }).catch(console.error);
+  #handleFailure(castId: string, msg: string, isRemote: boolean): void {
+    this.#logWriter().recordError({ castId, message: msg }).catch(console.error);
     this.#notify(isRemote ? msg : `Forge update failed: ${msg}`);
   }
 }
