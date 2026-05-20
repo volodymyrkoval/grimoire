@@ -62,7 +62,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
 
     const castId = this.#generateId();
 
-    this.#logInitialCast(castId, snapshot);
+    this.#recordCast(castId, snapshot);
     this.#notifyLaunch(sanitised, isRemote);
     close();
 
@@ -81,7 +81,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
     return sanitised === '' ? 'Spell name is invalid after sanitisation' : undefined;
   }
 
-  #logInitialCast(castId: string, snapshot: ForgeFormSnapshot): void {
+  #recordCast(castId: string, snapshot: ForgeFormSnapshot): void {
     this.#logWriter()
       .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [] })
       .catch(console.error);

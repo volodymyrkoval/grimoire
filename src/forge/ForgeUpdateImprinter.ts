@@ -16,6 +16,14 @@ export interface ForgeUpdateImprinterDeps {
   generateId?: () => string;
 }
 
+/** All values needed to call caster.cast and handle its callbacks, assembled once in imprint. */
+interface DispatchContext {
+  castId: string;
+  snapshot: ForgeUpdateFormSnapshot;
+  settings: GrimoireSettings;
+  isRemote: boolean;
+}
+
 /**
  * Orchestrates spell update forging: builds the per-cast user prompt, logs the cast, and dispatches execution.
  * Handles both local and remote execution modes, with appropriate user notifications.
@@ -40,24 +48,23 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
   imprint(snapshot: ForgeUpdateFormSnapshot, settings: GrimoireSettings, close: () => void): void {
     const isRemote = settings.executionMode === 'remote';
 
-    if (isRemote && settings.portalHost.trim() === '') {
-      this.#notify('Configure portal host in settings before casting remotely.');
-      return;
-    }
+    const configErr = this.#remoteConfigError(settings);
+    if (configErr) { this.#notify(configErr); return; }
 
     const castId = this.#generateId();
     this.#recordCast(castId, snapshot);
-    this.#notifyUpdateStarted(snapshot.spellName, isRemote);
+    this.#notifyLaunch(snapshot.spellName, isRemote);
     close();
 
-    this.#dispatchCast(castId, snapshot, settings, isRemote);
+    this.#dispatchCast({ castId, snapshot, settings, isRemote });
   }
 
-  #notifyUpdateStarted(spellName: string, isRemote: boolean): void {
-    const text = isRemote
-      ? `Updating '${spellName}' on portal…`
-      : `Updating '${spellName}'…`;
-    this.#notify(text);
+  /** Returns the error message when remote mode is misconfigured, or undefined when config is valid. */
+  #remoteConfigError(settings: GrimoireSettings): string | undefined {
+    if (settings.executionMode === 'remote' && settings.portalHost.trim() === '') {
+      return 'Configure portal host in settings before casting remotely.';
+    }
+    return undefined;
   }
 
   #recordCast(castId: string, snapshot: ForgeUpdateFormSnapshot, portalCastId?: string): void {
@@ -74,13 +81,13 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
       .catch(console.error);
   }
 
-  #dispatchCast(
-    castId: string,
-    snapshot: ForgeUpdateFormSnapshot,
-    settings: GrimoireSettings,
-    isRemote: boolean,
-  ): void {
-    const paths = this.#forgeUpdateSpellPaths();
+  #notifyLaunch(spellName: string, isRemote: boolean): void {
+    this.#notify(isRemote ? `Updating '${spellName}' on portal…` : `Updating '${spellName}'…`);
+  }
+
+  /** Invokes caster.cast and wires the onAccepted / onFailure callbacks. */
+  #dispatchCast(ctx: DispatchContext): void {
+    const { castId, snapshot, settings } = ctx;
     const userPrompt = buildForgeUpdateUserPrompt({
       spellPath: snapshot.spellPath,
       spellName: snapshot.spellName,
@@ -90,7 +97,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
       model: snapshot.model,
       effort: snapshot.effort,
     });
-
+    const paths = this.#forgeUpdateSpellPaths();
     this.#caster().cast(
       {
         castId,
@@ -104,25 +111,24 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
         activeFilePath: snapshot.spellPath,
       },
       {
-        onAccepted: ({ jobId }) => this.#handleAccepted(castId, snapshot, jobId, isRemote),
-        onFailure: (msg) => this.#handleFailure(castId, msg, isRemote),
+        onAccepted: ({ jobId }) => this.#onCastAccepted(ctx, jobId),
+        onFailure: (msg) => this.#onCastFailed(ctx, msg),
       },
     );
   }
 
-  #handleAccepted(
-    castId: string,
-    snapshot: ForgeUpdateFormSnapshot,
-    jobId: string | undefined,
-    isRemote: boolean,
-  ): void {
+  /** Logs the updated cast record with portalCastId when present, and notifies when running locally. */
+  #onCastAccepted(ctx: DispatchContext, jobId: string | undefined): void {
+    const { castId, snapshot, isRemote } = ctx;
     if (jobId !== undefined) {
       this.#recordCast(castId, snapshot, jobId);
     }
     if (!isRemote) this.#notify(`Spell '${snapshot.spellName}' updated`);
   }
 
-  #handleFailure(castId: string, msg: string, isRemote: boolean): void {
+  /** Logs the cast error and notifies the user with an appropriate message. */
+  #onCastFailed(ctx: DispatchContext, msg: string): void {
+    const { castId, isRemote } = ctx;
     this.#logWriter().recordError({ castId, message: msg }).catch(console.error);
     this.#notify(isRemote ? msg : `Forge update failed: ${msg}`);
   }
