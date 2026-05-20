@@ -145,7 +145,7 @@ export class CommandPopup extends Modal {
     this.#hotkeyWriter = params.hotkeyWriter;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
-      openLink: (path) => this.openLink(path),
+      openLink: this.#handleOpenLink,
     });
     this.#spellsPanel = this.#createSpellsPanel(params.spellTag);
     this.#panels = [this.#spellsPanel, castLogPanel];
@@ -158,71 +158,7 @@ export class CommandPopup extends Modal {
     this.#detailRouter = this.#buildRouter(params);
   }
 
-  #buildPhaseContext(): PopupPhaseContext {
-    return {
-      activePanel: () => this.#activePanel,
-      selectedIndex: () => this.#selectedIndex,
-      setSelectedIndex: (i) => { this.#selectedIndex = i; },
-      setActivePanel: (panel) => { this.#activePanel = panel; },
-      spellsPanel: () => this.#spellsPanel,
-      panels: () => this.#panels,
-      kb: () => this.#kb,
-      contentEl: () => this.contentEl,
-      exitDetail: () => this.#exitDetail(),
-      renderSearch: () => this.#render(),
-    };
-  }
-
-  #buildRouter(params: CommandPopupParams): DetailPanelRouter {
-    const markChanged = <T extends unknown[]>(fn: (...args: T) => Promise<void>) =>
-      async (...args: T): Promise<void> => {
-        await fn(...args);
-        this.#hotkeyChangedInDetailPanel = true;
-      };
-
-    return new DetailPanelRouter({
-      formDefaults: this.#formDefaults,
-      overrides: this.#overrides,
-      sessionMap: this.#sessionMap,
-      app: this.app,
-      models: SUPPORTED_MODELS,
-      imprintAction: this.#imprintAction,
-      castAction: this.#castAction,
-      refineCastAction: this.#refineCastAction,
-      settingsActiveRefinePath: params.settingsActiveRefinePath ?? null,
-      onOverrideChanged: () => this.#spellsPanel.refreshOverrides(),
-      onEnterDetail: (detail, onBack) => this.#enterDetail(detail, onBack),
-      onExit: () => this.#exitDetail(),
-      reattachTabBar: () => this.#reattachTabBar(),
-      forgeUpdateAction: this.#forgeUpdateAction,
-      spellContentReader: this.#spellContentReader,
-      hotkeyDirectoryFactory: () => buildHotkeyDirectory(this.#spellsPanel.spells()),
-      hotkeyEraser: markChanged(this.#hotkeyEraser),
-      hotkeyWriter: markChanged(this.#hotkeyWriter),
-    });
-  }
-
-  #createSpellsPanel(spellTag: string): SpellsPanel {
-    const panel = new SpellsPanel(this.app, spellTag, this.#rankSpells);
-    panel.setHasOverride((path) => this.#overrides.has(path));
-    panel.events.on("cast", (spell) => {
-      const snapshot = optionsFormSnapshotFromDefaults(this.#formDefaults, spell);
-      this.#castAction(spell, snapshot);
-    });
-    panel.events.on("sentinel", () => this.#detailRouter.renderForge(this.contentEl, this.scope));
-    panel.events.on("open-options", (spell) => this.#detailRouter.renderSpellOptions(this.contentEl, this.scope, spell));
-    panel.events.on("open-refine-options", () => this.#detailRouter.renderRefineOptions(this.contentEl, this.scope));
-    panel.events.on("refine-cast", () => {
-      const snapshot = optionsFormSnapshotFromRefineDefaults(
-        this.#formDefaults,
-        this.#overrides,
-        this.#sessionMap,
-        SUPPORTED_MODELS,
-      );
-      this.#refineCastAction(snapshot);
-    });
-    return panel;
-  }
+  // ── Lifecycle ────────────────────────────────────────────────────────────────
 
   onOpen(): void {
     this.#selectedIndex = 0;
@@ -242,31 +178,6 @@ export class CommandPopup extends Modal {
     this.#hintSlot?.renderHint();
     this.#bindKeys();
     this.#hotkeyCapture?.install();
-  }
-
-  /**
-   * Rebuilds the HotkeyBuffer, HotkeyRegistry, and HotkeyCapture on each popup open.
-   * Accepts the already-scanned spell list from refreshSpells() to avoid a second
-   * vault scan.
-   */
-  #buildHotkeyCapture(spells: readonly Spell[]): void {
-    this.#hotkeyCapture?.uninstall();
-    this.#hotkeyBuffer = new HotkeyBuffer();
-    this.#hotkeyBuffer.on('change', (state) => this.#onBufferChange(state));
-    const { registry, collisions } = HotkeyRegistry.build(spells, this.#spellsPanel.sentinels());
-    if (collisions.dropped.length > 0 && !this.#hasShownCollisionNotice) {
-      const list = collisions.dropped
-        .map((d) => `'${d.hotkey}' on '${d.ownerName}' (${d.reason})`)
-        .join(', ');
-      new Notice(`Hotkey collisions: ${list}`);
-      this.#hasShownCollisionNotice = true;
-    }
-    this.#hotkeyCapture = new HotkeyCapture({
-      kb: this.#kb,
-      buffer: this.#hotkeyBuffer,
-      registry,
-      focusRow: (i) => this.#focusRow(i),
-    });
   }
 
   onClose(): void {
@@ -309,33 +220,120 @@ export class CommandPopup extends Modal {
     super.close();
   }
 
+  // ── Build methods ────────────────────────────────────────────────────────────
+
+  #buildPhaseContext(): PopupPhaseContext {
+    return {
+      activePanel: () => this.#activePanel,
+      selectedIndex: () => this.#selectedIndex,
+      setSelectedIndex: (i) => { this.#selectedIndex = i; },
+      setActivePanel: (panel) => { this.#activePanel = panel; },
+      spellsPanel: () => this.#spellsPanel,
+      panels: () => this.#panels,
+      kb: () => this.#kb,
+      contentEl: () => this.contentEl,
+      exitDetail: this.#exitDetail,
+      renderSearch: this.#render,
+    };
+  }
+
+  #buildRouter(params: CommandPopupParams): DetailPanelRouter {
+    return new DetailPanelRouter({
+      formDefaults: this.#formDefaults,
+      overrides: this.#overrides,
+      sessionMap: this.#sessionMap,
+      app: this.app,
+      models: SUPPORTED_MODELS,
+      imprintAction: this.#imprintAction,
+      castAction: this.#castAction,
+      refineCastAction: this.#refineCastAction,
+      settingsActiveRefinePath: params.settingsActiveRefinePath ?? null,
+      onOverrideChanged: this.#handleOverrideChanged,
+      onEnterDetail: this.#enterDetail,
+      onExit: this.#exitDetail,
+      reattachTabBar: this.#reattachTabBar,
+      forgeUpdateAction: this.#forgeUpdateAction,
+      spellContentReader: this.#spellContentReader,
+      hotkeyDirectoryFactory: this.#buildCurrentHotkeyDirectory,
+      hotkeyEraser: this.#eraseHotkeyAndMarkChanged,
+      hotkeyWriter: this.#writeHotkeyAndMarkChanged,
+    });
+  }
+
+  #createSpellsPanel(spellTag: string): SpellsPanel {
+    const panel = new SpellsPanel(this.app, spellTag, this.#rankSpells);
+    panel.setHasOverride(this.#handleHasOverride);
+    panel.events.on("cast", this.#handleSpellCast);
+    panel.events.on("sentinel", this.#handleOpenSentinel);
+    panel.events.on("open-options", this.#handleOpenSpellOptions);
+    panel.events.on("open-refine-options", this.#handleOpenRefineOptions);
+    panel.events.on("refine-cast", this.#handleRefineCast);
+    return panel;
+  }
+
+  /**
+   * Rebuilds the HotkeyBuffer, HotkeyRegistry, and HotkeyCapture on each popup open.
+   * Accepts the already-scanned spell list from refreshSpells() to avoid a second
+   * vault scan.
+   */
+  #buildHotkeyCapture(spells: readonly Spell[]): void {
+    this.#hotkeyCapture?.uninstall();
+    this.#hotkeyBuffer = new HotkeyBuffer();
+    this.#hotkeyBuffer.on('change', this.#onBufferChange);
+    const { registry, collisions } = HotkeyRegistry.build(spells, this.#spellsPanel.sentinels());
+    if (collisions.dropped.length > 0 && !this.#hasShownCollisionNotice) {
+      const list = collisions.dropped
+        .map((d) => `'${d.hotkey}' on '${d.ownerName}' (${d.reason})`)
+        .join(', ');
+      new Notice(`Hotkey collisions: ${list}`);
+      this.#hasShownCollisionNotice = true;
+    }
+    this.#hotkeyCapture = new HotkeyCapture({
+      kb: this.#kb,
+      buffer: this.#hotkeyBuffer,
+      registry,
+      focusRow: this.#focusRow,
+    });
+  }
+
   #bindKeys(): void {
-    this.#kb.bind([], "ArrowDown", () => {
-      if (this.#hotkeyBuffer.state().status !== 'empty') this.#hotkeyBuffer.clear();
-      return this.#currentPhase.handleArrow(1);
-    });
-    this.#kb.bind([], "ArrowUp", () => {
-      if (this.#hotkeyBuffer.state().status !== 'empty') this.#hotkeyBuffer.clear();
-      return this.#currentPhase.handleArrow(-1);
-    });
-    this.#kb.bind([], "Enter", () => this.#currentPhase.handleEnter());
-    this.#kb.bind([], "Tab", () => this.#currentPhase.handleTab());
-    this.#kb.bind([], "ArrowRight", () => this.#currentPhase.handleArrowRight());
+    this.#kb.bind([], "ArrowDown", this.#handleArrowDown);
+    this.#kb.bind([], "ArrowUp", this.#handleArrowUp);
+    this.#kb.bind([], "Enter", this.#handleEnter);
+    this.#kb.bind([], "Tab", this.#handleTab);
+    this.#kb.bind([], "ArrowRight", this.#handleArrowRight);
     // Defensive Escape binding: in real Obsidian, Modal's built-in Escape→close()
     // (registered FIFO from the constructor) fires first and routes through our
     // close() override — which already handles the non-empty-buffer case. This
     // binding remains for environments where no earlier Escape handler exists
     // (e.g. unit tests that don't simulate the built-in handler).
-    this.#kb.bind([], "Escape", () => {
-      this.close();
-      return true;
-    });
+    this.#kb.bind([], "Escape", this.#handleEscape);
   }
 
-  #render(): void {
+  // ── Rendering & navigation ───────────────────────────────────────────────────
+
+  #render = (): void => {
     this.contentEl.empty();
     this.#tabBar = this.#createTabBar();
     this.#renderSearch();
+  };
+
+  #renderSearch(): void {
+    this.#reattachTabBar();
+    this.#mountActivePanel();
+  }
+
+  #reattachTabBar = (): void => {
+    const barEl = this.#tabBar?.el;
+    this.contentEl.empty();
+    if (barEl) this.contentEl.appendChild(barEl);
+  };
+
+  #mountActivePanel(): void {
+    if (isNavigable(this.#activePanel)) {
+      new SearchInput().render(this.contentEl, this.#activePanel, this.#searchQuery, this.#selectedIndex, this.#handleSearchInput);
+    }
+    this.#activePanel.mount(this.contentEl);
   }
 
   #createTabBar(): TabBar {
@@ -345,10 +343,7 @@ export class CommandPopup extends Modal {
       this.#panels.map((p) => p.id),
       this.#activePanel.id,
       this.#currentPhase.disablesTabBar(),
-      (id) => {
-        const panel = this.#panels.find((p) => p.id === id);
-        if (panel) this.#switchTab(panel);
-      },
+      this.#handleTabSwitch,
       /* withRightSlot */ true,
     );
     if (bar.rightSlotEl) {
@@ -362,33 +357,11 @@ export class CommandPopup extends Modal {
         this.#hintSlotContainer = bar.rightSlotEl.createDiv();
         this.#hintSlot = new HotkeyHintSlot({
           container: this.#hintSlotContainer,
-          onClear: () => this.#hotkeyBuffer.clear(),
+          onClear: this.#handleHintSlotClear,
         });
       }
     }
     return bar;
-  }
-
-  #renderSearch(): void {
-    this.#reattachTabBar();
-    this.#mountActivePanel();
-  }
-
-  #reattachTabBar(): void {
-    const barEl = this.#tabBar?.el;
-    this.contentEl.empty();
-    if (barEl) this.contentEl.appendChild(barEl);
-  }
-
-  #mountActivePanel(): void {
-    if (isNavigable(this.#activePanel)) {
-      new SearchInput().render(this.contentEl, this.#activePanel, this.#searchQuery, this.#selectedIndex, (query, idx) => {
-        this.#searchQuery = query;
-        this.#selectedIndex = idx;
-        this.#hotkeyBuffer.clear();
-      });
-    }
-    this.#activePanel.mount(this.contentEl);
   }
 
   /**
@@ -396,20 +369,20 @@ export class CommandPopup extends Modal {
    * Suspends global keyboard navigation to allow form inputs to receive key events.
    * DetailPhase still intercepts Escape via close().
    */
-  #enterDetail(detail: { destroy(): void }, onBack: () => void): void {
+  #enterDetail = (detail: { destroy(): void }, onBack: () => void): void => {
     this.#hotkeyBuffer.clear();
     this.#hintSlot?.hide();
     this.#kb.suspend();
     this.#currentPhase = this.#detailPhase;
     this.#detailPhase.setActive(detail, onBack);
-  }
+  };
 
   // Symmetric teardown for every detail handoff (detail → search or detail →
   // detail). DetailPhase.clearActive() destroys the outgoing detail so its
   // component-owned keyboard bindings cannot leak onto Modal.scope past their
   // owner's lifetime. Idempotent — safe when clearActive has already run via
   // DetailPhase.interceptClose (Escape path).
-  #exitDetail(): void {
+  #exitDetail = (): void => {
     this.#leaveDetailState();
     if (this.#hotkeyChangedInDetailPanel) {
       this.#hotkeyChangedInDetailPanel = false;
@@ -421,7 +394,7 @@ export class CommandPopup extends Modal {
     if (this.#activePanel === this.#panels[0]) {
       this.#hintSlot?.renderHint();
     }
-  }
+  };
 
   // Phase-and-keyboard half of the detail-exit transition, with no rendering.
   // Used by #exitDetail (which then re-renders search) and by #switchTab (which
@@ -432,35 +405,6 @@ export class CommandPopup extends Modal {
     this.#detailPhase.clearActive();
     this.#currentPhase = this.#searchPhase;
     this.#kb.resume();
-  }
-
-  /**
-   * Focuses the given global row index in the spells panel.
-   * Clears the search query first so filtered-out rows become visible,
-   * then delegates selection update to SpellsPanel.focusByRowIndex.
-   */
-  #focusRow(index: number): void {
-    this.#searchQuery = '';
-    this.#spellsPanel.reset();
-    this.#selectedIndex = index;
-    this.#render();
-    this.#spellsPanel.focusByRowIndex(index);
-  }
-
-  /**
-   * Reacts to HotkeyBuffer state changes.
-   * Delegates rendering to HotkeyHintSlot based on the new state.
-   */
-  #onBufferChange(state: BufferState): void {
-    if (!this.#hintSlot) return;
-    if (state.status === 'empty') {
-      // Only show hint when on Spells tab
-      if (this.#activePanel === this.#panels[0]) {
-        this.#hintSlot.renderHint();
-      }
-    } else {
-      this.#hintSlot.renderIndicator(state.letters, state.status);
-    }
   }
 
   #switchTab(panel: TabPanel): void {
@@ -493,4 +437,121 @@ export class CommandPopup extends Modal {
       this.#hintSlot?.hide();
     }
   }
+
+  /**
+   * Focuses the given global row index in the spells panel.
+   * Clears the search query first so filtered-out rows become visible,
+   * then delegates selection update to SpellsPanel.focusByRowIndex.
+   */
+  #focusRow = (index: number): void => {
+    this.#searchQuery = '';
+    this.#spellsPanel.reset();
+    this.#selectedIndex = index;
+    this.#render();
+    this.#spellsPanel.focusByRowIndex(index);
+  };
+
+  // ── Event handlers ───────────────────────────────────────────────────────────
+
+  /**
+   * Reacts to HotkeyBuffer state changes.
+   * Delegates rendering to HotkeyHintSlot based on the new state.
+   */
+  #onBufferChange = (state: BufferState): void => {
+    if (!this.#hintSlot) return;
+    if (state.status === 'empty') {
+      // Only show hint when on Spells tab
+      if (this.#activePanel === this.#panels[0]) {
+        this.#hintSlot.renderHint();
+      }
+    } else {
+      this.#hintSlot.renderIndicator(state.letters, state.status);
+    }
+  };
+
+  #handleOpenLink = (path: string): void => {
+    this.openLink(path);
+  };
+
+  #handleOverrideChanged = (): void => {
+    this.#spellsPanel.refreshOverrides();
+  };
+
+  #buildCurrentHotkeyDirectory = () => buildHotkeyDirectory(this.#spellsPanel.spells());
+
+  #eraseHotkeyAndMarkChanged = async (...args: Parameters<HotkeyEraser>): Promise<void> => {
+    await this.#hotkeyEraser(...args);
+    this.#hotkeyChangedInDetailPanel = true;
+  };
+
+  #writeHotkeyAndMarkChanged = async (...args: Parameters<HotkeyWriter>): Promise<void> => {
+    await this.#hotkeyWriter(...args);
+    this.#hotkeyChangedInDetailPanel = true;
+  };
+
+  #handleHasOverride = (...args: Parameters<SpellOverrideStore['has']>): boolean =>
+    this.#overrides.has(...args);
+
+  #handleSpellCast = (spell: Spell): void => {
+    const snapshot = optionsFormSnapshotFromDefaults(this.#formDefaults, spell);
+    this.#castAction(spell, snapshot);
+  };
+
+  #handleOpenSentinel = (): void => {
+    this.#detailRouter.renderForge(this.contentEl, this.scope);
+  };
+
+  #handleOpenSpellOptions = (spell: Spell): void => {
+    this.#detailRouter.renderSpellOptions(this.contentEl, this.scope, spell);
+  };
+
+  #handleOpenRefineOptions = (): void => {
+    this.#detailRouter.renderRefineOptions(this.contentEl, this.scope);
+  };
+
+  #handleRefineCast = (): void => {
+    const snapshot = optionsFormSnapshotFromRefineDefaults(
+      this.#formDefaults,
+      this.#overrides,
+      this.#sessionMap,
+      SUPPORTED_MODELS,
+    );
+    this.#refineCastAction(snapshot);
+  };
+
+  #handleArrowDown = (): boolean => {
+    if (this.#hotkeyBuffer.state().status !== 'empty') this.#hotkeyBuffer.clear();
+    return this.#currentPhase.handleArrow(1);
+  };
+
+  #handleArrowUp = (): boolean => {
+    if (this.#hotkeyBuffer.state().status !== 'empty') this.#hotkeyBuffer.clear();
+    return this.#currentPhase.handleArrow(-1);
+  };
+
+  #handleEnter = (): boolean => this.#currentPhase.handleEnter();
+
+  #handleTab = (): boolean => this.#currentPhase.handleTab();
+
+  #handleArrowRight = (): boolean => this.#currentPhase.handleArrowRight();
+
+  #handleEscape = (): boolean => {
+    this.close();
+    return true;
+  };
+
+  #handleTabSwitch = (id: string): void => {
+    const panel = this.#panels.find((p) => p.id === id);
+    if (panel) this.#switchTab(panel);
+  };
+
+  #handleHintSlotClear = (): void => {
+    this.#hotkeyBuffer.clear();
+  };
+
+  #handleSearchInput = (query: string, idx: number): void => {
+    this.#searchQuery = query;
+    this.#selectedIndex = idx;
+    this.#hotkeyBuffer.clear();
+  };
 }
