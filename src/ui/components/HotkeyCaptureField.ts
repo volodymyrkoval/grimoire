@@ -130,28 +130,30 @@ export class HotkeyCaptureField {
 
   #syncCapture(state: CaptureState): void {
     this.#hotkeyBtn.textContent = 'Save';
+    this.#renderBufferChip(state);
+    this.#renderCancelButton(state.previous);
+    if (state.error !== null) this.#renderInlineError(state.error);
+  }
 
-    // Live-buffer chip
+  #renderBufferChip(state: CaptureState): void {
     const chip = this.#preArea.createSpan({ cls: 'grimoire-hotkey-chip' });
     chip.textContent = state.buffer;
-    if (state.error !== null) {
-      chip.classList.add('is-error');
-    }
+    if (state.error !== null) chip.classList.add('is-error');
+  }
 
-    // Cancel × button
+  #renderCancelButton(previous: Hotkey | null): void {
     const clearBtn = this.#preArea.createEl('button', { cls: 'grimoire-hotkey-clear' });
     clearBtn.type = 'button';
     clearBtn.textContent = '×';
     clearBtn.addEventListener('click', () => {
-      this.#state = { phase: 'default', persisted: state.previous };
+      this.#state = { phase: 'default', persisted: previous };
       this.#syncDOM();
     });
+  }
 
-    // Inline error message
-    if (state.error !== null) {
-      const errEl = this.#postArea.createSpan({ cls: 'grimoire-hotkey-error' });
-      errEl.textContent = state.error;
-    }
+  #renderInlineError(message: string): void {
+    const errEl = this.#postArea.createSpan({ cls: 'grimoire-hotkey-error' });
+    errEl.textContent = message;
   }
 
   // ─── Event handlers ────────────────────────────────────────────────────────
@@ -238,8 +240,7 @@ export class HotkeyCaptureField {
       // Keep chip but show "Could not clear hotkey."
       this.#state = { phase: 'default', persisted: state.persisted };
       this.#syncDOM();
-      const errEl = this.#postArea.createSpan({ cls: 'grimoire-hotkey-error' });
-      errEl.textContent = errorCopyFor('erase-failed');
+      this.#renderInlineError(errorCopyFor('erase-failed'));
     }
   }
 }
