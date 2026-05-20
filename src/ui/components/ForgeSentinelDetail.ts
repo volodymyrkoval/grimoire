@@ -49,6 +49,10 @@ export class ForgeSentinelDetail {
   #submitBtn!: HTMLButtonElement;
   #mode!: ForgeMode;
   #kb: KeyboardController;
+  #callbacks!: ForgeSentinelDetailParams['callbacks'];
+  #hotkey!: ForgeSentinelDetailParams['hotkey'];
+
+  // ── Lifecycle ────────────────────────────────────────────────────────────────
 
   constructor(scope: Scope) {
     this.#kb = new KeyboardController(scope);
@@ -56,13 +60,15 @@ export class ForgeSentinelDetail {
 
   render({ contentEl, mode, callbacks, defaults, hotkey }: ForgeSentinelDetailParams): void {
     this.#mode = mode;
+    this.#callbacks = callbacks;
+    this.#hotkey = hotkey;
     // In update mode with no directives, the checkbox is absent — default to false
     this.#applyCastDirectives = mode.kind === 'update' ? mode.directiveCount > 0 : true;
-    this.#buildBackButton(contentEl, callbacks.onBack);
+    this.#buildBackButton(contentEl);
 
     // Hotkey field: update mode only, above the form, auto-saves on commit
     if (mode.kind === 'update') {
-      this.#buildHotkeyCaptureField(contentEl, mode, hotkey);
+      this.#buildHotkeyCaptureField(contentEl, mode);
     }
 
     const form = this.#buildForm(contentEl);
@@ -80,13 +86,10 @@ export class ForgeSentinelDetail {
     this.#currentEffort = this.#resolveInitialEffort(defaults);
     this.#effortRow = this.#initEffortRow(form, defaults);
     this.#submitBtn = this.#buildSubmitButton(form);
-    this.#wireSubmitHandler(form, mode, callbacks);
+    this.#wireSubmitHandler(form);
 
-    this.#descInput.addEventListener('input', () => {
-      this.#updateSubmitButtonState(this.#descInput.value, this.#applyCastDirectives, mode.kind === 'update' ? mode.directiveCount : 0);
-    });
-
-    this.#updateSubmitButtonState(this.#descInput.value, this.#applyCastDirectives, mode.kind === 'update' ? mode.directiveCount : 0);
+    this.#descInput.addEventListener('input', this.#handleDescriptionInput);
+    this.#handleDescriptionInput();
   }
 
   /**
@@ -100,10 +103,72 @@ export class ForgeSentinelDetail {
     this.#kb.unbindAll();
   }
 
-  #buildBackButton(contentEl: HTMLElement, onBack: () => void): void {
+  // ── Event handlers ───────────────────────────────────────────────────────────
+
+  #handleDescriptionInput = (): void => {
+    const directiveCount = this.#mode.kind === 'update' ? this.#mode.directiveCount : 0;
+    this.#updateSubmitButtonState(this.#descInput.value, this.#applyCastDirectives, directiveCount);
+  };
+
+  #handleHotkeyChange = (h: Hotkey | null): void => {
+    if (h !== null && this.#hotkey.writer && this.#mode.kind === 'update') {
+      void this.#hotkey.writer(this.#mode.spell.path, h);
+    }
+    // h === null: HotkeyCaptureField already called eraser; nothing extra to do
+  };
+
+  #handleExecuteOnNoteChange = (e: Event): void => {
+    this.#executeOnNote = (e.target as HTMLInputElement).checked;
+  };
+
+  #handleApplyCastDirectivesChange = (e: Event): void => {
+    this.#applyCastDirectives = (e.target as HTMLInputElement).checked;
+    if (this.#mode.kind === 'update') {
+      this.#updateSubmitButtonState(this.#descInput.value, this.#applyCastDirectives, this.#mode.directiveCount);
+    }
+  };
+
+  #handleModelChange = (): void => {
+    this.#currentEffort = null;
+    this.#effortRow.update(modelId(this.#modelSelect.value), null);
+  };
+
+  #handleEffortChange = (effort: Effort | null): void => {
+    this.#currentEffort = effort;
+  };
+
+  #handleSubmit = (e: Event): void => {
+    e.preventDefault();
+    if (this.#mode.kind === 'create') {
+      this.#callbacks.onCreateSubmit(this.#snapshotCreate());
+    } else {
+      this.#callbacks.onUpdateSubmit(this.#snapshotUpdate(this.#mode));
+    }
+  };
+
+  // ── DOM builders ─────────────────────────────────────────────────────────────
+
+  #buildBackButton(contentEl: HTMLElement): void {
     const back = contentEl.createEl('button', { text: '← back' });
     back.type = 'button';
-    back.addEventListener('click', () => onBack());
+    back.addEventListener('click', this.#callbacks.onBack);
+  }
+
+  #buildHotkeyCaptureField(
+    container: HTMLElement,
+    mode: Extract<ForgeMode, { kind: 'update' }>,
+  ): void {
+    const initialPersisted = mode.spell.hotkey ?? null;
+    const fieldContainer = container.createDiv();
+    this.#hotkeyCaptureField = new HotkeyCaptureField();
+    this.#hotkeyCaptureField.render({
+      container: fieldContainer,
+      initialPersisted,
+      selfPath: mode.spell.path,
+      directory: this.#hotkey.directory,
+      eraser: this.#hotkey.eraser,
+      onChange: this.#handleHotkeyChange,
+    });
   }
 
   #buildForm(contentEl: HTMLElement): HTMLFormElement {
@@ -134,29 +199,6 @@ export class ForgeSentinelDetail {
     return textarea;
   }
 
-  #buildHotkeyCaptureField(
-    container: HTMLElement,
-    mode: Extract<ForgeMode, { kind: 'update' }>,
-    hotkey: ForgeSentinelDetailParams['hotkey'],
-  ): void {
-    const initialPersisted = mode.spell.hotkey ?? null;
-    const fieldContainer = container.createDiv();
-    this.#hotkeyCaptureField = new HotkeyCaptureField();
-    this.#hotkeyCaptureField.render({
-      container: fieldContainer,
-      initialPersisted,
-      selfPath: mode.spell.path,
-      directory: hotkey.directory,
-      eraser: hotkey.eraser,
-      onChange: (h) => {
-        if (h !== null && hotkey.writer) {
-          void hotkey.writer(mode.spell.path, h);
-        }
-        // h === null: HotkeyCaptureField already called eraser; nothing extra to do
-      },
-    });
-  }
-
   #buildCheckbox(form: HTMLElement, mode: ForgeMode): void {
     if (mode.kind === 'create') {
       this.#buildExecuteOnNoteCheckbox(form);
@@ -172,7 +214,7 @@ export class ForgeSentinelDetail {
     input.type = 'checkbox';
     input.dataset['grimoire'] = 'execute-on-note';
     input.checked = true;
-    input.addEventListener('change', () => { this.#executeOnNote = input.checked; });
+    input.addEventListener('change', this.#handleExecuteOnNoteChange);
     label.append(' Execute on active note');
   }
 
@@ -184,12 +226,7 @@ export class ForgeSentinelDetail {
     input.checked = true;
     const noun = directiveCount === 1 ? 'directive' : 'directives';
     label.append(` Apply @cast directives (${directiveCount} ${noun} found)`);
-    input.addEventListener('change', () => {
-      this.#applyCastDirectives = input.checked;
-      if (this.#mode.kind === 'update') {
-        this.#updateSubmitButtonState(this.#descInput.value, this.#applyCastDirectives, this.#mode.directiveCount);
-      }
-    });
+    input.addEventListener('change', this.#handleApplyCastDirectivesChange);
   }
 
   #buildModelSectionHeader(form: HTMLElement): void {
@@ -204,13 +241,8 @@ export class ForgeSentinelDetail {
       kb: this.#kb,
       models: SUPPORTED_MODELS,
       initialModel: defaultModel,
-      onChange: () => this.#applyModelChange(),
+      onChange: this.#handleModelChange,
     });
-  }
-
-  #applyModelChange(): void {
-    this.#currentEffort = null;
-    this.#effortRow.update(modelId(this.#modelSelect.value), null);
   }
 
   #resolveInitialEffort(defaults: FormDefaults): Effort | null {
@@ -225,7 +257,7 @@ export class ForgeSentinelDetail {
       models: SUPPORTED_MODELS,
       modelId: defaults.defaultModel,
       effort: this.#currentEffort,
-      onChange: (effort) => { this.#currentEffort = effort; },
+      onChange: this.#handleEffortChange,
     });
     return row;
   }
@@ -237,20 +269,11 @@ export class ForgeSentinelDetail {
     return submitBtn;
   }
 
-  #wireSubmitHandler(
-    form: HTMLFormElement,
-    mode: ForgeMode,
-    callbacks: ForgeSentinelDetailParams['callbacks'],
-  ): void {
-    form.onsubmit = (e: Event): void => {
-      e.preventDefault();
-      if (mode.kind === 'create') {
-        callbacks.onCreateSubmit(this.#snapshotCreate());
-      } else {
-        callbacks.onUpdateSubmit(this.#snapshotUpdate(mode));
-      }
-    };
+  #wireSubmitHandler(form: HTMLFormElement): void {
+    form.onsubmit = this.#handleSubmit;
   }
+
+  // ── Data helpers ─────────────────────────────────────────────────────────────
 
   #snapshotCreate(): ForgeFormSnapshot {
     return {
