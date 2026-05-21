@@ -43,6 +43,7 @@ describe('SearchPhase', () => {
       contentEl: vi.fn(() => document.createElement('div')),
       exitDetail: vi.fn(),
       renderSearch: vi.fn(),
+      switchTab: vi.fn(),
     };
   }
 
@@ -91,8 +92,7 @@ describe('SearchPhase', () => {
     const result = phase.handleTab();
 
     expect(result).toBe(true);
-    expect(ctx.setActivePanel).toHaveBeenCalledWith(panel2);
-    expect(ctx.renderSearch).toHaveBeenCalled();
+    expect(ctx.switchTab).toHaveBeenCalledWith(panel2);
   });
 
   it('handleArrowRight calls openOptions on spells panel when active panel is spells and has a selected spell', () => {

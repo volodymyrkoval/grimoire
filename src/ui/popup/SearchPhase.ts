@@ -32,19 +32,9 @@ export class SearchPhase implements PopupPhase {
 
   handleTab(): boolean {
     const panels = this.#ctx.panels();
-    const activePanel = this.#ctx.activePanel();
-    const currentIndex = panels.indexOf(activePanel);
-    const nextIndex = (currentIndex + 1) % panels.length;
-    const nextPanel = panels[nextIndex];
-    activePanel.unmount?.();
-    this.#ctx.setActivePanel(nextPanel);
-    if (nextPanel && isNavigable(nextPanel)) {
-      nextPanel.reset();
-    }
-    if (isNavigable(nextPanel)) {
-      this.#ctx.setSelectedIndex(0);
-    }
-    this.#ctx.renderSearch();
+    const currentIndex = panels.indexOf(this.#ctx.activePanel());
+    const nextPanel = panels[(currentIndex + 1) % panels.length];
+    this.#ctx.switchTab(nextPanel);
     return true;
   }
 

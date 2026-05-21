@@ -234,6 +234,7 @@ export class CommandPopup extends Modal {
       contentEl: () => this.contentEl,
       exitDetail: this.#exitDetail,
       renderSearch: this.#render,
+      switchTab: (panel) => { this.#switchTab(panel); },
     };
   }
 

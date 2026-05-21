@@ -15,6 +15,7 @@ export interface PopupPhaseContext {
   contentEl(): HTMLElement;
   exitDetail(): void;
   renderSearch(): void;
+  switchTab(panel: TabPanel): void;
 }
 
 /**
