@@ -259,15 +259,25 @@ body.is-mobile .grimoire-options-chip {
 }
 .cast-log-row-header {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 1px;
+}
+.cast-log-row-title {
+  display: flex;
   align-items: center;
+  gap: 8px;
 }
 .cast-log-display-name {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.cast-log-meta {
+  display: flex;
+  gap: 6px;
 }
 .cast-log-model-badge,
 .cast-log-started,
@@ -277,6 +287,7 @@ body.is-mobile .grimoire-options-chip {
   white-space: nowrap;
 }
 .cast-log-status-badge {
+  flex-shrink: 0;
   font-size: var(--font-ui-smaller);
   padding: 1px 6px;
   border-radius: 4px;

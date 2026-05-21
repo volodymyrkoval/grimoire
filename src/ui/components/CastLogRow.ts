@@ -74,11 +74,13 @@ export class CastLogRow {
   #buildHeader(record: CastRecord, now: Date, onToggle: () => void): void {
     const header = this.el.createDiv({ cls: 'cast-log-row-header' });
     header.addEventListener('click', onToggle);
-    this.#nameSpan = buildNameSpan(header, record, this.#registry);
-    this.#modelBadgeSpan = buildModelBadgeSpan(header, record);
-    this.#startedSpan = buildStartedSpan(header, record, now);
-    this.#durationSpan = buildDurationSpan(header, record, now);
-    this.#statusBadgeSpan = buildStatusBadgeSpan(header, record);
+    const titleRow = header.createDiv({ cls: 'cast-log-row-title' });
+    this.#nameSpan = buildNameSpan(titleRow, record, this.#registry);
+    this.#statusBadgeSpan = buildStatusBadgeSpan(titleRow, record);
+    const meta = header.createDiv({ cls: 'cast-log-meta' });
+    this.#modelBadgeSpan = buildModelBadgeSpan(meta, record);
+    this.#startedSpan = buildStartedSpan(meta, record, now);
+    this.#durationSpan = buildDurationSpan(meta, record, now);
   }
 
   #renderBody(record: CastRecord): void {
