@@ -276,7 +276,7 @@ describe('spell hotkeys chrome — hint-slot behaviour', () => {
 
     const hintEl = h.contentEl.querySelector('.modal-tab-bar-right .hotkey-hint');
     expect(hintEl).not.toBeNull();
-    expect(hintEl!.textContent).toMatch(/Shift \+ letter for hotkeys/i);
+    expect(hintEl!.textContent).toMatch(/Shift \+ letters for hotkeys/i);
   });
 
   // (6) Clicking the Logs tab hides / removes the hint slot content -----------
@@ -302,6 +302,6 @@ describe('spell hotkeys chrome — hint-slot behaviour', () => {
 
     const hintEl = h.contentEl.querySelector('.modal-tab-bar-right .hotkey-hint');
     expect(hintEl).not.toBeNull();
-    expect(hintEl!.textContent).toMatch(/Shift \+ letter for hotkeys/i);
+    expect(hintEl!.textContent).toMatch(/Shift \+ letters for hotkeys/i);
   });
 });

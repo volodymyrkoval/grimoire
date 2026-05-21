@@ -24,13 +24,13 @@ export class HotkeyHintSlot {
   }
 
   /**
-   * Shows the static hint text: "Shift + letter for hotkeys".
+   * Shows the static hint text: "Shift + letters for hotkeys".
    * Replaces any previous content.
    */
   renderHint(): void {
     this.#container.empty();
     const span = this.#container.createSpan({ cls: 'hotkey-hint' });
-    span.setText('Shift + letter for hotkeys');
+    span.setText('Shift + letters for hotkeys');
   }
 
   /**
