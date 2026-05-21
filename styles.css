@@ -474,8 +474,8 @@ body.is-mobile .spells-row.has-hotkey .spells-row-hint {
   gap: 6px;
 }
 .hotkey-hint {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  font-size: calc(var(--font-ui-small) * 0.9);
 }
 .hotkey-buffer-indicator {
   font-family: var(--font-monospace);
@@ -486,11 +486,6 @@ body.is-mobile .spells-row.has-hotkey .spells-row-hint {
 }
 .hotkey-buffer-indicator.is-error {
   color: var(--text-error);
-}
-.hotkey-buffer-clear {
-  all: unset;
-  cursor: pointer;
-  color: var(--text-muted);
 }
 .grimoire-hotkey-field {
   display: flex;

@@ -641,3 +641,10 @@ export type RequestUrlResponse = {
   text: string;
   json: unknown;
 };
+
+export function setIcon(parent: HTMLElement, iconId: string): void {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'svg-icon');
+  svg.setAttribute('data-icon', iconId);
+  parent.appendChild(svg);
+}

@@ -1,3 +1,5 @@
+import { setIcon } from 'obsidian';
+
 /**
  * Renders the tab-bar right-slot chrome for hotkey state:
  * - hint text when the buffer is empty,
@@ -45,11 +47,11 @@ export class HotkeyHintSlot {
       : 'hotkey-buffer-indicator';
     const indicator = this.#container.createSpan({ cls });
     indicator.createSpan({ cls: 'hotkey-buffer-letters', text: letters });
-    const clearBtn = indicator.createEl('button', {
-      cls: 'hotkey-buffer-clear',
-      type: 'button',
-      text: '×',
+    const clearBtn = indicator.createSpan({
+      cls: 'setting-hotkey-icon setting-delete-hotkey',
+      attr: { role: 'button', tabindex: '0' },
     });
+    setIcon(clearBtn, 'x');
     clearBtn.addEventListener('click', () => this.#onClear());
   }
 
