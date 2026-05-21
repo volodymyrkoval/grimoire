@@ -351,6 +351,10 @@ body.is-mobile .grimoire-options-chip {
   color: var(--text-muted);
   white-space: nowrap;
 }
+.cast-log-started::before,
+.cast-log-duration::before {
+  content: '· ';
+}
 .cast-log-status-badge {
   flex-shrink: 0;
   font-size: var(--font-ui-smaller);
