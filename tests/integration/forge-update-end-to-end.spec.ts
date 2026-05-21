@@ -72,10 +72,10 @@ describe('forge-update end-to-end', () => {
 
     // Step 1: Open options for first spell (Banishment Hex, /spells/banishment.md)
     h.pressKey('ArrowRight');
-    expect(h.contentEl.querySelector('.grimoire-forge-update-row')).not.toBeNull();
+    expect(h.contentEl.querySelector('.grimoire-forge-btn')).not.toBeNull();
 
     // Step 2: Click Forge button
-    const forgeBtn = h.contentEl.querySelector('.grimoire-forge-update-row button');
+    const forgeBtn = h.contentEl.querySelector('.grimoire-forge-btn');
     forgeBtn?.dispatchEvent(new Event('click'));
 
     // Wait for async read + dialog mount

@@ -163,9 +163,9 @@ describe('C2: default state with persisted hotkey in update mode', () => {
     expect(chip).not.toBeNull();
     expect(btn).not.toBeNull();
 
-    // chip must appear before the button in document order
-    const position = chip.compareDocumentPosition(btn);
-    // DOCUMENT_POSITION_FOLLOWING === 4 means btn comes after chip
+    // chip must appear after the button in document order
+    const position = btn.compareDocumentPosition(chip);
+    // DOCUMENT_POSITION_FOLLOWING === 4 means chip comes after btn
     expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

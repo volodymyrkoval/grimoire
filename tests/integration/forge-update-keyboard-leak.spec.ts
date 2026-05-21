@@ -44,7 +44,7 @@ describe('OptionsDetail teardown on detail-to-detail transition', () => {
 
     // Click the Forge button → onForgeUpdate → exit() then renderForgeUpdate.
     const forgeBtn = h.contentEl.querySelector(
-      '.grimoire-forge-update-row button',
+      '.grimoire-forge-btn',
     ) as HTMLButtonElement | null;
     if (!forgeBtn) throw new Error('Forge button not found');
     forgeBtn.dispatchEvent(new Event('click'));

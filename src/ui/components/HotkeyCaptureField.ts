@@ -83,12 +83,12 @@ export class HotkeyCaptureField {
 
   /** Stable layout: [pre-area] [button] [post-area]. pre/post are emptied and rebuilt on each sync. */
   #buildLayout(container: HTMLElement): void {
-    this.#preArea = container.createDiv();
     const btn = container.createEl('button', { cls: 'grimoire-hotkey-button' });
     btn.type = 'button';
     btn.textContent = 'Hotkey';
     btn.addEventListener('click', () => this.#handleHotkeyBtnClick());
     this.#hotkeyBtn = btn;
+    this.#preArea = container.createDiv();
     this.#postArea = container.createDiv();
   }
 
@@ -114,6 +114,8 @@ export class HotkeyCaptureField {
     } else {
       this.#syncCapture(this.#state);
     }
+
+    this.#preArea.style.display = this.#preArea.hasChildNodes() ? '' : 'none';
   }
 
   #syncDefault(state: DefaultState): void {

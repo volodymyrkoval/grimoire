@@ -129,10 +129,8 @@ function createForgeUpdateHarness(opts: HarnessOptions = {}) {
   }
 
   function clickForgeButton(): void {
-    const forgeRow = modal.contentEl.querySelector('.grimoire-forge-update-row');
-    if (!forgeRow) throw new Error('.grimoire-forge-update-row not found in DOM');
-    const btn = forgeRow.querySelector('button');
-    if (!btn) throw new Error('Forge button not found inside .grimoire-forge-update-row');
+    const btn = modal.contentEl.querySelector<HTMLButtonElement>('.grimoire-forge-btn');
+    if (!btn) throw new Error('.grimoire-forge-btn not found in DOM');
     btn.dispatchEvent(new Event('click'));
   }
 
@@ -177,11 +175,8 @@ describe('D0-a: options panel for a user spell includes a Forge button', () => {
     );
     expect(resetBtn).not.toBeNull();
 
-    // Forge button must be present inside a grimoire-forge-update-row div (D1 not wired)
-    const forgeRow = h.contentEl.querySelector('.grimoire-forge-update-row');
-    expect(forgeRow).not.toBeNull();
-
-    const forgeBtn = forgeRow?.querySelector('button');
+    // Forge button must be present in the button row
+    const forgeBtn = h.contentEl.querySelector('.grimoire-forge-btn');
     expect(forgeBtn).not.toBeNull();
     expect(forgeBtn?.textContent?.trim()).toBe('Forge');
   });
@@ -225,14 +220,14 @@ describe('D0-b: clicking Forge reads spell content and mounts update-mode dialog
 // ─── D0-c: Refine sentinel options panel has no Forge button ─────────────────
 
 describe('D0-c: Refine sentinel options panel has no Forge button', () => {
-  it('ArrowRight on Refine sentinel row does not show a grimoire-forge-update-row', () => {
+  it('ArrowRight on Refine sentinel row does not show a Forge button', () => {
     const h = createForgeUpdateHarness();
     h.openOptionsForRefine();
 
     // The Refine options panel opens (sanity check: some form is present)
-    // but no forge update row must exist
-    const forgeRow = h.contentEl.querySelector('.grimoire-forge-update-row');
-    expect(forgeRow).toBeNull();
+    // but no Forge button must exist
+    const forgeBtn = h.contentEl.querySelector('.grimoire-forge-btn');
+    expect(forgeBtn).toBeNull();
   });
 });
 

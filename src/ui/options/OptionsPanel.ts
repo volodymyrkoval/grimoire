@@ -119,8 +119,7 @@ export class OptionsPanel {
       this.#refineVariantSelect.mount(form, deps.refineVariantSelectDeps);
     }
     if (deps.onForgeUpdate) {
-      const forgeRow = form.createDiv({ cls: 'grimoire-forge-update-row' });
-      const forgeBtn = forgeRow.createEl('button', { text: 'Forge' });
+      const forgeBtn = buttonRow.createEl('button', { text: 'Forge', cls: 'grimoire-forge-btn' });
       forgeBtn.type = 'button';
       forgeBtn.addEventListener('click', () => deps.onForgeUpdate?.());
     }
