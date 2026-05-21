@@ -14,6 +14,14 @@ export class TypedEmitter<T extends Record<string, unknown>> {
     this.#listeners.set(event, bucket);
   }
 
+  /** Removes a previously registered listener for the given event. No-ops if not registered. */
+  off<K extends keyof T>(event: K, listener: Listener<T[K]>): void {
+    const bucket = this.#listeners.get(event);
+    if (!bucket) return;
+    const index = bucket.indexOf(listener);
+    if (index !== -1) bucket.splice(index, 1);
+  }
+
   /** Emits an event, invoking all registered listeners with the given payload. */
   emit<K extends keyof T>(event: K, payload: T[K]): void {
     this.#listeners.get(event)?.forEach((l) => l(payload));
