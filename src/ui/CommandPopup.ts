@@ -181,6 +181,11 @@ export class CommandPopup extends Modal {
   }
 
   onClose(): void {
+    this.#spellsPanel.events.off("cast", this.#handleSpellCast);
+    this.#spellsPanel.events.off("sentinel", this.#handleOpenSentinel);
+    this.#spellsPanel.events.off("open-options", this.#handleOpenSpellOptions);
+    this.#spellsPanel.events.off("open-refine-options", this.#handleOpenRefineOptions);
+    this.#spellsPanel.events.off("refine-cast", this.#handleRefineCast);
     this.#panels.forEach((p) => p.unmount?.());
     this.contentEl.empty();
   }

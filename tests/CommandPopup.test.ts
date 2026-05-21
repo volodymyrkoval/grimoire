@@ -387,6 +387,21 @@ describe('CommandPopup D1 — dismiss() bypasses close-override intercept', () =
   });
 });
 
+describe('CommandPopup onClose — unsubscribes spellsPanel event listeners', () => {
+  it('emitting "cast" after onClose does not invoke castAction', () => {
+    const castAction = vi.fn();
+    const popup = makePopup(castAction);
+
+    popup.onOpen();
+    popup.onClose();
+
+    const spellsPanel = popup.panels[0] as any;
+    spellsPanel.events.emit('cast', STUB_SPELLS[0]);
+
+    expect(castAction).not.toHaveBeenCalled();
+  });
+});
+
 describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
   it('spellsPanel hasOverride predicate delegates to overrides.has()', () => {
     const stubOverrides = makeStubOverrides();
