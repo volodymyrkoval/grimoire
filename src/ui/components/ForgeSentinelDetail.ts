@@ -216,7 +216,7 @@ export class ForgeSentinelDetail {
     input.dataset['grimoire'] = 'execute-on-note';
     input.checked = true;
     input.addEventListener('change', this.#handleExecuteOnNoteChange);
-    label.append(' Execute on active note');
+    label.append(' Run on active note');
   }
 
   #buildApplyCastDirectivesCheckbox(form: HTMLElement, directiveCount: number): void {
@@ -231,7 +231,7 @@ export class ForgeSentinelDetail {
   }
 
   #buildModelSectionHeader(form: HTMLElement): void {
-    form.createSpan({ text: 'Forging model settings', cls: 'grimoire-section-label' });
+    form.createSpan({ text: 'Model settings', cls: 'grimoire-section-label' });
   }
 
   #buildModelSelect(form: HTMLElement, defaultModel: ModelId): HTMLSelectElement {

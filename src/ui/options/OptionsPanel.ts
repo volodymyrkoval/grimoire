@@ -162,7 +162,7 @@ export class OptionsPanel {
     checkbox.id = 'grimoire-execute-on-note';
     checkbox.dataset['grimoire'] = 'execute-on-note';
     checkbox.checked = initialValue;
-    const label = container.createEl('label', { text: 'Execute on active note' });
+    const label = container.createEl('label', { text: 'Run on active note' });
     label.htmlFor = checkbox.id;
     return checkbox;
   }
