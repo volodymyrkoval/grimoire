@@ -18,10 +18,10 @@
  * without the isRefineSentinel filter in getSpells, the file would appear.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { App } from 'obsidian';
-import { vi } from 'vitest';
 import { CommandPopup } from '../../src/ui/CommandPopup';
+import { RefineVariantSelect } from '../../src/ui/options/RefineVariantSelect';
 import { obsidianRanker } from '../../src/infra/obsidianRanker';
 import { modelId } from '../../src/domain/settings/ModelId';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
@@ -266,5 +266,29 @@ describe('custom-refine-variant-select integration — RefineVariantSelect seam'
       row.textContent?.includes(SENTINEL_FILE.basename)
     );
     expect(sentinelInList).toBe(false);
+  });
+});
+
+describe('RefineVariantSelect — memory cleanup', () => {
+  it('destroy() prevents change event from invoking onChange on the detached select', () => {
+    const parent = document.createElement('div');
+    const onChange = vi.fn();
+    const widget = new RefineVariantSelect();
+
+    widget.mount(parent, {
+      variants: [{ name: 'My Refine', path: 'spells/my-refine.md' }],
+      initialPath: null,
+      onChange,
+    });
+
+    const select = parent.querySelector<HTMLSelectElement>('select');
+    expect(select).not.toBeNull();
+
+    widget.destroy();
+
+    select!.value = 'spells/my-refine.md';
+    select!.dispatchEvent(new Event('change'));
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

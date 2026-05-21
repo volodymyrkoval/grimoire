@@ -21,20 +21,23 @@ export interface RefineVariantSelectDeps {
  */
 export class RefineVariantSelect {
   #mountedEls: HTMLElement[] = [];
+  #abort: AbortController | null = null;
 
   /** Creates label and <select> as direct children of `parent`. */
   mount(parent: HTMLElement, deps: RefineVariantSelectDeps): void {
+    this.#abort = new AbortController();
     const { label, select } = this.#createElements(parent);
     this.#mountedEls = [label, select];
     this.#populateOptions(select, deps.variants);
     select.value = deps.initialPath ?? '';
     select.addEventListener('change', () => {
       deps.onChange(select.value === '' ? null : select.value);
-    });
+    }, { signal: this.#abort.signal });
   }
 
   /** Removes all mounted elements from the DOM. */
   destroy(): void {
+    this.#abort?.abort();
     for (const el of this.#mountedEls) {
       el.remove();
     }
