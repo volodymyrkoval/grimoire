@@ -89,9 +89,8 @@ export class OptionsPanel {
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
   ): void {
-    form.createSpan({ text: 'Context notes', cls: 'grimoire-field-label' });
-    this.#buildContextNotes(form, formState, deps.app);
     const followUpInput = this.#buildFollowUpInput(form, formState.snapshot().followUp);
+    this.#buildContextNotes(form, formState, deps.app);
     this.#bindFollowUpInput(followUpInput, formState);
     const eonState: ExecuteOnNoteState = {
       initialValue: formState.snapshot().executeOnNote,
