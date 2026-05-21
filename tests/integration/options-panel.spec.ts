@@ -132,7 +132,7 @@ describe('OptionsPanel integration', () => {
 
     // "Set as default" label is hidden: snapshot matches initial formState
     // (model: sonnet, effort: medium) — snapshotEqualsCurrent returns true
-    const defaultLabel = form!.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
+    const defaultLabel = form!.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
     expect(defaultLabel).not.toBeNull();
     expect(defaultLabel!.style.display).toBe('none');
 
@@ -158,7 +158,7 @@ describe('OptionsPanel integration', () => {
     // formState now has model=opus, snapshot has model=sonnet → not equal
     // Opus has effortOptions (non-null) → effortPersistable = true
     // → label should be visible
-    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
+    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
     expect(defaultLabel).not.toBeNull();
     expect(defaultLabel!.style.display).not.toBe('none');
   });
@@ -181,7 +181,7 @@ describe('OptionsPanel integration', () => {
     select.dispatchEvent(new Event('change'));
 
     // Verify label is visible after change
-    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
+    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
     expect(defaultLabel!.style.display).not.toBe('none');
 
     // Click Reset
@@ -331,7 +331,7 @@ describe('OptionsPanel integration', () => {
     select.dispatchEvent(new Event('change'));
 
     // Per spec: checkbox still hidden because snapshot.effort === null (Haiku base → not persistable)
-    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
+    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
     expect(defaultLabel).not.toBeNull();
     expect(defaultLabel!.style.display).toBe('none');
 
@@ -492,7 +492,7 @@ describe('OptionsPanel integration', () => {
     });
 
     const form = contentEl.querySelector('form.options-panel')!;
-    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]')!;
+    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
 
     // Confirm label starts hidden (snapshot equals formState)
     expect(defaultLabel.style.display).toBe('none');

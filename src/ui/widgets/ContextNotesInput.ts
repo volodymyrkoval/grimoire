@@ -24,6 +24,7 @@ export class ContextNotesInput {
 
     this.#searchInput = parent.createEl('input', { cls: 'context-notes-search' });
     this.#searchInput.type = 'text';
+    this.#searchInput.placeholder = 'Add context notes…';
 
     this.#dropdown = parent.createDiv({ cls: 'context-notes-dropdown' });
 

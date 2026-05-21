@@ -138,7 +138,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
 
     // Step 7: set-as-default row must be hidden because resolved snapshot matches formState
     // (override → opus/medium; formState starts at opus/medium; snapshotEqualsCurrent = true)
-    const checkboxLabel = form2.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]')!;
+    const checkboxLabel = form2.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
     expect(checkboxLabel).not.toBeNull();
     expect(checkboxLabel.style.display).toBe('none');
   });
