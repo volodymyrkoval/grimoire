@@ -166,4 +166,24 @@ describe('ContextNotesInput keyboard selection', () => {
     expect(document.activeElement).toBe(searchInput);
     document.body.removeChild(container);
   });
+
+  // ------------------------------------------------------------------ A8
+  it('after detach() an input event on the search element does not rebuild the dropdown', () => {
+    const searchInput = container.querySelector<HTMLInputElement>('input.context-notes-search')!;
+    expect(searchInput).not.toBeNull();
+
+    // Populate dropdown before detach
+    searchInput.value = 'Notes';
+    searchInput.dispatchEvent(new Event('input'));
+    expect(container.querySelector('div.context-notes-dropdown button')).not.toBeNull();
+
+    input.detach();
+
+    // Dispatch input on the now-detached element (reference still alive)
+    searchInput.value = 'Meeting';
+    searchInput.dispatchEvent(new Event('input'));
+
+    // Dropdown should still be empty (handler did not fire)
+    expect(container.querySelector('div.context-notes-dropdown button')).toBeNull();
+  });
 });

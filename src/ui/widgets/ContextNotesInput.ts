@@ -16,9 +16,12 @@ export class ContextNotesInput {
   #pillContainer: HTMLElement | null = null;
   #dropdown: HTMLElement | null = null;
   #props: ContextNotesInputProps | null = null;
+  #mountAbort: AbortController | null = null;
 
   mount(parent: HTMLElement, props: ContextNotesInputProps): void {
     this.#props = props;
+    this.#mountAbort = new AbortController();
+    const { signal } = this.#mountAbort;
 
     this.#pillContainer = parent.createDiv({ cls: 'context-notes-pills' });
 
@@ -30,7 +33,7 @@ export class ContextNotesInput {
 
     this.#searchInput.addEventListener('input', () => {
       this.#rebuildDropdown(this.#searchInput!.value);
-    });
+    }, { signal });
 
     // Esc must bubble — no stopPropagation
     this.#searchInput.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -50,7 +53,7 @@ export class ContextNotesInput {
           }
         }
       }
-    });
+    }, { signal });
   }
 
   #rebuildDropdown(query: string): void {
@@ -147,6 +150,7 @@ export class ContextNotesInput {
   }
 
   detach(): void {
+    this.#mountAbort?.abort();
     this.#searchInput?.remove();
     this.#pillContainer?.remove();
     this.#dropdown?.remove();
