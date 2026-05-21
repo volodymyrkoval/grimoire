@@ -231,8 +231,7 @@ export class ForgeSentinelDetail {
   }
 
   #buildModelSectionHeader(form: HTMLElement): void {
-    form.createEl('hr');
-    form.createEl('small', { text: 'Forging model settings' });
+    form.createSpan({ text: 'Forging model settings', cls: 'grimoire-section-label' });
   }
 
   #buildModelSelect(form: HTMLElement, defaultModel: ModelId): HTMLSelectElement {

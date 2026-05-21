@@ -64,8 +64,7 @@ export class CastModelSection {
   }
 
   #buildHeader(container: HTMLElement): void {
-    container.createEl('hr');
-    container.createEl('small', { text: 'Cast model settings' });
+    container.createSpan({ text: 'Cast model settings', cls: 'grimoire-section-label' });
   }
 
   #buildModelSelect(container: HTMLElement, formState: OptionsFormState): void {

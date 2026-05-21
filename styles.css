@@ -171,10 +171,6 @@ body.is-mobile .grimoire-options-chip {
   align-items: center;
   gap: 8px;
 }
-.forge-sentinel-form hr,
-.options-panel hr {
-  margin: 2px 0;
-}
 .options-panel {
   display: flex;
   flex-direction: column;
@@ -201,6 +197,15 @@ body.is-mobile .grimoire-options-chip {
   align-items: center;
   gap: 8px;
 }
+.grimoire-section-label {
+  font-size: var(--font-ui-small);
+  font-weight: 600;
+  color: var(--text-normal);
+}
+.grimoire-field-label {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
 .grimoire-nav-bar {
   padding-bottom: 8px;
   margin-bottom: 4px;
@@ -215,6 +220,15 @@ body.is-mobile .grimoire-options-chip {
 }
 .grimoire-forge-btn {
   margin-left: auto;
+}
+.grimoire-refine-inline {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.grimoire-refine-inline select {
+  width: auto;
 }
 .context-notes-pills {
   display: flex;

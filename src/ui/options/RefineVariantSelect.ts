@@ -22,10 +22,10 @@ export interface RefineVariantSelectDeps {
 export class RefineVariantSelect {
   #mountedEls: HTMLElement[] = [];
 
-  /** Creates <hr>, <small> label, and <select> as direct children of `parent`. */
+  /** Creates label and <select> as direct children of `parent`. */
   mount(parent: HTMLElement, deps: RefineVariantSelectDeps): void {
-    const { hr, label, select } = this.#createElements(parent);
-    this.#mountedEls = [hr, label, select];
+    const { label, select } = this.#createElements(parent);
+    this.#mountedEls = [label, select];
     this.#populateOptions(select, deps.variants);
     select.value = deps.initialPath ?? '';
     select.addEventListener('change', () => {
@@ -41,10 +41,9 @@ export class RefineVariantSelect {
     this.#mountedEls = [];
   }
 
-  #createElements(parent: HTMLElement): { hr: HTMLElement; label: HTMLElement; select: HTMLSelectElement } {
+  #createElements(parent: HTMLElement): { label: HTMLElement; select: HTMLSelectElement } {
     return {
-      hr: parent.createEl('hr'),
-      label: parent.createEl('small', { text: 'Refine variant' }),
+      label: parent.createSpan({ text: 'Refine variant', cls: 'grimoire-field-label' }),
       select: parent.createEl('select'),
     };
   }

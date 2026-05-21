@@ -88,7 +88,7 @@ export class OptionsPanel {
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
   ): void {
-    form.createEl('small', { text: 'Context notes' });
+    form.createSpan({ text: 'Context notes', cls: 'grimoire-field-label' });
     this.#buildContextNotes(form, formState, deps.app);
     const followUpInput = this.#buildFollowUpInput(form, formState.snapshot().followUp);
     this.#bindFollowUpInput(followUpInput, formState);
@@ -116,8 +116,9 @@ export class OptionsPanel {
     const resetBtn = this.#buildResetButton(buttonRow);
     this.#bindReset(resetBtn, snapshot, formState, deps, followUpInput, eonState);
     if (deps.refineVariantSelectDeps) {
+      const refineWrapper = buttonRow.createDiv({ cls: 'grimoire-refine-inline' });
       this.#refineVariantSelect = new RefineVariantSelect();
-      this.#refineVariantSelect.mount(form, deps.refineVariantSelectDeps);
+      this.#refineVariantSelect.mount(refineWrapper, deps.refineVariantSelectDeps);
     }
     if (deps.onForgeUpdate) {
       const forgeBtn = buttonRow.createEl('button', { text: 'Forge', cls: 'grimoire-forge-btn' });
