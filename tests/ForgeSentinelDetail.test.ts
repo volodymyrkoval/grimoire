@@ -120,17 +120,17 @@ describe('ForgeSentinelDetail', () => {
     expect(form.className).toBe('forge-sentinel-form');
   });
 
-  it('form contains name input with type="text" and placeholder="Name"', () => {
+  it('form contains name input with type="text" and example placeholder', () => {
     const { nameInput } = buildDetail();
     expect(nameInput).not.toBeNull();
     expect(nameInput.type).toBe('text');
-    expect(nameInput.placeholder).toBe('Name');
+    expect(nameInput.placeholder).toBe('Spell name, e.g. Summarize note');
   });
 
-  it('form contains description textarea with placeholder="Description"', () => {
+  it('form contains description textarea with intent-guiding placeholder', () => {
     const { descInput } = buildDetail();
     expect(descInput).not.toBeNull();
-    expect(descInput.placeholder).toBe('Description');
+    expect(descInput.placeholder).toBe('What should this spell do?');
   });
 
   it('model select has options from SUPPORTED_MODELS: haiku, sonnet, opus ids', () => {

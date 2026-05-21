@@ -79,7 +79,12 @@ export class ForgeSentinelDetail {
       this.#buildStaticNameField(form, mode.spell.name);
     }
 
-    this.#descInput = this.#buildDescriptionField(form, mode.kind === 'update' ? 'What should change about this spell?' : 'Description');
+    this.#descInput = this.#buildDescriptionField(
+      form,
+      mode.kind === 'update'
+        ? 'What to change, e.g. Handle code blocks too'
+        : 'What should this spell do?',
+    );
     this.#buildCheckbox(form, mode);
     this.#buildModelSectionHeader(form);
     this.#modelSelect = this.#buildModelSelect(form, defaults.defaultModel);
@@ -180,7 +185,7 @@ export class ForgeSentinelDetail {
     const label = form.createEl('label');
     const input = label.createEl('input');
     input.type = 'text';
-    input.placeholder = 'Name';
+    input.placeholder = 'Spell name, e.g. Summarize note';
     input.focus();
     return input;
   }

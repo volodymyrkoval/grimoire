@@ -83,11 +83,11 @@ describe('forge-update end-to-end', () => {
       expect(h.contentEl.querySelector('form.forge-sentinel-form')).not.toBeNull();
     });
 
-    // Verify update-mode dialog: no name input (static), correct placeholder
+    // Verify update-mode dialog: no name input (static display instead)
     const form = h.contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
-    expect(form.querySelector('input[placeholder="Name"]')).toBeNull();
+    expect(form.querySelector('input[type="text"]')).toBeNull();
     const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
-    expect(textarea.placeholder).toBe('What should change about this spell?');
+    expect(textarea.placeholder).toBe('What to change, e.g. Handle code blocks too');
 
     // Step 3: Fill description and submit
     textarea.value = 'Tighten the structure and remove redundancy';
