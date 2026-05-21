@@ -189,8 +189,12 @@ body.is-mobile .grimoire-options-chip {
   border: 1px solid var(--background-modifier-border);
 }
 .options-panel textarea {
-  resize: vertical;
-  min-height: 60px;
+  resize: none;
+  overflow: hidden;
+  min-height: 2lh;
+  font-size: var(--font-text-size);
+  font-family: var(--font-text);
+  line-height: var(--line-height-normal);
 }
 .grimoire-checkbox-row {
   display: flex;
@@ -258,6 +262,11 @@ body.is-mobile .grimoire-options-chip {
 }
 .context-notes-pill button:hover {
   color: var(--text-normal);
+}
+.context-notes-search {
+  font-size: var(--font-text-size);
+  font-family: var(--font-text);
+  line-height: var(--line-height-normal);
 }
 .grimoire-search-input {
   width: 100%;
