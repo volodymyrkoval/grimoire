@@ -34,7 +34,7 @@ Refine requires an open markdown file: if the user presses Enter and no `.md` fi
 - Live-spec + drift sweep on three existing feature docs.
 
 **Out:**
-- Autonomous modes (Generate / Expand) — deferred; cast requires either `@cast` lines or a follow-up to do anything.
+- Autonomous modes (Generate / Expand) — deferred *in this iteration*; cast then required either `@cast` lines or a follow-up to do anything. **Superseded:** the three-mode prompt buildout (`refine-spell-buildout.md`, `dev/done-026`) makes Generate and Expand functionally live, so a directive-free note now triggers autonomous generation or expansion.
 - Autonomous mode detection — no mode reasoning lives in the plugin; the Refine prompt itself decides what to do based on `@cast` lines and follow-up text. (Editor-side `@cast` line decoration shipped separately — see `docs/features/refine-marker-styling.md`.)
 - Custom Refine Script — prompt is hardcoded in plugin source; user-authored prompt body waits for a second use case.
 - Re-cast affordance on Refine entries in Cast Log — pitch explicitly defers; existing log row behaviour applies unchanged.
