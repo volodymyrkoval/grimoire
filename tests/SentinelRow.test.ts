@@ -79,7 +79,7 @@ describe('SentinelRow', () => {
   });
 
   it('when selected, sentinel-row hint visibility is defined in CSS', () => {
-    const cssPath = resolve(__dirname, '../src/main.css');
+    const cssPath = resolve(__dirname, '../styles.css');
     const cssContent = readFileSync(cssPath, 'utf-8');
 
     // Assert the CSS rule exists for sentinel-row.is-selected .spells-row-hint
@@ -87,7 +87,7 @@ describe('SentinelRow', () => {
   });
 
   it('.sentinel-row has flex layout to push hint chip to the right edge', () => {
-    const cssPath = resolve(__dirname, '../src/main.css');
+    const cssPath = resolve(__dirname, '../styles.css');
     const cssContent = readFileSync(cssPath, 'utf-8');
 
     // Extract the .sentinel-row rule block (lines 35-39)

@@ -11,7 +11,7 @@ function extractRuleBody(css: string, selector: string): string {
   return m ? m[1] : '';
 }
 
-const css = readFileSync('src/main.css', 'utf-8');
+const css = readFileSync('styles.css', 'utf-8');
 
 describe('spell-row-name-wrapping: CSS structural assertions', () => {
   it('.spells-row-hint contains white-space: nowrap', () => {

@@ -68,7 +68,8 @@ export class OptionsPanel {
   }
 
   #buildBackButton(container: HTMLElement): HTMLButtonElement {
-    const backBtn = container.createEl('button', { text: '← back' });
+    const nav = container.createDiv({ cls: 'grimoire-nav-bar' });
+    const backBtn = nav.createEl('button', { text: '← back' });
     backBtn.type = 'button';
     return backBtn;
   }
@@ -172,7 +173,7 @@ export class OptionsPanel {
   }
 
   #buildCastButton(container: HTMLElement): void {
-    const castBtn = container.createEl('button', { text: 'Cast' });
+    const castBtn = container.createEl('button', { text: 'Cast', cls: 'mod-cta' });
     castBtn.type = 'submit';
   }
 

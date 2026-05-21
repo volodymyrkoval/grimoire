@@ -201,11 +201,11 @@ describe('SpellList options-chip click integration', () => {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the raw text of src/main.css. Used by scenarios (f) and (h) where
+ * Returns the raw text of styles.css. Used by scenarios (f) and (h) where
  * happy-dom cannot apply pseudo-class or shorthand computed styles reliably.
  */
 function mainCssText(): string {
-  return fs.readFileSync(path.resolve(__dirname, '../../src/main.css'), 'utf8');
+  return fs.readFileSync(path.resolve(__dirname, '../../styles.css'), 'utf8');
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +219,7 @@ describe('SpellList options-chip visibility & hit-area', () => {
    * Why inject CSS here: happy-dom does not auto-load any CSS files — it only
    * processes styles injected into document.head. Without this injection,
    * getComputedStyle returns default browser values ('') for every rule in
-   * src/main.css. The injection is done once per suite in beforeAll so DOM
+   * styles.css. The injection is done once per suite in beforeAll so DOM
    * mutations across individual tests cannot affect the stylesheet.
    *
    * The <style> element is intentionally NOT removed after the suite — it sits
@@ -228,7 +228,7 @@ describe('SpellList options-chip visibility & hit-area', () => {
    * extra stylesheet is invisible to them.
    */
   beforeAll(() => {
-    const cssPath = path.resolve(__dirname, '../../src/main.css');
+    const cssPath = path.resolve(__dirname, '../../styles.css');
     const css = fs.readFileSync(cssPath, 'utf8');
     const style = document.createElement('style');
     style.setAttribute('data-grimoire-test', 'main-css');
@@ -277,7 +277,7 @@ describe('SpellList options-chip visibility & hit-area', () => {
      * therefore leaves the computed opacity unchanged at '0', so a
      * getComputedStyle assertion would always be red for the wrong reason.
      *
-     * Pragmatic fallback: assert that src/main.css contains the correct
+     * Pragmatic fallback: assert that styles.css contains the correct
      * :hover rule text. This pins the behaviour contract at the CSS source
      * level — the selector and value are exactly what the browser will apply
      * at runtime. A mutation that removes or renames the rule will fail here.

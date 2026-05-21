@@ -85,7 +85,7 @@ export class ForgeSentinelDetail {
     this.#modelSelect = this.#buildModelSelect(form, defaults.defaultModel);
     this.#currentEffort = this.#resolveInitialEffort(defaults);
     this.#effortRow = this.#initEffortRow(form, defaults);
-    this.#submitBtn = this.#buildSubmitButton(form);
+    this.#submitBtn = this.#buildSubmitButton(form, mode);
     this.#wireSubmitHandler(form);
 
     this.#descInput.addEventListener('input', this.#handleDescriptionInput);
@@ -149,7 +149,8 @@ export class ForgeSentinelDetail {
   // ── DOM builders ─────────────────────────────────────────────────────────────
 
   #buildBackButton(contentEl: HTMLElement): void {
-    const back = contentEl.createEl('button', { text: '← back' });
+    const nav = contentEl.createDiv({ cls: 'grimoire-nav-bar' });
+    const back = nav.createEl('button', { text: '← back' });
     back.type = 'button';
     back.addEventListener('click', this.#callbacks.onBack);
   }
@@ -262,9 +263,10 @@ export class ForgeSentinelDetail {
     return row;
   }
 
-  #buildSubmitButton(form: HTMLFormElement): HTMLButtonElement {
+  #buildSubmitButton(form: HTMLFormElement, mode: ForgeMode): HTMLButtonElement {
     const buttonRow = form.createDiv({ cls: 'grimoire-button-row' });
-    const submitBtn = buttonRow.createEl('button', { text: 'Submit' });
+    const label = mode.kind === 'create' ? 'Imprint' : 'Submit';
+    const submitBtn = buttonRow.createEl('button', { text: label, cls: 'mod-cta' });
     submitBtn.type = 'submit';
     return submitBtn;
   }

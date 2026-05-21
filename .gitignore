@@ -5,7 +5,6 @@ dist/
 .DS_Store
 .idea/
 .claude/worktrees
-styles.css
 data.json
 hooks/
 agent-hooks/
