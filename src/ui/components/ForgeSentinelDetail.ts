@@ -51,6 +51,7 @@ export class ForgeSentinelDetail {
   #kb: KeyboardController;
   #callbacks!: ForgeSentinelDetailParams['callbacks'];
   #hotkey!: ForgeSentinelDetailParams['hotkey'];
+  #domAbort: AbortController | null = null;
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,7 @@ export class ForgeSentinelDetail {
   }
 
   render({ contentEl, mode, callbacks, defaults, hotkey }: ForgeSentinelDetailParams): void {
+    this.#domAbort = new AbortController();
     this.#mode = mode;
     this.#callbacks = callbacks;
     this.#hotkey = hotkey;
@@ -94,7 +96,7 @@ export class ForgeSentinelDetail {
     this.#submitBtn = this.#buildSubmitButton(form, mode);
     this.#wireSubmitHandler(form);
 
-    this.#descInput.addEventListener('input', this.#handleDescriptionInput);
+    this.#descInput.addEventListener('input', this.#handleDescriptionInput, { signal: this.#domAbort.signal });
     this.#handleDescriptionInput();
     this.#kb.bind(['Shift'], 'Enter', () => {
       if (!this.#submitBtn.disabled) this.#submitBtn.click();
@@ -109,6 +111,7 @@ export class ForgeSentinelDetail {
    * ArrowDown/ArrowUp handlers will intercept popup navigation.
    */
   destroy(): void {
+    this.#domAbort?.abort();
     this.#hotkeyCaptureField?.destroy();
     this.#kb.unbindAll();
   }
@@ -162,7 +165,7 @@ export class ForgeSentinelDetail {
     const nav = contentEl.createDiv({ cls: 'grimoire-nav-bar' });
     const back = nav.createEl('button', { text: '← back' });
     back.type = 'button';
-    back.addEventListener('click', this.#callbacks.onBack);
+    back.addEventListener('click', this.#callbacks.onBack, { signal: this.#domAbort!.signal });
     nav.createSpan({ cls: 'hotkey-hint', text: `Tab navigate · Esc back · ⇧↵ ${submitLabel}` });
   }
 
@@ -226,7 +229,7 @@ export class ForgeSentinelDetail {
     input.type = 'checkbox';
     input.dataset['grimoire'] = 'execute-on-note';
     input.checked = true;
-    input.addEventListener('change', this.#handleExecuteOnNoteChange);
+    input.addEventListener('change', this.#handleExecuteOnNoteChange, { signal: this.#domAbort!.signal });
     label.append(' Run on active note');
   }
 
@@ -238,7 +241,7 @@ export class ForgeSentinelDetail {
     input.checked = true;
     const noun = directiveCount === 1 ? 'directive' : 'directives';
     label.append(` Apply @cast directives (${directiveCount} ${noun} found)`);
-    input.addEventListener('change', this.#handleApplyCastDirectivesChange);
+    input.addEventListener('change', this.#handleApplyCastDirectivesChange, { signal: this.#domAbort!.signal });
   }
 
   #buildModelSectionHeader(form: HTMLElement): void {

@@ -159,6 +159,31 @@ describe('ForgeSentinelDetail', () => {
     expect(onBack).toHaveBeenCalled();
   });
 
+  it('destroy() prevents back button from invoking onBack on subsequent click', () => {
+    const onBack = vi.fn();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const detail = new ForgeSentinelDetail(makeScope());
+    detail.render({
+      contentEl: container,
+      mode: { kind: 'create' },
+      callbacks: { onBack, onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null },
+      hotkey: testHotkey(),
+    });
+
+    detail.destroy();
+
+    const backBtn = Array.from(container.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('← back'),
+    ) as HTMLButtonElement;
+    expect(backBtn).not.toBeNull();
+    backBtn.click();
+
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
   // -------------------------------------------------------------------------
   // EffortRow integration
   // -------------------------------------------------------------------------
