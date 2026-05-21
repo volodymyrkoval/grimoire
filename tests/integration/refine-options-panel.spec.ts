@@ -209,7 +209,7 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
 
     // Snapshot equals current because override (opus/medium) matches formState start
     // → checkbox label must be hidden (display: none)
-    const checkboxLabel = form2.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
+    const checkboxLabel = form2.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]')!;
     expect(checkboxLabel).not.toBeNull();
     expect(checkboxLabel.style.display).toBe('none');
   });

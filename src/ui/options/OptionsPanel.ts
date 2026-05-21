@@ -1,4 +1,5 @@
 import type { App, Scope } from 'obsidian';
+import { Setting } from 'obsidian';
 import { KeyboardController } from '../../infra/KeyboardController';
 import { ContextNotesInput } from '../widgets/ContextNotesInput';
 import type { OptionsFormState, OptionsFormSnapshot } from './OptionsFormState';
@@ -143,10 +144,11 @@ export class OptionsPanel {
   }
 
   #buildFollowUpInput(form: HTMLFormElement, followUp: string): HTMLTextAreaElement {
-    const followUpInput = form.createEl('textarea');
-    followUpInput.placeholder = 'Follow-up';
-    followUpInput.value = followUp;
-    return followUpInput;
+    const setting = new Setting(form).setName('Follow-up');
+    const textarea = setting.controlEl.createEl('textarea');
+    textarea.placeholder = 'Follow-up';
+    textarea.value = followUp;
+    return textarea;
   }
 
   #bindFollowUpInput(followUpInput: HTMLTextAreaElement, formState: OptionsFormState): void {
@@ -156,14 +158,12 @@ export class OptionsPanel {
   }
 
   #buildExecuteOnNoteCheckbox(form: HTMLFormElement, initialValue: boolean): HTMLInputElement {
-    const container = form.createDiv({ cls: 'grimoire-checkbox-row' });
-    const checkbox = container.createEl('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = 'grimoire-execute-on-note';
+    const setting = new Setting(form).setName('Run on active note').addToggle((toggle) => {
+      toggle.setValue(initialValue);
+    });
+    const checkbox = setting.controlEl.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!checkbox) throw new Error('Setting toggle did not render a checkbox (execute-on-note)');
     checkbox.dataset['grimoire'] = 'execute-on-note';
-    checkbox.checked = initialValue;
-    const label = container.createEl('label', { text: 'Run on active note' });
-    label.htmlFor = checkbox.id;
     return checkbox;
   }
 

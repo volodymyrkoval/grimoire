@@ -206,12 +206,13 @@ describe('ForgeSentinelDetail — update mode (3 directives)', () => {
     expect(castCheckbox!.checked).toBe(true);
   });
 
-  it('A3b: Apply @cast directives label includes " (3 directives found)"', () => {
+  it('A3b: Apply @cast directives setting description includes "(3 directives found)"', () => {
     const { contentEl } = mountUpdateMode(testSpell, 3);
     const form = contentEl.querySelector('form.forge-sentinel-form')!;
     const castCheckbox = form.querySelector<HTMLInputElement>('input[type="checkbox"][data-grimoire="apply-cast-directives"]');
-    const label = castCheckbox!.closest('label');
-    expect(label!.textContent).toContain('(3 directives found)');
+    // settingEl is the sibling preceding controlEl in the mock Setting structure.
+    const settingEl = castCheckbox!.parentElement!.previousElementSibling;
+    expect(settingEl!.textContent).toContain('(3 directives found)');
   });
 
   it('A3c: unchecking the cast directives checkbox then submitting → applyCastDirectives: false in snapshot', () => {
@@ -250,12 +251,13 @@ describe('ForgeSentinelDetail — update mode (3 directives)', () => {
 // ─── Assertion 4: directiveCount === 1, singular label ───────────────────────
 
 describe('ForgeSentinelDetail — update mode (1 directive)', () => {
-  it('A4: Apply @cast directives label uses singular "directive" for count of 1', () => {
+  it('A4: Apply @cast directives setting description uses singular "directive" for count of 1', () => {
     const { contentEl } = mountUpdateMode(testSpell, 1);
     const form = contentEl.querySelector('form.forge-sentinel-form')!;
     const castCheckbox = form.querySelector<HTMLInputElement>('input[type="checkbox"][data-grimoire="apply-cast-directives"]');
-    const label = castCheckbox!.closest('label');
-    expect(label!.textContent).toContain('(1 directive found)');
+    // settingEl is the sibling preceding controlEl in the mock Setting structure.
+    const settingEl = castCheckbox!.parentElement!.previousElementSibling;
+    expect(settingEl!.textContent).toContain('(1 directive found)');
   });
 });
 
@@ -329,6 +331,31 @@ describe('ForgeSentinelDetail — update mode submit button enable/disable', () 
     castCheckbox.checked = true;
     castCheckbox.dispatchEvent(new Event('change'));
     expect(submitBtn.disabled).toBe(false);
+  });
+});
+
+// ------------------------------------------------------------------ A-D6
+describe('ForgeSentinelDetail — apply-cast-directives D6 contract', () => {
+  it('apply-cast-directives inner input fires handler on a raw change event (D6 contract)', () => {
+    // Set up update mode with directives
+    const { contentEl } = mountUpdateMode(testSpell, 2);
+    const form = contentEl.querySelector('form.forge-sentinel-form')!;
+    const castCheckbox = form.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][data-grimoire="apply-cast-directives"]',
+    )!;
+    expect(castCheckbox).not.toBeNull();
+
+    // Initially checked (directiveCount > 0)
+    expect(castCheckbox.checked).toBe(true);
+
+    // Uncheck via raw DOM event — the change listener must update internal state
+    castCheckbox.checked = false;
+    castCheckbox.dispatchEvent(new Event('change'));
+
+    // With applyCastDirectives=false and empty description, submit button must be disabled
+    // (this confirms #handleApplyCastDirectivesChange ran and updated the enable rule)
+    const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(submitBtn.disabled).toBe(true);
   });
 });
 

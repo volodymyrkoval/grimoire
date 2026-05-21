@@ -47,11 +47,16 @@ export class GrimoireSettingTab extends PluginSettingTab {
 
   #renderGeneralSection(): void {
     const s = this.#plugin.data.settings;
-    this.#addTextField('Spell tag',          () => s.spellTag,          v => { s.spellTag = v; });
-    this.#addTextField('CLI command',        () => s.cliCommand,        v => { s.cliCommand = v; });
-    this.#addTextField('Binary path',        () => s.binaryPath,        v => { s.binaryPath = v; });
-    this.#addTextField('Forge output folder',() => s.forgeOutputFolder, v => { s.forgeOutputFolder = v; });
-    this.#addTextField('Vault mount path',   () => s.vaultMountPath,    v => { s.vaultMountPath = v; });
+    this.#addTextField('Spell tag',          () => s.spellTag,          v => { s.spellTag = v; },
+      'Frontmatter key used to mark notes as spells (e.g. spell).');
+    this.#addTextField('CLI command',        () => s.cliCommand,        v => { s.cliCommand = v; },
+      'Command used to invoke the agentic coding tool (e.g. claude).');
+    this.#addTextField('Binary path',        () => s.binaryPath,        v => { s.binaryPath = v; },
+      'Absolute path to the agentic tool binary. Leave blank to use the system PATH.');
+    this.#addTextField('Forge output folder',() => s.forgeOutputFolder, v => { s.forgeOutputFolder = v; },
+      'Vault folder where newly forged spell files are created.');
+    this.#addTextField('Vault mount path',   () => s.vaultMountPath,    v => { s.vaultMountPath = v; },
+      'Absolute path where the vault is mounted on disk. Used to resolve file paths during casting.');
 
     const effortRow = new EffortRow();
     this.#addModelField(effortRow);
@@ -96,15 +101,21 @@ export class GrimoireSettingTab extends PluginSettingTab {
     );
     this.#addTextField('Portal host',      () => s.portalHost,         v => { s.portalHost = v; },
       'Hostname or full URL. Defaults to HTTPS unless http:// is prefixed.');
-    this.#addTextField('Portal port',      () => s.portalPort,         v => { s.portalPort = v; });
-    this.#addTextField('Portal path',      () => s.portalPath,         v => { s.portalPath = v; });
-    this.#addTextField('Auth user',        () => s.portalAuthUser,     v => { s.portalAuthUser = v; });
-    this.#addPasswordField('Auth password',() => s.portalAuthPassword, v => { s.portalAuthPassword = v; });
+    this.#addTextField('Portal port',      () => s.portalPort,         v => { s.portalPort = v; },
+      'Port the portal server listens on (e.g. 3000).');
+    this.#addTextField('Portal path',      () => s.portalPath,         v => { s.portalPath = v; },
+      'URL path prefix for the portal API (e.g. /api).');
+    this.#addTextField('Auth user',        () => s.portalAuthUser,     v => { s.portalAuthUser = v; },
+      'Username for portal HTTP basic authentication.');
+    this.#addPasswordField('Auth password',() => s.portalAuthPassword, v => { s.portalAuthPassword = v; },
+      'Password for portal HTTP basic authentication.');
   }
 
   #addModelField(effortRow: EffortRow): void {
     const s = this.#plugin.data.settings;
-    new Setting(this.containerEl).setName('Default model').addDropdown(d => {
+    new Setting(this.containerEl).setName('Default model')
+      .setDesc('AI model used when casting spells unless overridden per-cast.')
+      .addDropdown(d => {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises -- addOption return is not a real Promise
       SUPPORTED_MODELS.forEach(m => d.addOption(m.id, m.label));
       d.setValue(s.defaultModel);
@@ -118,7 +129,8 @@ export class GrimoireSettingTab extends PluginSettingTab {
 
   #addEffortField(effortRow: EffortRow): void {
     const s = this.#plugin.data.settings;
-    const setting = new Setting(this.containerEl).setName('Default effort');
+    const setting = new Setting(this.containerEl).setName('Default effort')
+      .setDesc('Thinking budget for the default model. Higher effort produces better results but takes longer.');
     effortRow.mount(setting.controlEl, {
       models: SUPPORTED_MODELS,
       modelId: s.defaultModel,
@@ -142,12 +154,13 @@ export class GrimoireSettingTab extends PluginSettingTab {
     s.addToggle(t => t.setValue(get()).onChange(v => { set(v); this.#save(); }));
   }
 
-  #addPasswordField(label: string, getValue: () => string, setValue: (v: string) => void): void {
-    new Setting(this.containerEl)
-      .setName(label)
-      .addText(t => {
+  #addPasswordField(label: string, getValue: () => string, setValue: (v: string) => void, desc?: string): void {
+    const s = new Setting(this.containerEl).setName(label);
+    if (desc) s.setDesc(desc);
+    s.addText(t => {
         t.setValue(getValue()).onChange(v => { setValue(v); this.#save(); });
         t.inputEl.type = 'password';
       });
   }
+
 }

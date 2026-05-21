@@ -125,14 +125,13 @@ describe('ForgeSentinelDetail component', () => {
     // Effort row should now be present
     expect(form.querySelector('.grimoire-effort-row')).toBeTruthy();
 
-    // Effort row container must appear BEFORE the Submit button in the form
-    const allFormChildren = Array.from(form.children);
-    const effortIdx = allFormChildren.findIndex(el => el.querySelector('.grimoire-effort-row') !== null);
-    const submitIdx = allFormChildren.findIndex(el =>
-      el.matches('button[type="submit"]') || el.querySelector('button[type="submit"]') !== null
-    );
-    expect(effortIdx).toBeGreaterThanOrEqual(0);
-    expect(effortIdx).toBeLessThan(submitIdx);
+    // Effort row container must appear BEFORE the Submit button in the form (document order agnostic)
+    const effortEl = form.querySelector('.grimoire-effort-row');
+    const buttonRow = form.querySelector('.grimoire-button-row');
+    expect(effortEl).not.toBeNull();
+    expect(buttonRow).not.toBeNull();
+    // effort row must appear before the submit button row in document order
+    expect(effortEl!.compareDocumentPosition(buttonRow!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     detail.destroy();
     document.body.removeChild(contentEl);
@@ -207,18 +206,22 @@ describe('ForgeSentinelDetail component', () => {
     modelSelect.value = 'claude-sonnet-4-5';
     modelSelect.dispatchEvent(new Event('change'));
 
-    const allChildren = Array.from(form.children);
-    const effortIdx = allChildren.findIndex(el => el.querySelector?.('.grimoire-effort-row') !== null);
-    const submitIdx = allChildren.findIndex(el =>
-      el.matches?.('button[type="submit"]') || el.querySelector?.('button[type="submit"]') !== null
-    );
-    const eonIdx = allChildren.findIndex(el => el.querySelector?.('input[data-grimoire="execute-on-note"]') !== null);
+    const effortEl = form.querySelector('.grimoire-effort-row');
+    const buttonRow = form.querySelector('.grimoire-button-row');
+    const eonCheckbox = form.querySelector('input[data-grimoire="execute-on-note"]');
 
-    // eonCheckbox must NOT be placed between effortRow and Submit
-    expect(effortIdx).toBeGreaterThanOrEqual(0);
-    expect(submitIdx).toBeGreaterThan(effortIdx);
-    // eon must be outside the [effortIdx, submitIdx) range
-    expect(eonIdx < effortIdx || eonIdx >= submitIdx).toBe(true);
+    expect(effortEl).not.toBeNull();
+    expect(buttonRow).not.toBeNull();
+    expect(eonCheckbox).not.toBeNull();
+
+    // effort row must appear before the submit button row in document order
+    expect(effortEl!.compareDocumentPosition(buttonRow!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // executeOnNote checkbox must NOT be between effort row and submit button
+    // (i.e., eon must precede effort OR follow submit)
+    const eonBeforeEffort = eonCheckbox!.compareDocumentPosition(effortEl!) & Node.DOCUMENT_POSITION_FOLLOWING;
+    const eonAfterSubmit = buttonRow!.compareDocumentPosition(eonCheckbox!) & Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(eonBeforeEffort || eonAfterSubmit).toBeTruthy();
 
     detail.destroy();
     document.body.removeChild(contentEl);

@@ -555,9 +555,7 @@ export class Setting {
         h3.textContent = this.settingEl.textContent ?? '';
         parent.insertBefore(h3, this.settingEl);
         parent.removeChild(this.settingEl);
-        if (this.controlEl.parentElement) {
-          parent.removeChild(this.controlEl);
-        }
+        // controlEl stays in the DOM so addButton() chains on heading rows remain queryable.
       }
     }
     return this;

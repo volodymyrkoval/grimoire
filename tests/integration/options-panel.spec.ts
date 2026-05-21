@@ -132,7 +132,7 @@ describe('OptionsPanel integration', () => {
 
     // "Set as default" label is hidden: snapshot matches initial formState
     // (model: sonnet, effort: medium) — snapshotEqualsCurrent returns true
-    const defaultLabel = form!.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
+    const defaultLabel = form!.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
     expect(defaultLabel).not.toBeNull();
     expect(defaultLabel!.style.display).toBe('none');
 
@@ -158,7 +158,7 @@ describe('OptionsPanel integration', () => {
     // formState now has model=opus, snapshot has model=sonnet → not equal
     // Opus has effortOptions (non-null) → effortPersistable = true
     // → label should be visible
-    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
+    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
     expect(defaultLabel).not.toBeNull();
     expect(defaultLabel!.style.display).not.toBe('none');
   });
@@ -181,7 +181,7 @@ describe('OptionsPanel integration', () => {
     select.dispatchEvent(new Event('change'));
 
     // Verify label is visible after change
-    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
+    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
     expect(defaultLabel!.style.display).not.toBe('none');
 
     // Click Reset
@@ -331,7 +331,7 @@ describe('OptionsPanel integration', () => {
     select.dispatchEvent(new Event('change'));
 
     // Per spec: checkbox still hidden because snapshot.effort === null (Haiku base → not persistable)
-    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
+    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]');
     expect(defaultLabel).not.toBeNull();
     expect(defaultLabel!.style.display).toBe('none');
 
@@ -468,6 +468,21 @@ describe('OptionsPanel integration', () => {
     expect(eonCheckbox.checked).toBe(true);
   });
 
+  // ------------------------------------------------------------------ B-D6
+  it('executeOnNote inner input fires formState.setExecuteOnNote on a raw change event (D6 contract)', () => {
+    const { contentEl, formState } = mountPanel({ executeOnNote: false });
+    const form = contentEl.querySelector('form.options-panel')!;
+    const eonCheckbox = form.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][data-grimoire="execute-on-note"]'
+    )!;
+    expect(eonCheckbox).not.toBeNull();
+
+    eonCheckbox.checked = true;
+    eonCheckbox.dispatchEvent(new Event('change'));
+
+    expect(formState.snapshot().executeOnNote).toBe(true);
+  });
+
   // ------------------------------------------------------------------ A9
   it('panel.destroy() removes the formState listener so mutations no longer update the DOM', () => {
     const { contentEl, panel, formState, scope, onCast } = mountPanel({
@@ -477,7 +492,7 @@ describe('OptionsPanel integration', () => {
     });
 
     const form = contentEl.querySelector('form.options-panel')!;
-    const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
+    const defaultLabel = form.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]')!;
 
     // Confirm label starts hidden (snapshot equals formState)
     expect(defaultLabel.style.display).toBe('none');

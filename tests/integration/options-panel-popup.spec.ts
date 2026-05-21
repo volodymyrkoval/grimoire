@@ -136,9 +136,9 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
     const form2 = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
     expect(form2).not.toBeNull();
 
-    // Step 7: checkbox label must be hidden because resolved snapshot matches formState
+    // Step 7: set-as-default row must be hidden because resolved snapshot matches formState
     // (override → opus/medium; formState starts at opus/medium; snapshotEqualsCurrent = true)
-    const checkboxLabel = form2.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
+    const checkboxLabel = form2.querySelector<HTMLElement>('[data-grimoire="set-as-default-row"]')!;
     expect(checkboxLabel).not.toBeNull();
     expect(checkboxLabel.style.display).toBe('none');
   });

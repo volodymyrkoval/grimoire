@@ -1,4 +1,4 @@
-import { Scope } from 'obsidian';
+import { Scope, Setting } from 'obsidian';
 import { KeyboardController } from '../../infra/KeyboardController';
 import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import { ForgeUpdateFormSnapshot } from '../../forge/ForgeUpdateFormSnapshot';
@@ -177,25 +177,26 @@ export class ForgeSentinelDetail {
   }
 
   #buildNameField(form: HTMLElement): HTMLInputElement {
-    const label = form.createEl('label');
-    const input = label.createEl('input');
-    input.type = 'text';
-    input.placeholder = 'Name';
-    input.focus();
-    return input;
+    const setting = new Setting(form).setName('Name');
+    let inputEl!: HTMLInputElement;
+    setting.addText((text) => {
+      text.setPlaceholder('Name');
+      inputEl = text.inputEl;
+    });
+    inputEl.focus();
+    return inputEl;
   }
 
   #buildStaticNameField(form: HTMLElement, spellName: string): void {
-    const label = form.createEl('label');
-    label.createSpan({ text: 'Updating spell:' });
-    const div = label.createDiv();
+    const setting = new Setting(form).setName('Updating spell');
+    const div = setting.controlEl.createDiv();
     div.dataset['grimoire'] = 'spell-name';
     div.textContent = spellName;
   }
 
   #buildDescriptionField(form: HTMLElement, placeholder: string): HTMLTextAreaElement {
-    const label = form.createEl('label');
-    const textarea = label.createEl('textarea');
+    const setting = new Setting(form).setName('Description');
+    const textarea = setting.controlEl.createEl('textarea');
     textarea.placeholder = placeholder;
     return textarea;
   }
@@ -210,34 +211,37 @@ export class ForgeSentinelDetail {
   }
 
   #buildExecuteOnNoteCheckbox(form: HTMLElement): void {
-    const label = form.createEl('label');
-    const input = label.createEl('input');
-    input.type = 'checkbox';
+    const setting = new Setting(form).setName('Run on active note').addToggle((toggle) => {
+      toggle.setValue(true);
+    });
+    const input = setting.controlEl.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!input) throw new Error('Setting toggle did not render a checkbox (execute-on-note)');
     input.dataset['grimoire'] = 'execute-on-note';
-    input.checked = true;
     input.addEventListener('change', this.#handleExecuteOnNoteChange);
-    label.append(' Run on active note');
   }
 
   #buildApplyCastDirectivesCheckbox(form: HTMLElement, directiveCount: number): void {
-    const label = form.createEl('label');
-    const input = label.createEl('input');
-    input.type = 'checkbox';
-    input.dataset['grimoire'] = 'apply-cast-directives';
-    input.checked = true;
     const noun = directiveCount === 1 ? 'directive' : 'directives';
-    label.append(` Apply @cast directives (${directiveCount} ${noun} found)`);
+    const setting = new Setting(form)
+      .setName('Apply @cast directives')
+      .setDesc(`(${directiveCount} ${noun} found)`)
+      .addToggle((toggle) => {
+        toggle.setValue(true);
+      });
+    const input = setting.controlEl.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!input) throw new Error('Setting toggle did not render a checkbox (apply-cast-directives)');
+    input.dataset['grimoire'] = 'apply-cast-directives';
     input.addEventListener('change', this.#handleApplyCastDirectivesChange);
   }
 
   #buildModelSectionHeader(form: HTMLElement): void {
-    form.createSpan({ text: 'Model settings', cls: 'grimoire-section-label' });
+    new Setting(form).setName('Model settings').setHeading();
   }
 
   #buildModelSelect(form: HTMLElement, defaultModel: ModelId): HTMLSelectElement {
-    const label = form.createEl('label');
+    const setting = new Setting(form).setName('Model');
     return buildModelSelect({
-      container: label,
+      container: setting.controlEl,
       kb: this.#kb,
       models: SUPPORTED_MODELS,
       initialModel: defaultModel,
@@ -251,9 +255,9 @@ export class ForgeSentinelDetail {
   }
 
   #initEffortRow(form: HTMLElement, defaults: FormDefaults): EffortRow {
-    const effortContainer = form.createDiv();
+    const effortSetting = new Setting(form).setName('Effort');
     const row = new EffortRow();
-    row.mount(effortContainer, {
+    row.mount(effortSetting.controlEl, {
       models: SUPPORTED_MODELS,
       modelId: defaults.defaultModel,
       effort: this.#currentEffort,

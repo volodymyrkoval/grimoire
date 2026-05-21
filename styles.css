@@ -140,68 +140,6 @@ body.is-mobile .grimoire-options-chip {
   cursor: not-allowed;
   pointer-events: none;
 }
-.forge-sentinel-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-  font-size: var(--font-ui-small);
-}
-.forge-sentinel-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.forge-sentinel-form input:not([type=checkbox]),
-.forge-sentinel-form textarea,
-.forge-sentinel-form select {
-  width: 100%;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: var(--background-modifier-form-field);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-}
-.forge-sentinel-form textarea {
-  resize: vertical;
-  min-height: 60px;
-}
-.forge-sentinel-form label:has(input[type=checkbox]) {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-.options-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-  font-size: var(--font-ui-small);
-}
-.options-panel select,
-.options-panel textarea,
-.options-panel input:not([type=checkbox]) {
-  width: 100%;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: var(--background-modifier-form-field);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-}
-.options-panel textarea {
-  resize: vertical;
-  min-height: 60px;
-}
-.grimoire-checkbox-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.grimoire-section-label {
-  font-size: var(--font-ui-small);
-  font-weight: 600;
-  color: var(--text-normal);
-}
 .grimoire-field-label {
   font-size: var(--font-ui-small);
   color: var(--text-muted);
