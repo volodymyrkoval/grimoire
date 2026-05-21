@@ -71,6 +71,7 @@ export class OptionsPanel {
     const nav = container.createDiv({ cls: 'grimoire-nav-bar' });
     const backBtn = nav.createEl('button', { text: '← back' });
     backBtn.type = 'button';
+    nav.createSpan({ cls: 'hotkey-hint', text: 'Tab navigate · Esc back · ⇧↵ Cast' });
     return backBtn;
   }
 
@@ -186,7 +187,7 @@ export class OptionsPanel {
   }
 
   #bindCastKey(cast: () => void): void {
-    this.#kb.bind(['Mod'], 'Enter', () => {
+    this.#kb.bind(['Shift'], 'Enter', () => {
       cast();
       return true;
     });

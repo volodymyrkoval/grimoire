@@ -64,7 +64,8 @@ export class ForgeSentinelDetail {
     this.#hotkey = hotkey;
     // In update mode with no directives, the checkbox is absent — default to false
     this.#applyCastDirectives = mode.kind === 'update' ? mode.directiveCount > 0 : true;
-    this.#buildBackButton(contentEl);
+    const submitLabel = mode.kind === 'create' ? 'Imprint' : 'Submit';
+    this.#buildBackButton(contentEl, submitLabel);
 
     // Hotkey field: update mode only, above the form, auto-saves on commit
     if (mode.kind === 'update') {
@@ -95,6 +96,10 @@ export class ForgeSentinelDetail {
 
     this.#descInput.addEventListener('input', this.#handleDescriptionInput);
     this.#handleDescriptionInput();
+    this.#kb.bind(['Shift'], 'Enter', () => {
+      if (!this.#submitBtn.disabled) this.#submitBtn.click();
+      return true;
+    });
   }
 
   /**
@@ -153,11 +158,12 @@ export class ForgeSentinelDetail {
 
   // ── DOM builders ─────────────────────────────────────────────────────────────
 
-  #buildBackButton(contentEl: HTMLElement): void {
+  #buildBackButton(contentEl: HTMLElement, submitLabel: string): void {
     const nav = contentEl.createDiv({ cls: 'grimoire-nav-bar' });
     const back = nav.createEl('button', { text: '← back' });
     back.type = 'button';
     back.addEventListener('click', this.#callbacks.onBack);
+    nav.createSpan({ cls: 'hotkey-hint', text: `Tab navigate · Esc back · ⇧↵ ${submitLabel}` });
   }
 
   #buildHotkeyCaptureField(

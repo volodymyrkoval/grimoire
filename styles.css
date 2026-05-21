@@ -207,6 +207,9 @@ body.is-mobile .grimoire-options-chip {
   color: var(--text-muted);
 }
 .grimoire-nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding-bottom: 8px;
   margin-bottom: 4px;
   border-bottom: 1px solid var(--background-modifier-border);
@@ -476,6 +479,9 @@ body.is-mobile .spells-row.has-hotkey .spells-row-hint {
 .hotkey-hint {
   color: var(--text-faint);
   font-size: calc(var(--font-ui-small) * 0.9);
+}
+body.is-mobile .grimoire-nav-bar .hotkey-hint {
+  display: none;
 }
 .hotkey-buffer-indicator {
   font-family: var(--font-monospace);
