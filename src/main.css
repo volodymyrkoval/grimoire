@@ -247,6 +247,10 @@ body.is-mobile .grimoire-options-chip {
     gap: 8px;
 }
 
+.grimoire-forge-btn {
+    margin-left: auto;
+}
+
 .context-notes-pills {
     display: flex;
     flex-wrap: wrap;
@@ -381,8 +385,8 @@ body.is-mobile .grimoire-options-chip {
     white-space: nowrap;
 }
 
-.cast-log-status-badge.is-success { color: var(--color-green); }
-.cast-log-status-badge.is-failure { color: var(--color-red); }
+.cast-log-status-badge.is-success { color: var(--text-success); }
+.cast-log-status-badge.is-failure { color: var(--text-error); }
 .cast-log-status-badge.is-neutral { color: var(--text-muted); }
 
 .cast-log-row-body {
@@ -537,7 +541,7 @@ body.is-mobile .spells-row.has-hotkey .spells-row-hint {
 }
 
 .hotkey-buffer-indicator.is-error {
-    color: var(--color-red);
+    color: var(--text-error);
 }
 
 .hotkey-buffer-clear {
@@ -547,6 +551,14 @@ body.is-mobile .spells-row.has-hotkey .spells-row-hint {
 }
 
 /* ─── Hotkey capture field ────────────────────────────────────────────── */
+
+.grimoire-hotkey-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
 
 .grimoire-hotkey-chip {
     font-family: monospace;

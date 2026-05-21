@@ -170,6 +170,32 @@ describe('C2: default state with persisted hotkey in update mode', () => {
   });
 });
 
+// ─── Case 2b: Hotkey field wrapper is a dedicated layout block ────────────────
+
+describe('C2b: hotkey field wrapper layout contract (update mode)', () => {
+  it('wraps the field in a .grimoire-hotkey-field block, not a bare div', () => {
+    const { contentEl } = mountUpdateMode({ spell: SPELL_NO_HOTKEY });
+
+    const wrapper = findHotkeyContainer(contentEl);
+    expect(wrapper.classList.contains('grimoire-hotkey-field')).toBe(true);
+  });
+
+  it('renders the wrapper between the back button and the form', () => {
+    const { contentEl } = mountUpdateMode({ spell: SPELL_NO_HOTKEY });
+
+    const backBtn = contentEl.querySelector('button') as HTMLButtonElement;
+    const wrapper = contentEl.querySelector('.grimoire-hotkey-field') as HTMLElement;
+    const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
+    expect(backBtn).not.toBeNull();
+    expect(wrapper).not.toBeNull();
+    expect(form).not.toBeNull();
+
+    // back button precedes the wrapper, wrapper precedes the form
+    expect(backBtn.compareDocumentPosition(wrapper) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(wrapper.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
 // ─── Case 3: Click button → capture state ────────────────────────────────────
 
 describe('C3: click Hotkey button enters capture state', () => {

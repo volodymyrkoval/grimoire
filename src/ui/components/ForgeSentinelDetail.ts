@@ -159,7 +159,7 @@ export class ForgeSentinelDetail {
     mode: Extract<ForgeMode, { kind: 'update' }>,
   ): void {
     const initialPersisted = mode.spell.hotkey ?? null;
-    const fieldContainer = container.createDiv();
+    const fieldContainer = container.createDiv({ cls: 'grimoire-hotkey-field' });
     this.#hotkeyCaptureField = new HotkeyCaptureField();
     this.#hotkeyCaptureField.render({
       container: fieldContainer,
