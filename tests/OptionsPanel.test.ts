@@ -185,6 +185,21 @@ describe('OptionsPanel — per-control wiring', () => {
     }).not.toThrow();
   });
 
+  it('destroy() prevents back button from invoking onBack on subsequent click', () => {
+    const { contentEl, panel, onBack } = mountPanel();
+
+    panel.destroy();
+
+    const backBtn = Array.from(contentEl.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('back')
+    ) as HTMLButtonElement;
+    expect(backBtn).not.toBeNull();
+
+    backBtn!.click();
+
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
   it('form submission calls onCast with current formState snapshot', () => {
     const { contentEl, formState, onCast } = mountPanel();
 

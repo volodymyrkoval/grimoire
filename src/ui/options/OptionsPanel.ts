@@ -41,7 +41,7 @@ export class OptionsPanel {
   #contextNotesInput: ContextNotesInput;
   #castModelSection: CastModelSection;
   #refineVariantSelect: RefineVariantSelect | null = null;
-  #textareaAbort: AbortController | null = null;
+  #formAbort: AbortController | null = null;
 
   constructor(scope: Scope) {
     this.#kb = new KeyboardController(scope);
@@ -55,10 +55,12 @@ export class OptionsPanel {
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
   ): void {
+    this.#formAbort = new AbortController();
+    const { signal } = this.#formAbort;
     const backBtn = this.#buildBackButton(contentEl);
-    this.#bindBackButton(backBtn, deps.onBack);
+    this.#bindBackButton(backBtn, deps.onBack, signal);
     const form = this.#buildForm(contentEl);
-    this.#buildFormControls(form, formState, snapshot, deps);
+    this.#buildFormControls(form, formState, snapshot, deps, signal);
   }
 
   destroy(): void {
@@ -66,7 +68,7 @@ export class OptionsPanel {
     this.#castModelSection.destroy();
     this.#contextNotesInput.detach();
     this.#refineVariantSelect?.destroy();
-    this.#textareaAbort?.abort();
+    this.#formAbort?.abort();
   }
 
   #buildBackButton(container: HTMLElement): HTMLButtonElement {
@@ -77,8 +79,8 @@ export class OptionsPanel {
     return backBtn;
   }
 
-  #bindBackButton(button: HTMLButtonElement, onBack: () => void): void {
-    button.addEventListener('click', () => onBack());
+  #bindBackButton(button: HTMLButtonElement, onBack: () => void, signal: AbortSignal): void {
+    button.addEventListener('click', () => onBack(), { signal });
   }
 
   #buildForm(contentEl: HTMLElement): HTMLFormElement {
@@ -90,10 +92,11 @@ export class OptionsPanel {
     formState: OptionsFormState,
     snapshot: OptionsSnapshot,
     deps: OptionsPanelDeps,
+    signal: AbortSignal,
   ): void {
-    const followUpInput = this.#buildFollowUpInput(form, formState.snapshot().followUp);
+    const followUpInput = this.#buildFollowUpInput(form, formState.snapshot().followUp, signal);
     this.#buildContextNotes(form, formState, deps.app);
-    this.#bindFollowUpInput(followUpInput, formState);
+    this.#bindFollowUpInput(followUpInput, formState, signal);
     const eonState: ExecuteOnNoteState = {
       initialValue: formState.snapshot().executeOnNote,
       visible: deps.showExecuteOnNote !== false,
@@ -101,7 +104,7 @@ export class OptionsPanel {
     };
     eonState.checkbox = eonState.visible ? this.#buildExecuteOnNoteCheckbox(form, eonState.initialValue) : null;
     if (eonState.checkbox) {
-      this.#bindExecuteOnNote(eonState.checkbox, formState);
+      this.#bindExecuteOnNote(eonState.checkbox, formState, signal);
     }
     this.#castModelSection.mount(form, formState, snapshot, deps);
     const cast = () => {
@@ -116,7 +119,7 @@ export class OptionsPanel {
     this.#bindFormSubmit(form, cast);
     this.#bindCastKey(cast);
     const resetBtn = this.#buildResetButton(buttonRow);
-    this.#bindReset(resetBtn, snapshot, formState, deps, followUpInput, eonState);
+    this.#bindReset(resetBtn, snapshot, formState, deps, followUpInput, eonState, signal);
     if (deps.refineVariantSelectDeps) {
       const refineWrapper = buttonRow.createDiv({ cls: 'grimoire-refine-inline' });
       this.#refineVariantSelect = new RefineVariantSelect();
@@ -125,7 +128,7 @@ export class OptionsPanel {
     if (deps.onForgeUpdate) {
       const forgeBtn = buttonRow.createEl('button', { text: 'Forge', cls: 'grimoire-forge-btn' });
       forgeBtn.type = 'button';
-      forgeBtn.addEventListener('click', () => deps.onForgeUpdate?.());
+      forgeBtn.addEventListener('click', () => deps.onForgeUpdate?.(), { signal });
     }
   }
 
@@ -144,20 +147,19 @@ export class OptionsPanel {
     }
   }
 
-  #buildFollowUpInput(form: HTMLFormElement, followUp: string): HTMLTextAreaElement {
+  #buildFollowUpInput(form: HTMLFormElement, followUp: string, signal: AbortSignal): HTMLTextAreaElement {
     const textarea = form.createEl('textarea');
     textarea.placeholder = 'Follow-up';
     textarea.value = followUp;
-    this.#textareaAbort = new AbortController();
-    attachAutogrow(textarea, this.#textareaAbort.signal);
-    attachListContinuation(textarea, this.#textareaAbort.signal);
+    attachAutogrow(textarea, signal);
+    attachListContinuation(textarea, signal);
     return textarea;
   }
 
-  #bindFollowUpInput(followUpInput: HTMLTextAreaElement, formState: OptionsFormState): void {
+  #bindFollowUpInput(followUpInput: HTMLTextAreaElement, formState: OptionsFormState, signal: AbortSignal): void {
     followUpInput.addEventListener('input', () => {
       formState.setFollowUp(followUpInput.value);
-    });
+    }, { signal });
   }
 
   #buildExecuteOnNoteCheckbox(form: HTMLFormElement, initialValue: boolean): HTMLInputElement {
@@ -172,10 +174,10 @@ export class OptionsPanel {
     return checkbox;
   }
 
-  #bindExecuteOnNote(checkbox: HTMLInputElement, formState: OptionsFormState): void {
+  #bindExecuteOnNote(checkbox: HTMLInputElement, formState: OptionsFormState, signal: AbortSignal): void {
     checkbox.addEventListener('change', () => {
       formState.setExecuteOnNote(checkbox.checked);
-    });
+    }, { signal });
   }
 
   #buildCastButton(container: HTMLElement): void {
@@ -210,6 +212,7 @@ export class OptionsPanel {
     deps: OptionsPanelDeps,
     followUpInput: HTMLTextAreaElement,
     eonState: ExecuteOnNoteState,
+    signal: AbortSignal,
   ): void {
     button.addEventListener('click', () => {
       this.#castModelSection.resetToSnapshot(snapshot, formState);
@@ -221,7 +224,7 @@ export class OptionsPanel {
         eonState.checkbox.checked = eonState.initialValue;
       }
       deps.sessionMap.delete(deps.spellPath);
-    });
+    }, { signal });
   }
 }
 
