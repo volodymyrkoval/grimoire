@@ -33,7 +33,7 @@ The panel stays in sync with disk in two ways. It subscribes to Obsidian's vault
 **Out:**
 - Keyboard navigation inside the panel (arrows, Enter-to-toggle, Tab-within-expanded) — deferred per pitch; the existing tab-cycle still reaches Logs.
 - Filter input on the Logs tab — deferred; no second use case beyond list filtering.
-- Deletion, recast, completion toasts, diff view, grouping/sorting — each its own concern, deferred until prompted by use.
+- Deletion, recast, completion toasts, diff view, grouping/sorting — each its own concern, deferred until prompted by use. *(Per-row delete and clear-all later shipped in `grimoire-cast-log-deletion`.)*
 - Stale-cast timeout detection — in-flight rows remain in-flight forever; no producer of stale state to react to yet.
 - Tooltips and hover cards — premature; expansion already carries the detail.
 - A producer for `cast-log-agent.jsonl` — the reader handles the file's absence; a writer is a separate iteration tied to remote casting.

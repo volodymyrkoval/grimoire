@@ -122,7 +122,7 @@ Set your spell tag, Claude Code binary path, default model and effort level, For
 
 ## What's not there yet
 
-- **Cast Log filter and delete** — the Logs tab now lists every cast live with status, duration, and expandable detail (see `docs/features/cast-log-panel.md`), but a query input and row-level deletion are still pending.
+- **Cast Log filter** — the Logs tab now lists every cast live with status, duration, and expandable detail, and supports per-row delete and clear-all (see `docs/features/cast-log-panel.md` and `docs/features/grimoire-cast-log-deletion.md`), but a query input to filter the list is still pending.
 - **Refine Note** — a built-in spell that rewrites or expands your active note. Supports inline `@cast` directives for surgical edits without leaving the editor.
 - **Portal service** — the receiving end for remote casting. The plugin already dispatches to a configured portal when **Remote execution** is on, but the portal binary itself (and the mobile / HTTP-client UX that talks to it) is a separate project.
 - Per-spell override indicators, status bar, re-cast from log, scheduled casting.
