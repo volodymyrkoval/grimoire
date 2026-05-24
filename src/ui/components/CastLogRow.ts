@@ -136,32 +136,35 @@ export class CastLogRow {
     }
   }
 
-  /**
-   * Renders the delete control into host.
-   * Idle state: a single button with class cast-log-delete-btn.
-   * Confirming state: two buttons — cast-log-delete-confirm and cast-log-delete-cancel.
-   * All click handlers call stopPropagation() so the row-header toggle does not fire.
-   */
+  /** Dispatches to the idle or confirming delete UI based on pendingConfirm state. */
   #buildDeleteControl(host: HTMLElement, control: RowDeleteControl, signal: AbortSignal): void {
-    if (!control.pendingConfirm) {
-      const btn = host.createEl('button', { cls: 'cast-log-delete-btn', text: 'Delete' });
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        control.onRequestDelete();
-      }, { signal });
+    if (control.pendingConfirm) {
+      this.#buildConfirmingButtons(host, control, signal);
     } else {
-      const confirmBtn = host.createEl('button', { cls: 'cast-log-delete-confirm', text: 'Confirm' });
-      confirmBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        control.onConfirmDelete();
-      }, { signal });
-
-      const cancelBtn = host.createEl('button', { cls: 'cast-log-delete-cancel', text: 'Cancel' });
-      cancelBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        control.onCancelDelete();
-      }, { signal });
+      this.#buildIdleDeleteButton(host, control, signal);
     }
+  }
+
+  #buildIdleDeleteButton(host: HTMLElement, control: RowDeleteControl, signal: AbortSignal): void {
+    const btn = host.createEl('button', { cls: 'cast-log-delete-btn', text: 'Delete' });
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      control.onRequestDelete();
+    }, { signal });
+  }
+
+  #buildConfirmingButtons(host: HTMLElement, control: RowDeleteControl, signal: AbortSignal): void {
+    const confirmBtn = host.createEl('button', { cls: 'cast-log-delete-confirm', text: 'Confirm' });
+    confirmBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      control.onConfirmDelete();
+    }, { signal });
+
+    const cancelBtn = host.createEl('button', { cls: 'cast-log-delete-cancel', text: 'Cancel' });
+    cancelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      control.onCancelDelete();
+    }, { signal });
   }
 
   #renderBody(record: CastRecord): void {
