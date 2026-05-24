@@ -12,6 +12,7 @@ import type { ForgeMode } from '../../forge/ForgeMode';
 import type { Hotkey } from '../../domain/spells/Hotkey';
 import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
 import { HotkeyCaptureField } from './HotkeyCaptureField';
+import { attachAutogrow, attachListContinuation } from '../widgets/textareaHelpers';
 
 /** Callback to erase a hotkey binding for a spell. */
 export type HotkeyEraser = (spellPath: SpellPath) => Promise<void>;
@@ -97,6 +98,8 @@ export class ForgeSentinelDetail {
     this.#wireSubmitHandler(form);
 
     this.#descInput.addEventListener('input', this.#handleDescriptionInput, { signal: this.#domAbort.signal });
+    attachAutogrow(this.#descInput, this.#domAbort.signal);
+    attachListContinuation(this.#descInput, this.#domAbort.signal);
     this.#handleDescriptionInput();
     this.#kb.bind(['Shift'], 'Enter', () => {
       if (!this.#submitBtn.disabled) this.#submitBtn.click();
