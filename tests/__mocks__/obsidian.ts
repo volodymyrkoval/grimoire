@@ -237,6 +237,7 @@ export class Modal {
     this.app = app;
     if (typeof document !== 'undefined') {
       this.contentEl = document.createElement('div');
+      this.contentEl.setAttribute('data-mock-modal', '');
     } else {
       this.contentEl = createMockElement();
     }
@@ -245,6 +246,8 @@ export class Modal {
 
   open(): void {
     if (typeof document !== 'undefined') {
+      // Remove any stale modal elements left by previous tests (test isolation helper).
+      document.querySelectorAll('[data-mock-modal]').forEach((el) => el.remove());
       document.body.appendChild(this.contentEl);
     }
     this.onOpen();
@@ -449,6 +452,24 @@ class ButtonComponent {
   setButtonText(text: string): this {
     if (typeof document !== 'undefined') {
       this.buttonEl.textContent = text;
+    }
+    return this;
+  }
+
+  /** Adds the primary CTA style class to the button. */
+  setCta(): this {
+    return this;
+  }
+
+  /** Adds the warning/destructive style class to the button. */
+  setWarning(): this {
+    return this;
+  }
+
+  /** Adds a custom CSS class to the button element. */
+  setClass(cls: string): this {
+    if (typeof document !== 'undefined') {
+      this.buttonEl.classList.add(cls);
     }
     return this;
   }

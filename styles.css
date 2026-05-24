@@ -315,6 +315,8 @@ body.is-mobile .grimoire-options-chip {
   outline-offset: 2px;
 }
 .cast-log-header {
+  display: flex;
+  align-items: center;
   font-size: var(--font-ui-small);
   color: var(--text-muted);
   padding: 4px 8px;
@@ -547,4 +549,28 @@ body.is-mobile .grimoire-nav-bar .hotkey-hint {
   color: var(--text-error);
   font-size: 0.85em;
   margin-top: 2px;
+}
+.cast-log-delete-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cast-log-row-header .cast-log-delete-control {
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.cast-log-row:hover .cast-log-row-header .cast-log-delete-control {
+  opacity: 1;
+}
+.cast-log-row-body .cast-log-delete-control {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+.cast-log-clear-all-container {
+  margin-left: auto;
+}
+.cast-log-clear-all-btn {
+  font-size: var(--font-smaller);
+  padding: 2px 8px;
 }

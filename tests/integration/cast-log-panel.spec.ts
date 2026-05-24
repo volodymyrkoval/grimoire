@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { CastRecord } from '../../src/castLog/CastRecord';
 // CastLogPanel does not exist yet — this import causes the module-not-found red.
 import { CastLogPanel } from '../../src/ui/tabs/CastLogPanel';
+import { App } from '../__mocks__/obsidian';
 
 // ---------------------------------------------------------------------------
 // Fake seam implementations — never real coordinators, never vi.mock of children
@@ -102,8 +103,10 @@ function mountPanel(records: CastRecord[], now?: () => Date): MountResult {
   const tick = new FakeTickCoordinator();
   const openLink = vi.fn();
   const nowFn = now ?? (() => new Date());
+  const mutator = { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) };
+  const app = new App();
 
-  const panel = new CastLogPanel({ source, refresh, tick, openLink, now: nowFn });
+  const panel = new CastLogPanel({ source, refresh, tick, openLink, now: nowFn, mutator, app });
   panel.mount(container);
 
   return { container, source, refresh, tick, openLink, panel };
@@ -145,6 +148,8 @@ describe('CastLogPanel', () => {
         tick: tick2,
         openLink: vi.fn(),
         now: () => currentTime,
+        mutator: { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) },
+        app: new App(),
       });
       panel2.mount(container2);
       await flushPromises();
@@ -258,7 +263,7 @@ describe('CastLogPanel', () => {
       const source = new FakeCastLogSource([recordA, recordB]);
       const refresh = new FakeRefreshCoordinator();
       const tick = new FakeTickCoordinator();
-      const panel = new CastLogPanel({ source, refresh, tick, openLink: vi.fn(), now: () => new Date() });
+      const panel = new CastLogPanel({ source, refresh, tick, openLink: vi.fn(), now: () => new Date(), mutator: { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) }, app: new App() });
 
       panel.mount(container);
       await flushPromises();
@@ -302,7 +307,7 @@ describe('CastLogPanel', () => {
       const tick = new FakeTickCoordinator();
       const container = document.createElement('div');
 
-      const panel = new CastLogPanel({ source, refresh, tick, openLink: vi.fn(), now: () => new Date() });
+      const panel = new CastLogPanel({ source, refresh, tick, openLink: vi.fn(), now: () => new Date(), mutator: { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) }, app: new App() });
       panel.mount(container);
       await flushPromises();
 
@@ -343,7 +348,7 @@ describe('CastLogPanel', () => {
       const openLink = vi.fn();
       const container = document.createElement('div');
 
-      const panel = new CastLogPanel({ source, refresh, tick, openLink, now: () => new Date() });
+      const panel = new CastLogPanel({ source, refresh, tick, openLink, now: () => new Date(), mutator: { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) }, app: new App() });
       panel.mount(container);
       await flushPromises();
 
@@ -406,6 +411,8 @@ describe('CastLogPanel', () => {
         openLink: vi.fn(),
         now: () => new Date(),
         vaultRootAbs: '/vault',
+        mutator: { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) },
+        app: new App(),
       });
       panel.mount(container);
       await flushPromises();

@@ -126,6 +126,8 @@ export class CastLogModule {
       tick: new IntervalTickCoordinator({ intervalMs: 1000 }),
       now: () => new Date(),
       vaultRootAbs: this.#getSettings().vaultMountPath,
+      mutator: this.#pluginCastLogStore,
+      app: this.#app,
     };
   }
 

@@ -61,6 +61,8 @@ function makeFakeCastLogPanelDeps() {
     refresh: { start: vi.fn(), stop: vi.fn() },
     tick: { start: vi.fn(), stop: vi.fn() },
     now: () => new Date(),
+    mutator: { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) },
+    app: new App() as any,
   };
 }
 

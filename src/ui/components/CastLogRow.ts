@@ -10,8 +10,26 @@ import { toDisplayPath } from '../../castLog/format/toDisplayPath';
 import { basename } from '../../castLog/format/basename';
 
 /**
+ * Delete control state and callbacks for a row.
+ * Passed from CastLogList to CastLogRow.render() and .update().
+ */
+export interface RowDeleteControl {
+  pendingConfirm: boolean;
+  onRequestDelete: () => void;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
+}
+
+/**
  * Renders a single cast record as an expandable row with header and body sections.
  * Owns the DOM element (.el) and exposes update/repaintTimes for partial rerenders.
+ *
+ * Two AbortControllers keep listener lifetimes distinct:
+ *   - headerAbortController: governs the header click (toggle) listener; replaced only in render().
+ *   - abortController: governs delete-control listeners; replaced in both render() and update().
+ *
+ * This separation ensures the toggle listener survives update() calls so clicking the header
+ * to collapse a row continues to work after the first expansion triggers an update cycle.
  */
 export class CastLogRow {
   readonly el: HTMLElement;
@@ -22,6 +40,12 @@ export class CastLogRow {
   #nameSpan!: HTMLElement;
   #modelBadgeSpan!: HTMLElement;
   #bodyEl!: HTMLElement;
+  /** Container in the header reserved for the delete control; refreshed on update(). */
+  #deleteControlContainer!: HTMLElement;
+  /** Owns the header click (toggle) listener; torn down only in render(). */
+  #headerAbortController: AbortController = new AbortController();
+  /** Owns the delete-control listeners; torn down in both render() and update(). */
+  #abortController: AbortController = new AbortController();
   readonly #onOpenLink: (path: string) => void;
   readonly #vaultRootAbs: string;
   readonly #registry: SystemSpellRegistry;
@@ -40,9 +64,14 @@ export class CastLogRow {
     this.el = container.createDiv({ cls: 'cast-log-row' });
   }
 
-  render(expanded: boolean, now: Date, onToggle: () => void): void {
+  render(expanded: boolean, now: Date, onToggle: () => void, deleteControl?: RowDeleteControl): void {
+    this.#headerAbortController.abort();
+    this.#headerAbortController = new AbortController();
+    this.#abortController.abort();
+    this.#abortController = new AbortController();
+
     if (expanded) this.el.addClass('is-expanded');
-    this.#buildHeader(this.#record, now, onToggle);
+    this.#buildHeader(this.#record, now, onToggle, this.#headerAbortController.signal, this.#abortController.signal, deleteControl);
     this.#bodyEl = this.el.createDiv({ cls: 'cast-log-row-body' });
     this.#renderBody(this.#record);
   }
@@ -52,13 +81,24 @@ export class CastLogRow {
   }
 
   /** Called by CastLogList when the same castId receives an updated record. */
-  update(record: CastRecord, expanded: boolean, now: Date): void {
+  update(record: CastRecord, expanded: boolean, now: Date, deleteControl?: RowDeleteControl): void {
+    this.#abortController.abort();
+    this.#abortController = new AbortController();
+    const signal = this.#abortController.signal;
+
     this.#record = record;
     updateNameSpan(this.#nameSpan, record, this.#registry);
     updateModelBadgeSpan(this.#modelBadgeSpan, record);
     updateStartedSpan(this.#startedSpan, record, now);
     updateDurationSpan(this.#durationSpan, record, now);
     updateStatusBadgeSpan(this.#statusBadgeSpan, record);
+
+    // Refresh the header's delete control without rebuilding the entire header.
+    this.#deleteControlContainer.empty();
+    if (deleteControl) {
+      this.#buildDeleteControl(this.#deleteControlContainer, deleteControl, signal);
+    }
+
     this.#bodyEl.empty();
     this.#renderBody(record);
     this.el.toggleClass('is-expanded', expanded);
@@ -71,9 +111,16 @@ export class CastLogRow {
     }
   }
 
-  #buildHeader(record: CastRecord, now: Date, onToggle: () => void): void {
+  #buildHeader(
+    record: CastRecord,
+    now: Date,
+    onToggle: () => void,
+    headerSignal: AbortSignal,
+    deleteSignal: AbortSignal,
+    deleteControl?: RowDeleteControl,
+  ): void {
     const header = this.el.createDiv({ cls: 'cast-log-row-header' });
-    header.addEventListener('click', onToggle);
+    header.addEventListener('click', onToggle, { signal: headerSignal });
     const titleRow = header.createDiv({ cls: 'cast-log-row-title' });
     this.#nameSpan = buildNameSpan(titleRow, record, this.#registry);
     this.#statusBadgeSpan = buildStatusBadgeSpan(titleRow, record);
@@ -81,6 +128,40 @@ export class CastLogRow {
     this.#modelBadgeSpan = buildModelBadgeSpan(meta, record);
     this.#startedSpan = buildStartedSpan(meta, record, now);
     this.#durationSpan = buildDurationSpan(meta, record, now);
+
+    // Reserve a container for the delete control so update() can refresh it in place.
+    this.#deleteControlContainer = header.createDiv({ cls: 'cast-log-delete-control' });
+    if (deleteControl) {
+      this.#buildDeleteControl(this.#deleteControlContainer, deleteControl, deleteSignal);
+    }
+  }
+
+  /**
+   * Renders the delete control into host.
+   * Idle state: a single button with class cast-log-delete-btn.
+   * Confirming state: two buttons — cast-log-delete-confirm and cast-log-delete-cancel.
+   * All click handlers call stopPropagation() so the row-header toggle does not fire.
+   */
+  #buildDeleteControl(host: HTMLElement, control: RowDeleteControl, signal: AbortSignal): void {
+    if (!control.pendingConfirm) {
+      const btn = host.createEl('button', { cls: 'cast-log-delete-btn', text: 'Delete' });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        control.onRequestDelete();
+      }, { signal });
+    } else {
+      const confirmBtn = host.createEl('button', { cls: 'cast-log-delete-confirm', text: 'Confirm' });
+      confirmBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        control.onConfirmDelete();
+      }, { signal });
+
+      const cancelBtn = host.createEl('button', { cls: 'cast-log-delete-cancel', text: 'Cancel' });
+      cancelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        control.onCancelDelete();
+      }, { signal });
+    }
   }
 
   #renderBody(record: CastRecord): void {

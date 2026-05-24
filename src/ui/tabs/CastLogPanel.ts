@@ -1,10 +1,14 @@
+import type { App } from 'obsidian';
+import { Notice } from 'obsidian';
 import type { CastRecord } from '../../castLog/CastRecord';
 import type { CastLogSource } from '../../castLog/CastLogSource';
 import type { RefreshCoordinator } from '../../castLog/RefreshCoordinator';
 import type { TickCoordinator } from '../../castLog/TickCoordinator';
 import { CastLogList } from '../components/CastLogList';
+import { ClearAllConfirmModal } from '../components/ClearAllConfirmModal';
 import { SystemSpellRegistry } from '../../castLog/SystemSpellRegistry';
 import type { TabPanel } from './TabPanel';
+import type { CastLogMutator } from '../../castLog/CastLogMutator';
 
 /**
  * Dependencies for CastLogPanel.
@@ -21,6 +25,10 @@ export interface CastLogPanelDeps {
   vaultRootAbs?: string;
   /** Registry of system spells for display-name resolution. Defaults to empty when omitted. */
   registry?: SystemSpellRegistry;
+  /** Mutation operations: delete cast(s) from log. */
+  mutator: CastLogMutator;
+  /** Obsidian App instance — required to open the clear-all confirmation modal. */
+  app: App;
 }
 
 /**
@@ -38,6 +46,7 @@ export class CastLogPanel implements TabPanel {
   #list?: CastLogList;
   #records: CastRecord[] = [];
   #expandedIds = new Set<string>();
+  #pendingConfirmIds = new Set<string>();
   #disposed = false;
   readonly #deps: CastLogPanelDeps;
 
@@ -89,8 +98,16 @@ export class CastLogPanel implements TabPanel {
   }
 
   #renderList(): void {
-    this.#list?.render(this.#records, this.#expandedIds, this.#deps.now(), (castId) =>
-      this.#handleToggle(castId)
+    this.#list?.render(
+      this.#records,
+      this.#expandedIds,
+      this.#deps.now(),
+      (castId) => this.#handleToggle(castId),
+      this.#pendingConfirmIds,
+      (castId) => { void this.#handleDeleteCast(castId); },
+      (castId) => this.#handleRequestConfirm(castId),
+      (castId) => this.#handleCancelConfirm(castId),
+      () => this.#handleClearAll(),
     );
   }
 
@@ -101,5 +118,51 @@ export class CastLogPanel implements TabPanel {
       this.#expandedIds.add(castId);
     }
     this.#renderList();
+  }
+
+  #handleRequestConfirm(castId: string): void {
+    this.#pendingConfirmIds.add(castId);
+    this.#renderList();
+  }
+
+  #handleCancelConfirm(castId: string): void {
+    this.#pendingConfirmIds.delete(castId);
+    this.#renderList();
+  }
+
+  async #handleDeleteCast(castId: string): Promise<void> {
+    try {
+      await this.#deps.mutator.deleteCast(castId);
+    } catch (e) {
+      new Notice('Could not delete cast — see console');
+      console.error('deleteCast failed', e);
+    } finally {
+      this.#pendingConfirmIds.delete(castId);
+    }
+    this.#reload();
+  }
+
+  /**
+   * Opens the clear-all confirmation modal.
+   * On confirm: calls mutator.clearAll(), optimistically clears the displayed list,
+   * then schedules a reload (macrotask) so the source reflects the deletion before re-render.
+   */
+  #handleClearAll(): void {
+    const onConfirm = () => {
+      void (async () => {
+        try {
+          await this.#deps.mutator.clearAll();
+        } catch (e) {
+          new Notice('Could not clear cast log — see console');
+          console.error('clearAll failed', e);
+          return;
+        }
+        this.#records = [];
+        this.#renderList();
+        // Schedule reload as a macrotask so upstream source state settles first.
+        activeWindow.setTimeout(() => { this.#reload(); }, 0);
+      })();
+    };
+    new ClearAllConfirmModal(this.#deps.app, this.#records.length, onConfirm).open();
   }
 }

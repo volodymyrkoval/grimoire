@@ -1,6 +1,7 @@
 import type { DataAdapter } from 'obsidian';
 import type { CastLogEvent } from './types';
 import type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
+import type { CastLogMutator } from './CastLogMutator';
 export type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
 
 /**
@@ -18,29 +19,36 @@ export interface CastLogStorePorts {
 
 /**
  * Persists and reads cast log events from one or two files (local + optional remote).
- * Implements CastLogWriter and CastLogReader interfaces via recordCasted/recordError and readAll.
+ * Implements CastLogWriter, CastLogReader, and CastLogMutator interfaces.
  * Events are stored as newline-delimited JSON.
  */
-export class CastLogStore {
+export class CastLogStore implements CastLogMutator {
   readonly #ports: CastLogStorePorts;
   readonly #now: () => Date;
   readonly #appendLine: (filePath: string, line: string) => Promise<void>;
   readonly #readFile: (path: string, encoding: 'utf-8') => Promise<string>;
+  readonly #adapter: DataAdapter | undefined;
 
   constructor(ports: CastLogStorePorts) {
     this.#ports = ports;
     this.#now = ports.now ?? (() => new Date());
+    this.#adapter = ports.adapter;
     const adapter = ports.adapter;
-    this.#appendLine = ports.appendLine ?? (async (filePath, line) => {
-      const existing = adapter && (await adapter.exists(filePath)) ? await adapter.read(filePath) : '';
-      await adapter!.write(filePath, existing + line);
-    });
-    this.#readFile = ports.readFile ?? (async (filePath, _) => {
-      if (adapter && !(await adapter.exists(filePath))) {
-        throw Object.assign(new Error(`ENOENT: ${filePath}`), { code: 'ENOENT' });
-      }
-      return adapter!.read(filePath);
-    });
+    this.#appendLine =
+      ports.appendLine ??
+      (async (filePath, line) => {
+        const existing =
+          adapter && (await adapter.exists(filePath)) ? await adapter.read(filePath) : '';
+        await adapter!.write(filePath, existing + line);
+      });
+    this.#readFile =
+      ports.readFile ??
+      (async (filePath, _) => {
+        if (adapter && !(await adapter.exists(filePath))) {
+          throw Object.assign(new Error(`ENOENT: ${filePath}`), { code: 'ENOENT' });
+        }
+        return adapter!.read(filePath);
+      });
   }
 
   /**
@@ -84,6 +92,100 @@ export class CastLogStore {
     }
 
     return events;
+  }
+
+  /**
+   * Returns list of configured log file paths (local + agent if present).
+   */
+  #configuredPaths(): string[] {
+    const paths = [this.#ports.getLogPathAbs()];
+    if (this.#ports.getAgentLogPathAbs) {
+      paths.push(this.#ports.getAgentLogPathAbs());
+    }
+    return paths;
+  }
+
+  /**
+   * Returns true if the given line's parsed castId exactly matches the target castId.
+   * Returns false on parse failure, missing castId field, or non-match.
+   */
+  #lineMatchesCastId(line: string, castId: string): boolean {
+    try {
+      const parsed: unknown = JSON.parse(line);
+      if (parsed && typeof parsed === 'object' && 'castId' in parsed) {
+        return (parsed as Record<string, unknown>).castId === castId;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Reads a file, filters lines based on keepLine predicate, and writes back.
+   * Handles trailing newline: empty result → write ''; non-empty result → append '\n'.
+   * Missing file is a no-op.
+   */
+  async #rewriteFileLines(
+    path: string,
+    keepLine: (line: string) => boolean,
+  ): Promise<void> {
+    if (!this.#adapter) {
+      return;
+    }
+
+    if (!(await this.#adapter.exists(path))) {
+      return;
+    }
+
+    const content = await this.#adapter.read(path);
+    const lines = content.split('\n');
+
+    // Filter and remove empty strings, preserving non-empty lines
+    const kept = lines.filter((line) => line !== '' && keepLine(line));
+
+    let result: string;
+    if (kept.length === 0) {
+      result = '';
+    } else {
+      result = kept.join('\n') + '\n';
+    }
+
+    await this.#adapter.write(path, result);
+  }
+
+  /**
+   * Empties a file by writing an empty string. Missing file is a no-op.
+   */
+  async #emptyFile(path: string): Promise<void> {
+    if (!this.#adapter) {
+      return;
+    }
+
+    if (!(await this.#adapter.exists(path))) {
+      return;
+    }
+
+    await this.#adapter.write(path, '');
+  }
+
+  /**
+   * Removes all lines from all configured log files whose castId matches the given value.
+   * Unparseable and non-matching lines are preserved. Missing files are a no-op.
+   */
+  async deleteCast(castId: string): Promise<void> {
+    for (const path of this.#configuredPaths()) {
+      await this.#rewriteFileLines(path, (line) => !this.#lineMatchesCastId(line, castId));
+    }
+  }
+
+  /**
+   * Empties all configured log files. Missing files are a no-op.
+   */
+  async clearAll(): Promise<void> {
+    for (const path of this.#configuredPaths()) {
+      await this.#emptyFile(path);
+    }
   }
 
   /**

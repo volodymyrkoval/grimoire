@@ -146,6 +146,7 @@ export class CommandPopup extends Modal {
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
       openLink: this.#handleOpenLink,
+      app: params.app,
     });
     this.#spellsPanel = this.#createSpellsPanel(params.spellTag);
     this.#panels = [this.#spellsPanel, castLogPanel];

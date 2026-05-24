@@ -57,6 +57,7 @@ describe('CommandPopupBuilder', () => {
       refresh: vi.fn(),
       tick: vi.fn(),
       now: vi.fn(),
+      mutator: { deleteCast: vi.fn().mockResolvedValue(undefined), clearAll: vi.fn().mockResolvedValue(undefined) },
     };
     let capturedCloseCallback: (() => void) | undefined;
     const createDispatcher = vi.fn((close: () => void) => {

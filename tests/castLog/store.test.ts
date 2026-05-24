@@ -242,4 +242,303 @@ describe('CastLogStore', () => {
     });
   });
 
+  describe('mutation helpers', () => {
+    // Stub helper for tests: creates a mock DataAdapter backed by a files object
+    function makeAdapter(files: Record<string, string>): DataAdapter {
+      return {
+        exists: vi.fn(async (path: string) => path in files),
+        read: vi.fn(async (path: string) => files[path] ?? ''),
+        write: vi.fn(async (path: string, data: string) => {
+          files[path] = data;
+        }),
+      } as unknown as DataAdapter;
+    }
+
+    describe('#lineMatchesCastId', () => {
+      it('should match a line with the correct castId', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        // A line is indirectly tested via deleteCast behavior
+        // Here we implicitly test #lineMatchesCastId by calling deleteCast
+        // and verifying that matching lines are removed
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        expect(files['/local.jsonl']).toBe('');
+      });
+
+      it('should not match a line with mismatched castId', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-2');
+
+        expect(files['/local.jsonl']).toBe(
+          JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n',
+        );
+      });
+
+      it('should treat unparseable lines as non-matching (preserve them)', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = '{not valid json\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        expect(files['/local.jsonl']).toBe('{not valid json\n');
+      });
+
+      it('should filter out blank lines during rewrite', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        // Blank lines are filtered during rewrite, resulting in empty file
+        expect(files['/local.jsonl']).toBe('');
+      });
+    });
+
+    describe('deleteCast', () => {
+      it('should remove matching cast line from local file', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        expect(files['/local.jsonl']).toBe('');
+      });
+
+      it('should remove matching cast from both local and agent files', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          getAgentLogPathAbs: () => '/agent.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] =
+          JSON.stringify({ castId: 'cast-1', stage: 'casted' }) +
+          '\n' +
+          JSON.stringify({ castId: 'cast-2', stage: 'casted' }) +
+          '\n';
+        files['/agent.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'error' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        expect(files['/local.jsonl']).toBe(
+          JSON.stringify({ castId: 'cast-2', stage: 'casted' }) + '\n',
+        );
+        expect(files['/agent.jsonl']).toBe('');
+      });
+
+      it('should be a no-op when castId is not found in any file', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-999');
+
+        expect(files['/local.jsonl']).toBe(
+          JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n',
+        );
+      });
+
+      it('should be a no-op when agent file does not exist', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          getAgentLogPathAbs: () => '/agent.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        expect(files['/local.jsonl']).toBe('');
+        // agent file should not exist or should not be created
+        expect(files['/agent.jsonl']).toBeUndefined();
+      });
+
+      it('should preserve unparseable lines when deleting matching cast', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] =
+          JSON.stringify({ castId: 'cast-1', stage: 'casted' }) +
+          '\n' +
+          '{invalid json\n' +
+          JSON.stringify({ castId: 'cast-2', stage: 'casted' }) +
+          '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        expect(files['/local.jsonl']).toBe(
+          '{invalid json\n' + JSON.stringify({ castId: 'cast-2', stage: 'casted' }) + '\n',
+        );
+      });
+    });
+
+    describe('clearAll', () => {
+      it('should empty the local log file', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.clearAll();
+
+        expect(files['/local.jsonl']).toBe('');
+      });
+
+      it('should empty both local and agent log files', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          getAgentLogPathAbs: () => '/agent.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+        files['/agent.jsonl'] = JSON.stringify({ castId: 'cast-2', stage: 'error' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.clearAll();
+
+        expect(files['/local.jsonl']).toBe('');
+        expect(files['/agent.jsonl']).toBe('');
+      });
+
+      it('should be a no-op when agent file does not exist', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          getAgentLogPathAbs: () => '/agent.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.clearAll();
+
+        expect(files['/local.jsonl']).toBe('');
+        expect(files['/agent.jsonl']).toBeUndefined();
+      });
+    });
+
+    describe('round-trip edge case', () => {
+      it('should preserve unparseable lines after deleteCast and allow readAll to work', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          adapter,
+        });
+
+        // Append three casted lines (two distinct castIds) plus unparseable junk
+        const line1 = JSON.stringify({ castId: 'cast-1', stage: 'casted' });
+        const line2 = JSON.stringify({ castId: 'cast-2', stage: 'casted' });
+        const line3 = JSON.stringify({ castId: 'cast-1', stage: 'error' });
+        const junk = '{not valid json';
+
+        files['/local.jsonl'] = `${line1}\n${line2}\n${line3}\n${junk}\n`;
+
+        // Delete cast-1
+        const mutator = store as any;
+        await mutator.deleteCast('cast-1');
+
+        // Raw read should contain junk line
+        expect(files['/local.jsonl']).toContain('{not valid json');
+
+        // readAll should return only cast-2
+        const events = await store.readAll();
+        expect(events).toHaveLength(1);
+        expect(events[0]).toHaveProperty('castId', 'cast-2');
+      });
+
+      it('should be a no-op when castId is in neither file', async () => {
+        const files: Record<string, string> = {};
+        const adapter = makeAdapter(files);
+        const store = new CastLogStore({
+          getLogPathAbs: () => '/local.jsonl',
+          getAgentLogPathAbs: () => '/agent.jsonl',
+          adapter,
+        });
+
+        files['/local.jsonl'] = JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n';
+        files['/agent.jsonl'] = JSON.stringify({ castId: 'cast-2', stage: 'error' }) + '\n';
+
+        const mutator = store as any;
+        await mutator.deleteCast('cast-999');
+
+        // Files should be unchanged
+        expect(files['/local.jsonl']).toBe(
+          JSON.stringify({ castId: 'cast-1', stage: 'casted' }) + '\n',
+        );
+        expect(files['/agent.jsonl']).toBe(
+          JSON.stringify({ castId: 'cast-2', stage: 'error' }) + '\n',
+        );
+      });
+    });
+  });
+
 });

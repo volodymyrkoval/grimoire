@@ -190,7 +190,7 @@ header clear-all click
 5. **Section-level Red criterion** — the file exists and exports an interface importable by `store.ts` (B) and `CastLogPanel.ts` (H) without a type error.
 
 **junior-dev**
-- [ ] A1: Create `src/castLog/CastLogMutator.ts` exporting the `CastLogMutator` interface with `deleteCast(castId: string): Promise<void>` and `clearAll(): Promise<void>`, JSDoc per the Interfaces block (preserve non-matching + unparseable lines; missing files no-op). — S, junior-dev
+- [x] A1: Create `src/castLog/CastLogMutator.ts` exporting the `CastLogMutator` interface with `deleteCast(castId: string): Promise<void>` and `clearAll(): Promise<void>`, JSDoc per the Interfaces block (preserve non-matching + unparseable lines; missing files no-op). — S, junior-dev
 
 ### B. Store mutation — `deleteCast` + `clearAll` (no tester — pure store logic, unit-tested in `tests/`)
 
@@ -211,13 +211,13 @@ header clear-all click
 5. **Section-level Red criterion** — unit tests prove: (a) `deleteCast` removes only matching-castId lines from both files; (b) unparseable + blank + non-matching lines survive; (c) missing agent file is a no-op (no throw); (d) `clearAll` empties both files; (e) `clearAll` tolerates a missing file. Tests stub `adapter` (or `readFile`/`appendLine`-style ports) — never real disk.
 
 **junior-dev**
-- [ ] B1: Add `#configuredPaths(): string[]` returning `[getLogPathAbs()]` plus `getAgentLogPathAbs()` when the port is present (mirror the guard at `store.ts:81`). Unit-test both-present and local-only. — S, junior-dev
-- [ ] B2: Add `#lineMatchesCastId(line: string, castId: string): boolean` — `JSON.parse` in a try/catch; on throw or when parsed has no matching `castId`, return `false`; return `true` only on exact match. Unit-test: matching line → true; non-matching → false; unparseable `"{not json"` → false; blank → false. — S, junior-dev
-- [ ] B3: Add `#rewriteFileLines(path, keepLine: (line) => boolean): Promise<void>` — guard `adapter.exists(path)` (missing → return); read raw; split on `'\n'`; keep lines where `keepLine(line)` is true (preserve blanks/unparseable per the predicate); write back with the trailing-newline shape settled by a round-trip test (Technical note "Blank-line policy"). Unit-test missing-file no-op and preservation of unparseable line. — M, junior-dev
-- [ ] B4: Add `#emptyFile(path): Promise<void>` — guard `adapter.exists(path)` (missing → no-op); write `''` via adapter. Unit-test missing-file no-op and existing-file emptied. — S, junior-dev
-- [ ] B5: Add `async deleteCast(castId)` orchestrating `#rewriteFileLines(path, (line) => !this.#lineMatchesCastId(line, castId))` for each `#configuredPaths()`. Declare `CastLogStore implements CastLogMutator`. Unit-test: matching lines removed from BOTH files; non-matching/unparseable survive; agent-file-absent is a no-op. — M, junior-dev
-- [ ] B6: Add `async clearAll()` orchestrating `#emptyFile(path)` for each `#configuredPaths()`. Unit-test: both files emptied; missing agent file tolerated. — S, junior-dev
-- [ ] B7 (edge cases): Unit-test the full round-trip — append three `casted` lines (two castIds) + one unparseable junk line via the existing `recordCasted`/raw write, `deleteCast` one castId, then `readAll()` returns exactly the survivors AND a raw read still contains the junk line. Also: `deleteCast` of a castId present in NEITHER file is a clean no-op. — M, junior-dev
+- [x] B1: Add `#configuredPaths(): string[]` returning `[getLogPathAbs()]` plus `getAgentLogPathAbs()` when the port is present (mirror the guard at `store.ts:81`). Unit-test both-present and local-only. — S, junior-dev
+- [x] B2: Add `#lineMatchesCastId(line: string, castId: string): boolean` — `JSON.parse` in a try/catch; on throw or when parsed has no matching `castId`, return `false`; return `true` only on exact match. Unit-test: matching line → true; non-matching → false; unparseable `"{not json"` → false; blank → false. — S, junior-dev
+- [x] B3: Add `#rewriteFileLines(path, keepLine: (line) => boolean): Promise<void>` — guard `adapter.exists(path)` (missing → return); read raw; split on `'\n'`; keep lines where `keepLine(line)` is true (preserve blanks/unparseable per the predicate); write back with the trailing-newline shape settled by a round-trip test (Technical note "Blank-line policy"). Unit-test missing-file no-op and preservation of unparseable line. — M, junior-dev
+- [x] B4: Add `#emptyFile(path): Promise<void>` — guard `adapter.exists(path)` (missing → no-op); write `''` via adapter. Unit-test missing-file no-op and existing-file emptied. — S, junior-dev
+- [x] B5: Add `async deleteCast(castId)` orchestrating `#rewriteFileLines(path, (line) => !this.#lineMatchesCastId(line, castId))` for each `#configuredPaths()`. Declare `CastLogStore implements CastLogMutator`. Unit-test: matching lines removed from BOTH files; non-matching/unparseable survive; agent-file-absent is a no-op. — M, junior-dev
+- [x] B6: Add `async clearAll()` orchestrating `#emptyFile(path)` for each `#configuredPaths()`. Unit-test: both files emptied; missing agent file tolerated. — S, junior-dev
+- [x] B7 (edge cases): Unit-test the full round-trip — append three `casted` lines (two castIds) + one unparseable junk line via the existing `recordCasted`/raw write, `deleteCast` one castId, then `readAll()` returns exactly the survivors AND a raw read still contains the junk line. Also: `deleteCast` of a castId present in NEITHER file is a clean no-op. — M, junior-dev
 
 ### C. UI scaffolding — `ClearAllConfirmModal` shell + deps plumbing (no tester — file shells / type stubs)
 
@@ -234,8 +234,8 @@ header clear-all click
 5. **Section-level Red criterion** — `ClearAllConfirmModal` compiles and `new`s with `(app, count, onConfirm)`; `CastLogPanelDeps` type now has `mutator: CastLogMutator`; existing panel tests still construct (they will need the new dep — see coupling note for D/F).
 
 **junior-dev**
-- [ ] C1: Create `src/ui/components/ClearAllConfirmModal.ts` — `extends Modal`, constructor `(app, count: number, onConfirm: () => void)`, with `onOpen()` orchestrating `#renderMessage()` → `#renderButtons()` (method shells; bodies in F). Import `Modal`, `Setting` from `obsidian`. — S, junior-dev
-- [ ] C2: Add `mutator: CastLogMutator` to `CastLogPanelDeps` in `src/ui/tabs/CastLogPanel.ts` and import the interface from `../../castLog/CastLogMutator`. Do not yet call it. — S, junior-dev
+- [x] C1: Create `src/ui/components/ClearAllConfirmModal.ts` — `extends Modal`, constructor `(app, count: number, onConfirm: () => void)`, with `onOpen()` orchestrating `#renderMessage()` → `#renderButtons()` (method shells; bodies in F). Import `Modal`, `Setting` from `obsidian`. — S, junior-dev
+- [x] C2: Add `mutator: CastLogMutator` to `CastLogPanelDeps` in `src/ui/tabs/CastLogPanel.ts` and import the interface from `../../castLog/CastLogMutator`. Do not yet call it. — S, junior-dev
 
 ### D. Per-row delete affordance (tester owns the Red criterion; devs make it green)
 
@@ -257,15 +257,15 @@ header clear-all click
 5. **Section-level Red criterion** — an integration test: mounting the panel with a record + a stub mutator, clicking the row's delete control flips it to confirm/cancel without toggling expansion; clicking confirm calls `mutator.deleteCast(castId)` exactly once with the right id and the row disappears after `#reload()`; clicking cancel returns to idle and never calls the mutator; the pending-confirm state survives a `refresh.fire()` repaint mid-confirm.
 
 **ui-integration-tester**
-- [ ] D0: integration test at `tests/integration/cast-log-delete-row.spec.ts` — seam: `CastLogPanel` → real `CastLogList`/`CastLogRow` via a `FakeCastLogMutator` (`deleteCast` vi.fn, `clearAll` vi.fn) injected through deps. Assert: (a) delete control present per row; (b) clicking it flips to confirm/cancel and does NOT toggle `is-expanded`; (c) confirm → `deleteCast` called once with that castId, row gone after reload; (d) cancel → no mutator call, control back to idle; (e) mid-confirm `refresh.fire()` preserves the confirm state (panel-keyed). — M, ui-integration-tester
+- [x] D0: integration test at `tests/integration/cast-log-delete-row.spec.ts` — seam: `CastLogPanel` → real `CastLogList`/`CastLogRow` via a `FakeCastLogMutator` (`deleteCast` vi.fn, `clearAll` vi.fn) injected through deps. Assert: (a) delete control present per row; (b) clicking it flips to confirm/cancel and does NOT toggle `is-expanded`; (c) confirm → `deleteCast` called once with that castId, row gone after reload; (d) cancel → no mutator call, control back to idle; (e) mid-confirm `refresh.fire()` preserves the confirm state (panel-keyed). — M, ui-integration-tester
 
 **junior-dev**
-- [ ] D2: Add `#pendingConfirmIds = new Set<string>()` to `CastLogPanel`, plus `#handleRequestConfirm(castId)` (add + `#renderList()`) and `#handleCancelConfirm(castId)` (delete + `#renderList()`), mirroring `#handleToggle`. — S, junior-dev
-- [ ] D3: Add `#handleDeleteCast(castId)` to `CastLogPanel` orchestrating `await this.#deps.mutator.deleteCast(castId)` → `#pendingConfirmIds.delete(castId)` → `#reload()`, wrapped in try/catch that on failure shows `new Notice('Could not delete cast — see console')`, `console.error`s, and clears the pending id regardless (Error handling). — M, junior-dev
-- [ ] D4: Extend `CastLogList.render(...)` to accept `pendingConfirmIds`, `onDeleteCast`, `onRequestConfirm`, `onCancelConfirm` and build a `RowDeleteControl` per record (`pendingConfirm: pendingConfirmIds.has(castId)`, the three callbacks closing over `castId`), passing it into `row.render(...)` / `row.update(...)`. Thread the same args from `CastLogPanel.#renderList()`. — M, junior-dev
+- [x] D2: Add `#pendingConfirmIds = new Set<string>()` to `CastLogPanel`, plus `#handleRequestConfirm(castId)` (add + `#renderList()`) and `#handleCancelConfirm(castId)` (delete + `#renderList()`), mirroring `#handleToggle`. — S, junior-dev
+- [x] D3: Add `#handleDeleteCast(castId)` to `CastLogPanel` orchestrating `await this.#deps.mutator.deleteCast(castId)` → `#pendingConfirmIds.delete(castId)` → `#reload()`, wrapped in try/catch that on failure shows `new Notice('Could not delete cast — see console')`, `console.error`s, and clears the pending id regardless (Error handling). — M, junior-dev
+- [x] D4: Extend `CastLogList.render(...)` to accept `pendingConfirmIds`, `onDeleteCast`, `onRequestConfirm`, `onCancelConfirm` and build a `RowDeleteControl` per record (`pendingConfirm: pendingConfirmIds.has(castId)`, the three callbacks closing over `castId`), passing it into `row.render(...)` / `row.update(...)`. Thread the same args from `CastLogPanel.#renderList()`. — M, junior-dev
 
 **senior-dev**
-- [ ] D5: Extend `CastLogRow` with `#buildDeleteControl(host, control: RowDeleteControl)` rendering idle (delete button → `onRequestDelete`) vs confirming (confirm → `onConfirmDelete`, cancel → `onCancelDelete`) from `control.pendingConfirm`; bind listeners via the row's `AbortController` `{ signal }`; the control's click handlers `stopPropagation()` so the header toggle does not fire (coupling D1). Render one in the header (hover-reveal class gated by `Platform.isDesktop`) and one always in the expanded body (Key design decision 8). Make D0 green. — M, senior-dev
+- [x] D5: Extend `CastLogRow` with `#buildDeleteControl(host, control: RowDeleteControl)` rendering idle (delete button → `onRequestDelete`) vs confirming (confirm → `onConfirmDelete`, cancel → `onCancelDelete`) from `control.pendingConfirm`; bind listeners via the row's `AbortController` `{ signal }`; the control's click handlers `stopPropagation()` so the header toggle does not fire (coupling D1). Render one in the header (hover-reveal class gated by `Platform.isDesktop`) and one always in the expanded body (Key design decision 8). Make D0 green. — M, senior-dev (6f4250b)
 
 ### E. Clear-all header control scaffolding (no tester — list-header structure only)
 
@@ -280,7 +280,7 @@ header clear-all click
 5. **Section-level Red criterion** — with records present, the list header contains a clear-all control element; clicking it invokes the `onClearAll` callback (a vi.fn in this section's unit check); in the empty state no clear-all control is shown.
 
 **junior-dev**
-- [ ] E1: Extend `CastLogList` with `#renderClearAllControl(host, onClearAll)` and an `onClearAll` param on `render(...)`; render the control in the list header so it is present whenever `records.length > 0` (independent of the in-flight-count `is-hidden` toggle), hidden in the empty state. Bind the click via `{ signal }`. Thread `onClearAll` from `CastLogPanel.#renderList()` as a passthrough for now. — M, junior-dev
+- [x] E1: Extend `CastLogList` with `#renderClearAllControl(host, onClearAll)` and an `onClearAll` param on `render(...)`; render the control in the list header so it is present whenever `records.length > 0` (independent of the in-flight-count `is-hidden` toggle), hidden in the empty state. Bind the click via `{ signal }`. Thread `onClearAll` from `CastLogPanel.#renderList()` as a passthrough for now. — M, junior-dev (17aa613)
 
 ### F. Clear-all confirmation + execution (tester owns the Red criterion; devs make it green)
 
@@ -301,13 +301,13 @@ header clear-all click
 5. **Section-level Red criterion** — an integration test: clicking the header clear-all opens a modal whose text contains the live count; clicking Remove calls `mutator.clearAll()` once and the panel re-renders to "No casts yet"; clicking Cancel calls `clearAll` zero times and leaves the rows intact.
 
 **ui-integration-tester**
-- [ ] F0: integration test at `tests/integration/cast-log-clear-all.spec.ts` — seam: `CastLogPanel` → `CastLogList` header control → real `ClearAllConfirmModal` → `FakeCastLogMutator`. Assert: (a) clear-all control present when records exist; (b) clicking opens a modal whose text includes the count (e.g. "all 2"); (c) Remove → `clearAll()` called once → panel shows "No casts yet" after reload; (d) Cancel → `clearAll()` zero calls, rows intact; (e) clear-all control absent in the initial empty state. — M, ui-integration-tester
+- [x] F0: integration test at `tests/integration/cast-log-clear-all.spec.ts` — seam: `CastLogPanel` → `CastLogList` header control → real `ClearAllConfirmModal` → `FakeCastLogMutator`. Assert: (a) clear-all control present when records exist; (b) clicking opens a modal whose text includes the count (e.g. "all 2"); (c) Remove → `clearAll()` called once → panel shows "No casts yet" after reload; (d) Cancel → `clearAll()` zero calls, rows intact; (e) clear-all control absent in the initial empty state. — M, ui-integration-tester
 
 **junior-dev**
-- [ ] F2: Implement `ClearAllConfirmModal.#renderMessage()` ("Remove all ${count} casts?" via `new Setting(this.contentEl).setName(...).setHeading()`) and `#renderButtons()` (Cancel → `close()`; Remove → `onConfirm()` then `close()` via `.addButton`). Wire `onOpen()` to call both. — M, junior-dev
+- [x] F2: Implement `ClearAllConfirmModal.#renderMessage()` ("Remove all ${count} casts?" via `new Setting(this.contentEl).setName(...).setHeading()`) and `#renderButtons()` (Cancel → `close()`; Remove → `onConfirm()` then `close()` via `.addButton`). Wire `onOpen()` to call both. — M, junior-dev
 
 **senior-dev**
-- [ ] F3: Add `app` to `CastLogPanelDeps` (and thread it through wiring) and implement `CastLogPanel.#handleClearAll()` — `new ClearAllConfirmModal(this.#deps.app, this.#records.length, onConfirm).open()`, where `onConfirm` orchestrates `await mutator.clearAll()` → `#reload()` in a try/catch (Notice + console.error on failure). Bind it to E1's `onClearAll`. Make F0 green. — M, senior-dev
+- [x] F3: Add `app` to `CastLogPanelDeps` (and thread it through wiring) and implement `CastLogPanel.#handleClearAll()` — `new ClearAllConfirmModal(this.#deps.app, this.#records.length, onConfirm).open()`, where `onConfirm` orchestrates `await mutator.clearAll()` → `#reload()` in a try/catch (Notice + console.error on failure). Bind it to E1's `onClearAll`. Make F0 green. — M, senior-dev (aebf276)
 
 ### G. Styling (no tester — CSS only)
 
@@ -320,7 +320,7 @@ header clear-all click
 5. **Section-level Red criterion** — visual only; no automated Red. The header delete control is hidden until row hover on desktop; the body delete control and the header clear-all control are always visible when present.
 
 **junior-dev**
-- [ ] G1: Add `styles.css` rules: hide the header delete control until `.cast-log-row:hover` (desktop-class-gated), keep the body delete control and the inline confirm/cancel buttons laid out inline, and style the header clear-all control. Class names must match those emitted by D5 and E1. — S, junior-dev
+- [x] G1: Add `styles.css` rules: hide the header delete control until `.cast-log-row:hover` (desktop-class-gated), keep the body delete control and the inline confirm/cancel buttons laid out inline, and style the header clear-all control. Class names must match those emitted by D5 and E1. — S, junior-dev
 
 ### H. Wiring (no tester — composition root; covered by existing full-stack refresh integration test)
 
@@ -335,11 +335,14 @@ header clear-all click
 5. **Section-level Red criterion** — the existing `tests/integration/cast-log-refresh.spec.ts` (full-stack) still passes, and a delete/clear performed through the real wired panel reaches the real store. Confirm `CastLogPanelDeps` is fully satisfied at the `CommandPopup` construction site (no missing-dep type error).
 
 **junior-dev**
-- [ ] H1: In `CastLogModule.buildCastLogPanelDeps()`, add `mutator: this.#pluginCastLogStore` and `app: this.#app` to the returned object. Verify `CommandPopup`/`CommandPopupBuilder` construct without a missing-dep type error and the existing cast-log integration tests stay green. — S, junior-dev
-- [ ] H2 (edge cases): Extend or add a full-stack integration check that a delete through the wired panel removes the cast's lines from both real (stubbed-adapter) files and the panel repaints, and a clear-all empties both — exercising the real store ↔ real panel seam end to end. — M, junior-dev
+- [x] H1: In `CastLogModule.buildCastLogPanelDeps()`, add `mutator: this.#pluginCastLogStore` and `app: this.#app` to the returned object. Verify `CommandPopup`/`CommandPopupBuilder` construct without a missing-dep type error and the existing cast-log integration tests stay green. — S, junior-dev (aebf276)
+- [x] H2 (edge cases): Extend or add a full-stack integration check that a delete through the wired panel removes the cast's lines from both real (stubbed-adapter) files and the panel repaints, and a clear-all empties both — exercising the real store ↔ real panel seam end to end. — M, junior-dev (0d35354)
 
 ## Overall effort summary
 
 - **Total:** 21 todos — S: 10, M: 11, L: 0
 - **By tier:** ui-integration-tester: 2 (D0, F0) · junior-dev: 15 · senior-dev: 2 (D5, F3) · lead-dev: 0
 - **Dominant tier:** junior-dev. The store mutation logic (Section B) is the correctness core but is fully prescribed (raw-line rewrite with a named predicate, missing-file no-op, preservation rule) — mechanical to implement against the unit tests, hence junior-dev. Only the two seam-wiring todos that make the integration tests green (the row delete control's event-propagation interaction with the existing header-toggle handler; the clear-all modal + panel-state orchestration) carry enough cross-component judgment for senior-dev. No lead-dev: the one genuinely hard call (the concurrency stance) is decided by the pitch and explicitly forbids locking/retry, so there is no concurrency code to reason about.
+
+reviewed @ b8d1a48
+fixed @ 94dd485
