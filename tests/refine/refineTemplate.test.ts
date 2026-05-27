@@ -47,11 +47,11 @@ describe('renderRefineSystemPrompt', () => {
     expect(result).toContain('first match wins');
   });
 
-  // NEW: Vault search MCP tools
-  it('contains vault search tool references', () => {
+  // INVERTED: Vault search MCP tools — now assert ABSENCE of server-specific names
+  it('does not contain server-specific vault search tool names', () => {
     const result = renderRefineSystemPrompt();
-    expect(result).toContain('search_vault_simple');
-    expect(result).toContain('search_vault_smart');
+    expect(result).not.toContain('search_vault_simple');
+    expect(result).not.toContain('search_vault_smart');
   });
 
   // NEW: Web research agents and structure
@@ -80,12 +80,12 @@ describe('renderRefineSystemPrompt', () => {
     expect(result).toContain('wikilink');
   });
 
-  // NEW: Output Rules adaptation — pin for preference of line-level patches
-  it('contains output rules for patch strategy', () => {
+  // INVERTED: Output Rules — now assert ABSENCE of line-level patches, PRESENCE of full-file-write
+  it('does not contain line-level patch strategy; uses full-file-write instead', () => {
     const result = renderRefineSystemPrompt();
-    // pin for Output Rules adaptation — pitch prefers line-level patches over full-body replacement
-    expect(result).toContain('line-level patch');
-    expect(result).toContain('full-body replacement');
+    expect(result).not.toContain('line-level patch');
+    expect(result).not.toContain('full-body replacement');
+    expect(result).toContain('write the whole');
   });
 
   // NEW: Frontmatter and YAML preservation rules
@@ -129,5 +129,29 @@ describe('renderRefineSystemPrompt', () => {
   it('does not contain Tag conventions for new notes', () => {
     const result = renderRefineSystemPrompt();
     expect(result).not.toContain('Tag conventions for new notes');
+  });
+
+  // NEW: Absence of server-specific MCP tool names
+  it('does not contain mcp__obsidian-mcp-tools__ tool names', () => {
+    const result = renderRefineSystemPrompt();
+    expect(result).not.toContain('mcp__obsidian-mcp-tools__');
+    expect(result).not.toContain('get_vault_file');
+    expect(result).not.toContain('create_vault_file');
+  });
+
+  // NEW: Search ladder presence — three rungs with guidance to use best available
+  it('contains search ladder with three rungs and guidance to state which was used', () => {
+    const result = renderRefineSystemPrompt();
+    expect(result).toContain('semantic');
+    expect(result).toContain('full-text');
+    expect(result).toContain('grep');
+    expect(result).toContain('best available');
+    expect(result).toMatch(/state.*which|say.*which/i);
+  });
+
+  // NEW: Full-file-write presence
+  it('contains full-file-write guidance in output rules', () => {
+    const result = renderRefineSystemPrompt();
+    expect(result).toContain('write the whole');
   });
 });

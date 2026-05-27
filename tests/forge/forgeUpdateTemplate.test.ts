@@ -37,11 +37,28 @@ describe('renderForgeUpdateSystemPrompt', () => {
     expect(output).not.toContain('@cast');
   });
 
-  it('includes line-level patches rule', () => {
+  it('does not contain line-level patches rule', () => {
     const output = renderForgeUpdateSystemPrompt({
       vaultMountPath: '/vault',
     });
-    expect(output).toContain('**Prefer line-level patches**');
+    expect(output).not.toContain('**Prefer line-level patches**');
+  });
+
+  it('contains full-file-write instruction', () => {
+    const output = renderForgeUpdateSystemPrompt({
+      vaultMountPath: '/vault',
+    });
+    expect(output).toContain('write the whole');
+  });
+
+  it('does not contain server-specific tool names', () => {
+    const output = renderForgeUpdateSystemPrompt({
+      vaultMountPath: '/vault',
+    });
+    expect(output).not.toContain('mcp__obsidian-mcp-tools__');
+    expect(output).not.toContain('mcp__obsidian__');
+    expect(output).not.toContain('search_vault_smart');
+    expect(output).not.toContain('search_vault_simple');
   });
 
   it('includes Auto-generated banner in %% block', () => {

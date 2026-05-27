@@ -11,7 +11,7 @@ A spell is any markdown note tagged with your spell tag (default `grimoire/spell
 - **Cast spells** — fuzzy-search your library, `Enter` to cast against the active note, fire-and-forget.
 - **Tune any cast** — per-cast model, effort, context notes, and a follow-up instruction; remember a default per spell.
 - **Forge** — describe a task in plain English and let Claude author the spell file for you.
-- **Refine** — a built-in spell that rewrites or expands the active note, with inline `@cast` directives for surgical edits.
+- **Refine** — a built-in spell that rewrites or expands the active note, with inline `@cast` directives for surgical edits. Search quality depends on which MCP server you mount — semantic-capable servers give richer results, but any Obsidian-aware server works out of the box.
 - **Cast Log** — every cast, live, with status and duration.
 - **Hotkeys** — jump to any spell with `Shift + letter`.
 - **Remote casting** — optionally route casts to a portal server over HTTP, including from mobile.
@@ -28,6 +28,8 @@ claude mcp add --transport http obsidian https://127.0.0.1:27124/mcp/ \
 ```
 
 The plugin serves over HTTPS with a self-signed certificate — either trust it, or enable the plain-HTTP endpoint under *Settings → Local REST API*; see the [setup guide](https://volodymyrkoval.github.io/grimoire-docs/start/obsidian-mcp/) for both. If the MCP server is ever unavailable, spells fall back to filesystem access rooted at your configured vault mount path.
+
+For best-case Refine search results, use a semantic-capable MCP server (e.g., [OpenAI](https://github.com/modelcontextprotocol/servers/tree/main/src/openai-mcp), [Anthropic](https://github.com/modelcontextprotocol/servers/tree/main/src/anthropic), or a custom embedding service). Grimoire's shipped scripts bind tools by capability rather than server name, so any Obsidian-aware MCP works — you're choosing between good (any server) and better (semantic-aware).
 
 **2. Let casts run unattended.** Create `.claude/settings.local.json` in your **vault root** so Claude Code doesn't pause for permission on every tool call — a background cast has no terminal to answer them. The same file wires up cast-log progress tracking:
 
@@ -63,6 +65,8 @@ The plugin serves over HTTPS with a self-signed certificate — either trust it,
 The `mcp__obsidian__*` entries must match the server name you registered in step 1 (`obsidian` above). The MCP tools are those exposed by Local REST API; trim or extend the list to what your spells actually use. Without the `permissions` block, casts stall; without `hooks`, the Cast Log shows only submitted/failed, never in-progress or done.
 
 **3. Configure and cast.** Open *Settings → Grimoire* and set your Claude Code binary path (if `claude` isn't on your PATH) and vault mount path. Then open the command popup, pick a spell, and press `Enter`. Watch the **Logs** tab reach **Done**.
+
+Power users can fork the built-in Refine spell into a custom variant: mark any vault note with `sentinel: refine` in its frontmatter, and it becomes a selectable Refine option in *Settings → Grimoire → Custom Refine spell*. Use this seam to inject MCP tools, vault-specific context, or a different writing style. See the [custom Refine guide](https://volodymyrkoval.github.io/grimoire-docs/features/custom-refine-spell/) for details.
 
 ## Requirements
 

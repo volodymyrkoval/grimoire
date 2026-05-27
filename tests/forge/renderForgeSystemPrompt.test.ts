@@ -102,4 +102,28 @@ describe('renderForgeSystemPrompt', () => {
     expect(output).not.toContain('executeOnNote');
     expect(output).not.toContain('grimoire-execute-on-note');
   });
+
+  it('does not contain server-specific tool names', () => {
+    const output = renderForgeSystemPrompt({
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+    });
+    expect(output).not.toContain('mcp__obsidian-mcp-tools__');
+    expect(output).not.toContain('mcp__obsidian__');
+    expect(output).not.toContain('search_vault_smart');
+    expect(output).not.toContain('search_vault_simple');
+    expect(output).not.toContain('get_vault_file');
+    expect(output).not.toContain('create_vault_file');
+  });
+
+  it('explicitly states capability/intent-binding standard', () => {
+    const output = renderForgeSystemPrompt({
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+    });
+    expect(output).toContain('by capability');
+    expect(output).toContain('never by');
+  });
 });

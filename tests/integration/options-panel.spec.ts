@@ -341,7 +341,7 @@ describe('OptionsPanel integration', () => {
   });
 
   // ------------------------------------------------------------------ A8
-  it('Cmd+Enter fires Cast (scope keyboard shortcut)', () => {
+  it('Shift+Enter fires Cast (scope keyboard shortcut)', () => {
     const { contentEl, scope, onCast } = mountPanel();
 
     const form = contentEl.querySelector('form.options-panel')!;
@@ -349,7 +349,7 @@ describe('OptionsPanel integration', () => {
     textarea.value = 'keyboard cast';
     textarea.dispatchEvent(new Event('input'));
 
-    (scope as any).dispatch('Enter', ['Mod']);
+    (scope as any).dispatch('Enter', ['Shift']);
 
     expect(onCast).toHaveBeenCalledOnce();
   });
@@ -505,8 +505,8 @@ describe('OptionsPanel integration', () => {
     // DOM should NOT have updated — label stays hidden because no re-render happened
     expect(defaultLabel.style.display).toBe('none');
 
-    // Mod+Enter after destroy must NOT call onCast
-    ;(scope as any).dispatch('Enter', ['Mod']);
+    // Shift+Enter after destroy must NOT call onCast
+    ;(scope as any).dispatch('Enter', ['Shift']);
     expect(onCast).not.toHaveBeenCalled();
   });
 });

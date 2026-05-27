@@ -38,11 +38,7 @@ Then execute in order:
    - Preserve the YAML frontmatter exactly — including \`tags\`, \`grimoire-execute-on-note\`, and any other keys — unless the user's description explicitly requests changes to it.
    - Replace content according to the user's description.
 
-3. **Prefer line-level patches** when the change is local: replacing specific lines, inserting specific lines, fixing specific phrases, adding paragraphs at specific anchors. Leave everything else untouched.
-
-   **Fall back to full-body replacement** only when the change is structural: re-ordering whole sections, splitting the note, merging sections, or rewriting so much that line-level patches would lose coherence.
-
-4. Write the updated file back to the vault at its original path. Use Obsidian MCP write tools if available, otherwise write via the filesystem path under VAULT_MOUNT_PATH.
+3. Read the current spell, modify it in context, then write the whole file back to the vault at its original path — original frontmatter first, then the rewritten body. Always use full-file write; do not attempt surgical line-level edits. Use the mounted Obsidian MCP write tool if available, otherwise write via the filesystem path under VAULT_MOUNT_PATH.
 
 ---
 
