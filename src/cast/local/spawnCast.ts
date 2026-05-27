@@ -66,7 +66,9 @@ interface StderrBuffer {
 
 /**
  * Spawns a child process, manages its event stream (stdout drained, stderr buffered), and resolves once on the first terminal event.
- * Abstracts Platform.isDesktop check and dynamic import of Node.js child_process.
+ * Abstracts the Platform.isDesktop check and the Node.js child_process binding, which is
+ * loaded via a desktop-guarded require() — see #loadSpawner for why require() and not a
+ * dynamic import().
  */
 export class CastSpawner {
   readonly #ports: CastSpawnPorts | undefined;
@@ -80,7 +82,7 @@ export class CastSpawner {
    * Resolves with exit code and captured stderr; rejects on sync spawn errors (e.g., ENOENT).
    */
   async run(config: CastSpawnConfig): Promise<CastExitInfo> {
-    const spawner = this.#ports?.spawner ?? await this.#loadSpawner();
+    const spawner = this.#ports?.spawner ?? this.#loadSpawner();
     const options = this.#getOptions(config);
 
     return new Promise<CastExitInfo>((resolve, reject) => {
@@ -103,11 +105,15 @@ export class CastSpawner {
     });
   }
 
-  async #loadSpawner(): Promise<SpawnFn> {
+  #loadSpawner(): SpawnFn {
     if (!Platform.isDesktop) {
       throw new Error("CastSpawner requires a desktop environment");
     }
-    const { spawn } = await import("child_process");
+    // require() (not dynamic import) so esbuild keeps the external child_process as a
+    // CJS require("child_process") call — Electron resolves it, whereas a dynamic
+    // import() leaves a bare ESM specifier the Obsidian renderer cannot resolve.
+    // Guarded by Platform.isDesktop above so mobile bundles never invoke it.
+    const { spawn } = require("child_process") as typeof import("child_process");
     return spawn as unknown as SpawnFn;
   }
 
