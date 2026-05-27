@@ -4,7 +4,6 @@ import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import { ForgeUpdateFormSnapshot } from '../../forge/ForgeUpdateFormSnapshot';
 import { SUPPORTED_MODELS, Effort } from '../../domain/settings/Settings';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
-import type { SpellPath } from '../../domain/spells/SpellPath';
 import { EffortRow } from '../widgets/EffortRow';
 import { buildModelSelect } from '../widgets/ModelSelect';
 import { modelId, type ModelId } from '../../domain/settings/ModelId';
@@ -12,13 +11,8 @@ import type { ForgeMode } from '../../forge/ForgeMode';
 import type { Hotkey } from '../../domain/spells/Hotkey';
 import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
 import { HotkeyCaptureField } from './HotkeyCaptureField';
+import type { HotkeyEraser, HotkeyWriter } from './HotkeyTypes';
 import { attachAutogrow, attachListContinuation } from '../widgets/textareaHelpers';
-
-/** Callback to erase a hotkey binding for a spell. */
-export type HotkeyEraser = (spellPath: SpellPath) => Promise<void>;
-
-/** Callback to write a hotkey binding to a spell's frontmatter. */
-export type HotkeyWriter = (spellPath: SpellPath, hotkey: Hotkey) => Promise<void>;
 
 export interface ForgeSentinelDetailParams {
   contentEl: HTMLElement;

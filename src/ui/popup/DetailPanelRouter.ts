@@ -3,16 +3,19 @@ import type { Spell } from '../../domain/spells/Spell';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { OptionsSessionMap } from '../options/OptionsSessionMap';
-import type { SupportedModel } from '../../domain/settings/Settings';
+import type { SupportedModel, Effort } from '../../domain/settings/Settings';
 import type { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import type { ForgeUpdateFormSnapshot } from '../../forge/ForgeUpdateFormSnapshot';
 import type { SpellContentReader } from '../../forge/SpellContentReader';
 import type { OptionsFormSnapshot } from '../options/OptionsFormState';
-import { ForgeSentinelDetail, type HotkeyEraser, type HotkeyWriter } from '../components/ForgeSentinelDetail';
+import { ForgeSentinelDetail } from '../components/ForgeSentinelDetail';
+import type { HotkeyEraser, HotkeyWriter } from '../components/HotkeyTypes';
 import { OptionsDetail } from '../components/OptionsDetail';
 import { countCastDirectives } from '../../forge/castDirectiveExtractor';
 import type { ForgeMode } from '../../forge/ForgeMode';
 import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
+import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../../infra/castingFrontmatter';
+import type { ModelId } from '../../domain/settings/ModelId';
 
 /** Callback for submitting a Forge sentinel form. */
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
@@ -51,6 +54,12 @@ export interface DetailPanelRouterDeps {
   forgeUpdateAction: ForgeUpdateAction;
   /** Reads the raw content of a spell file for directive counting. */
   spellContentReader: SpellContentReader;
+  /** Reads spell-local casting settings from a spell file's frontmatter. */
+  reader: CastingFrontmatterReader;
+  /** Writes spell-local casting settings to a spell file's frontmatter (on Cast). */
+  castingWriter: CastingFrontmatterWriter;
+  /** Writes vault-wide default model/effort to plugin settings. */
+  setVaultDefault: (model: ModelId, effort: Effort | null) => void;
   /** Factory function that creates a HotkeyDirectory from the current spell list. */
   hotkeyDirectoryFactory: () => HotkeyDirectory;
   /** Callback to erase a hotkey binding for a spell. */
@@ -121,6 +130,9 @@ export class DetailPanelRouter {
       onCast: this.#handleSpellCast,
       onOverrideChanged: this.#deps.onOverrideChanged,
       kind: { kind: 'spell', spell },
+      reader: this.#deps.reader,
+      writeCasting: this.#deps.castingWriter,
+      setVaultDefault: this.#deps.setVaultDefault,
       onForgeUpdate: this.#handleForgeUpdateTransition,
     });
     this.#deps.onEnterDetail(detail, this.#deps.onExit);
@@ -183,6 +195,9 @@ export class DetailPanelRouter {
       onCast: this.#handleRefineCast,
       onOverrideChanged: this.#deps.onOverrideChanged,
       kind: { kind: 'refine' },
+      reader: this.#deps.reader,
+      writeCasting: this.#deps.castingWriter,
+      setVaultDefault: this.#deps.setVaultDefault,
       settingsActiveRefinePath: this.#deps.settingsActiveRefinePath,
     });
     this.#deps.onEnterDetail(detail, this.#deps.onExit);

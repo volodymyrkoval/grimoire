@@ -110,6 +110,8 @@ function createForgeUpdateHarness(opts: HarnessOptions = {}) {
     forgeUpdateAction,
     spellContentReader,
     hotkeyEraser: vi.fn().mockResolvedValue(undefined),
+    hotkeyWriter: vi.fn().mockResolvedValue(undefined),
+    reader: vi.fn().mockReturnValue(null),
   });
   modal.open();
 

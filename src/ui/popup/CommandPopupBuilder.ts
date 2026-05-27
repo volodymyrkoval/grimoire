@@ -9,14 +9,18 @@ import type { SpellContentReader } from '../../forge/SpellContentReader';
 import type { OptionsSessionMap } from '../options/OptionsSessionMap';
 import type { CastLogPanelDeps } from '../tabs/CastLogPanel';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
-import type { GrimoireData } from '../../domain/settings/Settings';
+import type { GrimoireData, Effort } from '../../domain/settings/Settings';
 import type { CastDispatcher } from '../../cast/CastDispatcher';
 import type { PluginPaths } from '../../infra/PluginPaths';
 import { refineCastSpell } from '../../refine/refineCastSpell';
 import { resolveRefinePath } from '../../refine/resolveRefinePath';
 import { isRefineSentinel } from '../../refine/refineSentinelScanner';
 import { HOTKEY_FRONTMATTER_KEY } from '../../domain/spells/Hotkey';
-import type { HotkeyEraser, HotkeyWriter } from '../components/ForgeSentinelDetail';
+import type { HotkeyEraser, HotkeyWriter } from '../components/HotkeyTypes';
+import { readCastingFrontmatter } from '../../infra/castingFrontmatter';
+import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../../infra/castingFrontmatter';
+import { CASTING_FRONTMATTER_KEY } from '../../domain/settings/CastingSettings';
+import type { ModelId } from '../../domain/settings/ModelId';
 
 export interface CommandPopupBuilderDeps {
   app: App;
@@ -28,6 +32,12 @@ export interface CommandPopupBuilderDeps {
   castLogPanelDeps: Omit<CastLogPanelDeps, 'openLink'>;
   createDispatcher: (close: () => void) => CastDispatcher;
   paths: PluginPaths;
+  /** Reads casting settings from spell frontmatter or returns null if absent/invalid. */
+  castingReader: CastingFrontmatterReader;
+  /** Writes casting settings to spell frontmatter. */
+  castingWriter: CastingFrontmatterWriter;
+  /** Writes vault-wide default model/effort to plugin settings and schedules a save. */
+  setVaultDefault: (model: ModelId, effort: Effort | null) => void;
 }
 
 export class CommandPopupBuilder {
@@ -70,6 +80,9 @@ export class CommandPopupBuilder {
       settingsActiveRefinePath: this.#deps.plugin.data.settings.activeRefinePath,
       hotkeyEraser: this.#buildHotkeyEraser(),
       hotkeyWriter: this.#buildHotkeyWriter(),
+      reader: (spellPath) => readCastingFrontmatter(this.#deps.app, spellPath),
+      castingWriter: this.#buildCastingWriter(),
+      setVaultDefault: this.#deps.setVaultDefault,
     });
   }
 
@@ -163,4 +176,18 @@ export class CommandPopupBuilder {
       });
     };
   }
+
+  /** Builds a closure that upserts the grimoire-casting block in a spell's frontmatter. */
+  #buildCastingWriter(): CastingFrontmatterWriter {
+    return (spellPath, settings) => {
+      const file = this.#deps.app.vault.getAbstractFileByPath(spellPath);
+      if (!(file instanceof TFile)) {
+        return Promise.reject(new Error('spell file not found'));
+      }
+      return this.#deps.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+        fm[CASTING_FRONTMATTER_KEY] = settings;
+      });
+    };
+  }
+
 }

@@ -13,7 +13,7 @@ import { SUPPORTED_MODELS } from "../domain/settings/Settings";
 import type { FormDefaults } from "../domain/settings/FormDefaults";
 import { SpellOverrideStore } from "../domain/settings/SpellOverrideStore";
 import { OptionsSessionMap } from "./options/OptionsSessionMap";
-import { optionsFormSnapshotFromDefaults, optionsFormSnapshotFromRefineDefaults } from "./options/OptionsFormState";
+import { optionsFormSnapshotFromRefineDefaults } from "./options/OptionsFormState";
 import type { PopupPhase, PopupPhaseContext } from "./popup/PopupPhase";
 import { SearchPhase } from "./popup/SearchPhase";
 import { DetailPhase } from "./popup/DetailPhase";
@@ -26,7 +26,12 @@ import { HotkeyCapture } from "./popup/hotkey/HotkeyCapture";
 import type { BufferState } from "./popup/hotkey/HotkeyBuffer";
 import { HotkeyHintSlot } from "./components/HotkeyHintSlot";
 import { buildHotkeyDirectory } from "../forge/HotkeyDirectory";
-import type { HotkeyEraser, HotkeyWriter } from "./components/ForgeSentinelDetail";
+import type { HotkeyEraser, HotkeyWriter } from "./components/HotkeyTypes";
+import type { CastingFrontmatterReader, CastingFrontmatterWriter } from "../infra/castingFrontmatter";
+import type { ModelId } from "../domain/settings/ModelId";
+import type { Effort } from "../domain/settings/Settings";
+import { resolveCastingForSpell } from "../domain/settings/resolveCastingForSpell";
+import { CLAUDE_CODE_PROVIDER } from "../domain/settings/CastingSettings";
 export type { ImprintAction, CastAction, RefineCastAction, ForgeUpdateAction } from "./popup/DetailPanelRouter";
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
@@ -69,6 +74,12 @@ export interface CommandPopupParams {
   hotkeyEraser: HotkeyEraser;
   /** Callback to write a hotkey binding to a spell's frontmatter (update mode only). */
   hotkeyWriter: HotkeyWriter;
+  /** Reads spell-local casting settings from a spell file's frontmatter. */
+  reader: CastingFrontmatterReader;
+  /** Writes spell-local casting settings to a spell file's frontmatter (on Cast). */
+  castingWriter: CastingFrontmatterWriter;
+  /** Writes vault-wide default model/effort to plugin settings. */
+  setVaultDefault: (model: ModelId, effort: Effort | null) => void;
 }
 
 /**
@@ -104,6 +115,9 @@ export class CommandPopup extends Modal {
   readonly #spellTag: string;
   readonly #hotkeyEraser: HotkeyEraser;
   readonly #hotkeyWriter: HotkeyWriter;
+  readonly #reader: CastingFrontmatterReader;
+  readonly #castingWriter: CastingFrontmatterWriter;
+  readonly #setVaultDefault: (model: ModelId, effort: Effort | null) => void;
   #hotkeyBuffer: HotkeyBuffer = new HotkeyBuffer();
   #hotkeyCapture: HotkeyCapture | null = null;
   #hintSlot: HotkeyHintSlot | null = null;
@@ -143,6 +157,9 @@ export class CommandPopup extends Modal {
     this.#spellTag = params.spellTag;
     this.#hotkeyEraser = params.hotkeyEraser;
     this.#hotkeyWriter = params.hotkeyWriter;
+    this.#reader = params.reader;
+    this.#castingWriter = params.castingWriter;
+    this.#setVaultDefault = params.setVaultDefault;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
       openLink: this.#handleOpenLink,
@@ -261,6 +278,9 @@ export class CommandPopup extends Modal {
       reattachTabBar: this.#reattachTabBar,
       forgeUpdateAction: this.#forgeUpdateAction,
       spellContentReader: this.#spellContentReader,
+      reader: this.#reader,
+      castingWriter: this.#castingWriter,
+      setVaultDefault: this.#setVaultDefault,
       hotkeyDirectoryFactory: this.#buildCurrentHotkeyDirectory,
       hotkeyEraser: this.#eraseHotkeyAndMarkChanged,
       hotkeyWriter: this.#writeHotkeyAndMarkChanged,
@@ -496,12 +516,18 @@ export class CommandPopup extends Modal {
     this.#hotkeyChangedInDetailPanel = true;
   };
 
-  #handleHasOverride = (...args: Parameters<SpellOverrideStore['has']>): boolean =>
-    this.#overrides.has(...args);
+  #handleHasOverride = (path: Parameters<SpellOverrideStore['has']>[0]): boolean =>
+    this.#reader(path) !== null;
 
   #handleSpellCast = (spell: Spell): void => {
-    const snapshot = optionsFormSnapshotFromDefaults(this.#formDefaults, spell);
-    this.#castAction(spell, snapshot);
+    const parsed = this.#reader(spell.path);
+    const { model, effort } = resolveCastingForSpell({
+      parsed,
+      defaults: this.#formDefaults,
+      models: SUPPORTED_MODELS,
+      knownProvider: CLAUDE_CODE_PROVIDER,
+    });
+    this.#castAction(spell, { model, effort, contextNotePaths: [], followUp: '', executeOnNote: spell.executeOnNote });
   };
 
   #handleOpenSentinel = (): void => {

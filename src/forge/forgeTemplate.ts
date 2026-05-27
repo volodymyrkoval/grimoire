@@ -1,3 +1,5 @@
+import { CASTING_FRONTMATTER_KEY, CLAUDE_CODE_PROVIDER } from '../domain/settings/CastingSettings';
+
 export interface ForgeSystemPromptInput {
   readonly spellTag: string;
   readonly forgeOutputFolder: string;
@@ -43,7 +45,12 @@ Then execute in order:
    - A \`---\` separator
    - Closing \`%%\` block containing only \`Begin execution now.\`
 
-3. Set the file's YAML frontmatter \`tags\` field to \`[${spellTag}]\` and configure the execution metadata based on the user prompt.
+3. Set the file's YAML frontmatter \`tags\` field to \`[${spellTag}]\`, add a \`${CASTING_FRONTMATTER_KEY}\` block with:
+   - \`provider: ${CLAUDE_CODE_PROVIDER}\`
+   - \`model: <the model you were forged with>\` (the model currently running this request)
+   - \`effort: <the effort setting>\` (only include if the model supports extended thinking/effort)
+
+   Also configure \`grimoire-execute-on-note\` in the frontmatter based on the user prompt.
 
 4. Determine the output path: \`${forgeOutputFolder}\` followed by the spell name and \`.md\`. Create the folder if it does not exist.
 

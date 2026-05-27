@@ -6,13 +6,21 @@ import { EffortRow } from '../widgets/EffortRow';
 import type { OptionsFormState } from './OptionsFormState';
 import type { OptionsSnapshot } from './OptionsSnapshot';
 import { snapshotEqualsCurrent } from './OptionsSnapshot';
-import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { SpellPath } from '../../domain/spells/SpellPath';
+import type { CastingFrontmatterWriter, CastingFrontmatterReader } from '../../infra/castingFrontmatter';
+import type { SpellCastingSettings } from '../../domain/settings/CastingSettings';
+import { CLAUDE_CODE_PROVIDER } from '../../domain/settings/CastingSettings';
+import type { ModelId } from '../../domain/settings/ModelId';
 
 export interface CastModelSectionDeps {
-  overrides: SpellOverrideStore;
   spellPath: SpellPath;
   onOverrideChanged: () => void;
+  /** Writes spell-local casting settings to frontmatter on Cast when the block has changed. */
+  writeCasting: CastingFrontmatterWriter;
+  /** Reads the current casting block for change-detection before writing on Cast. */
+  reader: CastingFrontmatterReader;
+  /** Writes vault-wide default model/effort to plugin settings when "Set as default" is ticked. */
+  setVaultDefault: (model: ModelId, effort: Effort | null) => void;
 }
 
 /**
@@ -103,20 +111,49 @@ export class CastModelSection {
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) {
         const current = formState.snapshot();
-        deps.overrides.set(deps.spellPath, { model: current.model, effort: current.effort! });
-      } else {
-        deps.overrides.clear(deps.spellPath);
+        deps.setVaultDefault(current.model, current.effort);
       }
+      // Unchecked: vault-wide default cannot be unset per-spell; just refresh.
       deps.onOverrideChanged();
     });
+  }
+
+  /**
+   * Writes the current form state to spell frontmatter if the casting block has changed.
+   * Call this from the host's cast handler, immediately before invoking `onCast`.
+   * Failures are swallowed (fire-and-forget write — cast still proceeds).
+   */
+  persistBlockOnCast(formState: OptionsFormState, deps: CastModelSectionDeps): void {
+    const current = formState.snapshot();
+    const currentBlock = deps.reader(deps.spellPath);
+    const newBlock: SpellCastingSettings = {
+      provider: CLAUDE_CODE_PROVIDER,
+      model: current.model,
+      effort: current.effort ?? undefined,
+    };
+    if (this.#blockChanged(currentBlock, newBlock)) {
+      deps.writeCasting(deps.spellPath, newBlock).catch(() => { /* write failures are non-fatal */ });
+    }
+  }
+
+  /**
+   * Returns true when the about-to-write block differs from the stored block,
+   * or when there is no stored block yet (first write).
+   */
+  #blockChanged(current: SpellCastingSettings | null, next: SpellCastingSettings): boolean {
+    if (current === null) return true;
+    return current.provider !== next.provider
+      || current.model !== next.model
+      || current.effort !== next.effort;
   }
 
   #updateReactive(formState: OptionsFormState, snapshot: OptionsSnapshot, deps: CastModelSectionDeps): void {
     const current = formState.snapshot();
     const matches = snapshotEqualsCurrent(snapshot, current);
-    const effortPersistable = snapshot.effort !== null;
+    const currentModel = SUPPORTED_MODELS.find((m) => m.id === current.model);
+    const effortPersistable = currentModel != null && currentModel.effortOptions !== null;
     this.#checkboxLabel.style.display = !matches && effortPersistable ? '' : 'none';
-    this.#checkbox.checked = deps.overrides.has(deps.spellPath);
+    this.#checkbox.checked = deps.reader(deps.spellPath) !== null;
   }
 
   #subscribeReactive(

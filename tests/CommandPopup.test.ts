@@ -87,6 +87,10 @@ function makePopup(castAction?: CastAction) {
     forgeUpdateAction: vi.fn(),
     spellContentReader: { read: vi.fn(async () => '') },
     hotkeyEraser: vi.fn().mockResolvedValue(undefined),
+    hotkeyWriter: vi.fn().mockResolvedValue(undefined),
+    reader: vi.fn().mockReturnValue(null),
+    castingWriter: vi.fn().mockResolvedValue(undefined),
+    setVaultDefault: vi.fn(),
   });
 }
 
@@ -322,14 +326,21 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
     const popup = new CommandPopup({
       app: makeApp(),
       spellTag: 'spell',
+      rankSpells: () => ({ spells: [], sentinels: [] }),
       imprintAction: vi.fn(),
       castAction: vi.fn(),
+      refineCastAction: vi.fn(),
       defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: fakeDeps,
       forgeUpdateAction: vi.fn(),
       spellContentReader: { read: vi.fn(async () => '') },
+      hotkeyEraser: vi.fn().mockResolvedValue(undefined),
+      hotkeyWriter: vi.fn().mockResolvedValue(undefined),
+      reader: vi.fn().mockReturnValue(null),
+      castingWriter: vi.fn().mockResolvedValue(undefined),
+      setVaultDefault: vi.fn(),
     });
 
     const panels = (popup as any).panels as any[];
@@ -346,14 +357,21 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
     const popup = new CommandPopup({
       app,
       spellTag: 'spell',
+      rankSpells: () => ({ spells: [], sentinels: [] }),
       imprintAction: vi.fn(),
       castAction: vi.fn(),
+      refineCastAction: vi.fn(),
       defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
       forgeUpdateAction: vi.fn(),
       spellContentReader: { read: vi.fn(async () => '') },
+      hotkeyEraser: vi.fn().mockResolvedValue(undefined),
+      hotkeyWriter: vi.fn().mockResolvedValue(undefined),
+      reader: vi.fn().mockReturnValue(null),
+      castingWriter: vi.fn().mockResolvedValue(undefined),
+      setVaultDefault: vi.fn(),
     });
 
     const closeSpy = vi.spyOn(popup, 'close').mockImplementation(() => {});
@@ -404,30 +422,37 @@ describe('CommandPopup onClose — unsubscribes spellsPanel event listeners', ()
   });
 });
 
-describe('CommandPopup D5 — setHasOverride wired from overrides', () => {
-  it('spellsPanel hasOverride predicate delegates to overrides.has()', () => {
+describe('CommandPopup D5 — setHasOverride wired from reader', () => {
+  it('spellsPanel hasOverride predicate delegates to reader(path) !== null', () => {
+    const reader = vi.fn().mockReturnValue(null);
     const stubOverrides = makeStubOverrides();
     const popup = new CommandPopup({
       app: makeApp(),
       spellTag: 'spell',
+      rankSpells: () => ({ spells: [], sentinels: [] }),
       imprintAction: vi.fn(),
       castAction: vi.fn(),
+      refineCastAction: vi.fn(),
       defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
       overrides: stubOverrides,
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
       forgeUpdateAction: vi.fn(),
       spellContentReader: { read: vi.fn(async () => '') },
+      hotkeyEraser: vi.fn().mockResolvedValue(undefined),
+      hotkeyWriter: vi.fn().mockResolvedValue(undefined),
+      reader,
+      castingWriter: vi.fn().mockResolvedValue(undefined),
+      setVaultDefault: vi.fn(),
     });
 
     const spellsPanel = (popup as any).panels[0];
     expect(typeof spellsPanel.setHasOverride).toBe('function');
 
-    // After onOpen(), refreshOverrides() renders with the predicate → delegates to overrides.has()
-    const hasSpy = vi.spyOn(stubOverrides, 'has').mockReturnValue(true);
+    // After onOpen(), refreshOverrides() renders with the predicate → delegates to reader()
     popup.onOpen();
     spellsPanel.refreshOverrides();
-    expect(hasSpy).toHaveBeenCalled();
+    expect(reader).toHaveBeenCalled();
   });
 });
 

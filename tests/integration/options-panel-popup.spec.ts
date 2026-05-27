@@ -20,11 +20,12 @@
  *   index 11 → Refine (sentinel)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { modelId } from '../../src/domain/settings/ModelId';
 import { createPopupHarness } from './harness';
-import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import type { CastAction } from '../../src/ui/CommandPopup';
+import type { CastingFrontmatterReader } from '../../src/infra/castingFrontmatter';
+import type { SpellCastingSettings } from '../../src/domain/settings/CastingSettings';
 
 describe('options-panel-popup integration — ArrowRight → OptionsPanel seam', () => {
   // ------------------------------------------------------------------ A1
@@ -95,74 +96,46 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
   });
 
   // ------------------------------------------------------------------ A4
-  it('override flow: change model + set-as-default → dot lights on list; re-open → checkbox hidden', () => {
-    const h = createPopupHarness();
+  it('reader-based dot: dot lights on list when reader returns a casting block for a spell', () => {
+    // reader returns a block for banishment only (index 0), null for everything else
+    const blockForBanishment: SpellCastingSettings = {
+      provider: 'claude-code',
+      model: modelId('claude-opus-4-5'),
+      effort: 'medium',
+    };
+    const reader: CastingFrontmatterReader = vi.fn().mockImplementation((path: string) =>
+      path === '/spells/banishment.md' ? blockForBanishment : null,
+    );
 
-    // Step 1: open options panel for spell at index 0 (Banishment Hex)
-    h.pressKey('ArrowRight');
+    const h = createPopupHarness({ reader });
 
-    const form = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
-    expect(form).not.toBeNull();
-
-    // Step 2: change model select to Opus
-    const select = form.querySelector<HTMLSelectElement>('select')!;
-    select.value = 'claude-opus-4-5';
-    select.dispatchEvent(new Event('change'));
-
-    // Step 3: tick "Set as default" checkbox
-    // The checkbox label becomes visible because formState differs from snapshot
-    const checkbox = form.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
-    checkbox.checked = true;
-    checkbox.dispatchEvent(new Event('change'));
-    // overrides.set('/spells/banishment.md', { model: modelId('claude-opus-4-5'), effort: 'medium' })
-    // onOverrideChanged fires → spellsPanel.refreshOverrides() → dot should be queued
-
-    // Step 4: exit detail phase (simulating Escape via modal.close())
-    h.modal.close();
-
-    // Back in search phase
-    expect(h.isInDetail()).toBe(false);
-
-    // Step 5: at least one spell row has the override dot (Banishment Hex at index 0)
+    // At least one spell row has the override dot (Banishment Hex at index 0)
     const spellRows = h.visibleSpellRows();
     const dotsInRows = spellRows.map((row) => !!row.querySelector('.grimoire-override-dot'));
     expect(dotsInRows[0]).toBe(true);
     // Other rows should not have a dot
     expect(dotsInRows.slice(1).some(Boolean)).toBe(false);
 
-    // Step 6: re-open panel for the same spell (index 0)
-    h.pressKey('ArrowRight');
-
-    const form2 = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
-    expect(form2).not.toBeNull();
-
-    // Step 7: set-as-default row must be hidden because resolved snapshot matches formState
-    // (override → opus/medium; formState starts at opus/medium; snapshotEqualsCurrent = true)
-    const checkboxLabel = form2.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
-    expect(checkboxLabel).not.toBeNull();
-    expect(checkboxLabel.style.display).toBe('none');
+    h.modal.close();
   });
 
   // ------------------------------------------------------------------ A5
-  it('pre-loaded override → dot visible on popup open for overridden spell only', () => {
-    const overrides = new SpellOverrideStore({
-      data: {
-        settings: {} as any,
-        spellOverrides: {
-          '/spells/banishment.md': { model: modelId('claude-sonnet-4-5'), effort: 'medium' },
-        },
-      },
-      saver: { schedule: vi.fn() } as any,
-    });
+  it('pre-loaded casting block → dot visible on popup open for overridden spell only', () => {
+    // reader returns a block only for banishment, simulating a pre-written frontmatter block
+    const reader: CastingFrontmatterReader = vi.fn().mockImplementation((path: string) =>
+      path === '/spells/banishment.md'
+        ? { provider: 'claude-code', model: modelId('claude-sonnet-4-5'), effort: 'medium' as const }
+        : null,
+    );
 
-    const h = createPopupHarness({ overrides });
+    const h = createPopupHarness({ reader });
 
     const rows = h.visibleSpellRows();
 
-    // Index 0 = Banishment Hex → has override dot
+    // Index 0 = Banishment Hex → has casting block → dot present
     expect(rows[0].querySelector('.grimoire-override-dot')).not.toBeNull();
 
-    // Index 1 = Divination Ritual → no override dot
+    // Index 1 = Divination Ritual → no casting block → no dot
     expect(rows[1].querySelector('.grimoire-override-dot')).toBeNull();
   });
 

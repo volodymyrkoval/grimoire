@@ -93,14 +93,15 @@ describe('renderForgeSystemPrompt', () => {
     expect(output).not.toContain('- **Effort:');
   });
 
-  it('does NOT contain executeOnNote placeholder', () => {
+  it('does NOT contain unfilled placeholder variables', () => {
     const output = renderForgeSystemPrompt({
       spellTag: 'grimoire/spell',
       forgeOutputFolder: 'Spells/',
       vaultMountPath: '/vault',
     });
-    expect(output).not.toContain('executeOnNote');
-    expect(output).not.toContain('grimoire-execute-on-note');
+    expect(output).not.toContain('- **Description:');
+    expect(output).not.toContain('- **Model:');
+    expect(output).not.toContain('- **Effort:');
   });
 
   it('does not contain server-specific tool names', () => {
@@ -125,5 +126,35 @@ describe('renderForgeSystemPrompt', () => {
     });
     expect(output).toContain('by capability');
     expect(output).toContain('never by');
+  });
+
+  it('step 3 includes instruction to set grimoire-casting frontmatter', () => {
+    const output = renderForgeSystemPrompt({
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+    });
+    expect(output).toContain('grimoire-casting');
+    expect(output).toContain('provider: claude-code');
+    expect(output).toContain('model');
+  });
+
+  it('step 3 still contains tags and grimoire-execute-on-note instructions', () => {
+    const output = renderForgeSystemPrompt({
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+    });
+    expect(output).toContain('tags');
+    expect(output).toContain('grimoire-execute-on-note');
+  });
+
+  it('footer contains Begin execution now', () => {
+    const output = renderForgeSystemPrompt({
+      spellTag: 'grimoire/spell',
+      forgeOutputFolder: 'Spells/',
+      vaultMountPath: '/vault',
+    });
+    expect(output).toContain('Begin execution now.');
   });
 });

@@ -44,7 +44,7 @@ function createHarnessWithAction(
     data: { settings: {} as any, spellOverrides: {} },
     saver: { schedule: vi.fn() } as any,
   });
-  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction: vi.fn(), defaults, overrides: stubOverrides, sessionMap: new OptionsSessionMap(), rankSpells: () => ({ spells: [], sentinels: [] }), refineCastAction: vi.fn(), forgeUpdateAction: vi.fn(), spellContentReader: { read: vi.fn(async () => '') }, hotkeyEraser: vi.fn().mockResolvedValue(undefined), hotkeyWriter: vi.fn().mockResolvedValue(undefined) });
+  const modal = new CommandPopup({ app, spellTag: 'spell', imprintAction, castAction: vi.fn(), defaults, overrides: stubOverrides, sessionMap: new OptionsSessionMap(), rankSpells: () => ({ spells: [], sentinels: [] }), refineCastAction: vi.fn(), forgeUpdateAction: vi.fn(), spellContentReader: { read: vi.fn(async () => '') }, hotkeyEraser: vi.fn().mockResolvedValue(undefined), hotkeyWriter: vi.fn().mockResolvedValue(undefined), reader: vi.fn().mockReturnValue(null), castingWriter: vi.fn().mockResolvedValue(undefined), castingEraser: vi.fn().mockResolvedValue(undefined), setVaultDefault: vi.fn() });
   modal.open();
   const { contentEl } = modal;
 

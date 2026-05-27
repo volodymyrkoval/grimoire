@@ -1,7 +1,8 @@
 import { Notice, type Plugin } from 'obsidian';
 import type { App } from 'obsidian';
-import type { GrimoireData } from '../domain/settings/Settings';
+import type { GrimoireData, Effort } from '../domain/settings/Settings';
 import type { SpellOverrideStore } from '../domain/settings/SpellOverrideStore';
+import type { ModelId } from '../domain/settings/ModelId';
 import { OptionsSessionMap } from '../ui/options/OptionsSessionMap';
 import { ForgeImprinter } from '../forge/ForgeImprinter';
 import { ForgeUpdateImprinter } from '../forge/ForgeUpdateImprinter';
@@ -17,6 +18,7 @@ import {
 } from '../domain/spells/SystemSpellPaths';
 import type { CastLogModule } from './CastLogModule';
 import type { PluginPaths } from '../infra/PluginPaths';
+import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../infra/castingFrontmatter';
 
 /**
  * Owns the spell browser popup and its lifecycle: opens the popup command,
@@ -34,6 +36,9 @@ export class PopupModule {
   readonly #spellContentReader: SpellContentReader;
   readonly #paths: PluginPaths;
   readonly #registry: SystemSpellRegistry;
+  readonly #castingReader: CastingFrontmatterReader;
+  readonly #castingWriter: CastingFrontmatterWriter;
+  readonly #setVaultDefault: (model: ModelId, effort: Effort | null) => void;
 
   constructor(deps: {
     app: App;
@@ -45,6 +50,10 @@ export class PopupModule {
     forgeUpdateSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
     spellContentReader: SpellContentReader;
     paths: PluginPaths;
+    castingReader: CastingFrontmatterReader;
+    castingWriter: CastingFrontmatterWriter;
+    /** Writes vault-wide default model/effort to plugin settings. */
+    setVaultDefault: (model: ModelId, effort: Effort | null) => void;
   }) {
     this.#app = deps.app;
     this.#getData = deps.getData;
@@ -53,6 +62,9 @@ export class PopupModule {
     this.#getAgentHooksDirAbs = deps.getAgentHooksDirAbs;
     this.#paths = deps.paths;
     this.#spellContentReader = deps.spellContentReader;
+    this.#castingReader = deps.castingReader;
+    this.#castingWriter = deps.castingWriter;
+    this.#setVaultDefault = deps.setVaultDefault;
 
     this.#registry = PopupModule.#buildRegistry();
     this.#sessionMap = new OptionsSessionMap();
@@ -105,6 +117,9 @@ export class PopupModule {
         logWriter: () => this.#castLog.activeLogStore(),
       }),
       paths: this.#paths,
+      castingReader: this.#castingReader,
+      castingWriter: this.#castingWriter,
+      setVaultDefault: this.#setVaultDefault,
     }).build().open();
   }
 }

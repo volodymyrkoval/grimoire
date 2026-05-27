@@ -9,7 +9,7 @@
  */
 
 import { App, Scope } from 'obsidian';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { OptionsPanel } from '../../src/ui/options/OptionsPanel';
 import { OptionsFormState } from '../../src/ui/options/OptionsFormState';
 import { EffortRow } from '../../src/ui/widgets/EffortRow';
@@ -17,7 +17,6 @@ import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
 import { snapshotEqualsCurrent } from '../../src/ui/options/OptionsSnapshot';
 import type { OptionsSnapshot } from '../../src/ui/options/OptionsSnapshot';
 import { modelId } from '../../src/domain/settings/ModelId';
-import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import { SUPPORTED_MODELS } from '../../src/domain/settings/Settings';
 import { spellPath } from '../../src/domain/spells/SpellPath';
 
@@ -33,7 +32,7 @@ interface MountResult {
   formState: OptionsFormState;
   snapshot: OptionsSnapshot;
   sessionMap: OptionsSessionMap;
-  overrides: SpellOverrideStore;
+  setVaultDefault: ReturnType<typeof vi.fn>;
   onCast: ReturnType<typeof vi.fn>;
   onOverrideChanged: ReturnType<typeof vi.fn>;
   onBack: ReturnType<typeof vi.fn>;
@@ -65,11 +64,9 @@ function mountPanel(overrideInitial?: {
 
   const sessionMap = new OptionsSessionMap();
 
-  const overrides = new SpellOverrideStore({
-    data: { settings: {} as any, spellOverrides: {} },
-    saver: { schedule: vi.fn() } as any,
-  });
-
+  const writeCasting = vi.fn().mockResolvedValue(undefined);
+  const reader = vi.fn().mockReturnValue(null);
+  const setVaultDefault = vi.fn();
   const onCast = vi.fn();
   const onOverrideChanged = vi.fn();
   const onBack = vi.fn();
@@ -79,12 +76,14 @@ function mountPanel(overrideInitial?: {
   const panel = new OptionsPanel(scope);
   panel.render(contentEl, formState, snapshot, {
     app,
-    overrides,
     sessionMap,
     spellPath: TEST_SPELL_PATH,
     onCast,
     onOverrideChanged,
     onBack,
+    writeCasting,
+    reader,
+    setVaultDefault,
   });
 
   return {
@@ -93,7 +92,7 @@ function mountPanel(overrideInitial?: {
     formState,
     snapshot,
     sessionMap,
-    overrides,
+    setVaultDefault,
     onCast,
     onOverrideChanged,
     onBack,
@@ -240,13 +239,11 @@ describe('OptionsPanel integration', () => {
   });
 
   // ------------------------------------------------------------------ A5
-  it('checking "Set as default" calls overrides.set and onOverrideChanged', () => {
-    const { contentEl, overrides, onOverrideChanged } = mountPanel({
+  it('checking "Set as default" calls setVaultDefault with model and effort, then onOverrideChanged', () => {
+    const { contentEl, setVaultDefault, onOverrideChanged } = mountPanel({
       model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
     });
-
-    const setSpy = vi.spyOn(overrides, 'set');
 
     const form = contentEl.querySelector('form.options-panel')!;
     const select = form.querySelector<HTMLSelectElement>('select')!;
@@ -259,18 +256,18 @@ describe('OptionsPanel integration', () => {
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
 
-    expect(setSpy).toHaveBeenCalledOnce();
+    // After F2: checking "Set as default" calls setVaultDefault(model, effort)
+    expect(setVaultDefault).toHaveBeenCalledOnce();
+    expect(setVaultDefault).toHaveBeenCalledWith(modelId('claude-opus-4-5'), 'medium');
     expect(onOverrideChanged).toHaveBeenCalledOnce();
   });
 
   // ------------------------------------------------------------------ A6
-  it('unchecking "Set as default" calls overrides.clear and onOverrideChanged', () => {
-    const { contentEl, overrides, onOverrideChanged } = mountPanel({
+  it('unchecking "Set as default" is a no-op (vault-wide default cannot be unset per-spell), but calls onOverrideChanged for refresh', () => {
+    const { contentEl, setVaultDefault, onOverrideChanged } = mountPanel({
       model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
     });
-
-    const clearSpy = vi.spyOn(overrides, 'clear');
 
     const form = contentEl.querySelector('form.options-panel')!;
     const select = form.querySelector<HTMLSelectElement>('select')!;
@@ -285,12 +282,14 @@ describe('OptionsPanel integration', () => {
     checkbox.dispatchEvent(new Event('change'));
 
     onOverrideChanged.mockClear();
+    setVaultDefault.mockClear();
 
     checkbox.checked = false;
     checkbox.dispatchEvent(new Event('change'));
 
-    expect(clearSpy).toHaveBeenCalledOnce();
-    expect(clearSpy).toHaveBeenCalledWith(TEST_SPELL_PATH);
+    // Unchecking is a no-op: vault-wide default cannot be unset per-spell
+    expect(setVaultDefault).not.toHaveBeenCalled();
+    // But onOverrideChanged is called to trigger a refresh
     expect(onOverrideChanged).toHaveBeenCalledOnce();
   });
 
@@ -309,31 +308,17 @@ describe('OptionsPanel integration', () => {
 
     const select = form.querySelector<HTMLSelectElement>('select')!;
 
-    // Change model to Sonnet — formState differs from snapshot (haiku → sonnet)
-    // but effort becomes non-null — wait: formState started as Haiku, Sonnet has effort
-    // The OptionsPanel should detect: effort is now non-null after the change
-    // BUT the snapshot.model=haiku vs formState.model=sonnet → snapshotEqualsCurrent = false
-    // However: the plan spec says checkbox is hidden when effort === null OR snapshotEqualsCurrent.
-    // Haiku itself has null effort; when switching TO Sonnet effort becomes 'medium'.
-    // So this assertion is specifically: when starting from Haiku and changing to Sonnet,
-    // the effort row appears BUT — re-reading the spec:
-    // A7 says: "change model select to 'claude-sonnet-4-5'" → effort is now non-null for Sonnet
-    // BUT spec says checkbox hidden when "effort === null". After switching to Sonnet effort != null.
-    // Re-read spec assertion 7: "checkbox still hidden" because effortPersistable=false.
-    // The spec means: effortPersistable tracks whether the *original* Haiku form had null effort.
-    // Actually the spec says: checkbox hidden when snapshotEqualsCurrent OR effort===null.
-    // After switching from Haiku snapshot to Sonnet form: snapshotEqualsCurrent=false, effort='medium'.
-    // So checkbox SHOULD be visible — but spec says hidden. The spec must mean:
-    // when snapshot itself has effort=null, override cannot be persisted (effortPersistable=false).
-    // So the rule is: checkbox hidden when snapshotEqualsCurrent OR snapshot.effort===null.
-    // Let's assert what the spec says: checkbox label display === 'none' after model change.
+    // Change model to Sonnet — formState differs from snapshot (haiku → sonnet).
+    // effortPersistable tracks the *current* model's effort support, not the snapshot's.
+    // Sonnet supports effort, so after the switch effortPersistable becomes true and the
+    // snapshot no longer equals current → the "Set as default" checkbox should become visible.
     select.value = 'claude-sonnet-4-5';
     select.dispatchEvent(new Event('change'));
 
-    // Per spec: checkbox still hidden because snapshot.effort === null (Haiku base → not persistable)
+    // Checkbox is now visible: current model (Sonnet) supports effort and form differs from snapshot
     const defaultLabel = form.querySelector<HTMLElement>('label:has(input[type="checkbox"])');
     expect(defaultLabel).not.toBeNull();
-    expect(defaultLabel!.style.display).toBe('none');
+    expect(defaultLabel!.style.display).not.toBe('none');
 
     // formState has been mutated by setModel call — Sonnet should have an effort row now
     // (EffortRow lazy-mounts when model gains effortOptions)

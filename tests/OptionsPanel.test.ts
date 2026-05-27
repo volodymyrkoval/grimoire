@@ -12,7 +12,6 @@ import { OptionsFormState } from '../src/ui/options/OptionsFormState';
 import { OptionsSessionMap } from '../src/ui/options/OptionsSessionMap';
 import type { OptionsSnapshot } from '../src/ui/options/OptionsSnapshot';
 import { modelId, type ModelId } from '../src/domain/settings/ModelId';
-import { SpellOverrideStore } from '../src/domain/settings/SpellOverrideStore';
 import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import { spellPath } from '../src/domain/spells/SpellPath';
 
@@ -51,11 +50,6 @@ function mountPanel(overrides?: Partial<{
 
   const sessionMap = new OptionsSessionMap();
 
-  const overridesStore = new SpellOverrideStore({
-    data: { settings: {} as any, spellOverrides: {} },
-    saver: { schedule: vi.fn() } as any,
-  });
-
   const onCast = vi.fn();
   const onBack = vi.fn();
   const onOverrideChanged = vi.fn();
@@ -63,13 +57,15 @@ function mountPanel(overrides?: Partial<{
   const panel = new OptionsPanel(scope);
   panel.render(contentEl, formState, snapshot, {
     app: new App() as any,
-    overrides: overridesStore,
     sessionMap,
     spellPath: TEST_SPELL_PATH,
     onCast,
     onOverrideChanged,
     onBack,
     showExecuteOnNote,
+    writeCasting: vi.fn().mockResolvedValue(undefined),
+    reader: vi.fn().mockReturnValue(null),
+    setVaultDefault: vi.fn(),
   });
 
   return {

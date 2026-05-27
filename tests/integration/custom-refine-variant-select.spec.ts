@@ -106,6 +106,11 @@ function createHarnessWithSentinelFromStart(sessionMap: OptionsSessionMap, optio
     forgeUpdateAction: vi.fn(),
     spellContentReader: { read: vi.fn(async () => '') },
     hotkeyEraser: vi.fn().mockResolvedValue(undefined),
+    hotkeyWriter: vi.fn().mockResolvedValue(undefined),
+    reader: vi.fn().mockReturnValue(null),
+    castingWriter: vi.fn().mockResolvedValue(undefined),
+    castingEraser: vi.fn().mockResolvedValue(undefined),
+    setVaultDefault: vi.fn(),
   });
 
   modal.open();

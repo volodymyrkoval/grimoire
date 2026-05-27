@@ -4,12 +4,15 @@ import { ContextNotesInput } from '../widgets/ContextNotesInput';
 import type { OptionsFormState, OptionsFormSnapshot } from './OptionsFormState';
 import type { OptionsSnapshot } from './OptionsSnapshot';
 import type { OptionsSessionMap } from './OptionsSessionMap';
-import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { SpellPath } from '../../domain/spells/SpellPath';
 import { CastModelSection } from './CastModelSection';
+import type { CastModelSectionDeps } from './CastModelSection';
 import { RefineVariantSelect } from './RefineVariantSelect';
 import type { RefineVariantSelectDeps } from './RefineVariantSelect';
 import { attachAutogrow, attachListContinuation } from '../widgets/textareaHelpers';
+import type { CastingFrontmatterWriter, CastingFrontmatterReader } from '../../infra/castingFrontmatter';
+import type { ModelId } from '../../domain/settings/ModelId';
+import type { Effort } from '../../domain/settings/Settings';
 
 interface ExecuteOnNoteState {
   checkbox: HTMLInputElement | null;
@@ -19,7 +22,6 @@ interface ExecuteOnNoteState {
 
 export interface OptionsPanelDeps {
   app: App;
-  overrides: SpellOverrideStore;
   sessionMap: OptionsSessionMap;
   spellPath: SpellPath;
   onCast: (snapshot: OptionsFormSnapshot) => void;
@@ -30,6 +32,12 @@ export interface OptionsPanelDeps {
   refineVariantSelectDeps?: RefineVariantSelectDeps;
   /** Called when the user clicks the Forge button to update this spell. Omit for Refine sentinel panels. */
   onForgeUpdate?: () => void;
+  /** Writes spell-local casting settings to frontmatter on Cast when the block has changed. */
+  writeCasting: CastingFrontmatterWriter;
+  /** Reads the current casting block for change-detection before writing on Cast. */
+  reader: CastingFrontmatterReader;
+  /** Writes vault-wide default model/effort to plugin settings when "Set as default" is ticked. */
+  setVaultDefault: (model: ModelId, effort: Effort | null) => void;
 }
 
 /**
@@ -107,9 +115,17 @@ export class OptionsPanel {
     if (eonState.checkbox) {
       this.#bindExecuteOnNote(eonState.checkbox, formState, signal);
     }
-    this.#castModelSection.mount(form, formState, snapshot, deps);
+    const castModelDeps: CastModelSectionDeps = {
+      spellPath: deps.spellPath,
+      onOverrideChanged: deps.onOverrideChanged,
+      writeCasting: deps.writeCasting,
+      reader: deps.reader,
+      setVaultDefault: deps.setVaultDefault,
+    };
+    this.#castModelSection.mount(form, formState, snapshot, castModelDeps);
     const cast = () => {
       const current = formState.snapshot();
+      this.#castModelSection.persistBlockOnCast(formState, castModelDeps);
       deps.sessionMap.put(deps.spellPath, { ...current, followUp: '' });
       followUpInput.value = '';
       formState.setFollowUp('');

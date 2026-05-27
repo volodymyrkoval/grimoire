@@ -3,15 +3,19 @@ import type { Spell } from '../../domain/spells/Spell';
 import { REFINE_SENTINEL_PATH } from '../../domain/spells/Spell';
 import type { SpellPath } from '../../domain/spells/SpellPath';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
-import type { SupportedModel } from '../../domain/settings/Settings';
+import type { SupportedModel, Effort } from '../../domain/settings/Settings';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
 import { resolveSpellOptions } from '../../domain/settings/spellOptionsResolver';
+import { resolveCastingForSpell } from '../../domain/settings/resolveCastingForSpell';
+import { CLAUDE_CODE_PROVIDER } from '../../domain/settings/CastingSettings';
 import { OptionsFormState } from '../options/OptionsFormState';
 import type { OptionsFormSnapshot } from '../options/OptionsFormState';
 import { OptionsPanel } from '../options/OptionsPanel';
 import type { OptionsSessionMap } from '../options/OptionsSessionMap';
 import { getRefineSentinels } from '../../refine/refineSentinelScanner';
 import type { RefineVariantSelectDeps } from '../options/RefineVariantSelect';
+import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../../infra/castingFrontmatter';
+import type { ModelId } from '../../domain/settings/ModelId';
 
 /**
  * Discriminant that parameterizes OptionsDetail.
@@ -36,6 +40,23 @@ export interface OptionsDetailParams {
   onCast: (snapshot: OptionsFormSnapshot) => void;
   onOverrideChanged: () => void;
   kind: OptionsDetailKind;
+  /**
+   * Reads spell-local casting settings from a spell file's frontmatter.
+   * Used to seed the model/effort form controls when kind === 'spell'.
+   */
+  reader: CastingFrontmatterReader;
+  /**
+   * Writes spell-local casting settings to a spell file's frontmatter.
+   * Called on Cast when the casting block has changed. Only meaningful for spell panels.
+   * Optional — defaults to a no-op when omitted (e.g. tests that focus on other behavior).
+   */
+  writeCasting?: CastingFrontmatterWriter;
+  /**
+   * Writes vault-wide default model/effort to plugin settings.
+   * Called when the user ticks "Set as default". Only meaningful for spell panels.
+   * Optional — defaults to a no-op when omitted.
+   */
+  setVaultDefault?: (model: ModelId, effort: Effort | null) => void;
   /**
    * Vault-relative path of the settings-level active Refine spell.
    * Used to pre-select the variant dropdown when no per-session override is present.
@@ -71,7 +92,42 @@ export class OptionsDetail {
     this.#panel.destroy();
   }
 
+  /**
+   * Dispatches to the appropriate resolution strategy based on `kind`:
+   * - `spell` → reads frontmatter via `reader`, resolves via `resolveCastingForSpell`,
+   *   then lets a session entry win if one exists.
+   * - `refine` (sentinel) → falls through to the legacy `resolveSpellOptions` path
+   *   which reads per-spell overrides from the data store.
+   */
   #resolveOptions(spellPath: SpellPath, params: OptionsDetailParams) {
+    if (params.kind.kind === 'spell') {
+      return this.#resolveRealSpellCasting(spellPath, params);
+    }
+    return this.#resolveSentinelCasting(spellPath, params);
+  }
+
+  /** Resolves model/effort for a real authored spell using frontmatter + session. */
+  #resolveRealSpellCasting(spellPath: SpellPath, params: OptionsDetailParams) {
+    const parsed = params.reader(spellPath);
+    const { model, effort } = resolveCastingForSpell({
+      parsed,
+      defaults: {
+        defaultModel: params.formDefaults.defaultModel,
+        defaultEffort: params.formDefaults.defaultEffort,
+      },
+      models: params.models,
+      knownProvider: CLAUDE_CODE_PROVIDER,
+    });
+    // Session tier-1 still wins — if a session entry exists it overrides frontmatter.
+    const sessionEntry = params.sessionMap.get(spellPath);
+    if (sessionEntry) {
+      return { model: sessionEntry.model, effort: sessionEntry.effort };
+    }
+    return { model, effort };
+  }
+
+  /** Resolves model/effort for the Refine sentinel via the data-store override path. */
+  #resolveSentinelCasting(spellPath: SpellPath, params: OptionsDetailParams) {
     return resolveSpellOptions({
       spellPath,
       session: params.sessionMap,
@@ -116,7 +172,6 @@ export class OptionsDetail {
     const panel = new OptionsPanel(params.scope);
     panel.render(params.contentEl, formState, snapshot, {
       app: params.app,
-      overrides: params.overrides,
       sessionMap: params.sessionMap,
       spellPath,
       onCast: params.onCast,
@@ -125,6 +180,9 @@ export class OptionsDetail {
       showExecuteOnNote,
       refineVariantSelectDeps,
       onForgeUpdate,
+      writeCasting: params.writeCasting ?? (() => Promise.resolve()),
+      reader: params.reader,
+      setVaultDefault: params.setVaultDefault ?? (() => {}),
     });
     return panel;
   }

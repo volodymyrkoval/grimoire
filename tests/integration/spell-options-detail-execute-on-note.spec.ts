@@ -51,6 +51,7 @@ describe('OptionsDetail #buildFormState executeOnNote seeding (spell kind)', () 
       onCast: onCastCallback,
       onOverrideChanged: () => {},
       kind: { kind: 'spell', spell },
+      reader: vi.fn().mockReturnValue(null),
     });
 
     // Trigger Cast to capture the snapshot
@@ -108,6 +109,7 @@ describe('OptionsDetail #buildFormState executeOnNote seeding (spell kind)', () 
       onCast: onCastCallback,
       onOverrideChanged: () => {},
       kind: { kind: 'spell', spell },
+      reader: vi.fn().mockReturnValue(null),
     });
 
     const form = contentEl.querySelector('form.options-panel') as HTMLFormElement;
@@ -158,6 +160,7 @@ describe('OptionsDetail #buildFormState executeOnNote seeding (spell kind)', () 
       onCast: onCastCallback,
       onOverrideChanged: () => {},
       kind: { kind: 'spell', spell },
+      reader: vi.fn().mockReturnValue(null),
     });
 
     const form = contentEl.querySelector('form.options-panel') as HTMLFormElement;

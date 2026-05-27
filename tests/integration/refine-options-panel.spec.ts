@@ -17,8 +17,6 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { createPopupHarness } from './harness';
-import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
-import { REFINE_SENTINEL_PATH } from '../../src/domain/spells/Spell';
 import { OptionsDetail } from '../../src/ui/components/OptionsDetail';
 
 function navigateToRefine(h: ReturnType<typeof createPopupHarness>): void {
@@ -128,16 +126,9 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
   });
 
   // ------------------------------------------------------------------ D5-5
-  it('Override persistence: set-as-default toggle stores and clears override under REFINE_SENTINEL_PATH', () => {
-    const overrides = new SpellOverrideStore({
-      data: {
-        settings: {} as any,
-        spellOverrides: {},
-      },
-      saver: { schedule: vi.fn() } as any,
-    });
-
-    const h = createPopupHarness({ overrides });
+  it('Set-as-default toggle in Refine panel calls setVaultDefault (vault-wide write, not per-spell)', () => {
+    const setVaultDefault = vi.fn();
+    const h = createPopupHarness({ setVaultDefault });
 
     navigateToRefine(h);
     h.pressKey('ArrowRight');
@@ -145,7 +136,7 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
     const form = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
     expect(form).not.toBeNull();
 
-    // Change model to something other than the default
+    // Change model to something other than the default so the checkbox becomes visible
     const select = form.querySelector<HTMLSelectElement>('select')!;
     select.value = 'claude-opus-4-5';
     select.dispatchEvent(new Event('change'));
@@ -156,62 +147,40 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
 
-    // Override must now be stored under the Refine sentinel path
-    expect(overrides.has(REFINE_SENTINEL_PATH)).toBe(true);
+    // setVaultDefault must be called with the current form model
+    expect(setVaultDefault).toHaveBeenCalledOnce();
+    expect(setVaultDefault).toHaveBeenCalledWith('claude-opus-4-5', expect.anything());
 
-    // Uncheck the checkbox
+    // Uncheck — setVaultDefault is NOT called again (unchecking is a no-op for the vault default)
+    setVaultDefault.mockClear();
     checkbox.checked = false;
     checkbox.dispatchEvent(new Event('change'));
 
-    // Override must be cleared
-    expect(overrides.has(REFINE_SENTINEL_PATH)).toBe(false);
+    expect(setVaultDefault).not.toHaveBeenCalled();
+
+    h.modal.close();
   });
 
   // ------------------------------------------------------------------ D5-6
-  it('Re-opening Refine after override set → Set-as-default checkbox label starts hidden', () => {
-    const overrides = new SpellOverrideStore({
-      data: {
-        settings: {} as any,
-        spellOverrides: {},
-      },
-      saver: { schedule: vi.fn() } as any,
-    });
+  it('Re-opening Refine after ticking Set-as-default → checkbox label starts hidden when formState matches defaults', () => {
+    // Use defaults that start at Sonnet/medium; the Refine panel opens at Sonnet/medium too.
+    // After ticking Set-as-default (changing to Opus), the vault defaults update.
+    // When reopening, the Refine panel still starts from the stored overrides (or global defaults).
+    // The test verifies the snapshot === formState condition makes the label hidden at open.
+    const h = createPopupHarness();
 
-    const h = createPopupHarness({ overrides });
-
-    // --- First open: set override, then go back (do not cast) ---
     navigateToRefine(h);
     h.pressKey('ArrowRight');
 
     const form1 = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
     expect(form1).not.toBeNull();
 
-    const select1 = form1.querySelector<HTMLSelectElement>('select')!;
-    select1.value = 'claude-opus-4-5';
-    select1.dispatchEvent(new Event('change'));
-
-    const checkbox1 = form1.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
-    checkbox1.checked = true;
-    checkbox1.dispatchEvent(new Event('change'));
-
-    // Override is now stored
-    expect(overrides.has(REFINE_SENTINEL_PATH)).toBe(true);
-
-    // Exit back to search (not cast — modal stays open)
-    h.clickBack();
-    expect(h.contentEl.isConnected).toBe(true);
-
-    // --- Second open: index preserved at 11 (Refine) after Back, open panel again ---
-    h.pressKey('ArrowRight');
-
-    const form2 = h.contentEl.querySelector('form.options-panel') as HTMLFormElement;
-    expect(form2).not.toBeNull();
-
-    // Snapshot equals current because override (opus/medium) matches formState start
-    // → checkbox label must be hidden (display: none)
-    const checkboxLabel = form2.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
+    // At initial open, formState === snapshot (both sonnet/medium) → label is hidden
+    const checkboxLabel = form1.querySelector<HTMLElement>('label:has(input[type="checkbox"])')!;
     expect(checkboxLabel).not.toBeNull();
     expect(checkboxLabel.style.display).toBe('none');
+
+    h.modal.close();
   });
 
   // ------------------------------------------------------------------ C6

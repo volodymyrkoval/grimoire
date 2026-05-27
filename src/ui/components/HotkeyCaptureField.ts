@@ -1,7 +1,7 @@
 import type { Hotkey } from '../../domain/spells/Hotkey';
 import type { SpellPath } from '../../domain/spells/SpellPath';
 import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
-import type { HotkeyEraser } from './ForgeSentinelDetail';
+import type { HotkeyEraser } from './HotkeyTypes';
 import { validateHotkeyCommit } from '../../forge/hotkeyCommitValidator';
 
 // ─── Public surface ────────────────────────────────────────────────────────────

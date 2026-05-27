@@ -22,9 +22,11 @@ import { obsidianRanker } from '../../src/infra/obsidianRanker';
 import type { Scope } from 'obsidian';
 import type { Effort } from '../../src/domain/settings/Settings';
 import { modelId } from '../../src/domain/settings/ModelId';
+import type { ModelId } from '../../src/domain/settings/ModelId';
 import { SpellOverrideStore } from '../../src/domain/settings/SpellOverrideStore';
 import { OptionsSessionMap } from '../../src/ui/options/OptionsSessionMap';
 import type { CastLogPanelDeps } from '../../src/ui/tabs/CastLogPanel';
+import type { CastingFrontmatterReader, CastingFrontmatterWriter, CastingFrontmatterEraser } from '../../src/infra/castingFrontmatter';
 
 export interface PopupHarness {
   modal: CommandPopup;
@@ -67,6 +69,10 @@ export function createPopupHarness(options?: {
   sessionMap?: OptionsSessionMap;
   forgeUpdateAction?: ForgeUpdateAction;
   spellContentReader?: SpellContentReader;
+  reader?: CastingFrontmatterReader;
+  castingWriter?: CastingFrontmatterWriter;
+  castingEraser?: CastingFrontmatterEraser;
+  setVaultDefault?: (model: ModelId, effort: Effort | null) => void;
 }): PopupHarness {
   const app = new App() as any;
   const imprintAction = options?.imprintAction ?? vi.fn();
@@ -96,7 +102,11 @@ export function createPopupHarness(options?: {
   });
   const forgeUpdateAction = options?.forgeUpdateAction ?? vi.fn();
   const spellContentReader = options?.spellContentReader ?? { read: vi.fn(async () => '') };
-  const modal = new CommandPopup({ app, spellTag: 'spell', rankSpells: obsidianRanker, imprintAction, castAction, refineCastAction, defaults, overrides, sessionMap, castLogPanelDeps: makeFakeCastLogPanelDeps(), forgeUpdateAction, spellContentReader });
+  const reader: CastingFrontmatterReader = options?.reader ?? vi.fn().mockReturnValue(null);
+  const castingWriter: CastingFrontmatterWriter = options?.castingWriter ?? vi.fn().mockResolvedValue(undefined);
+  const castingEraser: CastingFrontmatterEraser = options?.castingEraser ?? vi.fn().mockResolvedValue(undefined);
+  const setVaultDefault = options?.setVaultDefault ?? vi.fn();
+  const modal = new CommandPopup({ app, spellTag: 'spell', rankSpells: obsidianRanker, imprintAction, castAction, refineCastAction, defaults, overrides, sessionMap, castLogPanelDeps: makeFakeCastLogPanelDeps(), forgeUpdateAction, spellContentReader, reader, castingWriter, castingEraser, setVaultDefault });
   modal.open();
   const { contentEl } = modal;
 

@@ -10,6 +10,10 @@ import { PopupModule } from './main/PopupModule';
 import { refineMarkerExtension } from './editor/refineMarkerExtension';
 import { CustomRefineSeeder } from './refine/CustomRefineSeeder';
 import { renderRefineSystemPrompt } from './refine/refineTemplate';
+import { readCastingFrontmatter } from './infra/castingFrontmatter';
+import { migrateSpellOverridesToFrontmatter } from './infra/migrateSpellOverrides';
+import { CASTING_FRONTMATTER_KEY } from './domain/settings/CastingSettings';
+import { REFINE_SENTINEL_PATH } from './domain/spells/SystemSpellPaths';
 
 /**
  * Obsidian plugin entry point for Grimoire (spell management and casting).
@@ -23,6 +27,7 @@ export default class GrimoirePlugin extends Plugin {
   /** Initializes plugin data, cast log, UI panels, and settings tab. */
   async onload(): Promise<void> {
     await this.#loadPluginData();
+    await this.#runOverrideMigration();
     const paths = this.#buildPaths();
     const castLog = await this.#initCastLog(paths);
     const popupModule = this.#buildPopupModule(castLog, paths);
@@ -35,6 +40,22 @@ export default class GrimoirePlugin extends Plugin {
     });
     this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
     this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
+  }
+
+  async #runOverrideMigration(): Promise<void> {
+    await migrateSpellOverridesToFrontmatter({
+      data: this.data,
+      resolveFile: (p) => {
+        const f = this.app.vault.getAbstractFileByPath(p);
+        return f instanceof TFile ? f : null;
+      },
+      writeBlock: (file, settings) =>
+        this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+          fm[CASTING_FRONTMATTER_KEY] = settings;
+        }),
+      persist: () => this.saver.schedule(),
+      isSentinelPath: (p) => p === REFINE_SENTINEL_PATH,
+    });
   }
 
   #buildPaths(): PluginPaths {
@@ -80,6 +101,19 @@ export default class GrimoirePlugin extends Plugin {
         },
       },
       paths,
+      castingReader: (spellPath) => readCastingFrontmatter(this.app, spellPath),
+      castingWriter: (spellPath, settings) => {
+        const file = this.app.vault.getAbstractFileByPath(spellPath);
+        if (!(file instanceof TFile)) throw new Error(`Spell file not found: ${spellPath}`);
+        return this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+          fm[CASTING_FRONTMATTER_KEY] = settings;
+        });
+      },
+      setVaultDefault: (model, effort) => {
+        this.data.settings.defaultModel = model;
+        this.data.settings.defaultEffort = effort;
+        this.saver.schedule();
+      },
     });
   }
 
