@@ -93,11 +93,11 @@ Tab → switchTab(next panel) → clears #searchQuery, selectedIndex=0, panel.re
 - `switchTab` does a full `render()` (not just `reattachTabBar`), resetting `#searchQuery` and `selectedIndex`.
 - Sentinel `sentinelFocusIndex`: when no spells match and the query string matches a sentinel name, the returned index skips to that sentinel row.
 - `ArrowRight` is gated: returns `false` outside search phase, on the Logs panel, or when the index falls on a sentinel — keystroke falls through to platform default.
-- `SpellsPanel` is constructed with `hasOverride` set via `setHasOverride(path => overrides.has(path))`; `OptionsPanel` calls back through `onOverrideChanged` to trigger `spellsPanel.refreshOverrides()` after a checkbox toggle so the dot lights/extinguishes.
+- `SpellsPanel` is constructed with `hasOverride` set via `setHasOverride(...)`; `OptionsPanel` calls back through `onOverrideChanged` to trigger `spellsPanel.refreshOverrides()` after a write so the dot lights/extinguishes. *(Since `grimoire-spell-local-casting-settings` (`dev/done-034`), `hasOverride` reads the spell's `grimoire-casting` frontmatter presence rather than `overrides.has(path)`.)*
 
 ## Panels
 
 | Panel | `id` | Content | `confirm(index)` | Notes |
 |---|---|---|---|---|
-| `SpellsPanel` | `spells` | Vault-scanned spells (via `getSpells(app, spellTag)`) + 2 sentinels (Forge, Refine) | spell → `cast` event; sentinel → `sentinel` event | Sentinels always appended after filtered spells. Rows render an override dot when `hasOverride(spell.path)` and a `↵ cast · → options` hint whose `→ options` half is a clickable chip (see `clickable-options-chip`). |
+| `SpellsPanel` | `spells` | Vault-scanned spells (via `getSpells(app, spellTag)`) + 2 sentinels (Forge, Refine) | spell → `cast` event; sentinel → `sentinel` event | Sentinels always appended after filtered spells. Rows render an override dot when `hasOverride(spell.path)` (since `grimoire-spell-local-casting-settings`, this is the spell's `grimoire-casting` frontmatter presence) and a `↵ cast · → options` hint whose `→ options` half is a clickable chip (see `clickable-options-chip`). |
 | `CastLogPanel` | `logs` | Live folded view of `cast-log-plugin.jsonl` + `cast-log-agent.jsonl` (see `cast-log-panel`) | `confirm`/`move` are no-ops — keyboard navigation is intentionally absent | Owns refresh + tick coordinators; popup calls `panel.unmount()` from `onClose` |

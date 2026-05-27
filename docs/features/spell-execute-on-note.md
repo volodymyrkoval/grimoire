@@ -63,7 +63,7 @@ The direct-cast path (Enter from the spell row) reads `spell.executeOnNote` dire
 ## How to trigger
 
 - **Forge time:** open the Forge sentinel form. The "Execute on active note" checkbox starts checked. Untick to forge a note-free spell. The new spell's frontmatter will (best-effort) carry `grimoire-execute-on-note: false`.
-- **Cast time (per-cast override):** open the options panel for any spell (`ArrowRight` on a row). The "Execute on active note" checkbox is seeded from the spell's frontmatter (or last session value). Toggle and Cast — the override is session-scoped, not persisted to `SpellOverrideStore`.
+- **Cast time (per-cast override):** open the options panel for any spell (`ArrowRight` on a row). The "Execute on active note" checkbox is seeded from the spell's frontmatter (or last session value). Toggle and Cast — the override is session-scoped, not persisted as a casting override.
 - **Permanent change:** edit the spell's markdown file directly. The frontmatter is the single source of truth.
 
 ## Edge cases / invariants
@@ -72,7 +72,7 @@ The direct-cast path (Enter from the spell row) reads `spell.executeOnNote` dire
 - **Type coercion** — only strict `=== true` / `=== false` from Obsidian's YAML parser are honored. String `'false'`, number `0`, arrays, etc. all resolve to `true` (the default-on-invalid path). No console noise.
 - **`executeOnNote === false` + `activeFilePath === null` + no context notes + no follow-up** — `#buildUserPrompt` emits the literal `'Proceed with the execution according to the instructions'` so the prompt is never empty.
 - **`executeOnNote === false` + active file present** — the active-note prefix is still omitted; the flag wins over presence of an active file.
-- **Per-cast override is session-only** — `OptionsFormSnapshot.executeOnNote` flows into `OptionsSessionEntry` (kept in `OptionsSessionMap`) but never into `SpellOverrideStore`, which remains a `model+effort` store by design.
+- **Per-cast override is session-only** — `OptionsFormSnapshot.executeOnNote` flows into `OptionsSessionEntry` (kept in `OptionsSessionMap`) but is never persisted as a casting override. Persisted casting parameters are model+effort only; since `grimoire-spell-local-casting-settings` (`dev/done-034`) those live in the spell's `grimoire-casting` frontmatter (the Refine sentinel excepted — it keeps its `SpellOverrideStore` record).
 - **Reset in options panel** — restores the value the panel was constructed with (the initial seed: session entry or spell frontmatter), not the spell's frontmatter unconditionally.
 - **LLM compliance not guaranteed** — the forge system prompt *instructs* the LLM to write the frontmatter key; if the LLM omits it, the scanner defaults the spell to note-bound. Users may correct manually.
 - **Spell file edited mid-session** — `Spell.executeOnNote` reflects the value at popup-open time (when `getSpells` last ran). The options panel reads from `Spell` once at construction; reopening the popup re-scans.
