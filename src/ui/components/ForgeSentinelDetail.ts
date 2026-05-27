@@ -4,6 +4,7 @@ import { ForgeFormSnapshot } from '../../forge/ForgeFormSnapshot';
 import { ForgeUpdateFormSnapshot } from '../../forge/ForgeUpdateFormSnapshot';
 import { SUPPORTED_MODELS, Effort } from '../../domain/settings/Settings';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
+import type { Provider } from '../../domain/settings/Provider';
 import { EffortRow } from '../widgets/EffortRow';
 import { buildModelSelect } from '../widgets/ModelSelect';
 import { modelId, type ModelId } from '../../domain/settings/ModelId';
@@ -46,6 +47,7 @@ export class ForgeSentinelDetail {
   #kb: KeyboardController;
   #callbacks!: ForgeSentinelDetailParams['callbacks'];
   #hotkey!: ForgeSentinelDetailParams['hotkey'];
+  #defaultProvider!: Provider;
   #domAbort: AbortController | null = null;
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -59,6 +61,7 @@ export class ForgeSentinelDetail {
     this.#mode = mode;
     this.#callbacks = callbacks;
     this.#hotkey = hotkey;
+    this.#defaultProvider = defaults.defaultProvider;
     // In update mode with no directives, the checkbox is absent — default to false
     this.#applyCastDirectives = mode.kind === 'update' ? mode.directiveCount > 0 : true;
     const submitLabel = mode.kind === 'create' ? 'Imprint' : 'Submit';
@@ -294,6 +297,7 @@ export class ForgeSentinelDetail {
       model: modelId(this.#modelSelect.value),
       effort: this.#currentEffort,
       executeOnNote: this.#executeOnNote,
+      provider: this.#defaultProvider,
     };
   }
 
@@ -306,6 +310,7 @@ export class ForgeSentinelDetail {
       effort: this.#currentEffort,
       applyCastDirectives: this.#applyCastDirectives,
       directiveCount: mode.directiveCount,
+      provider: this.#defaultProvider,
     };
   }
 

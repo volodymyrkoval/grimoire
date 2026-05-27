@@ -5,6 +5,8 @@ import type { CastLogWriter } from '../src/castLog/CastLogWriter';
 import { GrimoireSettings } from '../src/domain/settings/Settings';
 import { Spell } from '../src/domain/spells/Spell';
 import { modelId } from '../src/domain/settings/ModelId';
+import { CLAUDE_CODE } from '../src/domain/settings/Provider';
+import * as resolveProviderAdapterModule from '../src/cast/provider/resolveProviderAdapter';
 
 function makeStubCaster() {
   let capturedInput: CastInput | undefined;
@@ -37,6 +39,8 @@ const baseSettings: GrimoireSettings = {
   forgeOutputFolder: 'Spells/',
   defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: null,
+  defaultProvider: CLAUDE_CODE,
+  activeRefinePath: null,
   executionMode: 'local',
   portalHost: '',
   portalPort: '',
@@ -66,6 +70,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: null,
       executeOnNote: true,
@@ -92,6 +97,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: null,
       executeOnNote: true,
@@ -120,6 +126,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: '' },
       activeFilePath: null,
       executeOnNote: false,
@@ -150,6 +157,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: '   ' },
       activeFilePath: null,
       executeOnNote: false,
@@ -177,6 +185,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -201,6 +210,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: ['a.md', 'b.md'],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -225,6 +235,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: 'then do more',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -249,6 +260,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: ['ctx.md'],
       followUp: 'do something',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: null,
       executeOnNote: false,
@@ -277,6 +289,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: ['ctx.md'],
       followUp: 'extra instruction',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/x.md',
       executeOnNote: false,
@@ -305,6 +318,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -331,6 +345,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -356,6 +371,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -382,6 +398,7 @@ describe('CastDispatcher', () => {
       effort: 'medium',
       contextNotePaths: ['ctx1.md', 'ctx2.md'],
       followUp: 'then continue',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -394,6 +411,7 @@ describe('CastDispatcher', () => {
       effort: 'medium',
       contextNotes: ['ctx1.md', 'ctx2.md'],
       followUp: 'then continue',
+      provider: CLAUDE_CODE,
       executeOnNote: true,
     });
     expect(logWriter.recordCasted).toHaveBeenCalledTimes(1);
@@ -416,6 +434,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -444,6 +463,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -474,6 +494,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
@@ -505,6 +526,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: null,
       executeOnNote: false,
@@ -531,6 +553,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -558,6 +581,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -585,6 +609,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -610,6 +635,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -640,6 +666,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -669,6 +696,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -703,6 +731,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...baseSettings, executionMode: 'remote', portalHost: 'p.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -731,6 +760,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: mutableSettings,
       activeFilePath: null,
       executeOnNote: false,
@@ -748,6 +778,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: { ...mutableSettings, portalHost: 'portal.example.com' },
       activeFilePath: null,
       executeOnNote: false,
@@ -773,6 +804,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: null,
       executeOnNote: false,
@@ -798,6 +830,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: null,
       executeOnNote: false,
@@ -823,6 +856,7 @@ describe('CastDispatcher', () => {
       effort: null,
       contextNotePaths: [],
       followUp: '',
+      provider: CLAUDE_CODE,
       settings: baseSettings,
       activeFilePath: null,
       executeOnNote: false,
@@ -830,5 +864,141 @@ describe('CastDispatcher', () => {
 
     expect(casterStub.getInput().systemPromptFile).toBe('/vault/spells/test.md');
     expect(casterStub.getInput().spellPath).toBe('spells/test.md');
+  });
+
+  describe('D6: provider threading', () => {
+    it('recordCasted receives the provider from the dispatch input', () => {
+      const logWriter = makeLogWriter();
+      const casterStub = makeStubCaster();
+
+      const dispatcher = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: casterStub.thunk,
+        logWriter: () => logWriter,
+        generateId: () => 'fixed-uuid',
+      });
+
+      dispatcher.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('claude-sonnet-4-5'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        settings: baseSettings,
+        activeFilePath: null,
+        executeOnNote: false,
+        provider: CLAUDE_CODE,
+      });
+
+      expect(logWriter.recordCasted).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: CLAUDE_CODE }),
+      );
+    });
+
+    it('CastInput carries the provider from the dispatch input', () => {
+      const casterStub = makeStubCaster();
+
+      const dispatcher = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: casterStub.thunk,
+        logWriter: makeLogWriter,
+      });
+
+      dispatcher.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('claude-sonnet-4-5'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        settings: baseSettings,
+        activeFilePath: null,
+        executeOnNote: false,
+        provider: CLAUDE_CODE,
+      });
+
+      expect(casterStub.getInput().provider).toBe(CLAUDE_CODE);
+    });
+
+    it('resolveProviderAdapter is called exactly once per dispatch', () => {
+      const casterStub = makeStubCaster();
+      const spy = vi.spyOn(resolveProviderAdapterModule, 'resolveProviderAdapter');
+
+      const dispatcher = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: casterStub.thunk,
+        logWriter: makeLogWriter,
+      });
+
+      dispatcher.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('claude-sonnet-4-5'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        settings: baseSettings,
+        activeFilePath: null,
+        executeOnNote: false,
+        provider: CLAUDE_CODE,
+      });
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(CLAUDE_CODE);
+      spy.mockRestore();
+    });
+
+    it('local-vs-remote selection is unchanged when provider is present (regression)', () => {
+      const localCasterStub = makeStubCaster();
+      const remoteSettings = { ...baseSettings, executionMode: 'remote' as const, portalHost: 'portal.example.com' };
+
+      const dispatcher = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: localCasterStub.thunk,
+        logWriter: makeLogWriter,
+      });
+
+      // local dispatch with provider
+      dispatcher.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('claude-sonnet-4-5'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        settings: baseSettings,
+        activeFilePath: null,
+        executeOnNote: false,
+        provider: CLAUDE_CODE,
+      });
+
+      expect(localCasterStub.castFn).toHaveBeenCalledTimes(1);
+      // systemPromptFile is set for local (not undefined)
+      expect(localCasterStub.getInput().systemPromptFile).toBeDefined();
+
+      const remoteCasterStub = makeStubCaster();
+      const dispatcherRemote = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: remoteCasterStub.thunk,
+        logWriter: makeLogWriter,
+      });
+
+      dispatcherRemote.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('claude-sonnet-4-5'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        settings: remoteSettings,
+        activeFilePath: null,
+        executeOnNote: false,
+        provider: CLAUDE_CODE,
+      });
+
+      // systemPromptFile is undefined for remote
+      expect(remoteCasterStub.getInput().systemPromptFile).toBeUndefined();
+    });
   });
 });

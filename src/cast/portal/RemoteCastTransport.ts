@@ -1,4 +1,5 @@
 import type { Effort } from '../../domain/settings/Settings';
+import type { Provider } from '../../domain/settings/Provider';
 import { parsePortalScheme } from './parsePortalScheme';
 import { buildPortalUrl } from './buildPortalUrl';
 import { buildBasicAuthHeader } from './buildBasicAuthHeader';
@@ -41,6 +42,7 @@ export interface RemoteCastInput {
   readonly userPrompt: string;
   readonly modelId: string;
   readonly effort: Effort | null;
+  readonly provider?: Provider;
   readonly portalHost: string;
   readonly portalPort: string;
   readonly portalPath: string;
@@ -92,6 +94,7 @@ export class RemoteCastTransport {
       userPrompt: input.userPrompt,
       modelId: input.modelId,
       effort: input.effort,
+      provider: input.provider,
     });
 
     let timeoutId: ReturnType<typeof activeWindow.setTimeout> | undefined;

@@ -1,18 +1,26 @@
 import { Effort, SupportedModel } from "../../domain/settings/Settings";
 import type { FormDefaults } from "../../domain/settings/FormDefaults";
 import type { ModelId } from "../../domain/settings/ModelId";
+import type { Provider } from "../../domain/settings/Provider";
 import type { Spell } from "../../domain/spells/Spell";
 import { REFINE_SENTINEL_PATH } from "../../domain/spells/Spell";
 import { resolveSpellOptions } from "../../domain/settings/spellOptionsResolver";
 import type { SpellOverrideStore } from "../../domain/settings/SpellOverrideStore";
 import type { OptionsSessionMap } from "./OptionsSessionMap";
 
+/**
+ * Snapshot of all casting options captured at the moment the user submits a cast.
+ * Carried through the CastAction/RefineCastAction callback so the dispatcher
+ * can forward every field — including `provider` — to CastDispatchInput.
+ */
 export interface OptionsFormSnapshot {
   model: ModelId;
   effort: Effort | null;
   contextNotePaths: readonly string[];
   followUp: string;
   executeOnNote: boolean;
+  /** Provider selected for this cast. Resolved from frontmatter or defaultProvider. */
+  provider: Provider;
   /** Only set for the Refine sentinel. undefined = no choice yet; null = explicit "Default (built-in)". */
   refinePathOverride?: string | null;
 }
@@ -28,6 +36,7 @@ export function optionsFormSnapshotFromDefaults(
   return {
     model: defaults.defaultModel,
     effort: defaults.defaultEffort,
+    provider: defaults.defaultProvider,
     contextNotePaths: [],
     followUp: "",
     executeOnNote: spell.executeOnNote,
@@ -62,6 +71,7 @@ export function optionsFormSnapshotFromRefineDefaults(
   return {
     model: resolved.model,
     effort: resolved.effort,
+    provider: defaults.defaultProvider,
     contextNotePaths: sessionEntry?.contextNotePaths ?? [],
     followUp: sessionEntry?.followUp ?? '',
     executeOnNote: true,
@@ -77,6 +87,7 @@ export function optionsFormSnapshotFromRefineDefaults(
 export class OptionsFormState {
   #model: ModelId;
   #effort: Effort | null;
+  #provider: Provider;
   #contextNotePaths: readonly string[];
   #followUp: string;
   #executeOnNote: boolean;
@@ -85,6 +96,7 @@ export class OptionsFormState {
   constructor(initial: OptionsFormSnapshot) {
     this.#model = initial.model;
     this.#effort = initial.effort;
+    this.#provider = initial.provider;
     this.#contextNotePaths = initial.contextNotePaths;
     this.#followUp = initial.followUp;
     this.#executeOnNote = initial.executeOnNote;
@@ -141,6 +153,7 @@ export class OptionsFormState {
     return {
       model: this.#model,
       effort: this.#effort,
+      provider: this.#provider,
       contextNotePaths: Array.from(this.#contextNotePaths),
       followUp: this.#followUp,
       executeOnNote: this.#executeOnNote,

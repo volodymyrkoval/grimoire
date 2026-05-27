@@ -8,6 +8,7 @@ import * as OptionsPanelModule from '../src/ui/options/OptionsPanel';
 import { modelId } from '../src/domain/settings/ModelId';
 import { SpellOverrideStore } from '../src/domain/settings/SpellOverrideStore';
 import { OptionsSessionMap } from '../src/ui/options/OptionsSessionMap';
+import { CLAUDE_CODE } from '../src/domain/settings/Provider';
 import type { CastLogPanelDeps } from '../src/ui/tabs/CastLogPanel';
 
 // EffortRow uses document.createElement — not available in the unit test environment
@@ -80,7 +81,7 @@ function makePopup(castAction?: CastAction) {
     imprintAction: vi.fn(),
     castAction: castAction ?? vi.fn(),
     refineCastAction: vi.fn(),
-    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
+    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium', defaultProvider: CLAUDE_CODE } satisfies FormDefaults,
     overrides: makeStubOverrides(),
     sessionMap: new OptionsSessionMap(),
     castLogPanelDeps: makeFakeCastLogPanelDeps(),
@@ -330,7 +331,7 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       imprintAction: vi.fn(),
       castAction: vi.fn(),
       refineCastAction: vi.fn(),
-      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium', defaultProvider: CLAUDE_CODE } satisfies FormDefaults,
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: fakeDeps,
@@ -361,7 +362,7 @@ describe('CommandPopup G2 — CastLogPanel wiring', () => {
       imprintAction: vi.fn(),
       castAction: vi.fn(),
       refineCastAction: vi.fn(),
-      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium', defaultProvider: CLAUDE_CODE } satisfies FormDefaults,
       overrides: makeStubOverrides(),
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),
@@ -422,6 +423,41 @@ describe('CommandPopup onClose — unsubscribes spellsPanel event listeners', ()
   });
 });
 
+describe('CommandPopup F1+F2 — provider wired through enter-from-list cast', () => {
+  it('handleSpellCast invokes castAction with provider from resolveCastingForSpell (no frontmatter → defaultProvider)', () => {
+    // reader returns null (no frontmatter) → wholesale fallback → defaultProvider (CLAUDE_CODE)
+    const castAction = vi.fn();
+    const reader = vi.fn().mockReturnValue(null);
+    const popup = new CommandPopup({
+      app: makeApp(),
+      spellTag: 'spell',
+      rankSpells: () => ({ spells: [], sentinels: [] }),
+      imprintAction: vi.fn(),
+      castAction,
+      refineCastAction: vi.fn(),
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium', defaultProvider: CLAUDE_CODE } satisfies FormDefaults,
+      overrides: makeStubOverrides(),
+      sessionMap: new OptionsSessionMap(),
+      castLogPanelDeps: makeFakeCastLogPanelDeps(),
+      forgeUpdateAction: vi.fn(),
+      spellContentReader: { read: vi.fn(async () => '') },
+      hotkeyEraser: vi.fn().mockResolvedValue(undefined),
+      hotkeyWriter: vi.fn().mockResolvedValue(undefined),
+      reader,
+      castingWriter: vi.fn().mockResolvedValue(undefined),
+      setVaultDefault: vi.fn(),
+    });
+
+    popup.onOpen();
+    const spellsPanel = popup.panels[0] as any;
+    spellsPanel.events.emit('cast', STUB_SPELLS[0]);
+
+    expect(castAction).toHaveBeenCalledOnce();
+    const [, snapshot] = castAction.mock.calls[0] as [unknown, { provider: unknown }];
+    expect(snapshot.provider).toBe(CLAUDE_CODE);
+  });
+});
+
 describe('CommandPopup D5 — setHasOverride wired from reader', () => {
   it('spellsPanel hasOverride predicate delegates to reader(path) !== null', () => {
     const reader = vi.fn().mockReturnValue(null);
@@ -433,7 +469,7 @@ describe('CommandPopup D5 — setHasOverride wired from reader', () => {
       imprintAction: vi.fn(),
       castAction: vi.fn(),
       refineCastAction: vi.fn(),
-      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' } satisfies FormDefaults,
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium', defaultProvider: CLAUDE_CODE } satisfies FormDefaults,
       overrides: stubOverrides,
       sessionMap: new OptionsSessionMap(),
       castLogPanelDeps: makeFakeCastLogPanelDeps(),

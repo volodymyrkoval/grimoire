@@ -521,13 +521,13 @@ export class CommandPopup extends Modal {
 
   #handleSpellCast = (spell: Spell): void => {
     const parsed = this.#reader(spell.path);
-    const { model, effort } = resolveCastingForSpell({
+    const { model, effort, provider } = resolveCastingForSpell({
       parsed,
       defaults: this.#formDefaults,
       models: SUPPORTED_MODELS,
       knownProvider: CLAUDE_CODE_PROVIDER,
     });
-    this.#castAction(spell, { model, effort, contextNotePaths: [], followUp: '', executeOnNote: spell.executeOnNote });
+    this.#castAction(spell, { model, effort, provider, contextNotePaths: [], followUp: '', executeOnNote: spell.executeOnNote });
   };
 
   #handleOpenSentinel = (): void => {

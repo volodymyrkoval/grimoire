@@ -1,5 +1,6 @@
 import { modelId, type ModelId } from './ModelId';
 import type { Effort } from './Settings';
+import { CLAUDE_CODE, parseProvider as parseProviderBrand, type Provider } from './Provider';
 
 /**
  * YAML frontmatter key for spell-local casting settings.
@@ -10,14 +11,14 @@ export const CASTING_FRONTMATTER_KEY = 'grimoire-casting' as const;
 /**
  * Standard casting provider identifier for claude-code CLI.
  */
-export const CLAUDE_CODE_PROVIDER = 'claude-code' as const;
+export const CLAUDE_CODE_PROVIDER = CLAUDE_CODE;
 
 /**
  * Spell-local casting configuration, typically stored in YAML frontmatter.
  * Overrides global settings for a specific spell.
  */
 export interface SpellCastingSettings {
-  provider: string;
+  provider: Provider;
   model: ModelId;
   effort?: Effort;
 }
@@ -31,15 +32,14 @@ function isPlainObject(raw: unknown): raw is Record<string, unknown> {
 
 /**
  * Extracts and validates the provider field from an object.
- * Returns the trimmed provider string if non-empty, else null.
+ * Returns a branded Provider if valid and known, else null.
  */
-function parseProvider(obj: Record<string, unknown>): string | null {
+function parseProviderField(obj: Record<string, unknown>): Provider | null {
   const provider = obj.provider;
   if (typeof provider !== 'string') {
     return null;
   }
-  const trimmed = provider.trim();
-  return trimmed.length > 0 ? trimmed : null;
+  return parseProviderBrand(provider);
 }
 
 /**
@@ -78,7 +78,7 @@ export function parseCastingSettings(raw: unknown): SpellCastingSettings | null 
     return null;
   }
 
-  const provider = parseProvider(raw);
+  const provider = parseProviderField(raw);
   if (provider === null) {
     return null;
   }

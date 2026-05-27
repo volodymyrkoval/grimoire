@@ -6,6 +6,7 @@ import { ForgeFormSnapshot } from './ForgeFormSnapshot';
 import type { Caster } from '../execution/Caster';
 import type { CastEventSink } from './CastEventSink';
 import type { SpellImprinter } from './SpellImprinter';
+import { resolveProviderAdapter } from '../cast/provider/resolveProviderAdapter';
 
 /** Dependencies injected into ForgeImprinter, allowing optional ID generation override for testing. */
 export interface ForgeImprinterDeps {
@@ -83,7 +84,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
 
   #recordCast(castId: string, snapshot: ForgeFormSnapshot): void {
     this.#logWriter()
-      .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [] })
+      .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [], provider: snapshot.provider })
       .catch(console.error);
   }
 
@@ -100,9 +101,11 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
       model: snapshot.model,
       effort: snapshot.effort,
       executeOnNote: snapshot.executeOnNote,
+      provider: snapshot.provider,
     });
     const paths = this.#forgeSpellPaths();
     const caster = this.#caster();
+    resolveProviderAdapter(snapshot.provider);
     caster.cast(
       {
         castId,
@@ -112,6 +115,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
         userPrompt,
         systemPromptFile: paths.absForCaster,
         vaultMountPath: settings.vaultMountPath,
+        provider: snapshot.provider,
       },
       {
         onAccepted: ({ jobId }) => this.#onCastAccepted(ctx, jobId),
@@ -125,7 +129,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
     const { castId, sanitised, snapshot, isRemote } = ctx;
     if (jobId !== undefined) {
       this.#logWriter()
-        .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [], portalCastId: jobId })
+        .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [], portalCastId: jobId, provider: snapshot.provider })
         .catch(console.error);
     }
     if (!isRemote) this.#notify(`Spell "${sanitised}" forged`);

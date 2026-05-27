@@ -126,6 +126,7 @@ export class OptionsPanel {
     const cast = () => {
       const current = formState.snapshot();
       this.#castModelSection.persistBlockOnCast(formState, castModelDeps);
+      // provider is not in OptionsSessionEntry — it is always re-resolved from frontmatter, not session-cached.
       deps.sessionMap.put(deps.spellPath, { ...current, followUp: '' });
       followUpInput.value = '';
       formState.setFollowUp('');

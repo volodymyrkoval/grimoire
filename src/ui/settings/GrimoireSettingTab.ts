@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import { GrimoireData, SUPPORTED_MODELS } from '../../domain/settings/Settings';
 import { EffortRow } from '../widgets/EffortRow';
 import { modelId } from '../../domain/settings/ModelId';
+import { KNOWN_PROVIDERS, CLAUDE_CODE, parseProvider } from '../../domain/settings/Provider';
 import { RefineSeeder } from '../../refine/CustomRefineSeeder';
 import { CustomRefineSection } from './CustomRefineSection';
 
@@ -58,6 +59,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
     this.#addTextField('Vault mount path',   () => s.vaultMountPath,    v => { s.vaultMountPath = v; },
       'Absolute path where the vault is mounted on disk. Used to resolve file paths during casting.');
 
+    this.#addProviderField();
     const effortRow = new EffortRow();
     this.#addModelField(effortRow);
     this.#addEffortField(effortRow);
@@ -109,6 +111,22 @@ export class GrimoireSettingTab extends PluginSettingTab {
       'Username for portal HTTP basic authentication.');
     this.#addPasswordField('Auth password',() => s.portalAuthPassword, v => { s.portalAuthPassword = v; },
       'Password for portal HTTP basic authentication.');
+  }
+
+  #addProviderField(): void {
+    const s = this.#plugin.data.settings;
+    new Setting(this.containerEl)
+      .setName('Default provider')
+      .setDesc('API provider used when casting spells unless overridden per-cast.')
+      .addDropdown(d => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- addOption return is not a real Promise
+        KNOWN_PROVIDERS.forEach(p => d.addOption(p, p));
+        d.setValue(s.defaultProvider);
+        d.onChange(raw => {
+          s.defaultProvider = parseProvider(raw) ?? CLAUDE_CODE;
+          this.#save();
+        });
+      });
   }
 
   #addModelField(effortRow: EffortRow): void {

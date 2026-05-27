@@ -33,6 +33,7 @@ export class RemoteCaster implements Caster {
         userPrompt: input.userPrompt,
         modelId: input.modelId,
         effort: input.effort,
+        provider: input.provider,
         portalHost: this.#settings.portalHost,
         portalPort: this.#settings.portalPort,
         portalPath: this.#settings.portalPath,

@@ -1,4 +1,5 @@
 import { modelId } from '../../../src/domain/settings/ModelId';
+import { CLAUDE_CODE } from '../../../src/domain/settings/Provider';
 import { describe, it, expect, vi } from 'vitest';
 import { RemoteCaster } from '../../../src/cast/portal/RemoteCaster';
 import type { RemoteCastInput, RemoteCastCallbacks } from '../../../src/cast/portal/RemoteCastTransport';
@@ -20,6 +21,8 @@ const baseSettings: GrimoireSettings = {
   vaultMountPath: '/vault',
   defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: 'medium',
+  defaultProvider: CLAUDE_CODE,
+  activeRefinePath: null,
   executionMode: 'remote',
   portalHost: 'localhost',
   portalPort: '8080',

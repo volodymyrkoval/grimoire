@@ -129,4 +129,16 @@ describe('buildCastArgs', () => {
     expect(args).toContain('--add-dir');
     expect(args).toContain('/vault');
   });
+
+  it('never includes --provider flag for local cast arguments', () => {
+    const args = buildCastArgs({
+      metaSpell: 'my spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '',
+    });
+
+    expect(args).not.toContain('--provider');
+    expect(args).not.toContain('claude-code');
+  });
 });

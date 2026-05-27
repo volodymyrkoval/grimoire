@@ -377,4 +377,25 @@ describe('foldEvents', () => {
       model: modelId('gpt-4o'),
     });
   });
+
+  it('casted event provider propagates to record', () => {
+    const castedEvent: CastedEvent = {
+      castId: 'cast-1',
+      ts: '2025-05-14T10:00:00Z',
+      stage: 'casted',
+      spellPath: 'Spells/MySpell.md',
+      model: modelId('gpt-4o'),
+      effort: null,
+      contextNotes: ['Note 1'],
+      provider: 'claude-code',
+    };
+
+    const result = foldEvents([castedEvent]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      castId: 'cast-1',
+      provider: 'claude-code',
+    });
+  });
 });

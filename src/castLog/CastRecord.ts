@@ -1,4 +1,5 @@
 import type { Effort } from '../domain/settings/Settings';
+import type { Provider } from '../domain/settings/Provider';
 
 /** Status of a cast: lifecycle from initiation through terminal states (done or error). */
 export type CastStatus = 'casted' | 'in-progress' | 'done' | 'error';
@@ -23,4 +24,5 @@ export interface CastRecord {
   readonly endedTs?: string;
   readonly errorMessage?: string;
   readonly portalCastId?: string;
+  readonly provider: Provider;
 }

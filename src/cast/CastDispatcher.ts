@@ -3,6 +3,8 @@ import { type Effort, type GrimoireSettings } from '../domain/settings/Settings'
 import type { Caster } from '../execution/Caster';
 import type { CastResultRecorder } from './CastResultRecorder';
 import type { ModelId } from '../domain/settings/ModelId';
+import type { Provider } from '../domain/settings/Provider';
+import { resolveProviderAdapter } from './provider/resolveProviderAdapter';
 
 /**
  * Input payload for a spell cast request.
@@ -25,6 +27,8 @@ export interface CastDispatchInput {
    * undefined and use the standard computation.
    */
   readonly systemPromptFilePath?: string;
+  /** The provider used to execute this cast. */
+  readonly provider: Provider;
 }
 
 /**
@@ -62,7 +66,7 @@ export class CastDispatcher {
    * Runs asynchronously; errors are surfaced via notify callback.
    */
   dispatch(input: CastDispatchInput): void {
-    const { spell, model, effort, contextNotePaths, followUp, settings, activeFilePath } = input;
+    const { spell, model, effort, contextNotePaths, followUp, settings, activeFilePath, provider } = input;
     const isRemote = settings.executionMode === 'remote';
     const logWriter = this.#logWriter();
 
@@ -79,9 +83,10 @@ export class CastDispatcher {
 
     const castId = this.#generateId();
     const userPrompt = this.#buildUserPrompt(input.executeOnNote, settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
+    const providerAdapter = resolveProviderAdapter(provider);
 
     logWriter
-      .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote })
+      .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote, provider })
       .catch(console.error);
 
     const noticeText = isRemote ? `Casting '${spell.name}' on portal…` : `Casting '${spell.name}'…`;
@@ -98,12 +103,13 @@ export class CastDispatcher {
         userPrompt,
         systemPromptFile: isRemote ? undefined : (input.systemPromptFilePath ?? `${settings.vaultMountPath}/${spell.path}`),
         vaultMountPath: settings.vaultMountPath,
+        provider,
       },
       {
         onAccepted: ({ jobId }) => {
           if (jobId !== undefined) {
             logWriter
-              .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote, portalCastId: jobId })
+              .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote, portalCastId: jobId, provider })
               .catch(console.error);
           }
           if (!isRemote) this.#notify('Spell cast');
@@ -114,6 +120,8 @@ export class CastDispatcher {
         },
       },
     );
+
+    void providerAdapter; // TODO: wire to caster routing when a second provider is added
   }
 
   #buildUserPrompt(

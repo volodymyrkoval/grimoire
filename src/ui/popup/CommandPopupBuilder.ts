@@ -21,6 +21,7 @@ import { readCastingFrontmatter } from '../../infra/castingFrontmatter';
 import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../../infra/castingFrontmatter';
 import { CASTING_FRONTMATTER_KEY } from '../../domain/settings/CastingSettings';
 import type { ModelId } from '../../domain/settings/ModelId';
+import { CLAUDE_CODE } from '../../domain/settings/Provider';
 
 export interface CommandPopupBuilderDeps {
   app: App;
@@ -73,6 +74,7 @@ export class CommandPopupBuilder {
       defaults: {
         defaultModel: this.#deps.plugin.data.settings.defaultModel,
         defaultEffort: this.#deps.plugin.data.settings.defaultEffort,
+        defaultProvider: this.#deps.plugin.data.settings.defaultProvider,
       },
       overrides: this.#deps.plugin.overrides,
       sessionMap: this.#deps.sessionMap,
@@ -110,6 +112,7 @@ export class CommandPopupBuilder {
         activeFilePath: activeFile.path,
         executeOnNote: true,
         systemPromptFilePath: resolved.path,
+        provider: CLAUDE_CODE,
       });
       getPopup().dismiss();
     };
@@ -149,6 +152,7 @@ export class CommandPopupBuilder {
         settings: this.#deps.plugin.data.settings,
         activeFilePath: this.#deps.app.workspace.getActiveFile()?.path ?? null,
         executeOnNote: snap.executeOnNote,
+        provider: snap.provider,
       });
     };
   }

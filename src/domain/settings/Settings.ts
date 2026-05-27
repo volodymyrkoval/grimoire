@@ -1,4 +1,5 @@
 import { modelId, type ModelId } from './ModelId';
+import { CLAUDE_CODE, type Provider } from './Provider';
 
 /** Execution effort level, mapped to model-specific parameter ranges. */
 export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
@@ -14,6 +15,7 @@ export interface GrimoireSettings {
   forgeOutputFolder: string;
   vaultMountPath: string;
   defaultModel: ModelId;
+  defaultProvider: Provider;
   defaultEffort: Effort | null;
   executionMode: ExecutionMode;
   portalHost: string;
@@ -45,6 +47,7 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '',
   defaultModel: modelId('claude-sonnet-4-5'),
+  defaultProvider: CLAUDE_CODE,
   defaultEffort: 'medium',
   executionMode: 'local',
   portalHost: '',
@@ -59,13 +62,14 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
 export interface SupportedModel {
   id: ModelId;
   label: string;
+  provider: Provider;
   effortOptions: readonly Effort[] | null;
   defaultEffort: Effort | null;
 }
 
 /** Hardcoded list of models available for selection in forms and casts. */
 export const SUPPORTED_MODELS: readonly SupportedModel[] = [
-  { id: modelId('claude-haiku-4-5'), label: 'Claude Haiku 4.5', effortOptions: null, defaultEffort: null },
-  { id: modelId('claude-sonnet-4-5'), label: 'Claude Sonnet 4.5', effortOptions: ['low', 'medium', 'high', 'max'], defaultEffort: 'medium' },
-  { id: modelId('claude-opus-4-5'), label: 'Claude Opus 4.5', effortOptions: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'xhigh' },
+  { id: modelId('claude-haiku-4-5'), label: 'Claude Haiku 4.5', provider: CLAUDE_CODE, effortOptions: null, defaultEffort: null },
+  { id: modelId('claude-sonnet-4-5'), label: 'Claude Sonnet 4.5', provider: CLAUDE_CODE, effortOptions: ['low', 'medium', 'high', 'max'], defaultEffort: 'medium' },
+  { id: modelId('claude-opus-4-5'), label: 'Claude Opus 4.5', provider: CLAUDE_CODE, effortOptions: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'xhigh' },
 ];

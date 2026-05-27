@@ -6,6 +6,7 @@ import { ForgeFormSnapshot } from '../src/forge/ForgeFormSnapshot';
 import type { CastInput, CastCallbacks } from '../src/cast/Caster';
 import type { CastLogWriter } from '../src/castLog/CastLogWriter';
 import { buildForgeUserPrompt } from '../src/forge/buildForgeUserPrompt';
+import { CLAUDE_CODE } from '../src/domain/settings/Provider';
 
 // Canonical forge paths used in all test instances.
 const FORGE_ABS = '/vault/.obsidian/plugins/grimoire/forge.md';
@@ -81,6 +82,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       closeFn
@@ -110,6 +112,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       closeFn
@@ -137,6 +140,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -149,6 +153,7 @@ describe('ForgeImprinter', () => {
       model: modelId('claude-sonnet-4-5'),
       effort: null,
       executeOnNote: true,
+      provider: CLAUDE_CODE,
     });
     expect(input.userPrompt).toBe(expectedPrompt);
     // Specifically does NOT contain system-prompt content
@@ -172,6 +177,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: false,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -197,6 +203,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: false,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -223,6 +230,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: false,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -305,6 +313,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -332,6 +341,7 @@ describe('ForgeImprinter', () => {
       model: modelId('claude-sonnet-4-5'),
       effort: 'medium',
       executeOnNote: true,
+      provider: CLAUDE_CODE,
     } as ForgeFormSnapshot;
 
     imprinter.imprint(snapshot, localBaseSettings, vi.fn());
@@ -344,8 +354,9 @@ describe('ForgeImprinter', () => {
       model: snapshot.model,
       effort: snapshot.effort,
       contextNotes: [],
+      provider: snapshot.provider,
     });
-    expect(Object.keys(callArg).sort()).toEqual(['castId', 'contextNotes', 'effort', 'model', 'spellPath']);
+    expect(Object.keys(callArg).sort()).toEqual(['castId', 'contextNotes', 'effort', 'model', 'provider', 'spellPath']);
   });
 
   it('caster.cast receives castId in its input', () => {
@@ -366,6 +377,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -394,6 +406,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -428,6 +441,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       { ...remoteBaseSettings, portalHost: '' },
       closeFn
@@ -457,6 +471,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       { ...remoteBaseSettings, portalHost: '   ' },
       closeFn
@@ -488,6 +503,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       remoteBaseSettings,
       closeFn
@@ -521,6 +537,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       remoteBaseSettings,
       vi.fn()
@@ -553,6 +570,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       remoteBaseSettings,
       vi.fn()
@@ -583,6 +601,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: 'medium',
         executeOnNote: false,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       remoteBaseSettings,
       vi.fn()
@@ -617,6 +636,7 @@ describe('ForgeImprinter', () => {
         model: modelId('claude-sonnet-4-5'),
         effort: null,
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       } as ForgeFormSnapshot,
       localBaseSettings,
       vi.fn()
@@ -641,7 +661,7 @@ describe('ForgeImprinter', () => {
     });
 
     imprinter.imprint(
-      { name: 'My Spell', description: 'desc', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false },
+      { name: 'My Spell', description: 'desc', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false, provider: CLAUDE_CODE },
       { ...remoteBaseSettings },
       vi.fn()
     );
@@ -665,7 +685,7 @@ describe('ForgeImprinter', () => {
       forgeSpellPaths,
     });
     imprinter2.imprint(
-      { name: 'X', description: 'd', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false },
+      { name: 'X', description: 'd', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false, provider: CLAUDE_CODE },
       { ...remoteBaseSettings },
       vi.fn()
     );
@@ -692,6 +712,7 @@ describe('ForgeImprinter', () => {
       model: modelId('claude-sonnet-4-5'),
       effort: null,
       executeOnNote: false,
+      provider: CLAUDE_CODE,
     };
 
     imprinter.imprint(snapshot, mutableSettings, vi.fn());

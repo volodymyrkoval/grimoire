@@ -155,8 +155,8 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** Unit tests prove: `parseProvider('claude-code')` returns the branded `CLAUDE_CODE`; `parseProvider('codex')`, `parseProvider('')`, `parseProvider(null)`, `parseProvider(42)`, `parseProvider({})` all return `null`; `isKnownProvider('claude-code')` is `true`, `isKnownProvider('nope')` is `false`; `KNOWN_PROVIDERS` contains exactly `CLAUDE_CODE`.
 
 **junior-dev**
-- [ ] A1: Create `src/domain/settings/Provider.ts` with `type Provider = string & { readonly __brand: 'Provider' }`, `provider(value)` brand ctor, `CLAUDE_CODE = provider('claude-code')`, and `KNOWN_PROVIDERS: readonly Provider[] = [CLAUDE_CODE]`. Mirror `src/domain/settings/ModelId.ts` exactly. — S, junior-dev
-- [ ] A2: Add `isKnownProvider(value: string): boolean` (returns `KNOWN_PROVIDERS.some(p => p === value)`) and `parseProvider(raw: unknown): Provider | null` (returns `provider(raw.trim())` when `typeof raw === 'string'` and `isKnownProvider(raw.trim())`, else `null`). Cover the edge cases in the Red criterion: empty string, `null`, non-string, unknown string, plain object. — S, junior-dev
+- [x] A1: Create `src/domain/settings/Provider.ts` with `type Provider = string & { readonly __brand: 'Provider' }`, `provider(value)` brand ctor, `CLAUDE_CODE = provider('claude-code')`, and `KNOWN_PROVIDERS: readonly Provider[] = [CLAUDE_CODE]`. Mirror `src/domain/settings/ModelId.ts` exactly. — S, junior-dev
+- [x] A2: Add `isKnownProvider(value: string): boolean` (returns `KNOWN_PROVIDERS.some(p => p === value)`) and `parseProvider(raw: unknown): Provider | null` (returns `provider(raw.trim())` when `typeof raw === 'string'` and `isKnownProvider(raw.trim())`, else `null`). Cover the edge cases in the Red criterion: empty string, `null`, non-string, unknown string, plain object. — S, junior-dev
 
 ### B. Provider in the model registry, global settings, and hydrate
 
@@ -170,10 +170,10 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** `DEFAULT_SETTINGS.defaultProvider === CLAUDE_CODE`; every `SUPPORTED_MODELS` entry has `provider === CLAUDE_CODE`; `hydrate({}, app).settings.defaultProvider === CLAUDE_CODE`; `hydrate({ settings: { defaultProvider: 'codex' } }, app).settings.defaultProvider === CLAUDE_CODE` (unknown → fallback); `hydrate({ settings: { defaultProvider: 'claude-code' } }, app)` preserves it; `parseCastingSettings({ provider: 'codex', model: 'x' })` returns `null` (unknown provider rejected); `parseCastingSettings({ provider: 'claude-code', model: 'claude-sonnet-4-5' })` returns a block whose `provider === CLAUDE_CODE`.
 
 **junior-dev**
-- [ ] B1: In `Settings.ts`, add `provider: Provider` to `SupportedModel` and tag all three `SUPPORTED_MODELS` rows with `CLAUDE_CODE` (import from `Provider.ts`). — S, junior-dev
-- [ ] B2: In `Settings.ts`, add `defaultProvider: Provider` to `GrimoireSettings` and set `DEFAULT_SETTINGS.defaultProvider = CLAUDE_CODE`. — S, junior-dev
-- [ ] B3: In `settingsPersistence.ts` `hydrate`, after the existing `defaultModel` re-brand add `merged.defaultProvider = parseProvider(merged.defaultProvider) ?? CLAUDE_CODE;`. Edge cases: absent (→ `CLAUDE_CODE`), unknown string (→ `CLAUDE_CODE`), valid (→ preserved). — S, junior-dev
-- [ ] B4: In `CastingSettings.ts`, replace the local `CLAUDE_CODE_PROVIDER` literal with a re-export of `CLAUDE_CODE` from `Provider.ts` (keep the `CLAUDE_CODE_PROVIDER` name exported for existing importers, or update importers — pick the lower-churn option and note it), retype `SpellCastingSettings.provider` to `Provider`, and make the block's `parseProvider`/`parseCastingSettings` delegate to `Provider.ts`'s `parseProvider` so an unknown-provider block returns `null`. Edge case: unknown provider in block → `null`. — M, junior-dev
+- [x] B1: In `Settings.ts`, add `provider: Provider` to `SupportedModel` and tag all three `SUPPORTED_MODELS` rows with `CLAUDE_CODE` (import from `Provider.ts`). — S, junior-dev (63e4d3a)
+- [x] B2: In `Settings.ts`, add `defaultProvider: Provider` to `GrimoireSettings` and set `DEFAULT_SETTINGS.defaultProvider = CLAUDE_CODE`. — S, junior-dev (63e4d3a)
+- [x] B3: In `settingsPersistence.ts` `hydrate`, after the existing `defaultModel` re-brand add `merged.defaultProvider = parseProvider(merged.defaultProvider) ?? CLAUDE_CODE;`. Edge cases: absent (→ `CLAUDE_CODE`), unknown string (→ `CLAUDE_CODE`), valid (→ preserved). — S, junior-dev (63e4d3a)
+- [x] B4: In `CastingSettings.ts`, replace the local `CLAUDE_CODE_PROVIDER` literal with a re-export of `CLAUDE_CODE` from `Provider.ts` (keep the `CLAUDE_CODE_PROVIDER` name exported for existing importers, or update importers — pick the lower-churn option and note it), retype `SpellCastingSettings.provider` to `Provider`, and make the block's `parseProvider`/`parseCastingSettings` delegate to `Provider.ts`'s `parseProvider` so an unknown-provider block returns `null`. Edge case: unknown provider in block → `null`. — M, junior-dev (63e4d3a)
 
 ### C. Provider in the spell-casting resolver
 
@@ -187,8 +187,8 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** `resolveCastingForSpell` returns `provider: CLAUDE_CODE` for a valid claude-code block; returns `defaultProvider` (wholesale) when `parsed` is `null`; returns `defaultProvider` (wholesale) when `parsed.provider` is a stale/unknown provider; the returned `model`/`effort` behavior is byte-for-byte unchanged from today (regression guard).
 
 **junior-dev**
-- [ ] C1: Add `defaultProvider: Provider` to `ResolveCastingInput.defaults` and `provider: Provider` to `ResolvedCasting`. — S, junior-dev
-- [ ] C2: Retype `ResolveCastingInput.knownProvider` to `Provider`; in `resolveCastingForSpell`, compute `resolvedProvider = wholesale ? input.defaults.defaultProvider : input.parsed!.provider` and include it in the return. Tests: valid block → block provider; null parsed → default; stale provider → wholesale to default; assert model/effort unchanged vs current behavior. — M, junior-dev
+- [x] C1: Add `defaultProvider: Provider` to `ResolveCastingInput.defaults` and `provider: Provider` to `ResolvedCasting`. — S, junior-dev (8238099)
+- [x] C2: Retype `ResolveCastingInput.knownProvider` to `Provider`; in `resolveCastingForSpell`, compute `resolvedProvider = wholesale ? input.defaults.defaultProvider : input.parsed!.provider` and include it in the return. Tests: valid block → block provider; null parsed → default; stale provider → wholesale to default; assert model/effort unchanged vs current behavior. — M, junior-dev (8238099)
 
 ### D. Provider through dispatch, cast input, cast log, and the adapter seam
 
@@ -204,14 +204,14 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** `resolveProviderAdapter(CLAUDE_CODE)` returns the single `claudeCodeAdapter` whose `.provider === CLAUDE_CODE`; `CastInput`, `CastedEvent`, `CastRecord`, `RecordCastedInput` all carry a `provider: Provider` field (type-level + runtime); `foldEvents` copies `provider` from the casted event into the resulting `CastRecord`; `CastDispatcher.dispatch` records `provider` in `recordCasted` and passes it in `CastInput`, and calls `resolveProviderAdapter` exactly once per dispatch without altering local-vs-remote selection; `buildPortalRequestBody({…, provider: CLAUDE_CODE})` includes `"provider":"claude-code"` in the JSON; `buildCastArgs` output is unchanged (regression guard — no `--provider`).
 
 **junior-dev**
-- [ ] D1: Add `readonly provider: Provider` to `CastInput` (`src/execution/Caster.ts`). — S, junior-dev
-- [ ] D2: Add `readonly provider: Provider` to `CastedEvent` (`src/castLog/types.ts`), `CastRecord` (`src/castLog/CastRecord.ts`), and `RecordCastedInput` in `src/cast/CastResultRecorder.ts`. — S, junior-dev
-- [ ] D3: In `foldEvents.ts` `combineCastedRecord`, copy `provider: castedEvent.provider` into the seeded record. Test: record reflects the casted event's provider. — S, junior-dev
-- [ ] D4: In `buildPortalRequestBody.ts`, add `provider: input.provider` to the body and `provider` to its input type; thread `provider` through `RemoteCaster.cast` and `RemoteCastTransport` run input. Test: JSON body contains `"provider":"claude-code"`. — M, junior-dev
+- [x] D1: Add `readonly provider: Provider` to `CastInput` (`src/execution/Caster.ts`). — S, junior-dev
+- [x] D2: Add `readonly provider: Provider` to `CastedEvent` (`src/castLog/types.ts`), `CastRecord` (`src/castLog/CastRecord.ts`), and `RecordCastedInput` in `src/cast/CastResultRecorder.ts`. — S, junior-dev
+- [x] D3: In `foldEvents.ts` `combineCastedRecord`, copy `provider: castedEvent.provider` into the seeded record. Test: record reflects the casted event's provider. — S, junior-dev
+- [x] D4: In `buildPortalRequestBody.ts`, add `provider: input.provider` to the body and `provider` to its input type; thread `provider` through `RemoteCaster.cast` and `RemoteCastTransport` run input. Test: JSON body contains `"provider":"claude-code"`. — M, junior-dev
 
 **senior-dev**
-- [ ] D5: Create `src/cast/provider/resolveProviderAdapter.ts` — `interface ProviderAdapter { readonly provider: Provider }`, a `claudeCodeAdapter: ProviderAdapter = { provider: CLAUDE_CODE }`, a `PROVIDER_ADAPTERS: Map<Provider, ProviderAdapter>` with the one entry, and `resolveProviderAdapter(p)` returning `PROVIDER_ADAPTERS.get(p) ?? claudeCodeAdapter`. The adapter MUST have no methods (no-go: no adapter interface/dialect). Tests: returns the claude-code adapter for `CLAUDE_CODE`; returns it as fallback for any unregistered provider. — S, senior-dev (judgment: this is the load-bearing seam shape; keep it behaviorless and orthogonal)
-- [ ] D6: In `CastDispatcher`, add `provider: Provider` to `CastDispatchInput`; thread it into both `recordCasted(...)` calls and the `caster.cast({...})` `CastInput`; call `resolveProviderAdapter(input.provider)` alongside `this.#caster()` (resolve + hold; do NOT branch on it, do NOT fold into `createCaster`). Tests: `recordCasted` receives provider; `CastInput` carries provider; `resolveProviderAdapter` invoked once; local-vs-remote selection unchanged. — M, senior-dev (judgment: the orthogonality invariant — two separate calls, adapter held not branched — is the whole pitch; depends on D5)
+- [x] D5: Create `src/cast/provider/resolveProviderAdapter.ts` — `interface ProviderAdapter { readonly provider: Provider }`, a `claudeCodeAdapter: ProviderAdapter = { provider: CLAUDE_CODE }`, a `PROVIDER_ADAPTERS: Map<Provider, ProviderAdapter>` with the one entry, and `resolveProviderAdapter(p)` returning `PROVIDER_ADAPTERS.get(p) ?? claudeCodeAdapter`. The adapter MUST have no methods (no-go: no adapter interface/dialect). Tests: returns the claude-code adapter for `CLAUDE_CODE`; returns it as fallback for any unregistered provider. — S, senior-dev (judgment: this is the load-bearing seam shape; keep it behaviorless and orthogonal) (d9e5734)
+- [x] D6: In `CastDispatcher`, add `provider: Provider` to `CastDispatchInput`; thread it into both `recordCasted(...)` calls and the `caster.cast({...})` `CastInput`; call `resolveProviderAdapter(input.provider)` alongside `this.#caster()` (resolve + hold; do NOT branch on it, do NOT fold into `createCaster`). Tests: `recordCasted` receives provider; `CastInput` carries provider; `resolveProviderAdapter` invoked once; local-vs-remote selection unchanged. — M, senior-dev (judgment: the orthogonality invariant — two separate calls, adapter held not branched — is the whole pitch; depends on D5) (d9e5734)
 
 ### E. Provider in Forge create, Forge update, and the forge template
 
@@ -229,10 +229,10 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** `ForgeFormSnapshot` and `ForgeUpdateFormSnapshot` carry `provider: Provider`; both imprinters log `provider` in `recordCasted` and pass it in `CastInput`; both call `resolveProviderAdapter` once per dispatch without changing local-vs-remote selection; `buildForgeUserPrompt`/`buildForgeUpdateUserPrompt` render the provider line; `renderForgeSystemPrompt` still stamps `provider: claude-code` (typed via `CLAUDE_CODE`).
 
 **junior-dev**
-- [ ] E1: Add `provider: Provider` to `ForgeFormSnapshot` and `ForgeUpdateFormSnapshot`. — S, junior-dev
-- [ ] E2: In `buildForgeUserPrompt` and `buildForgeUpdateUserPrompt`, add `provider` to the input type and render a `- **Provider:** ${provider}` line. Test: rendered prompt contains the provider. — S, junior-dev
-- [ ] E3: In `forgeTemplate.ts`, retype the `CLAUDE_CODE_PROVIDER` import to `CLAUDE_CODE` from `Provider.ts` (stamp value unchanged: `provider: claude-code`). — S, junior-dev
-- [ ] E4: In `ForgeImprinter` (`#recordCast`, `#onCastAccepted`, `#dispatchCast`) add `provider: snapshot.provider` to both `recordCasted` calls and the `CastInput`; call `resolveProviderAdapter(snapshot.provider)` beside `this.#caster()` (held, not branched). Same edits in `ForgeUpdateImprinter` (`#recordCast`, `#dispatchCast`). Tests: provider logged + in CastInput; adapter resolved once; local/remote unchanged. — M, junior-dev (design fully prescribed by D5/D6 — mechanical mirror)
+- [x] E1: Add `provider: Provider` to `ForgeFormSnapshot` and `ForgeUpdateFormSnapshot`. — S, junior-dev
+- [x] E2: In `buildForgeUserPrompt` and `buildForgeUpdateUserPrompt`, add `provider` to the input type and render a `- **Provider:** ${provider}` line. Test: rendered prompt contains the provider. — S, junior-dev
+- [x] E3: In `forgeTemplate.ts`, retype the `CLAUDE_CODE_PROVIDER` import to `CLAUDE_CODE` from `Provider.ts` (stamp value unchanged: `provider: claude-code`). — S, junior-dev
+- [x] E4: In `ForgeImprinter` (`#recordCast`, `#onCastAccepted`, `#dispatchCast`) add `provider: snapshot.provider` to both `recordCasted` calls and the `CastInput`; call `resolveProviderAdapter(snapshot.provider)` beside `this.#caster()` (held, not branched). Same edits in `ForgeUpdateImprinter` (`#recordCast`, `#dispatchCast`). Tests: provider logged + in CastInput; adapter resolved once; local/remote unchanged. — M, junior-dev (design fully prescribed by D5/D6 — mechanical mirror)
 
 ### F. Wire provider through the popup/options callers and the Refine cast
 
@@ -249,8 +249,8 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** Enter-from-list cast dispatches a `CastDispatchInput` whose `provider` is the spell's resolved provider (block provider, or `defaultProvider` on wholesale fallback); the options-panel cast does the same; the Refine cast dispatches with `provider === settings.defaultProvider`; Forge create dispatches with the configured default provider; the `CastModelSection` block written on cast carries `provider: CLAUDE_CODE`; no caller of the cast action omits `provider` (type-checks).
 
 **senior-dev**
-- [ ] F1: Thread `defaultProvider` into every `resolveCastingForSpell({ defaults, knownProvider })` call site (`CommandPopup.#handleSpellCast`, `OptionsDetail.#resolveRealSpellCasting`) using `settings.defaultProvider` / `formDefaults` and `CLAUDE_CODE`, and forward the returned `provider` into the cast action. Update `FormDefaults`/`formDefaults` plumbing if it must carry `defaultProvider` (follow the existing `defaultModel`/`defaultEffort` route). — M, senior-dev (judgment: trace the full set of cast-action callers; this is the completeness-critical wiring the pitch's risk centres on)
-- [ ] F2: Extend the cast-action / dispatch-input plumbing (the closure that calls `CastDispatcher.dispatch` from `CommandPopup`/`PopupModule`, the Refine cast action, and Forge-snapshot construction) so `provider` is supplied everywhere: spell casts pass the resolved provider; Refine passes `settings.defaultProvider`; Forge create passes the default provider; Forge update passes the resolved/default provider per the existing model precedent. Update `CastModelSection` to write `CLAUDE_CODE` (retyped) and compare providers in `#blockChanged`. — M, senior-dev (judgment: orchestrates the wiring across popup, refine, and forge call sites; depends on F1)
+- [x] F1: Thread `defaultProvider` into every `resolveCastingForSpell({ defaults, knownProvider })` call site (`CommandPopup.#handleSpellCast`, `OptionsDetail.#resolveRealSpellCasting`) using `settings.defaultProvider` / `formDefaults` and `CLAUDE_CODE`, and forward the returned `provider` into the cast action. Update `FormDefaults`/`formDefaults` plumbing if it must carry `defaultProvider` (follow the existing `defaultModel`/`defaultEffort` route). — M, senior-dev (judgment: trace the full set of cast-action callers; this is the completeness-critical wiring the pitch's risk centres on) (93ee8e6)
+- [x] F2: Extend the cast-action / dispatch-input plumbing (the closure that calls `CastDispatcher.dispatch` from `CommandPopup`/`PopupModule`, the Refine cast action, and Forge-snapshot construction) so `provider` is supplied everywhere: spell casts pass the resolved provider; Refine passes `settings.defaultProvider`; Forge create passes the default provider; Forge update passes the resolved/default provider per the existing model precedent. Update `CastModelSection` to write `CLAUDE_CODE` (retyped) and compare providers in `#blockChanged`. — M, senior-dev (judgment: orchestrates the wiring across popup, refine, and forge call sites; depends on F1) (93ee8e6)
 
 ### G. Default-provider settings field (UI seam)
 
@@ -263,10 +263,10 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** Mounting `GrimoireSettingTab` renders a "Default provider" dropdown whose options are exactly `KNOWN_PROVIDERS`, whose value reflects `settings.defaultProvider`, and whose `onChange` writes the parsed provider back to settings and triggers a save. Changing the (single) option keeps `defaultProvider` a valid known provider.
 
 **ui-integration-tester**
-- [ ] G6: integration test (`tests/integration/`): mount `GrimoireSettingTab`, assert a "Default provider" dropdown exists with options equal to `KNOWN_PROVIDERS` and value equal to `settings.defaultProvider`; simulate selecting the option and assert `settings.defaultProvider` is set to a known `Provider` and the save callback fired. Mock `obsidian` via the existing `tests/__mocks__/obsidian.ts`. — S, ui-integration-tester
+- [x] G6: integration test (`tests/integration/`): mount `GrimoireSettingTab`, assert a "Default provider" dropdown exists with options equal to `KNOWN_PROVIDERS` and value equal to `settings.defaultProvider`; simulate selecting the option and assert `settings.defaultProvider` is set to a known `Provider` and the save callback fired. Mock `obsidian` via the existing `tests/__mocks__/obsidian.ts`. — S, ui-integration-tester
 
 **junior-dev**
-- [ ] G7: Add `#addProviderField()` to `GrimoireSettingTab` (mirror `#addModelField`), call it from `#renderGeneralSection` ahead of the model field, reading/writing `settings.defaultProvider` with `KNOWN_PROVIDERS` options and `parseProvider(raw) ?? CLAUDE_CODE` on change. Make G6 green. — S, junior-dev (depends on G6 above)
+- [x] G7: Add `#addProviderField()` to `GrimoireSettingTab` (mirror `#addModelField`), call it from `#renderGeneralSection` ahead of the model field, reading/writing `settings.defaultProvider` with `KNOWN_PROVIDERS` options and `parseProvider(raw) ?? CLAUDE_CODE` on change. Make G6 green. — S, junior-dev (depends on G6 above)
 
 ### H. Completeness guard
 
@@ -278,7 +278,7 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
 5. **Section-level Red criterion.** A test reads the source of `Caster.ts`, `castLog/types.ts`, `CastRecord.ts`, `CastResultRecorder.ts`, `CastingSettings.ts`, `resolveCastingForSpell.ts` (`ResolvedCasting`), `ForgeFormSnapshot.ts`, `ForgeUpdateFormSnapshot.ts`, and `buildPortalRequestBody.ts`, and asserts each that mentions `model`/`modelId` also mentions `provider`. The test fails (red) if a provider field was dropped from any threaded interface.
 
 **junior-dev**
-- [ ] H1: Add a completeness test asserting every threaded interface listed in the Red criterion that references `model`/`modelId` also references `provider` (string-match the source files, mirroring `tests/castLog/CastLogWriter.types.test.ts`-style guards). Edge: the test must fail if any one interface omits provider. — M, junior-dev
+- [x] H1: Add a completeness test asserting every threaded interface listed in the Red criterion that references `model`/`modelId` also references `provider` (string-match the source files, mirroring `tests/castLog/CastLogWriter.types.test.ts`-style guards). Edge: the test must fail if any one interface omits provider. — M, junior-dev
 
 ---
 
@@ -291,3 +291,5 @@ The two axes meet at dispatch: `createCaster(settings)` chooses local/remote (th
   - senior-dev = D5, D6, F1, F2.
   - ui-integration-tester = G6.
 - **Dominant tier:** junior-dev. The feature is overwhelmingly mechanical field-threading; the only genuine judgment is the adapter-seam shape (D5), the orthogonality invariant at dispatch (D6 — two separate calls, adapter held not branched), and tracing the full set of cast-action callers (F1/F2). One thin UI seam (G6/G7) for the settings dropdown; one completeness guard (H1).
+
+reviewed @ 00ef871

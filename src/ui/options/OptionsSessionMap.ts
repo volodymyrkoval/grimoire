@@ -10,6 +10,8 @@ export interface OptionsSessionEntry {
   executeOnNote: boolean;
   // Only meaningful for the Refine sentinel entry. undefined = no per-cast choice; null = explicit 'Default (built-in)'.
   refinePathOverride?: string | null;
+  // provider is intentionally absent: it is always re-resolved from spell frontmatter (or settings default),
+  // never made session-sticky. Only model and effort are cached between popup reopens.
 }
 
 /**

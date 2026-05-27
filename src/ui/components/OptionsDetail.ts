@@ -5,9 +5,9 @@ import type { SpellPath } from '../../domain/spells/SpellPath';
 import type { SpellOverrideStore } from '../../domain/settings/SpellOverrideStore';
 import type { SupportedModel, Effort } from '../../domain/settings/Settings';
 import type { FormDefaults } from '../../domain/settings/FormDefaults';
+import type { Provider } from '../../domain/settings/Provider';
 import { resolveSpellOptions } from '../../domain/settings/spellOptionsResolver';
 import { resolveCastingForSpell } from '../../domain/settings/resolveCastingForSpell';
-import { CLAUDE_CODE_PROVIDER } from '../../domain/settings/CastingSettings';
 import { OptionsFormState } from '../options/OptionsFormState';
 import type { OptionsFormSnapshot } from '../options/OptionsFormState';
 import { OptionsPanel } from '../options/OptionsPanel';
@@ -106,29 +106,30 @@ export class OptionsDetail {
     return this.#resolveSentinelCasting(spellPath, params);
   }
 
-  /** Resolves model/effort for a real authored spell using frontmatter + session. */
-  #resolveRealSpellCasting(spellPath: SpellPath, params: OptionsDetailParams) {
+  /** Resolves model/effort/provider for a real authored spell using frontmatter + session. */
+  #resolveRealSpellCasting(spellPath: SpellPath, params: OptionsDetailParams): { model: ReturnType<typeof resolveSpellOptions>['model']; effort: ReturnType<typeof resolveSpellOptions>['effort']; provider: Provider } {
     const parsed = params.reader(spellPath);
-    const { model, effort } = resolveCastingForSpell({
+    const { model, effort, provider } = resolveCastingForSpell({
       parsed,
       defaults: {
         defaultModel: params.formDefaults.defaultModel,
         defaultEffort: params.formDefaults.defaultEffort,
+        defaultProvider: params.formDefaults.defaultProvider,
       },
       models: params.models,
-      knownProvider: CLAUDE_CODE_PROVIDER,
+      knownProvider: params.formDefaults.defaultProvider,
     });
     // Session tier-1 still wins — if a session entry exists it overrides frontmatter.
     const sessionEntry = params.sessionMap.get(spellPath);
     if (sessionEntry) {
-      return { model: sessionEntry.model, effort: sessionEntry.effort };
+      return { model: sessionEntry.model, effort: sessionEntry.effort, provider };
     }
-    return { model, effort };
+    return { model, effort, provider };
   }
 
-  /** Resolves model/effort for the Refine sentinel via the data-store override path. */
-  #resolveSentinelCasting(spellPath: SpellPath, params: OptionsDetailParams) {
-    return resolveSpellOptions({
+  /** Resolves model/effort/provider for the Refine sentinel via the data-store override path. */
+  #resolveSentinelCasting(spellPath: SpellPath, params: OptionsDetailParams): { model: ReturnType<typeof resolveSpellOptions>['model']; effort: ReturnType<typeof resolveSpellOptions>['effort']; provider: Provider } {
+    const resolved = resolveSpellOptions({
       spellPath,
       session: params.sessionMap,
       overrides: params.overrides,
@@ -138,9 +139,10 @@ export class OptionsDetail {
       },
       models: params.models,
     });
+    return { ...resolved, provider: params.formDefaults.defaultProvider };
   }
 
-  #buildFormState(spellPath: SpellPath, resolved: ReturnType<typeof resolveSpellOptions>, params: OptionsDetailParams) {
+  #buildFormState(spellPath: SpellPath, resolved: ReturnType<typeof resolveSpellOptions> & { provider: Provider }, params: OptionsDetailParams) {
     const sessionEntry = params.sessionMap.get(spellPath);
     // executeOnNote: spell uses its own flag; refine sentinel never executes on a note.
     const executeOnNote =
@@ -150,13 +152,14 @@ export class OptionsDetail {
     return new OptionsFormState({
       model: resolved.model,
       effort: resolved.effort,
+      provider: resolved.provider,
       contextNotePaths: sessionEntry?.contextNotePaths ?? [],
       followUp: sessionEntry?.followUp ?? '',
       executeOnNote,
     });
   }
 
-  #createPanel(spellPath: SpellPath, resolved: ReturnType<typeof resolveSpellOptions>, formState: OptionsFormState, params: OptionsDetailParams) {
+  #createPanel(spellPath: SpellPath, resolved: ReturnType<typeof resolveSpellOptions> & { provider: Provider }, formState: OptionsFormState, params: OptionsDetailParams) {
     // showExecuteOnNote: spell panels show the toggle; refine panels hide it (sentinel has no note).
     const showExecuteOnNote = params.kind.kind === 'spell';
     const snapshot = { model: resolved.model, effort: resolved.effort };

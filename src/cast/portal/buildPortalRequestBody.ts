@@ -1,4 +1,5 @@
 import type { Effort } from '../../domain/settings/Settings';
+import type { Provider } from '../../domain/settings/Provider';
 
 /**
  * Input fields for constructing a portal cast request body.
@@ -14,6 +15,7 @@ export interface BuildPortalRequestBodyInput {
   userPrompt: string;
   modelId: string;
   effort: Effort | null;
+  provider?: Provider;
 }
 
 /**
@@ -30,6 +32,10 @@ export function buildPortalRequestBody(input: BuildPortalRequestBodyInput): stri
 
   if (input.spellPath !== undefined) {
     body.spellPath = input.spellPath;
+  }
+
+  if (input.provider !== undefined) {
+    body.provider = input.provider;
   }
 
   return JSON.stringify(body);

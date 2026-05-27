@@ -27,12 +27,12 @@ describe('GrimoireSettingTab seam', () => {
     tab.display();
   });
 
-  // (i) 13 rows (7 general + 5 Advanced text/password + 1 toggle)
+  // (i) 14 rows (8 general [5 text + 1 provider dropdown + 1 model dropdown + 1 effort row] + 5 Advanced text/password + 1 toggle)
   //   + 2 <hr>+<h3> section headings (Custom Refine spell + Advanced)
   //   + 2 Custom Refine section rows (Active Refine dropdown + Create from default button)
-  //   = 28 original + 6 new = 34 children
-  it('renders setting rows + section headings (34 child elements in containerEl)', () => {
-    expect(tab.containerEl.childElementCount).toBe(34);
+  //   = 28 original + 2 provider = 36 children
+  it('renders setting rows + section headings (36 child elements in containerEl)', () => {
+    expect(tab.containerEl.childElementCount).toBe(36);
   });
 
   // (ii) Text input write-through — spell-tag (index 0)
@@ -46,22 +46,24 @@ describe('GrimoireSettingTab seam', () => {
   });
 
   // (iii) Dropdown → Haiku — model field updated, save called
+  // Provider dropdown is now at index 0, model dropdown is at index 1
   it('selecting claude-haiku-4-5 writes defaultModel to plugin.data.settings and calls save', () => {
     plugin.save.mockClear();
     const selects = tab.containerEl.querySelectorAll('select');
-    (selects[0] as any).__triggerChange('claude-haiku-4-5');
+    (selects[1] as any).__triggerChange('claude-haiku-4-5');
 
     expect(plugin.data.settings.defaultModel).toBe('claude-haiku-4-5');
     expect(plugin.save).toHaveBeenCalled();
   });
 
   // (iv) Dropdown → Opus — effort row lazy-mounts with 5 buttons
+  // Provider dropdown is now at index 0, model dropdown is at index 1
   it('selecting claude-opus-4-5 after haiku renders 5 effort buttons', () => {
     const selects = tab.containerEl.querySelectorAll('select');
     // First go to Haiku (Case 2: segmented stays from Sonnet default)
-    (selects[0] as any).__triggerChange('claude-haiku-4-5');
+    (selects[1] as any).__triggerChange('claude-haiku-4-5');
     // Then pick Opus — Case 1: setOptions → 5 Opus buttons
-    (selects[0] as any).__triggerChange('claude-opus-4-5');
+    (selects[1] as any).__triggerChange('claude-opus-4-5');
 
     const btns = tab.containerEl.querySelectorAll('.grimoire-segmented__btn');
     expect(btns.length).toBe(5);
@@ -170,14 +172,14 @@ describe('GrimoireSettingTab seam', () => {
     expect(advancedH3!.textContent).toBe('Advanced');
   });
 
-  it('<hr> and <h3> appear after the 7th existing Setting children and before the Advanced rows', () => {
+  it('<hr> and <h3> appear after the 8 general Setting children (5 text + provider + model + effort) and before the Advanced rows', () => {
     const children = Array.from(tab.containerEl.children);
-    // 7 existing: indices 0-13; hr: 14; h3: 15; toggle: 16-17; 5 Advanced text/password: 18-27
+    // 8 general: indices 0-15; hr: 16; h3: 17; toggle: 18-19; 5 Advanced text/password: 20-29
     const hrIndex = children.findIndex(c => c.tagName === 'HR');
     const h3Index = children.findIndex(c => c.tagName === 'H3');
-    // hr comes after 7 existing settings (14 children) = after index 13
-    expect(hrIndex).toBe(14);
-    expect(h3Index).toBe(15);
+    // hr comes after 8 general settings (16 children) = after index 15
+    expect(hrIndex).toBe(16);
+    expect(h3Index).toBe(17);
   });
 
   it('Portal host row has description text', () => {

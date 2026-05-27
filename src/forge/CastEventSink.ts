@@ -1,5 +1,6 @@
 import type { Effort } from '../domain/settings/Settings';
 import type { ModelId } from '../domain/settings/ModelId';
+import type { Provider } from '../domain/settings/Provider';
 
 /**
  * Input for recording a cast event; stage and timestamp are added automatically.
@@ -14,6 +15,7 @@ export interface RecordCastedInput {
   readonly followUp?: string;
   readonly executeOnNote?: boolean;
   readonly portalCastId?: string;
+  readonly provider: Provider;
 }
 
 /**

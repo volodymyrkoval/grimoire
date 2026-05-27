@@ -11,6 +11,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('Spells/my-spell.md');
   });
@@ -24,6 +25,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('my-spell');
   });
@@ -37,6 +39,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('claude-sonnet-4-5');
   });
@@ -50,6 +53,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('Update this spell to be better');
   });
@@ -63,6 +67,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('medium');
   });
@@ -76,6 +81,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: null,
+      provider: 'claude-code',
     });
     expect(output).toContain('n/a');
   });
@@ -89,6 +95,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('true');
   });
@@ -102,6 +109,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('false');
   });
@@ -115,6 +123,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 3,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('3');
   });
@@ -128,8 +137,24 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('Follow the workflow in your system prompt');
+  });
+
+  it('includes provider in the output', () => {
+    const output = buildForgeUpdateUserPrompt({
+      spellPath: 'Spells/my-spell.md',
+      spellName: 'my-spell',
+      description: 'Update this spell',
+      applyCastDirectives: true,
+      directiveCount: 2,
+      model: 'claude-sonnet-4-5',
+      effort: 'medium',
+      provider: 'claude-code',
+    });
+    expect(output).toContain('Provider');
+    expect(output).toContain('claude-code');
   });
 
   it('does NOT contain currentContent field', () => {
@@ -141,6 +166,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).not.toContain('currentContent');
   });
@@ -154,6 +180,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).not.toMatch(/^- \*\*Directives:/m);
   });
@@ -167,6 +194,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 2,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('Remove all `@cast` lines from the spell body after applying them');
   });
@@ -180,6 +208,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       directiveCount: 0,
       model: 'claude-sonnet-4-5',
       effort: 'medium',
+      provider: 'claude-code',
     });
     expect(output).toContain('Preserve all `@cast` lines in the spell body — do not remove them');
     expect(output).not.toContain('Remove all `@cast` lines');

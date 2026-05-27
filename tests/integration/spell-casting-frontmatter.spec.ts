@@ -31,6 +31,7 @@ import { modelId } from '../../src/domain/settings/ModelId';
 import { spellPath } from '../../src/domain/spells/SpellPath';
 import type { CastingFrontmatterReader } from '../../src/infra/castingFrontmatter';
 import type { SpellCastingSettings } from '../../src/domain/settings/CastingSettings';
+import { CLAUDE_CODE } from '../../src/domain/settings/Provider';
 
 /** Global default seeded into every test: Sonnet + medium */
 const GLOBAL_DEFAULT_MODEL = modelId('claude-sonnet-4-5');
@@ -75,6 +76,7 @@ function mountDetail(reader: CastingFrontmatterReader): MountResult {
     formDefaults: {
       defaultModel: GLOBAL_DEFAULT_MODEL,
       defaultEffort: GLOBAL_DEFAULT_EFFORT,
+      defaultProvider: CLAUDE_CODE,
     },
     models: SUPPORTED_MODELS,
     onBack: vi.fn(),

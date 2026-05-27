@@ -4,6 +4,7 @@ import { App } from 'obsidian';
 import { GrimoireSettingTab } from '../src/ui/settings/GrimoireSettingTab';
 import GrimoirePlugin from '../src/main';
 import { CastDispatcher } from '../src/cast/CastDispatcher';
+import { CLAUDE_CODE } from '../src/domain/settings/Provider';
 
 vi.mock('../src/domain/settings/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
@@ -105,6 +106,7 @@ describe('GrimoirePlugin', () => {
     expect(params.defaults).toStrictEqual({
       defaultModel: modelId('claude-sonnet-4-5'),
       defaultEffort: 'medium',
+      defaultProvider: 'claude-code',
     });
     expect(params.overrides).toBe(plugin.overrides);
     const { OptionsSessionMap } = await import('../src/ui/options/OptionsSessionMap');
@@ -205,6 +207,7 @@ describe('GrimoirePlugin', () => {
       contextNotePaths: [],
       followUp: '',
       executeOnNote: true,
+      provider: CLAUDE_CODE,
     };
     capturedCastAction!(stubSpell, stubSnapshot);
 
@@ -218,6 +221,7 @@ describe('GrimoirePlugin', () => {
       settings: plugin.data.settings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
+      provider: CLAUDE_CODE,
     });
 
     dispatchSpy.mockRestore();
@@ -288,6 +292,7 @@ describe('GrimoirePlugin', () => {
       contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
       followUp: 'This is a follow-up.',
       executeOnNote: true,
+      provider: CLAUDE_CODE,
     };
     capturedCastAction!(stubSpell, stubSnapshot);
 
@@ -301,6 +306,7 @@ describe('GrimoirePlugin', () => {
       settings: plugin.data.settings,
       activeFilePath: 'notes/active.md',
       executeOnNote: true,
+      provider: CLAUDE_CODE,
     });
 
     dispatchSpy.mockRestore();

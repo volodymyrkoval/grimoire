@@ -14,6 +14,7 @@ function combineCastedRecord(castId: string, castedEvent: CastedEvent): CastReco
     effort: castedEvent.effort,
     contextNotes: castedEvent.contextNotes,
     castedTs: castedEvent.ts,
+    provider: castedEvent.provider,
     ...(castedEvent.followUp && { followUp: castedEvent.followUp }),
     ...(castedEvent.executeOnNote !== undefined && {
       executeOnNote: castedEvent.executeOnNote,

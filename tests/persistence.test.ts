@@ -137,4 +137,19 @@ describe('persistence.hydrate', () => {
       portalAuthPassword: '',
     }));
   });
+
+  it('(l) hydrate({}, app).settings.defaultProvider === CLAUDE_CODE (absent → fallback)', () => {
+    const result = hydrate({}, app);
+    expect(result.settings.defaultProvider).toBe(DEFAULT_SETTINGS.defaultProvider);
+  });
+
+  it('(m) hydrate({ settings: { defaultProvider: "codex" } }, app) → CLAUDE_CODE (unknown → fallback)', () => {
+    const result = hydrate({ settings: { defaultProvider: 'codex' } }, app);
+    expect(result.settings.defaultProvider).toBe(DEFAULT_SETTINGS.defaultProvider);
+  });
+
+  it('(n) hydrate({ settings: { defaultProvider: "claude-code" } }, app) → CLAUDE_CODE (valid → preserved)', () => {
+    const result = hydrate({ settings: { defaultProvider: 'claude-code' } }, app);
+    expect(result.settings.defaultProvider).toBe(DEFAULT_SETTINGS.defaultProvider);
+  });
 });

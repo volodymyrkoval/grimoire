@@ -121,5 +121,21 @@ describe('CastingSettings', () => {
         effort: undefined,
       });
     });
+
+    it('returns null when provider is unknown (codex)', () => {
+      const raw = { provider: 'codex', model: 'claude-sonnet-4-5' };
+      const result = parseCastingSettings(raw);
+
+      expect(result).toBeNull();
+    });
+
+    it('returns SpellCastingSettings with Provider brand when provider is valid', () => {
+      const raw = { provider: 'claude-code', model: 'claude-sonnet-4-5' };
+      const result = parseCastingSettings(raw);
+
+      expect(result).not.toBeNull();
+      expect(result?.provider).toBe('claude-code');
+      expect(result?.model).toBe(modelId('claude-sonnet-4-5'));
+    });
   });
 });

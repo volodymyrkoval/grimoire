@@ -8,6 +8,7 @@ import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import type { Effort } from '../src/domain/settings/Settings';
 import { modelId, type ModelId } from '../src/domain/settings/ModelId';
 import { buildHotkeyDirectory } from '../src/forge/HotkeyDirectory';
+import { CLAUDE_CODE } from '../src/domain/settings/Provider';
 
 // EffortRow is mocked so its DOM interactions don't bleed into these unit tests
 const { mockEffortMount, mockEffortUpdate } = vi.hoisted(() => ({
@@ -62,6 +63,7 @@ function buildDetail(opts: BuildOpts = {}) {
     defaults: {
       defaultModel: opts.defaultModel ?? modelId('claude-sonnet-4-5'),
       defaultEffort: opts.defaultEffort !== undefined ? opts.defaultEffort : null,
+      defaultProvider: CLAUDE_CODE,
     },
     hotkey: testHotkey(),
   });
@@ -106,7 +108,7 @@ describe('ForgeSentinelDetail', () => {
       contentEl: container,
       mode: { kind: 'create' },
       callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
-      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null },
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null, defaultProvider: CLAUDE_CODE },
       hotkey: testHotkey(),
     });
 
@@ -169,7 +171,7 @@ describe('ForgeSentinelDetail', () => {
       contentEl: container,
       mode: { kind: 'create' },
       callbacks: { onBack, onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
-      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null },
+      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null, defaultProvider: CLAUDE_CODE },
       hotkey: testHotkey(),
     });
 
@@ -230,6 +232,59 @@ describe('ForgeSentinelDetail', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Provider in snapshots (F2)
+  // -------------------------------------------------------------------------
+  describe('provider in snapshots', () => {
+    it('create snapshot includes provider: CLAUDE_CODE', () => {
+      const onCreateSubmit = vi.fn();
+      const { nameInput, descInput, submitForm } = buildDetail({ onCreateSubmit });
+      nameInput.value = 'Test';
+      descInput.value = 'desc';
+      submitForm();
+      expect(onCreateSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: CLAUDE_CODE }),
+      );
+    });
+
+    it('update snapshot includes provider: CLAUDE_CODE', () => {
+      const scope = makeScope();
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+
+      const onUpdateSubmit = vi.fn();
+      const detail = new ForgeSentinelDetail(scope);
+      const fakeSpell = {
+        path: 'spells/test.md' as any,
+        name: 'Test Spell',
+        basename: 'test',
+        tags: [] as string[],
+        executeOnNote: false,
+        hotkey: null,
+      };
+      detail.render({
+        contentEl: container,
+        mode: { kind: 'update', spell: fakeSpell, directiveCount: 0 },
+        callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit },
+        defaults: {
+          defaultModel: modelId('claude-sonnet-4-5'),
+          defaultEffort: null,
+          defaultProvider: CLAUDE_CODE,
+        },
+        hotkey: testHotkey(),
+      });
+
+      const form = container.querySelector<HTMLFormElement>('form')!;
+      const descInput = container.querySelector<HTMLTextAreaElement>('textarea')!;
+      descInput.value = 'Some update description';
+      form.dispatchEvent(new Event('submit', { bubbles: true }));
+
+      expect(onUpdateSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: CLAUDE_CODE }),
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Form submission
   // -------------------------------------------------------------------------
   describe('form submission', () => {
@@ -252,6 +307,7 @@ describe('ForgeSentinelDetail', () => {
         model: 'claude-opus-4-5',
         effort: 'low',
         executeOnNote: true,
+        provider: CLAUDE_CODE,
       });
     });
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildPortalRequestBody } from '../../../src/cast/portal/buildPortalRequestBody';
+import { CLAUDE_CODE } from '../../../src/domain/settings/Provider';
 import type { Effort } from '../../../src/domain/settings/Settings';
 
 describe('buildPortalRequestBody', () => {
@@ -88,6 +89,30 @@ describe('buildPortalRequestBody', () => {
       userPrompt: 'Test prompt',
       model: 'claude-opus-4-5',
       effort: 'high',
+    });
+  });
+
+  it('includes provider in JSON body when provided', () => {
+    const input = {
+      castId: 'cast-123',
+      spellPath: '/path/to/spell',
+      userPrompt: 'Hello, world!',
+      modelId: 'claude-sonnet-4-5',
+      effort: 'medium' as Effort,
+      provider: CLAUDE_CODE,
+    };
+
+    const result = buildPortalRequestBody(input);
+    const parsed = JSON.parse(result);
+
+    expect(parsed.provider).toBe('claude-code');
+    expect(parsed).toEqual({
+      castId: 'cast-123',
+      spellPath: '/path/to/spell',
+      userPrompt: 'Hello, world!',
+      model: 'claude-sonnet-4-5',
+      effort: 'medium',
+      provider: 'claude-code',
     });
   });
 });

@@ -1,4 +1,5 @@
 import { modelId } from '../../src/domain/settings/ModelId';
+import { CLAUDE_CODE } from '../../src/domain/settings/Provider';
 import { describe, it, expect, vi } from 'vitest';
 import { createCaster } from '../../src/cast/createCaster';
 import { CastRunner } from '../../src/cast/local/CastRunner';
@@ -14,6 +15,8 @@ const localSettings: GrimoireSettings = {
   vaultMountPath: '/vault',
   defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: 'medium',
+  defaultProvider: CLAUDE_CODE,
+  activeRefinePath: null,
   executionMode: 'local',
   portalHost: '',
   portalPort: '',

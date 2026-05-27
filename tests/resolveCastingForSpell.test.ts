@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveCastingForSpell } from '../src/domain/settings/resolveCastingForSpell';
 import { CLAUDE_CODE_PROVIDER } from '../src/domain/settings/CastingSettings';
+import { CLAUDE_CODE } from '../src/domain/settings/Provider';
 import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import { modelId } from '../src/domain/settings/ModelId';
 
@@ -134,5 +135,59 @@ describe('resolveCastingForSpell', () => {
 
     expect(result.model).toBe(SUPPORTED_MODELS[0].id); // Should be Haiku
     expect(result.effort).toBeNull(); // Haiku doesn't support effort
+  });
+
+  it('C1: valid claude-code block returns provider: CLAUDE_CODE', () => {
+    const opusModel = modelId('claude-opus-4-5');
+    const input = {
+      parsed: {
+        provider: CLAUDE_CODE,
+        model: opusModel,
+        effort: 'xhigh' as const,
+      },
+      defaults: { defaultModel, defaultEffort, defaultProvider: CLAUDE_CODE },
+      models: SUPPORTED_MODELS,
+      knownProvider: CLAUDE_CODE,
+    };
+
+    const result = resolveCastingForSpell(input);
+
+    expect(result.provider).toBe(CLAUDE_CODE);
+    expect(result.model).toBe(opusModel);
+    expect(result.effort).toBe('xhigh');
+  });
+
+  it('C2a: parsed is null (wholesale) returns provider: defaults.defaultProvider', () => {
+    const input = {
+      parsed: null,
+      defaults: { defaultModel, defaultEffort, defaultProvider: CLAUDE_CODE },
+      models: SUPPORTED_MODELS,
+      knownProvider: CLAUDE_CODE,
+    };
+
+    const result = resolveCastingForSpell(input);
+
+    expect(result.provider).toBe(CLAUDE_CODE);
+    expect(result.model).toBe(defaultModel);
+    expect(result.effort).toBe(defaultEffort);
+  });
+
+  it('C2b: parsed.provider is stale (mismatch) wholesale fallback returns defaultProvider', () => {
+    const input = {
+      parsed: {
+        provider: 'openai' as any,
+        model: modelId('gpt-4'),
+        effort: 'high' as const,
+      },
+      defaults: { defaultModel, defaultEffort, defaultProvider: CLAUDE_CODE },
+      models: SUPPORTED_MODELS,
+      knownProvider: CLAUDE_CODE,
+    };
+
+    const result = resolveCastingForSpell(input);
+
+    expect(result.provider).toBe(CLAUDE_CODE);
+    expect(result.model).toBe(defaultModel);
+    expect(result.effort).toBe(defaultEffort);
   });
 });

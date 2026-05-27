@@ -1,5 +1,6 @@
 import type { Effort } from '../domain/settings/Settings';
 import type { ModelId } from '../domain/settings/ModelId';
+import type { Provider } from '../domain/settings/Provider';
 
 /** Input required to initiate a cast (spell execution). */
 export interface CastInput {
@@ -15,6 +16,7 @@ export interface CastInput {
   readonly executeOnNote?: boolean;
   /** Vault-relative path of the note to use as active file when executeOnNote is true. */
   readonly activeFilePath?: string | null;
+  readonly provider: Provider;
 }
 
 /** Info returned when a cast is accepted for execution (e.g., portal job ID). */

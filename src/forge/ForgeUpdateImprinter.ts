@@ -5,6 +5,7 @@ import { ForgeUpdateFormSnapshot } from './ForgeUpdateFormSnapshot';
 import type { Caster } from '../execution/Caster';
 import type { CastEventSink } from './CastEventSink';
 import type { SpellImprinter } from './SpellImprinter';
+import { resolveProviderAdapter } from '../cast/provider/resolveProviderAdapter';
 
 /** Dependencies injected into ForgeUpdateImprinter, allowing optional ID generation override for testing. */
 export interface ForgeUpdateImprinterDeps {
@@ -76,6 +77,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
         effort: snapshot.effort,
         contextNotes: [],
         executeOnNote: true,
+        provider: snapshot.provider,
         ...(portalCastId !== undefined && { portalCastId }),
       })
       .catch(console.error);
@@ -96,8 +98,10 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
       directiveCount: snapshot.directiveCount,
       model: snapshot.model,
       effort: snapshot.effort,
+      provider: snapshot.provider,
     });
     const paths = this.#forgeUpdateSpellPaths();
+    resolveProviderAdapter(snapshot.provider);
     this.#caster().cast(
       {
         castId,
@@ -109,6 +113,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
         vaultMountPath: settings.vaultMountPath,
         executeOnNote: true,
         activeFilePath: snapshot.spellPath,
+        provider: snapshot.provider,
       },
       {
         onAccepted: ({ jobId }) => this.#onCastAccepted(ctx, jobId),

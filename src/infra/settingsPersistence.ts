@@ -2,6 +2,7 @@ import { App } from 'obsidian';
 import { DEFAULT_SETTINGS, Effort, GrimoireData, GrimoireSettings, SpellOverride } from '../domain/settings/Settings';
 import { computeVaultMountDefault } from './computeVaultMountDefault';
 import { modelId } from '../domain/settings/ModelId';
+import { parseProvider, CLAUDE_CODE } from '../domain/settings/Provider';
 
 const VALID_EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -22,6 +23,8 @@ export function hydrate(saved: unknown, app: App): GrimoireData {
   }
   // Re-brand the model string read from disk — trust boundary.
   merged.defaultModel = modelId(merged.defaultModel);
+  // Parse and validate provider; fallback to CLAUDE_CODE on missing or unknown.
+  merged.defaultProvider = parseProvider(merged.defaultProvider) ?? CLAUDE_CODE;
   const rawOverrides = s?.spellOverrides ?? {};
   const brandedOverrides: Record<string, SpellOverride> = {};
   for (const [key, override] of Object.entries(rawOverrides)) {

@@ -8,6 +8,7 @@ import { spellPath } from '../../src/domain/spells/SpellPath';
 import { buildForgeUpdateUserPrompt } from '../../src/forge/buildForgeUpdateUserPrompt';
 import type { CastInput, CastCallbacks } from '../../src/execution/Caster';
 import type { CastEventSink } from '../../src/forge/CastEventSink';
+import { CLAUDE_CODE } from '../../src/domain/settings/Provider';
 
 // Canonical forge-update paths used in all test instances.
 const FORGE_UPDATE_ABS = '/vault/.obsidian/plugins/grimoire/forge-update.md';
@@ -73,6 +74,7 @@ const baseSnapshot: ForgeUpdateFormSnapshot = {
   effort: null,
   applyCastDirectives: false,
   directiveCount: 0,
+  provider: CLAUDE_CODE,
 };
 
 describe('ForgeUpdateImprinter', () => {
@@ -161,6 +163,7 @@ describe('ForgeUpdateImprinter', () => {
       effort: baseSnapshot.effort,
       contextNotes: [],
       executeOnNote: true,
+      provider: baseSnapshot.provider,
     });
     expect(stubCaster.castFn).toHaveBeenCalledOnce();
   });
@@ -377,6 +380,7 @@ describe('ForgeUpdateImprinter', () => {
       directiveCount: 3,
       model: snapshot.model,
       effort: snapshot.effort,
+      provider: snapshot.provider,
     });
     expect(stubCaster.getInput().userPrompt).toBe(expectedPrompt);
   });
@@ -407,6 +411,7 @@ describe('ForgeUpdateImprinter', () => {
       directiveCount: 0,
       model: snapshot.model,
       effort: snapshot.effort,
+      provider: snapshot.provider,
     });
     expect(stubCaster.getInput().userPrompt).toBe(expectedPrompt);
   });

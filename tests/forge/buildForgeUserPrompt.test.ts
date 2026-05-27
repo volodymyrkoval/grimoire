@@ -9,6 +9,7 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       executeOnNote: true,
+      provider: 'claude-code',
     });
     expect(output).toContain('test description here');
   });
@@ -20,6 +21,7 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       executeOnNote: true,
+      provider: 'claude-code',
     });
     expect(output).toContain('test-spell');
   });
@@ -31,6 +33,7 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       executeOnNote: true,
+      provider: 'claude-code',
     });
     expect(output).toContain('claude-sonnet-4-5');
   });
@@ -42,6 +45,7 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       executeOnNote: true,
+      provider: 'claude-code',
     });
     expect(output).toContain('medium');
   });
@@ -53,6 +57,7 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: null,
       executeOnNote: true,
+      provider: 'claude-code',
     });
     expect(output).toContain('n/a');
   });
@@ -64,6 +69,7 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       executeOnNote: true,
+      provider: 'claude-code',
     });
     expect(output).toContain('true');
   });
@@ -75,6 +81,7 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       executeOnNote: false,
+      provider: 'claude-code',
     });
     expect(output).toContain('false');
   });
@@ -86,7 +93,21 @@ describe('buildForgeUserPrompt', () => {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       executeOnNote: true,
+      provider: 'claude-code',
     });
     expect(output).toContain('Follow the workflow in your system prompt');
+  });
+
+  it('includes provider in the output', () => {
+    const output = buildForgeUserPrompt({
+      description: 'test',
+      name: 'test-spell',
+      model: 'claude-sonnet-4-5',
+      effort: 'medium',
+      executeOnNote: true,
+      provider: 'claude-code',
+    });
+    expect(output).toContain('Provider');
+    expect(output).toContain('claude-code');
   });
 });

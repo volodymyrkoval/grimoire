@@ -1,4 +1,5 @@
-import { CASTING_FRONTMATTER_KEY, CLAUDE_CODE_PROVIDER } from '../domain/settings/CastingSettings';
+import { CASTING_FRONTMATTER_KEY } from '../domain/settings/CastingSettings';
+import { CLAUDE_CODE } from '../domain/settings/Provider';
 
 export interface ForgeSystemPromptInput {
   readonly spellTag: string;
@@ -46,7 +47,7 @@ Then execute in order:
    - Closing \`%%\` block containing only \`Begin execution now.\`
 
 3. Set the file's YAML frontmatter \`tags\` field to \`[${spellTag}]\`, add a \`${CASTING_FRONTMATTER_KEY}\` block with:
-   - \`provider: ${CLAUDE_CODE_PROVIDER}\`
+   - \`provider: ${CLAUDE_CODE}\`
    - \`model: <the model you were forged with>\` (the model currently running this request)
    - \`effort: <the effort setting>\` (only include if the model supports extended thinking/effort)
 

@@ -1,5 +1,6 @@
 import type { ModelId } from './ModelId';
 import type { Effort, SupportedModel } from './Settings';
+import type { Provider } from './Provider';
 import type { SpellCastingSettings } from './CastingSettings';
 
 /**
@@ -7,15 +8,16 @@ import type { SpellCastingSettings } from './CastingSettings';
  */
 export interface ResolveCastingInput {
   parsed: SpellCastingSettings | null; // from frontmatter, may be null
-  defaults: { defaultModel: ModelId; defaultEffort: Effort | null };
+  defaults: { defaultModel: ModelId; defaultEffort: Effort | null; defaultProvider: Provider };
   models: readonly SupportedModel[];
-  knownProvider: string; // CLAUDE_CODE_PROVIDER today
+  knownProvider: Provider;
 }
 
 /**
  * Resolved casting settings for a spell.
  */
 export interface ResolvedCasting {
+  provider: Provider;
   model: ModelId;
   effort: Effort | null;
 }
@@ -26,7 +28,7 @@ export interface ResolvedCasting {
  */
 function shouldFallbackWholesale(
   parsed: SpellCastingSettings | null,
-  knownProvider: string
+  knownProvider: Provider
 ): boolean {
   if (parsed === null) {
     return true;
@@ -90,8 +92,10 @@ export function resolveCastingForSpell(input: ResolveCastingInput): ResolvedCast
   const wholesale = shouldFallbackWholesale(input.parsed, input.knownProvider);
   const resolvedModel = resolveModel(input.parsed, input.defaults, input.models, wholesale);
   const resolvedEffort = resolveEffort(input.parsed, input.defaults, resolvedModel, wholesale);
+  const resolvedProvider = wholesale ? input.defaults.defaultProvider : input.parsed!.provider;
 
   return {
+    provider: resolvedProvider,
     model: resolvedModel.id,
     effort: resolvedEffort,
   };

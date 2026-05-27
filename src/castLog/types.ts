@@ -1,5 +1,6 @@
 import type { Effort } from '../domain/settings/Settings';
 import type { ModelId } from '../domain/settings/ModelId';
+import type { Provider } from '../domain/settings/Provider';
 
 /** Stages a cast passes through during its lifecycle. */
 export type CastLogStage = 'casted' | 'error' | 'in-progress' | 'done';
@@ -24,6 +25,7 @@ export interface CastedEvent extends BaseEvent {
   readonly followUp?: string;
   readonly executeOnNote?: boolean;
   readonly portalCastId?: string;
+  readonly provider: Provider;
 }
 
 /**
