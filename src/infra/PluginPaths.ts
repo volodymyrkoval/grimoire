@@ -16,8 +16,8 @@ export class PluginPaths {
 
   constructor(pluginDir: string) {
     this.#pluginDir = normalizePath(pluginDir);
-    this.#pluginLog = normalizePath(`${pluginDir}/cast-log-plugin.jsonl`);
-    this.#agentLog = normalizePath(`${pluginDir}/cast-log-agent.jsonl`);
+    this.#pluginLog = normalizePath(`${pluginDir}/cast-log-plugin.json`);
+    this.#agentLog = normalizePath(`${pluginDir}/cast-log-agent.json`);
     this.#scratch = normalizePath(`${pluginDir}/cast-log-scratch`);
   }
 

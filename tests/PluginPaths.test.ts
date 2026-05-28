@@ -13,14 +13,14 @@ describe('PluginPaths', () => {
   it('pluginLogPath returns normalized path to local cast log', () => {
     const pluginDir = '.obsidian/plugins/grimoire';
     const paths = new PluginPaths(pluginDir);
-    const expected = normalizePath(`${pluginDir}/cast-log-plugin.jsonl`);
+    const expected = normalizePath(`${pluginDir}/cast-log-plugin.json`);
     expect(paths.pluginLogPath()).toBe(expected);
   });
 
   it('agentLogPath returns normalized path to remote cast log', () => {
     const pluginDir = '.obsidian/plugins/grimoire';
     const paths = new PluginPaths(pluginDir);
-    const expected = normalizePath(`${pluginDir}/cast-log-agent.jsonl`);
+    const expected = normalizePath(`${pluginDir}/cast-log-agent.json`);
     expect(paths.agentLogPath()).toBe(expected);
   });
 

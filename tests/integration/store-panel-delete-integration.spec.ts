@@ -47,8 +47,8 @@ const flushPromises = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 // ---------------------------------------------------------------------------
 
 describe('store-panel full-stack: delete and clear-all', () => {
-  const LOCAL_LOG = '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl';
-  const AGENT_LOG = '/vault/.obsidian/plugins/grimoire/cast-log-agent.jsonl';
+  const LOCAL_LOG = '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json';
+  const AGENT_LOG = '/vault/.obsidian/plugins/grimoire/cast-log-agent.json';
 
   let files: Record<string, string>;
   let adapter: DataAdapter;

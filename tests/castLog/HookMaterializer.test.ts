@@ -10,7 +10,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -33,7 +33,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -41,7 +41,7 @@ describe('HookMaterializer', () => {
 
       await mat.run();
 
-      const expectedContent = renderSessionStartScript({ logPathAbs: '/p/cast-log-plugin.jsonl' });
+      const expectedContent = renderSessionStartScript({ logPathAbs: '/p/cast-log-plugin.json' });
       expect(writeFile).toHaveBeenNthCalledWith(1, '/p/hooks/session-start.sh', expectedContent);
     });
 
@@ -51,7 +51,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -69,7 +69,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -78,7 +78,7 @@ describe('HookMaterializer', () => {
       await mat.run();
 
       const expectedContent = renderStopScript({
-        logPathAbs: '/p/cast-log-plugin.jsonl',
+        logPathAbs: '/p/cast-log-plugin.json',
         scratchDirAbs: '/p/cast-log-scratch',
       });
       expect(writeFile).toHaveBeenNthCalledWith(3, '/p/hooks/stop.sh', expectedContent);
@@ -91,7 +91,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -108,7 +108,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/tmp/plugin',
-        getLogPathAbs: () => '/tmp/plugin/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/tmp/plugin/cast-log-plugin.json',
         getVaultRootAbs: () => '',
       });
 
@@ -122,7 +122,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-agent.jsonl',
+        getLogPathAbs: () => '/p/cast-log-agent.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -143,7 +143,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p/', // trailing slash
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -163,7 +163,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '/vault',
         writeFile,
         mkdir,
@@ -172,7 +172,7 @@ describe('HookMaterializer', () => {
       await mat.run();
 
       const expectedContent = renderStopScript({
-        logPathAbs: '/p/cast-log-plugin.jsonl',
+        logPathAbs: '/p/cast-log-plugin.json',
         scratchDirAbs: '/p/cast-log-scratch',
         vaultRootAbs: '/vault',
       });
@@ -185,7 +185,7 @@ describe('HookMaterializer', () => {
 
       const mat = new HookMaterializer({
         getPluginDirAbs: () => '/p',
-        getLogPathAbs: () => '/p/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/p/cast-log-plugin.json',
         getVaultRootAbs: () => '',
         writeFile,
         mkdir,
@@ -194,7 +194,7 @@ describe('HookMaterializer', () => {
       await mat.run();
 
       const expectedContent = renderStopScript({
-        logPathAbs: '/p/cast-log-plugin.jsonl',
+        logPathAbs: '/p/cast-log-plugin.json',
         scratchDirAbs: '/p/cast-log-scratch',
         vaultRootAbs: '',
       });

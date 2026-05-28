@@ -77,8 +77,8 @@ No new error paths. The change is purely lexical.
 
 **junior-dev**
 
-- [ ] A1: In `tests/PluginPaths.test.ts`, change line 16 expected literal from `cast-log-plugin.jsonl` to `cast-log-plugin.json`, and line 23 expected literal from `cast-log-agent.jsonl` to `cast-log-agent.json`. Run `npx vitest run tests/PluginPaths.test.ts` — both tests must be red against the unchanged source. — S, junior-dev
-- [ ] A2: In `src/infra/PluginPaths.ts`, change line 19 string literal from `cast-log-plugin.jsonl` to `cast-log-plugin.json`, and line 20 from `cast-log-agent.jsonl` to `cast-log-agent.json`. Re-run `npx vitest run tests/PluginPaths.test.ts` — both tests must now pass. — S, junior-dev
+- [x] A1: In `tests/PluginPaths.test.ts`, change line 16 expected literal from `cast-log-plugin.jsonl` to `cast-log-plugin.json`, and line 23 expected literal from `cast-log-agent.jsonl` to `cast-log-agent.json`. Run `npx vitest run tests/PluginPaths.test.ts` — both tests must be red against the unchanged source. — S, junior-dev (d66ab72)
+- [x] A2: In `src/infra/PluginPaths.ts`, change line 19 string literal from `cast-log-plugin.jsonl` to `cast-log-plugin.json`, and line 20 from `cast-log-agent.jsonl` to `cast-log-agent.json`. Re-run `npx vitest run tests/PluginPaths.test.ts` — both tests must now pass. — S, junior-dev (d66ab72)
 
 ### B. Store test-fixture sweep
 
@@ -94,8 +94,8 @@ No new error paths. The change is purely lexical.
 
 **junior-dev**
 
-- [ ] B1: In `tests/castLog/store.test.ts`, replace every occurrence of `cast-log-plugin.jsonl` with `cast-log-plugin.json` and `cast-log-agent.jsonl` with `cast-log-agent.json`. Also replace the arbitrary stub paths `/local.jsonl` → `/local.json` and `/agent.jsonl` → `/agent.json` (these are in-memory map keys for the adapter double). Run `npx vitest run tests/castLog/store.test.ts` — all tests pass. — S, junior-dev
-- [ ] B2: In `tests/castLog/store.readAll.test.ts`, replace every occurrence of `cast-log-plugin.jsonl` with `cast-log-plugin.json` and `cast-log-agent.jsonl` with `cast-log-agent.json`. Run `npx vitest run tests/castLog/store.readAll.test.ts` — all tests pass. — S, junior-dev
+- [x] B1: In `tests/castLog/store.test.ts`, replace every occurrence of `cast-log-plugin.jsonl` with `cast-log-plugin.json` and `cast-log-agent.jsonl` with `cast-log-agent.json`. Also replace the arbitrary stub paths `/local.jsonl` → `/local.json` and `/agent.jsonl` → `/agent.json` (these are in-memory map keys for the adapter double). Run `npx vitest run tests/castLog/store.test.ts` — all tests pass. — S, junior-dev (9d27b8c)
+- [x] B2: In `tests/castLog/store.readAll.test.ts`, replace every occurrence of `cast-log-plugin.jsonl` with `cast-log-plugin.json` and `cast-log-agent.jsonl` with `cast-log-agent.json`. Run `npx vitest run tests/castLog/store.readAll.test.ts` — all tests pass. — S, junior-dev (9d27b8c)
 
 ### C. HookMaterializer test-fixture sweep
 
@@ -111,7 +111,7 @@ No new error paths. The change is purely lexical.
 
 **junior-dev**
 
-- [ ] C1: In `tests/castLog/HookMaterializer.test.ts`, replace every occurrence of `cast-log-plugin.jsonl` with `cast-log-plugin.json` and `cast-log-agent.jsonl` with `cast-log-agent.json`. Run `npx vitest run tests/castLog/HookMaterializer.test.ts` — all tests pass. — S, junior-dev
+- [x] C1: In `tests/castLog/HookMaterializer.test.ts`, replace every occurrence of `cast-log-plugin.jsonl` with `cast-log-plugin.json` and `cast-log-agent.jsonl` with `cast-log-agent.json`. Run `npx vitest run tests/castLog/HookMaterializer.test.ts` — all tests pass. — S, junior-dev (c2bdbbf)
 
 ### D. Integration-test fixture sweep
 
@@ -127,8 +127,8 @@ No new error paths. The change is purely lexical.
 
 **junior-dev**
 
-- [ ] D1: In `tests/integration/remote-cast.spec.ts`, change line 28 `REMOTE_LOG` constant from `/vault/cast-log-agent.jsonl` to `/vault/cast-log-agent.json` and line 29 `LOCAL_LOG` from `/vault/cast-log-plugin.jsonl` to `/vault/cast-log-plugin.json`. Run the integration suite (`npm run test:integration`) for this file. — S, junior-dev
-- [ ] D2: In `tests/integration/store-panel-delete-integration.spec.ts`, change lines 50–51 to use `cast-log-plugin.json` and `cast-log-agent.json` in the `LOCAL_LOG` and `AGENT_LOG` constants respectively. Re-run the integration suite for this file. — S, junior-dev
+- [x] D1: In `tests/integration/remote-cast.spec.ts`, change line 28 `REMOTE_LOG` constant from `/vault/cast-log-agent.jsonl` to `/vault/cast-log-agent.json` and line 29 `LOCAL_LOG` from `/vault/cast-log-plugin.jsonl` to `/vault/cast-log-plugin.json`. Run the integration suite (`npm run test:integration`) for this file. — S, junior-dev (5fa0e9d)
+- [x] D2: In `tests/integration/store-panel-delete-integration.spec.ts`, change lines 50–51 to use `cast-log-plugin.json` and `cast-log-agent.json` in the `LOCAL_LOG` and `AGENT_LOG` constants respectively. Re-run the integration suite for this file. — S, junior-dev (5fa0e9d)
 
 ### E. `.gitignore` housekeeping
 
@@ -144,7 +144,7 @@ No new error paths. The change is purely lexical.
 
 **junior-dev**
 
-- [ ] E1: In `.gitignore`, replace lines 13–14 (`cast-log-plugin.jsonl`, `cast-log-agent.jsonl`) with `cast-log-plugin.json` and `cast-log-agent.json`. Also remove the historical lines 11–12 (`cast-log-local.jsonl`, `cast-log-remote.jsonl`) since those filenames have been gone since iteration 015. — S, junior-dev
+- [x] E1: In `.gitignore`, replace lines 13–14 (`cast-log-plugin.jsonl`, `cast-log-agent.jsonl`) with `cast-log-plugin.json` and `cast-log-agent.json`. Also remove the historical lines 11–12 (`cast-log-local.jsonl`, `cast-log-remote.jsonl`) since those filenames have been gone since iteration 015. — S, junior-dev (4b8d956)
 
 ### F. Verification sweep
 
@@ -160,8 +160,8 @@ No new error paths. The change is purely lexical.
 
 **junior-dev**
 
-- [ ] F1: Run `grep -rn 'cast-log-plugin\.jsonl\|cast-log-agent\.jsonl' src/`. Expected: zero matches. If any match exists outside `PluginPaths.ts` (which was already updated in A2), report it as an unexpected coupling and stop — the plan assumes no such source exists. — S, junior-dev
-- [ ] F2: Run the full test suite: `npm run lint && npm test && npm run test:integration`. All must be green. — S, junior-dev
+- [x] F1: Run `grep -rn 'cast-log-plugin\.jsonl\|cast-log-agent\.jsonl' src/`. Expected: zero matches. If any match exists outside `PluginPaths.ts` (which was already updated in A2), report it as an unexpected coupling and stop — the plan assumes no such source exists. — S, junior-dev (verified: zero matches)
+- [x] F2: Run the full test suite: `npm run lint && npm test && npm run test:integration`. All must be green. — S, junior-dev (lint: pass, unit: 979 pass, integration: 319 pass)
 
 ## Effort summary
 
@@ -172,3 +172,5 @@ Total todos: 9. Effort: **S × 9**. Tier: **junior-dev × 9**. No senior or lead
 - Dev environments may contain stale `cast-log-plugin.jsonl` / `cast-log-agent.jsonl` files in `<vault>/.obsidian/plugins/grimoire/`. Delete them by hand if you want a clean slate; otherwise they are inert (nothing reads them after the rename). Production has no such files.
 - The new `.json` filenames are recognised by Obsidian Sync's allow-list and will reach mobile on next sync after the plugin re-loads with the changed `PluginPaths`.
 - A first mobile cast (post-sync) confirms the round-trip; this is a manual smoke test outside the automated suite.
+
+reviewed @ 3aac062

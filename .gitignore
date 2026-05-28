@@ -8,10 +8,8 @@ dist/
 data.json
 hooks/
 agent-hooks/
-cast-log-local.jsonl
-cast-log-remote.jsonl
-cast-log-plugin.jsonl
-cast-log-agent.jsonl
+cast-log-plugin.json
+cast-log-agent.json
 cast-log-scratch/
 forge.md
 refine.md

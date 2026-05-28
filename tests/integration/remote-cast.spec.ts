@@ -25,8 +25,8 @@ import type { Spell } from '../../src/domain/spells/Spell';
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
-const REMOTE_LOG = '/vault/cast-log-agent.jsonl';
-const LOCAL_LOG = '/vault/cast-log-plugin.jsonl';
+const REMOTE_LOG = '/vault/cast-log-agent.json';
+const LOCAL_LOG = '/vault/cast-log-plugin.json';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 

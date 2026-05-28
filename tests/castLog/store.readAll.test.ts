@@ -18,7 +18,7 @@ describe('CastLogStore.readAll', () => {
       );
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
@@ -26,7 +26,7 @@ describe('CastLogStore.readAll', () => {
 
       expect(readFile).toHaveBeenCalledTimes(1);
       expect(readFile).toHaveBeenCalledWith(
-        '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         'utf-8'
       );
       expect(events).toHaveLength(1);
@@ -49,7 +49,7 @@ describe('CastLogStore.readAll', () => {
       const readFile = vi.fn().mockRejectedValue(error);
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
@@ -66,7 +66,7 @@ describe('CastLogStore.readAll', () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
@@ -96,7 +96,7 @@ describe('CastLogStore.readAll', () => {
       );
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
@@ -128,7 +128,7 @@ describe('CastLogStore.readAll', () => {
       );
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
@@ -158,7 +158,7 @@ describe('CastLogStore.readAll', () => {
       );
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
@@ -196,8 +196,8 @@ describe('CastLogStore.readAll', () => {
         );
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
-        getAgentLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-agent.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
+        getAgentLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-agent.json',
         readFile,
       });
 
@@ -223,7 +223,7 @@ describe('CastLogStore.readAll', () => {
       );
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
@@ -252,8 +252,8 @@ describe('CastLogStore.readAll', () => {
         .mockRejectedValueOnce(error);
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
-        getAgentLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-agent.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
+        getAgentLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-agent.json',
         readFile,
       });
 
@@ -290,7 +290,7 @@ describe('CastLogStore.readAll', () => {
       );
 
       const store = new CastLogStore({
-        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.jsonl',
+        getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
       });
 
