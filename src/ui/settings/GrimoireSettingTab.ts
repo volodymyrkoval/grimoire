@@ -44,6 +44,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
     this.#renderGeneralSection();
     this.#renderCustomRefineSection();
     this.#renderAdvancedSection();
+    this.#renderDebugSection();
   }
 
   #renderGeneralSection(): void {
@@ -101,12 +102,6 @@ export class GrimoireSettingTab extends PluginSettingTab {
       v => { this.#plugin.data.settings.executionMode = v ? 'remote' : 'local'; },
       'Send spells to a portal server instead of running them locally.',
     );
-    this.#addToggleField(
-      'Show cast output in console',
-      () => s.showCastOutput,
-      v => { s.showCastOutput = v; },
-      'Stream local cast stdout/stderr to the developer console as it arrives, prefixed with the cast id. Desktop only; ignored for remote casts.',
-    );
     this.#addTextField('Portal host',      () => s.portalHost,         v => { s.portalHost = v; },
       'Hostname or full URL. Defaults to HTTPS unless http:// is prefixed.');
     this.#addTextField('Portal port',      () => s.portalPort,         v => { s.portalPort = v; },
@@ -117,6 +112,17 @@ export class GrimoireSettingTab extends PluginSettingTab {
       'Username for portal HTTP basic authentication.');
     this.#addPasswordField('Auth password',() => s.portalAuthPassword, v => { s.portalAuthPassword = v; },
       'Password for portal HTTP basic authentication.');
+  }
+
+  #renderDebugSection(): void {
+    new Setting(this.containerEl).setName('Debug').setHeading();
+    const s = this.#plugin.data.settings;
+    this.#addToggleField(
+      'Show cast output in console',
+      () => s.showCastOutput,
+      v => { s.showCastOutput = v; },
+      'Stream local cast stdout/stderr to the developer console as it arrives, prefixed with the cast id. Desktop only; ignored for remote casts.',
+    );
   }
 
   #addProviderField(): void {
