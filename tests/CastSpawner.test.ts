@@ -33,7 +33,7 @@ describe('CastSpawner', () => {
 
   describe('echo output — #deriveEchoConfig via public seam', () => {
     it('debugs each stdout chunk prefixed with [castId] when echoOutput is true', async () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
@@ -55,7 +55,7 @@ describe('CastSpawner', () => {
 
   describe('#attachStdoutListener — echo branch', () => {
     it('does not call console.debug when echoOutput is false', async () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
@@ -75,7 +75,7 @@ describe('CastSpawner', () => {
     });
 
     it('calls console.debug with prefixed chunk exactly once when echoOutput is true', async () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
@@ -172,7 +172,7 @@ describe('CastSpawner', () => {
 
   describe('E5 — echo edge cases', () => {
     it('(a) uses [cast] prefix when env.CAST_ID is missing and echoOutput is true', async () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
@@ -192,7 +192,7 @@ describe('CastSpawner', () => {
     });
 
     it('(b) emits single console.debug call for a multi-line chunk (one prefix per chunk, not per line)', async () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
@@ -213,7 +213,7 @@ describe('CastSpawner', () => {
     });
 
     it('(c) calls console.debug with just the prefix when chunk is an empty string', async () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
@@ -234,7 +234,7 @@ describe('CastSpawner', () => {
     });
 
     it('(d) resolves success path unchanged and no on-failure console.error when echoOutput true and exit code 0', async () => {
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const debugSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
@@ -393,7 +393,7 @@ describe('CastSpawner', () => {
 
   describe('F1 — echo OFF preserves today', () => {
     it('(a) echoOutput false + stdout chunk emitted before exit → console.debug receives zero calls', async () => {
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const debugSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 

@@ -157,7 +157,10 @@ export class CastSpawner {
     // Drain stdout to prevent OS-level pipe backpressure from stalling the child.
     child.stdout.on("data", (chunk) => {
       if (echoConfig.echoOn) {
-        console.debug(echoConfig.prefix + chunk.toString());
+        // console.debug is suppressed by Obsidian's DevTools filter by default;
+        // console.log ensures cast output is visible in the developer console.
+        // eslint-disable-next-line obsidianmd/rule-custom-message
+        console.log(echoConfig.prefix + chunk.toString());
       }
     });
   }
