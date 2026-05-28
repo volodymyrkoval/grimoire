@@ -27,12 +27,12 @@ describe('GrimoireSettingTab seam', () => {
     tab.display();
   });
 
-  // (i) 14 rows (8 general [5 text + 1 provider dropdown + 1 model dropdown + 1 effort row] + 5 Advanced text/password + 1 toggle)
+  // (i) 15 rows (8 general [5 text + 1 provider dropdown + 1 model dropdown + 1 effort row] + 5 Advanced text/password + 2 toggles [executionMode + showCastOutput])
   //   + 2 <hr>+<h3> section headings (Custom Refine spell + Advanced)
   //   + 2 Custom Refine section rows (Active Refine dropdown + Create from default button)
-  //   = 28 original + 2 provider = 36 children
-  it('renders setting rows + section headings (36 child elements in containerEl)', () => {
-    expect(tab.containerEl.childElementCount).toBe(36);
+  //   = 28 original + 2 provider + 2 showCastOutput = 38 children
+  it('renders setting rows + section headings (38 child elements in containerEl)', () => {
+    expect(tab.containerEl.childElementCount).toBe(38);
   });
 
   // (ii) Text input write-through — spell-tag (index 0)
@@ -98,6 +98,40 @@ describe('GrimoireSettingTab seam', () => {
     const checkboxes = tab.containerEl.querySelectorAll('input[type="checkbox"]');
     (checkboxes[0] as any).__triggerChange(false);
     expect(plugin.data.settings.executionMode).toBe('local');
+    expect(plugin.save).toHaveBeenCalledTimes(1);
+  });
+
+  // (vi-b) Show cast output in console toggle — B0 red tests
+  it('Advanced section contains a toggle with label "Show cast output in console"', () => {
+    const containerText = tab.containerEl.textContent ?? '';
+    expect(containerText).toContain('Show cast output in console');
+  });
+
+  it('Advanced section contains the showCastOutput toggle description text', () => {
+    const containerText = tab.containerEl.textContent ?? '';
+    expect(containerText).toContain(
+      'Stream local cast stdout/stderr to the developer console as it arrives, prefixed with the cast id. Desktop only; ignored for remote casts.',
+    );
+  });
+
+  it('there are 2 checkboxes (executionMode + showCastOutput) after B1 is implemented', () => {
+    const checkboxes = tab.containerEl.querySelectorAll('input[type="checkbox"]');
+    expect(checkboxes.length).toBe(2);
+  });
+
+  it('toggling showCastOutput to true writes showCastOutput=true and calls save exactly once', () => {
+    plugin.save.mockClear();
+    const checkboxes = tab.containerEl.querySelectorAll('input[type="checkbox"]');
+    (checkboxes[1] as any).__triggerChange(true);
+    expect(plugin.data.settings.showCastOutput).toBe(true);
+    expect(plugin.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggling showCastOutput back to false writes showCastOutput=false and calls save exactly once', () => {
+    plugin.save.mockClear();
+    const checkboxes = tab.containerEl.querySelectorAll('input[type="checkbox"]');
+    (checkboxes[1] as any).__triggerChange(false);
+    expect(plugin.data.settings.showCastOutput).toBe(false);
     expect(plugin.save).toHaveBeenCalledTimes(1);
   });
 

@@ -116,4 +116,48 @@ describe('LocalCaster', () => {
       expect(callbacks.onFailure).toHaveBeenCalledWith('spawn error: ENOENT');
     });
   });
+
+  describe('echoOutput threading', () => {
+    it('with settings.showCastOutput = true, inline cast receives echoOutput: true', () => {
+      const casterSettings = { ...settings, showCastOutput: true };
+      const caster = new LocalCaster({ runner, settings: casterSettings });
+
+      caster.cast(baseInput, callbacks);
+
+      const [runInput] = runner.run.mock.calls[0];
+      expect(runInput.echoOutput).toBe(true);
+    });
+
+    it('with settings.showCastOutput = true, file-mode cast receives echoOutput: true', () => {
+      const casterSettings = { ...settings, showCastOutput: true };
+      const caster = new LocalCaster({ runner, settings: casterSettings });
+      const input: CastInput = { ...baseInput, systemPromptFile: 'spells/foo.md' };
+
+      caster.cast(input, callbacks);
+
+      const [runInput] = runner.run.mock.calls[0];
+      expect(runInput.echoOutput).toBe(true);
+    });
+
+    it('with settings.showCastOutput = false (default), inline cast receives echoOutput: false', () => {
+      const casterSettings = { ...settings, showCastOutput: false };
+      const caster = new LocalCaster({ runner, settings: casterSettings });
+
+      caster.cast(baseInput, callbacks);
+
+      const [runInput] = runner.run.mock.calls[0];
+      expect(runInput.echoOutput).toBe(false);
+    });
+
+    it('with settings.showCastOutput = false (default), file-mode cast receives echoOutput: false', () => {
+      const casterSettings = { ...settings, showCastOutput: false };
+      const caster = new LocalCaster({ runner, settings: casterSettings });
+      const input: CastInput = { ...baseInput, systemPromptFile: 'spells/foo.md' };
+
+      caster.cast(input, callbacks);
+
+      const [runInput] = runner.run.mock.calls[0];
+      expect(runInput.echoOutput).toBe(false);
+    });
+  });
 });

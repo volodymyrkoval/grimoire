@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CastRunner, CastRunCallbacks } from '../src/cast/local/CastRunner';
-import { SpawnFn, SpawnedProcess } from '../src/cast/local/spawnCast';
+import { SpawnFn, SpawnedProcess, CastSpawner } from '../src/cast/local/spawnCast';
 
 function makeFakeProcess() {
   const handlers: Record<string, ((...args: any[]) => void)[]> = {};
@@ -299,4 +299,63 @@ describe('CastRunner', () => {
     expect(args).toContain('high');
   });
 
+  it('accepts echoOutput in input without type errors', () => {
+    const { runner } = makeRunnerWithFakeSpawn();
+
+    // This test verifies that TypeScript accepts echoOutput in CastRunInput
+    runner.run(
+      {
+        metaSpell: 'my spell',
+        modelId: 'claude-sonnet-4-5',
+        effort: null,
+        vaultMountPath: '/vault',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        castId: 'test-cast-id',
+        echoOutput: true,
+      },
+      { onSuccess: () => {}, onFailure: () => {} }
+    );
+
+    expect(true).toBe(true);
+  });
+
+});
+
+describe('CastRunner — D2: echoOutput threading', () => {
+  it('threads echoOutput into CastSpawnConfig', async () => {
+    let capturedSpawnConfig: any;
+    const fakeProcess = makeFakeProcess();
+
+    const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
+
+    // Spy on CastSpawner.run to capture the config passed to it
+    const runSpy = vi.spyOn(CastSpawner.prototype, 'run').mockImplementation(function (config: any) {
+      capturedSpawnConfig = config;
+      return Promise.resolve({ code: 0, stderrTail: '' });
+    });
+
+    const runner = new CastRunner(fakeSpawn);
+
+    runner.run(
+      {
+        metaSpell: 'my spell',
+        modelId: 'claude-sonnet-4-5',
+        effort: null,
+        vaultMountPath: '/vault',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        castId: 'test-cast-id',
+        echoOutput: true,
+      },
+      { onSuccess: () => {}, onFailure: () => {} }
+    );
+
+    // Give the async call time to execute
+    await vi.runAllTimersAsync();
+
+    expect(runSpy).toHaveBeenCalled();
+    expect(capturedSpawnConfig).toBeDefined();
+    expect(capturedSpawnConfig.echoOutput).toBe(true);
+  });
 });

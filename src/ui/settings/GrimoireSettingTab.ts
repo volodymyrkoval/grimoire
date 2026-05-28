@@ -101,6 +101,12 @@ export class GrimoireSettingTab extends PluginSettingTab {
       v => { this.#plugin.data.settings.executionMode = v ? 'remote' : 'local'; },
       'Send spells to a portal server instead of running them locally.',
     );
+    this.#addToggleField(
+      'Show cast output in console',
+      () => s.showCastOutput,
+      v => { s.showCastOutput = v; },
+      'Stream local cast stdout/stderr to the developer console as it arrives, prefixed with the cast id. Desktop only; ignored for remote casts.',
+    );
     this.#addTextField('Portal host',      () => s.portalHost,         v => { s.portalHost = v; },
       'Hostname or full URL. Defaults to HTTPS unless http:// is prefixed.');
     this.#addTextField('Portal port',      () => s.portalPort,         v => { s.portalPort = v; },

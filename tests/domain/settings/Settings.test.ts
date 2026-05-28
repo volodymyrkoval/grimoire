@@ -7,6 +7,10 @@ describe('Settings', () => {
     it('DEFAULT_SETTINGS.defaultProvider === CLAUDE_CODE', () => {
       expect(DEFAULT_SETTINGS.defaultProvider).toBe(CLAUDE_CODE);
     });
+
+    it('DEFAULT_SETTINGS.showCastOutput === false', () => {
+      expect(DEFAULT_SETTINGS.showCastOutput).toBe(false);
+    });
   });
 
   describe('SUPPORTED_MODELS', () => {

@@ -152,4 +152,14 @@ describe('persistence.hydrate', () => {
     const result = hydrate({ settings: { defaultProvider: 'claude-code' } }, app);
     expect(result.settings.defaultProvider).toBe(DEFAULT_SETTINGS.defaultProvider);
   });
+
+  it('(o) hydrate({ settings: {} }, app).settings.showCastOutput === false (missing key → default false)', () => {
+    const result = hydrate({ settings: {} }, app);
+    expect(result.settings.showCastOutput).toBe(false);
+  });
+
+  it('(p) hydrate({ settings: { showCastOutput: true } }, app).settings.showCastOutput === true', () => {
+    const result = hydrate({ settings: { showCastOutput: true } }, app);
+    expect(result.settings.showCastOutput).toBe(true);
+  });
 });

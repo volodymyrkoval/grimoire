@@ -13,6 +13,7 @@ export interface CastSpawnConfig {
   args: readonly string[];
   env: Record<string, string | undefined>;
   cwd?: string;
+  echoOutput?: boolean;
 }
 
 /**
@@ -101,7 +102,8 @@ export class CastSpawner {
         resolve(info);
       };
 
-      this.#listenToForgingProcess(child, safeResolve);
+      const echoConfig = this.#deriveEchoConfig(config);
+      this.#listenToForgingProcess(child, safeResolve, echoConfig);
     });
   }
 
@@ -119,19 +121,64 @@ export class CastSpawner {
 
   #listenToForgingProcess(
     child: SpawnedProcess,
-    safeResolve: (info: CastExitInfo) => void
+    safeResolve: (info: CastExitInfo) => void,
+    echoConfig: { echoOn: boolean; prefix: string }
   ) {
-    // Drain stdout to prevent OS-level pipe backpressure from stalling the child.
-    child.stdout.on("data", () => {});
-
     const stderrFull: StderrBuffer = { message: "" };
-    child.stderr.on("data", (chunk) => {
-      stderrFull.message += chunk.toString();
-    });
+
+    this.#attachStdoutListener(child, echoConfig);
+    this.#attachStderrListener(child, stderrFull, echoConfig);
 
     child.on("exit", this.#handleForgingProcessExit(stderrFull, safeResolve));
 
     child.on("error", this.#handleForgingProcessError(stderrFull, safeResolve));
+  }
+
+  /**
+   * Derives the echo configuration once from the spawn config.
+   * The prefix is built here — not per chunk — so the string allocation happens once.
+   */
+  #deriveEchoConfig(config: CastSpawnConfig): { echoOn: boolean; prefix: string } {
+    return {
+      echoOn: !!config.echoOutput,
+      prefix: `[${config.env.CAST_ID ?? "cast"}] `,
+    };
+  }
+
+  /**
+   * Attaches a stdout `data` listener that always drains the stream to prevent
+   * OS-level pipe backpressure from stalling the child process.
+   * When `echoConfig.echoOn`, each chunk is also written to `console.debug`.
+   */
+  #attachStdoutListener(
+    child: SpawnedProcess,
+    echoConfig: { echoOn: boolean; prefix: string }
+  ): void {
+    // Drain stdout to prevent OS-level pipe backpressure from stalling the child.
+    child.stdout.on("data", (chunk) => {
+      if (echoConfig.echoOn) {
+        console.debug(echoConfig.prefix + chunk.toString());
+      }
+    });
+  }
+
+  /**
+   * Attaches a stderr `data` listener that always accumulates chunks into
+   * `stderrFull.message` so the failure path has the full buffer available.
+   * When `echoConfig.echoOn`, each chunk is also written to `console.error`.
+   */
+  #attachStderrListener(
+    child: SpawnedProcess,
+    stderrFull: StderrBuffer,
+    echoConfig: { echoOn: boolean; prefix: string }
+  ): void {
+    child.stderr.on("data", (chunk) => {
+      const text = chunk.toString();
+      stderrFull.message += text;
+      if (echoConfig.echoOn) {
+        console.error(echoConfig.prefix + text);
+      }
+    });
   }
 
   #getOptions(config: CastSpawnConfig) {

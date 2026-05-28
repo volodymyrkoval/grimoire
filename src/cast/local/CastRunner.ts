@@ -14,6 +14,7 @@ interface BaseCastRunInput {
   cliCommand: string;
   castId: string;
   claudeHooksDir?: string;
+  echoOutput?: boolean;
 }
 
 /**
@@ -86,6 +87,7 @@ export class CastRunner {
           ...(input.claudeHooksDir ? { CLAUDE_HOOKS_DIR: input.claudeHooksDir } : {}),
         },
         cwd: input.vaultMountPath,
+        echoOutput: input.echoOutput,
       })
       .then(this.#onCastExit(callbacks))
       .catch(this.#onCastError(callbacks));

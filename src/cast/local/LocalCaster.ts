@@ -32,6 +32,7 @@ export class LocalCaster implements Caster {
           cliCommand: this.#settings.cliCommand,
           castId: input.castId,
           claudeHooksDir: this.#claudeHooksDirAbs,
+          echoOutput: this.#settings.showCastOutput,
         }
       : {
           metaSpell: input.userPrompt,
@@ -42,6 +43,7 @@ export class LocalCaster implements Caster {
           cliCommand: this.#settings.cliCommand,
           castId: input.castId,
           claudeHooksDir: this.#claudeHooksDirAbs,
+          echoOutput: this.#settings.showCastOutput,
         };
 
     this.#runner.run(runInput, {
