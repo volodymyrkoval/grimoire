@@ -31,6 +31,8 @@ The plugin serves over HTTPS with a self-signed certificate — either trust it,
 
 For best-case Refine search results, use a semantic-capable MCP server (e.g., [OpenAI](https://github.com/modelcontextprotocol/servers/tree/main/src/openai-mcp), [Anthropic](https://github.com/modelcontextprotocol/servers/tree/main/src/anthropic), or a custom embedding service). Grimoire's shipped scripts bind tools by capability rather than server name, so any Obsidian-aware MCP works — you're choosing between good (any server) and better (semantic-aware).
 
+**Optional: pin the MCP server set.** Open *Settings → Grimoire → General* and set **MCP config path** to the absolute path of a dedicated MCP config file. When set, Grimoire passes `--mcp-config <path> --strict-mcp-config` to every local cast, so the cast's MCP servers are exactly what that file declares — the same on every machine, regardless of what Claude Code has registered globally. Note that `claude mcp list` continues to show your machine's ambient scopes; when this setting is active, that listing no longer reflects what your casts actually load.
+
 **2. Let casts run unattended.** Create `.claude/settings.local.json` in your **vault root** so Claude Code doesn't pause for permission on every tool call — a background cast has no terminal to answer them. The same file wires up cast-log progress tracking:
 
 ```json
@@ -62,7 +64,7 @@ For best-case Refine search results, use a semantic-capable MCP server (e.g., [O
 }
 ```
 
-The `mcp__obsidian__*` entries must match the server name you registered in step 1 (`obsidian` above). The MCP tools are those exposed by Local REST API; trim or extend the list to what your spells actually use. Without the `permissions` block, casts stall; without `hooks`, the Cast Log shows only submitted/failed, never in-progress or done.
+The `mcp__obsidian__*` entries must match the server name you registered in step 1 (`obsidian` above). If you've set **MCP config path** in Grimoire Settings, these names must instead match the server names declared in that file — `claude mcp list` reflects ambient scopes, not what your casts actually load. The MCP tools are those exposed by Local REST API; trim or extend the list to what your spells actually use. Without the `permissions` block, casts stall; without `hooks`, the Cast Log shows only submitted/failed, never in-progress or done.
 
 **3. Configure and cast.** Open *Settings → Grimoire* and set your Claude Code binary path (if `claude` isn't on your PATH) and vault mount path. Then open the command popup, pick a spell, and press `Enter`. Watch the **Logs** tab reach **Done**.
 

@@ -7,6 +7,8 @@ interface BaseCastArgsInput {
   modelId: string;
   effort: Effort | null;
   vaultMountPath: string;
+  /** See GrimoireSettings.mcpConfigPath. Verbatim string. */
+  mcpConfigPath: string;
 }
 
 /**
@@ -55,6 +57,10 @@ export function buildCastArgs(input: CastArgsInput): string[] {
 
   if (input.vaultMountPath !== '') {
     args.push('--add-dir', input.vaultMountPath);
+  }
+
+  if (input.mcpConfigPath.trim() !== '') {
+    args.push('--mcp-config', input.mcpConfigPath, '--strict-mcp-config');
   }
 
   return args;

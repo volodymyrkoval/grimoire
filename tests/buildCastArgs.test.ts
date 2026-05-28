@@ -8,6 +8,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      mcpConfigPath: '',
     });
     expect(args).toEqual([
       '-p',
@@ -26,6 +27,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      mcpConfigPath: '',
     });
     expect(args).toEqual([
       '--system-prompt-file',
@@ -45,6 +47,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: 'high',
       vaultMountPath: '',
+      mcpConfigPath: '',
     });
     expect(args).toContain('--effort');
     expect(args).toContain('high');
@@ -56,6 +59,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      mcpConfigPath: '',
     });
     expect(args).not.toContain('--effort');
   });
@@ -66,6 +70,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '/vault/mount',
+      mcpConfigPath: '',
     });
     expect(args).toContain('--add-dir');
     expect(args).toContain('/vault/mount');
@@ -77,6 +82,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      mcpConfigPath: '',
     });
     expect(args).not.toContain('--add-dir');
   });
@@ -87,6 +93,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-opus-4-5',
       effort: 'xhigh',
       vaultMountPath: '/vault',
+      mcpConfigPath: '',
     });
     expect(args).toContain('--effort');
     expect(args).toContain('xhigh');
@@ -109,6 +116,7 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '/vault',
+      mcpConfigPath: '',
     });
 
     // Assert order: --system-prompt-file comes before the path, then -p, then the prompt.
@@ -136,9 +144,97 @@ describe('buildCastArgs', () => {
       modelId: 'claude-sonnet-4-5',
       effort: null,
       vaultMountPath: '',
+      mcpConfigPath: '',
     });
 
     expect(args).not.toContain('--provider');
     expect(args).not.toContain('claude-code');
+  });
+
+  it('omits --mcp-config and --strict-mcp-config when mcpConfigPath is empty', () => {
+    const args = buildCastArgs({
+      metaSpell: 'spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '',
+      mcpConfigPath: '',
+    });
+    expect(args).not.toContain('--mcp-config');
+    expect(args).not.toContain('--strict-mcp-config');
+  });
+
+  it('omits both MCP flags when mcpConfigPath is whitespace-only', () => {
+    const args = buildCastArgs({
+      metaSpell: 'spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '',
+      mcpConfigPath: '   ',
+    });
+    expect(args).not.toContain('--mcp-config');
+    expect(args).not.toContain('--strict-mcp-config');
+  });
+
+  it('appends --mcp-config <path> --strict-mcp-config when mcpConfigPath is non-empty', () => {
+    const args = buildCastArgs({
+      metaSpell: 'spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '',
+      mcpConfigPath: '/abs/path/mcp.json',
+    });
+    const mcpIdx = args.indexOf('--mcp-config');
+    expect(mcpIdx).toBeGreaterThanOrEqual(0);
+    expect(args[mcpIdx + 1]).toBe('/abs/path/mcp.json');
+    const strictIdx = args.indexOf('--strict-mcp-config');
+    expect(strictIdx).toBeGreaterThanOrEqual(0);
+    expect(strictIdx - mcpIdx).toBe(2); // consecutive: --mcp-config <path> --strict-mcp-config
+  });
+
+  it('MCP flags coexist with --effort and --add-dir', () => {
+    const args = buildCastArgs({
+      metaSpell: 'spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: 'high',
+      vaultMountPath: '/v',
+      mcpConfigPath: '/abs/m.json',
+    });
+    expect(args).toContain('--effort');
+    expect(args).toContain('high');
+    expect(args).toContain('--add-dir');
+    expect(args).toContain('/v');
+    expect(args).toContain('--mcp-config');
+    expect(args).toContain('/abs/m.json');
+    expect(args).toContain('--strict-mcp-config');
+  });
+
+  it('passes mcpConfigPath verbatim (untrimmed) when path has surrounding whitespace', () => {
+    const rawPath = '  /abs/path/mcp.json  ';
+    const args = buildCastArgs({
+      metaSpell: 'spell',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '',
+      mcpConfigPath: rawPath,
+    });
+    const mcpIdx = args.indexOf('--mcp-config');
+    expect(mcpIdx).toBeGreaterThanOrEqual(0);
+    expect(args[mcpIdx + 1]).toBe(rawPath);
+  });
+
+  it('MCP flags coexist with --system-prompt-file file-mode and appear at tail', () => {
+    const args = buildCastArgs({
+      systemPromptFile: '/sys.md',
+      userPrompt: 'prompt',
+      modelId: 'claude-sonnet-4-5',
+      effort: null,
+      vaultMountPath: '/vault',
+      mcpConfigPath: '/mcp.json',
+    });
+    const sysIdx = args.indexOf('--system-prompt-file');
+    const mcpIdx = args.indexOf('--mcp-config');
+    expect(sysIdx).toBeGreaterThanOrEqual(0);
+    expect(mcpIdx).toBeGreaterThan(sysIdx);
+    expect(args).toContain('--strict-mcp-config');
   });
 });

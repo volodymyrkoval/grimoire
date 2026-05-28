@@ -27,12 +27,13 @@ describe('GrimoireSettingTab seam', () => {
     tab.display();
   });
 
-  // (i) 15 rows (8 general [5 text + 1 provider dropdown + 1 model dropdown + 1 effort row] + 5 Advanced text/password + 2 toggles [executionMode + showCastOutput])
-  //   + 2 <hr>+<h3> section headings (Custom Refine spell + Advanced)
-  //   + 2 Custom Refine section rows (Active Refine dropdown + Create from default button)
-  //   = 28 original + 2 provider + 2 showCastOutput = 38 children
-  it('renders setting rows + section headings (38 child elements in containerEl)', () => {
-    expect(tab.containerEl.childElementCount).toBe(38);
+  // (i) 16 rows (9 general [6 text (spellTag, cliCommand, binaryPath, mcpConfigPath, forgeOutputFolder, vaultMountPath) + 1 provider dropdown + 1 model dropdown + 1 effort row]
+  //             + 5 Advanced text/password + 2 toggles [executionMode, showCastOutput])
+  //   + 2 Custom Refine rows (heading×3 + dropdown×2 = 5 elements)
+  //   + Advanced heading (3 elements) + Debug heading (3 elements)
+  //   = 18 general + 5 customRefine + 3 advancedHeading + 12 advancedRows + 3 debugHeading + 2 debugToggle = 43 children
+  it('renders setting rows + section headings (43 child elements in containerEl)', () => {
+    expect(tab.containerEl.childElementCount).toBe(43);
   });
 
   // (ii) Text input write-through — spell-tag (index 0)
@@ -42,6 +43,16 @@ describe('GrimoireSettingTab seam', () => {
     (textInputs[0] as any).__triggerChange('#spell');
 
     expect(plugin.data.settings.spellTag).toBe('#spell');
+    expect(plugin.save).toHaveBeenCalledTimes(1);
+  });
+
+  // (ii-b) Text input write-through — mcp config path (index 3)
+  it('typing in the MCP config path input writes through to plugin.data.settings and calls save', () => {
+    plugin.save.mockClear();
+    const textInputs = tab.containerEl.querySelectorAll('input[type="text"]');
+    (textInputs[3] as any).__triggerChange('/abs/path/mcp.json');
+
+    expect(plugin.data.settings.mcpConfigPath).toBe('/abs/path/mcp.json');
     expect(plugin.save).toHaveBeenCalledTimes(1);
   });
 
@@ -153,10 +164,9 @@ describe('GrimoireSettingTab seam', () => {
   // (viii) Advanced field write-through
   it('typing in portalHost input writes through to settings and calls save', () => {
     plugin.save.mockClear();
-    // Advanced inputs are text inputs after the 5 original text inputs (spellTag, cliCommand, binaryPath, forgeOutput, vaultMount) = indices 5, 6, 7, 8 for host, port, path, authUser
     const textInputs = tab.containerEl.querySelectorAll('input[type="text"]');
-    // portalHost is the first Advanced text row — after 5 original text rows
-    const hostInput = textInputs[5];
+    // portalHost is the first Advanced text row — after 6 general text rows (spellTag, cliCommand, binaryPath, mcpConfigPath, forgeOutputFolder, vaultMountPath)
+    const hostInput = textInputs[6];
     expect(hostInput).toBeDefined();
     (hostInput as any).__triggerChange('portal.example.com');
     expect(plugin.data.settings.portalHost).toBe('portal.example.com');
@@ -166,7 +176,7 @@ describe('GrimoireSettingTab seam', () => {
   it('typing in portalPort input writes through to settings and calls save', () => {
     plugin.save.mockClear();
     const textInputs = tab.containerEl.querySelectorAll('input[type="text"]');
-    const portInput = textInputs[6];
+    const portInput = textInputs[7];
     expect(portInput).toBeDefined();
     (portInput as any).__triggerChange('8080');
     expect(plugin.data.settings.portalPort).toBe('8080');
@@ -176,7 +186,7 @@ describe('GrimoireSettingTab seam', () => {
   it('typing in portalPath input writes through to settings and calls save', () => {
     plugin.save.mockClear();
     const textInputs = tab.containerEl.querySelectorAll('input[type="text"]');
-    const pathInput = textInputs[7];
+    const pathInput = textInputs[8];
     expect(pathInput).toBeDefined();
     (pathInput as any).__triggerChange('/api/grimoire');
     expect(plugin.data.settings.portalPath).toBe('/api/grimoire');
@@ -186,7 +196,7 @@ describe('GrimoireSettingTab seam', () => {
   it('typing in portalAuthUser input writes through to settings and calls save', () => {
     plugin.save.mockClear();
     const textInputs = tab.containerEl.querySelectorAll('input[type="text"]');
-    const authUserInput = textInputs[8];
+    const authUserInput = textInputs[9];
     expect(authUserInput).toBeDefined();
     (authUserInput as any).__triggerChange('grimoire_user');
     expect(plugin.data.settings.portalAuthUser).toBe('grimoire_user');
@@ -206,14 +216,14 @@ describe('GrimoireSettingTab seam', () => {
     expect(advancedH3!.textContent).toBe('Advanced');
   });
 
-  it('<hr> and <h3> appear after the 8 general Setting children (5 text + provider + model + effort) and before the Advanced rows', () => {
+  it('<hr> and <h3> appear after the 9 general Setting children (6 text + provider + model + effort) and before the Advanced rows', () => {
     const children = Array.from(tab.containerEl.children);
-    // 8 general: indices 0-15; hr: 16; h3: 17; toggle: 18-19; 5 Advanced text/password: 20-29
+    // 9 general: indices 0-17; hr: 18; h3: 19
     const hrIndex = children.findIndex(c => c.tagName === 'HR');
     const h3Index = children.findIndex(c => c.tagName === 'H3');
-    // hr comes after 8 general settings (16 children) = after index 15
-    expect(hrIndex).toBe(16);
-    expect(h3Index).toBe(17);
+    // hr comes after 9 general settings (18 children) = after index 17
+    expect(hrIndex).toBe(18);
+    expect(h3Index).toBe(19);
   });
 
   it('Portal host row has description text', () => {

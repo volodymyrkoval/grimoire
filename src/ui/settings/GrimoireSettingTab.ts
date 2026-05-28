@@ -55,6 +55,8 @@ export class GrimoireSettingTab extends PluginSettingTab {
       'Command used to invoke the agentic coding tool (e.g. claude).');
     this.#addTextField('Binary path',        () => s.binaryPath,        v => { s.binaryPath = v; },
       'Absolute path to the agentic tool binary. Leave blank to use the system PATH.');
+    this.#addTextField('MCP config path',    () => s.mcpConfigPath,     v => { s.mcpConfigPath = v; },
+      'Optional. Path to a dedicated MCP config file. When set, casts run with this file as the only MCP source (--strict-mcp-config), ignoring all other configured scopes. Leave blank to inherit ambient MCP state.');
     this.#addTextField('Forge output folder',() => s.forgeOutputFolder, v => { s.forgeOutputFolder = v; },
       'Vault folder where newly forged spell files are created.');
     this.#addTextField('Vault mount path',   () => s.vaultMountPath,    v => { s.vaultMountPath = v; },

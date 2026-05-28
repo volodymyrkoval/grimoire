@@ -12,6 +12,7 @@ interface BaseCastRunInput {
   vaultMountPath: string;
   binaryPath: string;
   cliCommand: string;
+  mcpConfigPath: string;
   castId: string;
   claudeHooksDir?: string;
   echoOutput?: boolean;

@@ -72,6 +72,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       callbacks
@@ -99,6 +100,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       callbacks
@@ -127,6 +129,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       callbacks
@@ -151,6 +154,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/opt/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
@@ -170,6 +174,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
@@ -189,6 +194,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
@@ -208,6 +214,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'abc123',
       },
       { onSuccess: () => {}, onFailure: () => {} }
@@ -227,6 +234,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
         claudeHooksDir: '/my/vault/.obsidian/plugins/grimoire/agent-hooks',
       },
@@ -247,6 +255,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
@@ -266,6 +275,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
@@ -285,6 +295,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
       },
       { onSuccess: () => {}, onFailure: () => {} }
@@ -299,6 +310,30 @@ describe('CastRunner', () => {
     expect(args).toContain('high');
   });
 
+  it('forwards non-empty mcpConfigPath to spawn args as --mcp-config / --strict-mcp-config pair', () => {
+    const { runner, getArgs } = makeRunnerWithFakeSpawn();
+
+    runner.run(
+      {
+        metaSpell: 'my spell',
+        modelId: 'claude-sonnet-4-5',
+        effort: null,
+        vaultMountPath: '/vault',
+        binaryPath: '/usr/bin/claude',
+        cliCommand: 'claude',
+        mcpConfigPath: '/abs/path/mcp.json',
+        castId: 'test-cast-id',
+      },
+      { onSuccess: () => {}, onFailure: () => {} }
+    );
+
+    const args = getArgs();
+    const mcpIdx = args.indexOf('--mcp-config');
+    expect(mcpIdx).toBeGreaterThanOrEqual(0);
+    expect(args[mcpIdx + 1]).toBe('/abs/path/mcp.json');
+    expect(args).toContain('--strict-mcp-config');
+  });
+
   it('accepts echoOutput in input without type errors', () => {
     const { runner } = makeRunnerWithFakeSpawn();
 
@@ -311,6 +346,7 @@ describe('CastRunner', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
         echoOutput: true,
       },
@@ -345,6 +381,7 @@ describe('CastRunner — D2: echoOutput threading', () => {
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
         cliCommand: 'claude',
+        mcpConfigPath: '',
         castId: 'test-cast-id',
         echoOutput: true,
       },

@@ -12,6 +12,12 @@ export interface GrimoireSettings {
   spellTag: string;
   cliCommand: string;
   binaryPath: string;
+  /** Absolute or relative path to a dedicated MCP config file. When non-empty (after trim),
+   *  local casts append `--mcp-config <path> --strict-mcp-config` to `claude -p`, making
+   *  the cast's MCP server set exactly what the file declares (ignoring all configured
+   *  scopes). When empty, both flags are omitted and casts inherit ambient MCP state.
+   *  Passed verbatim — no expansion, no validation. */
+  mcpConfigPath: string;
   forgeOutputFolder: string;
   vaultMountPath: string;
   defaultModel: ModelId;
@@ -46,6 +52,7 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
   spellTag: 'grimoire/spell',
   cliCommand: 'claude',
   binaryPath: '',
+  mcpConfigPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '',
   defaultModel: modelId('claude-sonnet-4-5'),
