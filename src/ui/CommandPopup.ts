@@ -192,8 +192,9 @@ export class CommandPopup extends Modal {
     this.#hintSlot = null;
     this.#hintSlotContainer = null;
     this.#render();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    this.#hintSlot?.renderHint();
+    // #render() re-creates #hintSlot via #createTabBar; cast to escape TS narrowing from line above.
+    const hintSlot = this.#hintSlot as HotkeyHintSlot | null;
+    hintSlot?.renderHint();
     this.#bindKeys();
     this.#hotkeyCapture?.install();
   }

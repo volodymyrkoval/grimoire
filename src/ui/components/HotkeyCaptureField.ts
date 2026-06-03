@@ -53,8 +53,8 @@ export class HotkeyCaptureField {
    */
   #postArea!: HTMLElement;
 
-  #keydownHandler!: (e: KeyboardEvent) => void;
-  #focusoutHandler!: (e: FocusEvent) => void;
+  #keydownHandler?: (e: KeyboardEvent) => void;
+  #focusoutHandler?: (e: FocusEvent) => void;
 
   /**
    * Mount the widget into `params.container`.

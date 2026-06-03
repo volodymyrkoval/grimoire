@@ -252,7 +252,7 @@ interface PathLinkListOptions {
   label: string;
   cssRowClass: string;
   cssSectionClass: string;
-  paths: string[];
+  paths: readonly string[];
   vaultRootAbs: string;
   onOpenLink: (path: string) => void;
 }
