@@ -26,7 +26,7 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
 
   it('(a) returns session entry model & effort when session is present (takes priority)', () => {
     input.session.get = vi.fn(() => ({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'high' as const,
       contextNotePaths: [],
       followUp: '',
@@ -35,7 +35,7 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
     const result = resolveSpellOptions(input);
 
     expect(result).toEqual({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'high',
     });
   });
@@ -43,14 +43,14 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
   it('(b) returns override model & effort when session is absent but override is present', () => {
     input.session.get = vi.fn(() => undefined);
     input.overrides.get = vi.fn(() => ({
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'xhigh' as const,
     }));
 
     const result = resolveSpellOptions(input);
 
     expect(result).toEqual({
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'xhigh',
     });
   });
@@ -62,7 +62,7 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
     const result = resolveSpellOptions(input);
 
     expect(result).toEqual({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
   });
@@ -75,14 +75,14 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
     const result = resolveSpellOptions(input);
 
     expect(result).toEqual({
-      model: modelId('claude-haiku-4-5'),
+      model: modelId('haiku'),
       effort: null,
     });
   });
 
   it('(e) returns selectedEffort when it is in the resolved model\'s effortOptions', () => {
     input.session.get = vi.fn(() => ({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'high' as const,
       contextNotePaths: [],
       followUp: '',
@@ -95,7 +95,7 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
 
   it('(f) clamps selectedEffort to model\'s defaultEffort when not in effortOptions', () => {
     input.session.get = vi.fn(() => ({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'xhigh' as const,
       contextNotePaths: [],
       followUp: '',
@@ -108,7 +108,7 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
 
   it('(g) returns null effort when resolvedModel has effortOptions === null (Haiku)', () => {
     input.session.get = vi.fn(() => ({
-      model: modelId('claude-haiku-4-5'),
+      model: modelId('haiku'),
       effort: 'high' as const,
       contextNotePaths: [],
       followUp: '',
@@ -117,7 +117,7 @@ describe('spellOptionsResolver.resolveSpellOptions', () => {
     const result = resolveSpellOptions(input);
 
     expect(result).toEqual({
-      model: modelId('claude-haiku-4-5'),
+      model: modelId('haiku'),
       effort: null,
     });
   });

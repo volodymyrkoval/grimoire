@@ -50,7 +50,7 @@ describe('forge-update end-to-end', () => {
       vaultMountPath: '/vault',
       binaryPath: '/usr/bin/claude',
       forgeOutputFolder: 'Spells/',
-      defaultModel: modelId('claude-sonnet-4-5'),
+      defaultModel: modelId('sonnet'),
       defaultEffort: null,
       portalPort: '',
       portalPath: '',

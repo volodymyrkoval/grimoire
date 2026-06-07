@@ -61,7 +61,7 @@ function buildDetail(opts: BuildOpts = {}) {
     mode: { kind: 'create' },
     callbacks,
     defaults: {
-      defaultModel: opts.defaultModel ?? modelId('claude-sonnet-4-5'),
+      defaultModel: opts.defaultModel ?? modelId('sonnet'),
       defaultEffort: opts.defaultEffort !== undefined ? opts.defaultEffort : null,
       defaultProvider: CLAUDE_CODE,
     },
@@ -108,7 +108,7 @@ describe('ForgeSentinelDetail', () => {
       contentEl: container,
       mode: { kind: 'create' },
       callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
-      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null, defaultProvider: CLAUDE_CODE },
+      defaults: { defaultModel: modelId('sonnet'), defaultEffort: null, defaultProvider: CLAUDE_CODE },
       hotkey: testHotkey(),
     });
 
@@ -138,9 +138,9 @@ describe('ForgeSentinelDetail', () => {
   it('model select has options from SUPPORTED_MODELS: haiku, sonnet, opus ids', () => {
     const { modelSelect } = buildDetail();
     expect(modelSelect.options.length).toBe(3);
-    expect(modelSelect.options[0].value).toBe('claude-haiku-4-5');
-    expect(modelSelect.options[1].value).toBe('claude-sonnet-4-5');
-    expect(modelSelect.options[2].value).toBe('claude-opus-4-5');
+    expect(modelSelect.options[0].value).toBe('haiku');
+    expect(modelSelect.options[1].value).toBe('sonnet');
+    expect(modelSelect.options[2].value).toBe('opus');
   });
 
   it('model select labels match SUPPORTED_MODELS labels', () => {
@@ -171,7 +171,7 @@ describe('ForgeSentinelDetail', () => {
       contentEl: container,
       mode: { kind: 'create' },
       callbacks: { onBack, onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
-      defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null, defaultProvider: CLAUDE_CODE },
+      defaults: { defaultModel: modelId('sonnet'), defaultEffort: null, defaultProvider: CLAUDE_CODE },
       hotkey: testHotkey(),
     });
 
@@ -191,31 +191,31 @@ describe('ForgeSentinelDetail', () => {
   // -------------------------------------------------------------------------
   describe('EffortRow integration', () => {
     it('mounts EffortRow with SUPPORTED_MODELS and effort from FormDefaults', () => {
-      buildDetail({ defaultModel: modelId('claude-opus-4-5'), defaultEffort: 'high' });
+      buildDetail({ defaultModel: modelId('opus'), defaultEffort: 'high' });
       expect(mockEffortMount).toHaveBeenCalledOnce();
       const [, mountOpts] = mockEffortMount.mock.calls[0] as [unknown, { modelId: string; effort: Effort | null; models: unknown }];
-      expect(mountOpts.modelId).toBe('claude-opus-4-5');
+      expect(mountOpts.modelId).toBe('opus');
       expect(mountOpts.effort).toBe('high');
       expect(mountOpts.models).toBeDefined();
     });
 
     it('uses model defaultEffort when FormDefaults.defaultEffort is null (sonnet → medium)', () => {
-      buildDetail({ defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: null });
+      buildDetail({ defaultModel: modelId('sonnet'), defaultEffort: null });
       const [, mountOpts] = mockEffortMount.mock.calls[0] as [unknown, { effort: Effort | null }];
       expect(mountOpts.effort).toBe('medium');
     });
 
     it('uses null effort when model has no default effort (haiku)', () => {
-      buildDetail({ defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null });
+      buildDetail({ defaultModel: modelId('haiku'), defaultEffort: null });
       const [, mountOpts] = mockEffortMount.mock.calls[0] as [unknown, { effort: Effort | null }];
       expect(mountOpts.effort).toBeNull();
     });
 
     it('calls EffortRow.update with new modelId and null when model select changes', () => {
-      const { modelSelect, fireModelChange } = buildDetail({ defaultModel: modelId('claude-sonnet-4-5') });
-      modelSelect.value = 'claude-opus-4-5';
+      const { modelSelect, fireModelChange } = buildDetail({ defaultModel: modelId('sonnet') });
+      modelSelect.value = 'opus';
       fireModelChange();
-      expect(mockEffortUpdate).toHaveBeenCalledWith(modelId('claude-opus-4-5'), null);
+      expect(mockEffortUpdate).toHaveBeenCalledWith(modelId('opus'), null);
     });
 
     it('effort reported by EffortRow onChange is used in the next submit', () => {
@@ -266,7 +266,7 @@ describe('ForgeSentinelDetail', () => {
         mode: { kind: 'update', spell: fakeSpell, directiveCount: 0 },
         callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit },
         defaults: {
-          defaultModel: modelId('claude-sonnet-4-5'),
+          defaultModel: modelId('sonnet'),
           defaultEffort: null,
           defaultProvider: CLAUDE_CODE,
         },
@@ -292,19 +292,19 @@ describe('ForgeSentinelDetail', () => {
       const onCreateSubmit = vi.fn();
       const { nameInput, descInput, modelSelect, submitForm } = buildDetail({
         onCreateSubmit,
-        defaultModel: modelId('claude-sonnet-4-5'),
+        defaultModel: modelId('sonnet'),
         defaultEffort: 'low',
       });
       nameInput.value = 'My Forge';
       descInput.value = 'A description';
-      modelSelect.value = 'claude-opus-4-5';
+      modelSelect.value = 'opus';
 
       submitForm();
 
       expect(onCreateSubmit).toHaveBeenCalledWith({
         name: 'My Forge',
         description: 'A description',
-        model: 'claude-opus-4-5',
+        model: 'opus',
         effort: 'low',
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -315,7 +315,7 @@ describe('ForgeSentinelDetail', () => {
       const onCreateSubmit = vi.fn();
       const { submitForm } = buildDetail({
         onCreateSubmit,
-        defaultModel: modelId('claude-haiku-4-5'),
+        defaultModel: modelId('haiku'),
         defaultEffort: null,
       });
       submitForm();

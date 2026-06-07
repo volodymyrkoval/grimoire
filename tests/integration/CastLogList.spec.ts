@@ -16,7 +16,7 @@ const makeRecord = (overrides: Partial<CastRecord> = {}): CastRecord => ({
   castId: 'cast-list-test',
   status: 'done',
   spellPath: 'Spells/Test.md',
-  model: 'claude-opus-4-7',
+  model: 'opus',
   effort: null,
   contextNotes: [],
   castedTs: NOW.toISOString(),

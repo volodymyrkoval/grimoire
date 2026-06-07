@@ -7,7 +7,7 @@ describe('OptionsSessionMap', () => {
   it('put then get returns the entry', () => {
     const map = new OptionsSessionMap();
     const entry: OptionsSessionEntry = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -31,7 +31,7 @@ describe('OptionsSessionMap', () => {
   it('delete removes the entry; get returns undefined after', () => {
     const map = new OptionsSessionMap();
     const entry: OptionsSessionEntry = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'low',
       contextNotePaths: [],
       followUp: '',
@@ -48,14 +48,14 @@ describe('OptionsSessionMap', () => {
   it('clear empties the map; get returns undefined after', () => {
     const map = new OptionsSessionMap();
     const entry1: OptionsSessionEntry = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
       executeOnNote: true,
     };
     const entry2: OptionsSessionEntry = {
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'xhigh',
       contextNotePaths: [],
       followUp: '',
@@ -75,7 +75,7 @@ describe('OptionsSessionMap', () => {
   it('put and get entry with executeOnNote: false preserves the value', () => {
     const map = new OptionsSessionMap();
     const entry: OptionsSessionEntry = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',

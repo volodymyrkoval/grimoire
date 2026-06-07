@@ -5,7 +5,7 @@ describe('buildCastArgs', () => {
   it('builds inline mode args with metaSpell', () => {
     const args = buildCastArgs({
       metaSpell: 'my spell content',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '',
@@ -14,7 +14,7 @@ describe('buildCastArgs', () => {
       '-p',
       'my spell content',
       '--model',
-      'claude-sonnet-4-5',
+      'sonnet',
       '--permission-mode',
       'dontAsk',
     ]);
@@ -24,7 +24,7 @@ describe('buildCastArgs', () => {
     const args = buildCastArgs({
       systemPromptFile: '/path/to/sys.md',
       userPrompt: 'do the thing',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '',
@@ -35,7 +35,7 @@ describe('buildCastArgs', () => {
       '-p',
       'do the thing',
       '--model',
-      'claude-sonnet-4-5',
+      'sonnet',
       '--permission-mode',
       'dontAsk',
     ]);
@@ -44,7 +44,7 @@ describe('buildCastArgs', () => {
   it('includes effort when effort is not null', () => {
     const args = buildCastArgs({
       metaSpell: 'my spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: 'high',
       vaultMountPath: '',
       mcpConfigPath: '',
@@ -56,7 +56,7 @@ describe('buildCastArgs', () => {
   it('omits effort flag when effort is null', () => {
     const args = buildCastArgs({
       metaSpell: 'my spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '',
@@ -67,7 +67,7 @@ describe('buildCastArgs', () => {
   it('includes --add-dir when vaultMountPath is non-empty', () => {
     const args = buildCastArgs({
       metaSpell: 'my spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '/vault/mount',
       mcpConfigPath: '',
@@ -79,7 +79,7 @@ describe('buildCastArgs', () => {
   it('omits --add-dir when vaultMountPath is empty', () => {
     const args = buildCastArgs({
       metaSpell: 'my spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '',
@@ -90,7 +90,7 @@ describe('buildCastArgs', () => {
   it('combines effort and vaultMountPath flags', () => {
     const args = buildCastArgs({
       metaSpell: 'my spell',
-      modelId: 'claude-opus-4-5',
+      modelId: 'opus',
       effort: 'xhigh',
       vaultMountPath: '/vault',
       mcpConfigPath: '',
@@ -108,12 +108,12 @@ describe('buildCastArgs', () => {
     // --system-prompt-file <path> -p <block>  (not reversed or mangled).
     const forgePath = '/vault/.obsidian/plugins/grimoire/forge.md';
     const forgeUserPrompt =
-      'name: My Spell\ndescription: Does things\nmodel: claude-sonnet-4-5\neffort: medium\nexecuteOnNote: false';
+      'name: My Spell\ndescription: Does things\nmodel: sonnet\neffort: medium\nexecuteOnNote: false';
 
     const args = buildCastArgs({
       systemPromptFile: forgePath,
       userPrompt: forgeUserPrompt,
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '/vault',
       mcpConfigPath: '',
@@ -141,7 +141,7 @@ describe('buildCastArgs', () => {
   it('never includes --provider flag for local cast arguments', () => {
     const args = buildCastArgs({
       metaSpell: 'my spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '',
@@ -154,7 +154,7 @@ describe('buildCastArgs', () => {
   it('omits --mcp-config and --strict-mcp-config when mcpConfigPath is empty', () => {
     const args = buildCastArgs({
       metaSpell: 'spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '',
@@ -166,7 +166,7 @@ describe('buildCastArgs', () => {
   it('omits both MCP flags when mcpConfigPath is whitespace-only', () => {
     const args = buildCastArgs({
       metaSpell: 'spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '   ',
@@ -178,7 +178,7 @@ describe('buildCastArgs', () => {
   it('appends --mcp-config <path> --strict-mcp-config when mcpConfigPath is non-empty', () => {
     const args = buildCastArgs({
       metaSpell: 'spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: '/abs/path/mcp.json',
@@ -194,7 +194,7 @@ describe('buildCastArgs', () => {
   it('MCP flags coexist with --effort and --add-dir', () => {
     const args = buildCastArgs({
       metaSpell: 'spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: 'high',
       vaultMountPath: '/v',
       mcpConfigPath: '/abs/m.json',
@@ -212,7 +212,7 @@ describe('buildCastArgs', () => {
     const rawPath = '  /abs/path/mcp.json  ';
     const args = buildCastArgs({
       metaSpell: 'spell',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '',
       mcpConfigPath: rawPath,
@@ -226,7 +226,7 @@ describe('buildCastArgs', () => {
     const args = buildCastArgs({
       systemPromptFile: '/sys.md',
       userPrompt: 'prompt',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
       vaultMountPath: '/vault',
       mcpConfigPath: '/mcp.json',

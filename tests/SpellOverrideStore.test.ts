@@ -29,16 +29,16 @@ describe('SpellOverrideStore', () => {
     const path = spellPath('my/spell');
     expect(store.has(path)).toBe(false);
 
-    store.set(path, { model: modelId('claude-sonnet-4-5'), effort: 'medium' });
+    store.set(path, { model: modelId('sonnet'), effort: 'medium' });
     expect(store.has(path)).toBe(true);
   });
 
   it('(c) set valid override (sonnet, medium) → stored in data.spellOverrides[path], saver.schedule() called once', () => {
     const path = spellPath('my/spell');
-    store.set(path, { model: modelId('claude-sonnet-4-5'), effort: 'medium' });
+    store.set(path, { model: modelId('sonnet'), effort: 'medium' });
 
     expect(data.spellOverrides[path]).toEqual({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
     expect(saver.schedule).toHaveBeenCalledTimes(1);
@@ -57,15 +57,15 @@ describe('SpellOverrideStore', () => {
     consoleError.mockRestore();
   });
 
-  it('(e) set for claude-haiku-4-5 (no effort support) → NOT stored, console.error called', () => {
+  it('(e) set for haiku (no effort support) → NOT stored, console.error called', () => {
     const path = spellPath('my/spell');
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    store.set(path, { model: modelId('claude-haiku-4-5'), effort: 'medium' });
+    store.set(path, { model: modelId('haiku'), effort: 'medium' });
 
     expect(data.spellOverrides[path]).toBeUndefined();
     expect(consoleError).toHaveBeenCalledWith(
-      'Cannot set override for model with no effort support: claude-haiku-4-5'
+      'Cannot set override for model with no effort support: haiku'
     );
     expect(saver.schedule).not.toHaveBeenCalled();
 
@@ -74,10 +74,10 @@ describe('SpellOverrideStore', () => {
 
   it('(f) set with effort outside model effortOptions (xhigh for sonnet) → stored with effort clamped to defaultEffort (medium)', () => {
     const path = spellPath('my/spell');
-    store.set(path, { model: modelId('claude-sonnet-4-5'), effort: 'xhigh' });
+    store.set(path, { model: modelId('sonnet'), effort: 'xhigh' });
 
     expect(data.spellOverrides[path]).toEqual({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
     expect(saver.schedule).toHaveBeenCalledTimes(1);
@@ -85,7 +85,7 @@ describe('SpellOverrideStore', () => {
 
   it('(g) clear for known path → removed from data.spellOverrides, saver.schedule() called', () => {
     const path = spellPath('my/spell');
-    data.spellOverrides[path] = { model: modelId('claude-sonnet-4-5'), effort: 'medium' };
+    data.spellOverrides[path] = { model: modelId('sonnet'), effort: 'medium' };
 
     store.clear(path);
 

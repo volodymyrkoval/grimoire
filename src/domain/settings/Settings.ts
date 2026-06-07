@@ -53,7 +53,7 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
   mcpConfigPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '',
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultProvider: CLAUDE_CODE,
   defaultEffort: 'medium',
   executionMode: 'local',
@@ -77,7 +77,7 @@ export interface SupportedModel {
 
 /** Hardcoded list of models available for selection in forms and casts. */
 export const SUPPORTED_MODELS: readonly SupportedModel[] = [
-  { id: modelId('claude-haiku-4-5'), label: 'Claude Haiku 4.5', provider: CLAUDE_CODE, effortOptions: null, defaultEffort: null },
-  { id: modelId('claude-sonnet-4-5'), label: 'Claude Sonnet 4.5', provider: CLAUDE_CODE, effortOptions: ['low', 'medium', 'high', 'max'], defaultEffort: 'medium' },
-  { id: modelId('claude-opus-4-5'), label: 'Claude Opus 4.5', provider: CLAUDE_CODE, effortOptions: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'xhigh' },
+  { id: modelId('haiku'), label: 'Claude Haiku', provider: CLAUDE_CODE, effortOptions: null, defaultEffort: null },
+  { id: modelId('sonnet'), label: 'Claude Sonnet', provider: CLAUDE_CODE, effortOptions: ['low', 'medium', 'high', 'max'], defaultEffort: 'medium' },
+  { id: modelId('opus'), label: 'Claude Opus', provider: CLAUDE_CODE, effortOptions: ['low', 'medium', 'high', 'xhigh', 'max'], defaultEffort: 'xhigh' },
 ];

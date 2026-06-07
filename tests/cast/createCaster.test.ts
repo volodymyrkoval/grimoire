@@ -12,7 +12,7 @@ const localSettings: GrimoireSettings = {
   binaryPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '/vault',
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: 'medium',
   defaultProvider: CLAUDE_CODE,
   activeRefinePath: null,
@@ -37,7 +37,7 @@ const remoteSettings: GrimoireSettings = {
 const baseCastInput: CastInput = {
   castId: 'cast-1',
   spellPath: 'spell.md',
-  modelId: modelId('claude-sonnet-4-5'),
+  modelId: modelId('sonnet'),
   effort: 'medium',
   userPrompt: 'Hello',
   vaultMountPath: '/vault',

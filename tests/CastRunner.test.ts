@@ -67,7 +67,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
@@ -95,7 +95,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
@@ -124,7 +124,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
@@ -149,7 +149,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/opt/bin/claude',
@@ -169,7 +169,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
@@ -189,7 +189,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
@@ -209,7 +209,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
@@ -230,7 +230,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
@@ -250,7 +250,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
@@ -270,7 +270,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell content',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: 'high',
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
@@ -285,7 +285,7 @@ describe('CastRunner', () => {
     expect(args).toContain('-p');
     expect(args).toContain('my spell content');
     expect(args).toContain('--model');
-    expect(args).toContain('claude-sonnet-4-5');
+    expect(args).toContain('sonnet');
     expect(args).toContain('--effort');
     expect(args).toContain('high');
   });
@@ -296,7 +296,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
@@ -321,7 +321,7 @@ describe('CastRunner', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
@@ -356,7 +356,7 @@ describe('CastRunner — D2: echoOutput threading', () => {
     runner.run(
       {
         metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
+        modelId: 'sonnet',
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',

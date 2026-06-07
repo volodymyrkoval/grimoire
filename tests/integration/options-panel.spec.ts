@@ -47,7 +47,7 @@ function mountPanel(overrideInitial?: {
   snapshot?: OptionsSnapshot;
   executeOnNote?: boolean;
 }): MountResult {
-  const model = modelId(overrideInitial?.model ?? 'claude-sonnet-4-5');
+  const model = modelId(overrideInitial?.model ?? 'sonnet');
   const effort = overrideInitial?.effort !== undefined ? overrideInitial.effort : 'medium';
 
   const contentEl = document.createElement('div');
@@ -143,7 +143,7 @@ describe('OptionsPanel integration', () => {
   // ------------------------------------------------------------------ A2
   it('changing model to Opus makes the "Set as default" checkbox label visible', () => {
     const { contentEl, formState } = mountPanel({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
 
@@ -151,7 +151,7 @@ describe('OptionsPanel integration', () => {
     const select = form.querySelector<HTMLSelectElement>('select')!;
 
     // Change model to Opus
-    select.value = 'claude-opus-4-5';
+    select.value = 'opus';
     select.dispatchEvent(new Event('change'));
 
     // formState now has model=opus, snapshot has model=sonnet → not equal
@@ -165,9 +165,9 @@ describe('OptionsPanel integration', () => {
   // ------------------------------------------------------------------ A3
   it('Reset restores snapshot values, hides the checkbox label, and calls sessionMap.delete', () => {
     const { contentEl, sessionMap } = mountPanel({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
-      snapshot: { model: modelId('claude-sonnet-4-5'), effort: 'medium' },
+      snapshot: { model: modelId('sonnet'), effort: 'medium' },
     });
 
     const deleteSpy = vi.spyOn(sessionMap, 'delete');
@@ -176,7 +176,7 @@ describe('OptionsPanel integration', () => {
     const select = form.querySelector<HTMLSelectElement>('select')!;
 
     // First change model to make things differ
-    select.value = 'claude-opus-4-5';
+    select.value = 'opus';
     select.dispatchEvent(new Event('change'));
 
     // Verify label is visible after change
@@ -190,7 +190,7 @@ describe('OptionsPanel integration', () => {
     resetBtn.click();
 
     // Model select restored to snapshot value
-    expect(select.value).toBe('claude-sonnet-4-5');
+    expect(select.value).toBe('sonnet');
 
     // Checkbox label hidden again
     expect(defaultLabel!.style.display).toBe('none');
@@ -218,7 +218,7 @@ describe('OptionsPanel integration', () => {
     expect(onCast).toHaveBeenCalledOnce();
     expect(onCast).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         followUp: 'my followup',
         contextNotePaths: [],
@@ -230,7 +230,7 @@ describe('OptionsPanel integration', () => {
     expect(putSpy).toHaveBeenCalledWith(
       TEST_SPELL_PATH,
       expect.objectContaining({
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         followUp: '',
         contextNotePaths: [],
@@ -241,7 +241,7 @@ describe('OptionsPanel integration', () => {
   // ------------------------------------------------------------------ A5
   it('checking "Set as default" calls setVaultDefault with model and effort, then onOverrideChanged', () => {
     const { contentEl, setVaultDefault, onOverrideChanged } = mountPanel({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
 
@@ -249,7 +249,7 @@ describe('OptionsPanel integration', () => {
     const select = form.querySelector<HTMLSelectElement>('select')!;
 
     // Make checkbox visible by changing model
-    select.value = 'claude-opus-4-5';
+    select.value = 'opus';
     select.dispatchEvent(new Event('change'));
 
     const checkbox = form.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
@@ -258,14 +258,14 @@ describe('OptionsPanel integration', () => {
 
     // After F2: checking "Set as default" calls setVaultDefault(model, effort)
     expect(setVaultDefault).toHaveBeenCalledOnce();
-    expect(setVaultDefault).toHaveBeenCalledWith(modelId('claude-opus-4-5'), 'medium');
+    expect(setVaultDefault).toHaveBeenCalledWith(modelId('opus'), 'medium');
     expect(onOverrideChanged).toHaveBeenCalledOnce();
   });
 
   // ------------------------------------------------------------------ A6
   it('unchecking "Set as default" is a no-op (vault-wide default cannot be unset per-spell), but calls onOverrideChanged for refresh', () => {
     const { contentEl, setVaultDefault, onOverrideChanged } = mountPanel({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
 
@@ -273,7 +273,7 @@ describe('OptionsPanel integration', () => {
     const select = form.querySelector<HTMLSelectElement>('select')!;
 
     // Make checkbox visible
-    select.value = 'claude-opus-4-5';
+    select.value = 'opus';
     select.dispatchEvent(new Event('change'));
 
     // Check then uncheck
@@ -296,9 +296,9 @@ describe('OptionsPanel integration', () => {
   // ------------------------------------------------------------------ A7
   it('Haiku model: effort row absent; checkbox stays hidden even when model differs from snapshot', () => {
     const { contentEl, formState } = mountPanel({
-      model: modelId('claude-haiku-4-5'),
+      model: modelId('haiku'),
       effort: null,
-      snapshot: { model: modelId('claude-haiku-4-5'), effort: null },
+      snapshot: { model: modelId('haiku'), effort: null },
     });
 
     const form = contentEl.querySelector('form.options-panel')!;
@@ -312,7 +312,7 @@ describe('OptionsPanel integration', () => {
     // effortPersistable tracks the *current* model's effort support, not the snapshot's.
     // Sonnet supports effort, so after the switch effortPersistable becomes true and the
     // snapshot no longer equals current → the "Set as default" checkbox should become visible.
-    select.value = 'claude-sonnet-4-5';
+    select.value = 'sonnet';
     select.dispatchEvent(new Event('change'));
 
     // Checkbox is now visible: current model (Sonnet) supports effort and form differs from snapshot
@@ -353,8 +353,8 @@ describe('OptionsPanel integration', () => {
     (scope as any).dispatch('ArrowDown', []);
 
     // effort survives when new model also has the current effort in its options
-    expect(updateSpy).toHaveBeenCalledWith('claude-opus-4-5', expect.anything());
-    expect(formState.snapshot().model).toBe('claude-opus-4-5');
+    expect(updateSpy).toHaveBeenCalledWith('opus', expect.anything());
+    expect(formState.snapshot().model).toBe('opus');
     document.body.removeChild(contentEl);
     updateSpy.mockRestore();
   });
@@ -373,8 +373,8 @@ describe('OptionsPanel integration', () => {
     (scope as any).dispatch('ArrowUp', []);
 
     // haiku has null effort (no effort options)
-    expect(updateSpy).toHaveBeenCalledWith('claude-haiku-4-5', null);
-    expect(formState.snapshot().model).toBe('claude-haiku-4-5');
+    expect(updateSpy).toHaveBeenCalledWith('haiku', null);
+    expect(formState.snapshot().model).toBe('haiku');
     document.body.removeChild(contentEl);
     updateSpy.mockRestore();
   });
@@ -471,9 +471,9 @@ describe('OptionsPanel integration', () => {
   // ------------------------------------------------------------------ A9
   it('panel.destroy() removes the formState listener so mutations no longer update the DOM', () => {
     const { contentEl, panel, formState, scope, onCast } = mountPanel({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
-      snapshot: { model: modelId('claude-sonnet-4-5'), effort: 'medium' },
+      snapshot: { model: modelId('sonnet'), effort: 'medium' },
     });
 
     const form = contentEl.querySelector('form.options-panel')!;
@@ -485,7 +485,7 @@ describe('OptionsPanel integration', () => {
     panel.destroy();
 
     // After destroy, mutate formState — the listener should be gone
-    formState.setModel(modelId('claude-opus-4-5'), SUPPORTED_MODELS);
+    formState.setModel(modelId('opus'), SUPPORTED_MODELS);
 
     // DOM should NOT have updated — label stays hidden because no re-render happened
     expect(defaultLabel.style.display).toBe('none');

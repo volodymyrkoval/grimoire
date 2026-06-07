@@ -36,7 +36,7 @@ const baseSettings: GrimoireSettings = {
   spellTag: 'grimoire/spell',
   binaryPath: '/usr/bin/claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: null,
   defaultProvider: CLAUDE_CODE,
   activeRefinePath: null,
@@ -65,7 +65,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -92,7 +92,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -121,7 +121,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -152,7 +152,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -180,7 +180,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -205,7 +205,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: ['a.md', 'b.md'],
       followUp: '',
@@ -230,7 +230,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: 'then do more',
@@ -255,7 +255,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: ['ctx.md'],
       followUp: 'do something',
@@ -284,7 +284,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: ['ctx.md'],
       followUp: 'extra instruction',
@@ -313,7 +313,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -340,7 +340,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { name: 'Summoning Circle', path: 'spells/summoning.md' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -366,7 +366,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -393,7 +393,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test Spell' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: ['ctx1.md', 'ctx2.md'],
       followUp: 'then continue',
@@ -406,7 +406,7 @@ describe('CastDispatcher', () => {
     expect(logWriter.recordCasted).toHaveBeenCalledWith({
       castId: 'fixed-uuid',
       spellPath: 'spells/test.md',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotes: ['ctx1.md', 'ctx2.md'],
       followUp: 'then continue',
@@ -429,7 +429,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -458,7 +458,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -489,7 +489,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -521,7 +521,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -548,7 +548,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { name: 'Summoning Circle', path: 'spells/summoning.md' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -576,7 +576,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -604,7 +604,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -630,7 +630,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -661,7 +661,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -691,7 +691,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -726,7 +726,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -755,7 +755,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -773,7 +773,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -799,7 +799,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -825,7 +825,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -851,7 +851,7 @@ describe('CastDispatcher', () => {
 
     dispatcher.dispatch({
       spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -880,7 +880,7 @@ describe('CastDispatcher', () => {
 
       dispatcher.dispatch({
         spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         contextNotePaths: [],
         followUp: '',
@@ -907,7 +907,7 @@ describe('CastDispatcher', () => {
 
       dispatcher.dispatch({
         spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         contextNotePaths: [],
         followUp: '',
@@ -933,7 +933,7 @@ describe('CastDispatcher', () => {
 
       dispatcher.dispatch({
         spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         contextNotePaths: [],
         followUp: '',
@@ -962,7 +962,7 @@ describe('CastDispatcher', () => {
       // local dispatch with provider
       dispatcher.dispatch({
         spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         contextNotePaths: [],
         followUp: '',
@@ -986,7 +986,7 @@ describe('CastDispatcher', () => {
 
       dispatcherRemote.dispatch({
         spell: { path: 'spells/test.md', name: 'Test' } as Spell,
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         contextNotePaths: [],
         followUp: '',

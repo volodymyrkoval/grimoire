@@ -8,7 +8,7 @@ describe('OptionsFormState', () => {
 
   beforeEach(() => {
     initialSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -20,7 +20,7 @@ describe('OptionsFormState', () => {
     const state = new OptionsFormState(initialSnapshot);
     const snap = state.snapshot();
 
-    expect(snap.model).toBe('claude-sonnet-4-5');
+    expect(snap.model).toBe('sonnet');
     expect(snap.effort).toBe('medium');
     expect(snap.contextNotePaths).toEqual([]);
     expect(snap.followUp).toBe('');
@@ -42,7 +42,7 @@ describe('OptionsFormState', () => {
     const listener = vi.fn();
 
     state.onChange(listener);
-    const result = state.setModel(modelId('claude-opus-4-5'), SUPPORTED_MODELS);
+    const result = state.setModel(modelId('opus'), SUPPORTED_MODELS);
 
     expect(state.snapshot().effort).toBe('medium');
     expect(result).toBe('medium');
@@ -51,7 +51,7 @@ describe('OptionsFormState', () => {
 
   it('setModel to Sonnet falls back to defaultEffort when current effort not in options', () => {
     const stateSnapshot: OptionsFormSnapshot = {
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'xhigh',
       contextNotePaths: [],
       followUp: '',
@@ -61,7 +61,7 @@ describe('OptionsFormState', () => {
     const listener = vi.fn();
 
     state.onChange(listener);
-    const result = state.setModel(modelId('claude-sonnet-4-5'), SUPPORTED_MODELS);
+    const result = state.setModel(modelId('sonnet'), SUPPORTED_MODELS);
 
     expect(state.snapshot().effort).toBe('medium');
     expect(result).toBe('medium');
@@ -73,7 +73,7 @@ describe('OptionsFormState', () => {
     const listener = vi.fn();
 
     state.onChange(listener);
-    const result = state.setModel(modelId('claude-haiku-4-5'), SUPPORTED_MODELS);
+    const result = state.setModel(modelId('haiku'), SUPPORTED_MODELS);
 
     expect(state.snapshot().effort).toBeNull();
     expect(result).toBeNull();
@@ -88,7 +88,7 @@ describe('OptionsFormState', () => {
     state.onChange(listener);
     const result = state.setModel(modelId('unknown-model-id'), SUPPORTED_MODELS);
 
-    expect(state.snapshot().model).toBe('claude-haiku-4-5');
+    expect(state.snapshot().model).toBe('haiku');
     expect(state.snapshot().effort).toBeNull();
     expect(result).toBeNull();
     expect(warnSpy).toHaveBeenCalled();

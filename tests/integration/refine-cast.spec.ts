@@ -34,7 +34,7 @@ const BASE_SETTINGS: GrimoireData['settings'] = {
   spellTag: 'grimoire/spell',
   binaryPath: '/usr/bin/claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: 'medium',
   executionMode: 'local',
   portalHost: '',
@@ -309,7 +309,7 @@ describe('refine-cast integration — CommandPopupBuilder → cast pipeline seam
       data: {
         settings: {} as any,
         spellOverrides: {
-          [REFINE_SENTINEL_PATH]: { model: modelId('claude-opus-4-5'), effort: 'high' },
+          [REFINE_SENTINEL_PATH]: { model: modelId('opus'), effort: 'high' },
         },
       },
       saver: { schedule: vi.fn() } as any,
@@ -325,7 +325,7 @@ describe('refine-cast integration — CommandPopupBuilder → cast pipeline seam
     const [runInput] = runSpy.mock.calls[0] as any[];
 
     // Override model and effort must flow through to CastRunner
-    expect(runInput.modelId).toBe('claude-opus-4-5');
+    expect(runInput.modelId).toBe('opus');
     expect(runInput.effort).toBe('high');
   });
 
@@ -348,7 +348,7 @@ describe('refine-cast integration — CommandPopupBuilder → cast pipeline seam
       castId: recordedArg.castId ?? 'stub-id',
       status: 'casted',
       spellPath: recordedArg.spellPath,
-      model: recordedArg.model ?? 'claude-sonnet-4-5',
+      model: recordedArg.model ?? 'sonnet',
       effort: recordedArg.effort ?? null,
       contextNotes: recordedArg.contextNotes ?? [],
       castedTs: new Date().toISOString(),

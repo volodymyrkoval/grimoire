@@ -48,7 +48,7 @@ function mountCreateMode(opts: {
       onCreateSubmit: opts.onCreateSubmit ?? vi.fn(),
       onUpdateSubmit: vi.fn(),
     },
-    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+    defaults: { defaultModel: modelId('sonnet'), defaultEffort: 'medium' },
     hotkey: { directory, eraser },
   });
   return { contentEl, detail };
@@ -76,7 +76,7 @@ function mountUpdateMode(opts: {
       onCreateSubmit: vi.fn(),
       onUpdateSubmit: opts.onUpdateSubmit ?? vi.fn(),
     },
-    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+    defaults: { defaultModel: modelId('sonnet'), defaultEffort: 'medium' },
     hotkey: { directory, eraser, writer },
   });
   return { contentEl, detail, eraser, writer };

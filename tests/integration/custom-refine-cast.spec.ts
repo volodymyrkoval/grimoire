@@ -39,7 +39,7 @@ const BASE_SETTINGS: GrimoireData['settings'] = {
   spellTag: 'grimoire/spell',
   binaryPath: '/usr/bin/claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: 'medium',
   executionMode: 'local',
   portalHost: '',
@@ -286,7 +286,7 @@ describe('custom-refine-cast integration — resolveRefinePath wiring seam', () 
   it('F0-d — session refinePathOverride wins over settings.activeRefinePath: dispatcher receives the per-cast path, no Notice', () => {
     const sessionMap = new OptionsSessionMap();
     sessionMap.put(REFINE_SENTINEL_PATH, {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -322,7 +322,7 @@ describe('custom-refine-cast integration — resolveRefinePath wiring seam', () 
   it('F0-e — session refinePathOverride === null (explicit Default) overrides settings.activeRefinePath: dispatcher receives bundled default, no Notice', () => {
     const sessionMap = new OptionsSessionMap();
     sessionMap.put(REFINE_SENTINEL_PATH, {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',

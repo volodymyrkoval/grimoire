@@ -1,5 +1,5 @@
 /**
- * Branded string type for Claude model identifiers (e.g. 'claude-sonnet-4-5').
+ * Branded string type for Claude model identifiers (e.g. 'sonnet', 'opus', 'haiku').
  * @see SpellPath for the sibling brand pattern.
  */
 export type ModelId = string & { readonly __brand: 'ModelId' };

@@ -34,7 +34,7 @@ function mountPanel(overrides?: Partial<{
 }>): MountResult {
   const contentEl = document.createElement('div');
   const scope = new Scope();
-  const model = overrides?.model ?? modelId('claude-sonnet-4-5');
+  const model = overrides?.model ?? modelId('sonnet');
   const effort = overrides?.effort !== undefined ? overrides.effort : 'medium';
   const showExecuteOnNote = overrides?.showExecuteOnNote !== false;
 
@@ -100,7 +100,7 @@ describe('OptionsPanel — per-control wiring', () => {
 
   it('changing model select calls formState.setModel', () => {
     const { contentEl, formState } = mountPanel({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
 
@@ -108,18 +108,18 @@ describe('OptionsPanel — per-control wiring', () => {
     const spy = vi.spyOn(formState, 'setModel');
 
     // Change to Opus
-    select.value = 'claude-opus-4-5';
+    select.value = 'opus';
     select.dispatchEvent(new Event('change', { bubbles: true }));
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith(modelId('claude-opus-4-5'), SUPPORTED_MODELS);
+    expect(spy).toHaveBeenCalledWith(modelId('opus'), SUPPORTED_MODELS);
 
     spy.mockRestore();
   });
 
   it('select exists and can be manually navigated by index', () => {
     // Mount with Haiku (index 0) to test wrap-around easily
-    const { contentEl } = mountPanel({ model: modelId('claude-haiku-4-5'), effort: null });
+    const { contentEl } = mountPanel({ model: modelId('haiku'), effort: null });
 
     const select = contentEl.querySelector<HTMLSelectElement>('select')!;
     expect(select).not.toBeNull();
@@ -172,7 +172,7 @@ describe('OptionsPanel — per-control wiring', () => {
 
   it('destroy() completes without error', () => {
     const { panel } = mountPanel({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     });
 
@@ -211,7 +211,7 @@ describe('OptionsPanel — per-control wiring', () => {
     expect(onCast).toHaveBeenCalledOnce();
     expect(onCast).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         followUp: 'my follow-up text',
       })

@@ -15,7 +15,7 @@ const makeRunnerStub = () => {
 const baseInput: CastInput = {
   castId: 'cast-1',
   spellPath: 'spells/foo.md',
-  modelId: 'claude-sonnet-4-5',
+  modelId: 'sonnet',
   effort: 'medium',
   userPrompt: 'Execute this spell',
   vaultMountPath: '/vault',

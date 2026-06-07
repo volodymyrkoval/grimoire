@@ -10,7 +10,7 @@ const baseInput: RemoteCastInput = {
   castId: 'cast-abc',
   spellPath: 'Spells/MySpell.md',
   userPrompt: 'Do the thing',
-  modelId: 'claude-sonnet-4-5',
+  modelId: 'sonnet',
   effort: 'medium',
   portalHost: 'portal.example.com',
   portalPort: '',
@@ -95,7 +95,7 @@ describe('RemoteCastTransport', () => {
         castId: 'cast-abc',
         spellPath: 'Spells/MySpell.md',
         userPrompt: 'Do the thing',
-        model: 'claude-sonnet-4-5',
+        model: 'sonnet',
         effort: 'medium',
       });
     });

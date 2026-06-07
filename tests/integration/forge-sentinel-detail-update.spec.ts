@@ -12,7 +12,7 @@ import { buildHotkeyDirectory } from '../../src/forge/HotkeyDirectory';
 // ─── Shared test fixtures ────────────────────────────────────────────────────
 
 const DEFAULT_DEFAULTS = {
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: 'medium' as const,
 };
 

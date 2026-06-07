@@ -39,8 +39,8 @@ import { createPopupHarness } from './harness';
 // ── Shared fixture helpers ────────────────────────────────────────────────────
 
 const TEST_SPELL_PATH = spellPath('/spells/fireball.md');
-const SONNET_MODEL = modelId('claude-sonnet-4-5');
-const OPUS_MODEL = modelId('claude-opus-4-5');
+const SONNET_MODEL = modelId('sonnet');
+const OPUS_MODEL = modelId('opus');
 
 /**
  * Augmented deps that carry the post-F2 ports alongside the legacy overrides field
@@ -140,7 +140,7 @@ describe('F0: Panel write-target swap + notification dot', () => {
       const select = form.querySelector<HTMLSelectElement>('select')!;
 
       // Change model to Opus so the "Set as default" checkbox label becomes visible.
-      select.value = 'claude-opus-4-5';
+      select.value = 'opus';
       select.dispatchEvent(new Event('change'));
 
       const checkbox = form.querySelector<HTMLInputElement>('input[data-grimoire="set-as-default"]')!;
@@ -164,7 +164,7 @@ describe('F0: Panel write-target swap + notification dot', () => {
   // ── (b) Cast after a model change calls writeCasting with the new block ───
 
   describe('(b) Cast after model change calls writeCasting with the new block', () => {
-    it('submitting cast after changing model to Opus calls writeCasting with provider:claude-code model:claude-opus-4-5', async () => {
+    it('submitting cast after changing model to Opus calls writeCasting with provider:claude-code model:opus', async () => {
       const { contentEl, writeCasting } = mountPanelWithNewDeps({
         initialModel: SONNET_MODEL,
         // reader returns null = no existing block, so the block is "new"
@@ -175,7 +175,7 @@ describe('F0: Panel write-target swap + notification dot', () => {
       const select = form.querySelector<HTMLSelectElement>('select')!;
 
       // Change model from Sonnet to Opus.
-      select.value = 'claude-opus-4-5';
+      select.value = 'opus';
       select.dispatchEvent(new Event('change'));
 
       // Submit cast.

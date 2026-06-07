@@ -16,7 +16,7 @@ describe('readCastingFrontmatter', () => {
     const frontmatterData = {
       'grimoire-casting': {
         provider: 'claude-code',
-        model: 'claude-sonnet-4-5',
+        model: 'sonnet',
         effort: 'high',
       },
     };
@@ -32,7 +32,7 @@ describe('readCastingFrontmatter', () => {
     // Assert
     expect(result).toEqual({
       provider: 'claude-code',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'high',
     });
   });

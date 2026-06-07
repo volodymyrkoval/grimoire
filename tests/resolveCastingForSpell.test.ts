@@ -6,9 +6,9 @@ import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import { modelId } from '../src/domain/settings/ModelId';
 
 describe('resolveCastingForSpell', () => {
-  const defaultModel = modelId('claude-sonnet-4-5');
+  const defaultModel = modelId('sonnet');
   const defaultEffort = 'medium' as const;
-  const haikuModel = modelId('claude-haiku-4-5');
+  const haikuModel = modelId('haiku');
 
   it('1: null block returns defaults wholesale', () => {
     const input = {
@@ -43,7 +43,7 @@ describe('resolveCastingForSpell', () => {
   });
 
   it('3: matching provider with model+valid effort uses those values', () => {
-    const opusModel = modelId('claude-opus-4-5');
+    const opusModel = modelId('opus');
     const input = {
       parsed: {
         provider: CLAUDE_CODE_PROVIDER,
@@ -62,7 +62,7 @@ describe('resolveCastingForSpell', () => {
   });
 
   it('4: matching provider, effort omitted, model supports effort → defaults.defaultEffort clamped', () => {
-    const sonnetModel = modelId('claude-sonnet-4-5');
+    const sonnetModel = modelId('sonnet');
     const input = {
       parsed: {
         provider: CLAUDE_CODE_PROVIDER,
@@ -99,7 +99,7 @@ describe('resolveCastingForSpell', () => {
   });
 
   it('6: block effort invalid for the block model → clamped to model default', () => {
-    const sonnetModel = modelId('claude-sonnet-4-5');
+    const sonnetModel = modelId('sonnet');
     // Sonnet supports ['low', 'medium', 'high', 'max'], not 'xhigh'
     const input = {
       parsed: {
@@ -107,7 +107,7 @@ describe('resolveCastingForSpell', () => {
         model: sonnetModel,
         effort: 'xhigh' as const, // invalid for Sonnet
       },
-      defaults: { defaultModel: modelId('claude-opus-4-5'), defaultEffort: null },
+      defaults: { defaultModel: modelId('opus'), defaultEffort: null },
       models: SUPPORTED_MODELS,
       knownProvider: CLAUDE_CODE_PROVIDER,
     };
@@ -138,7 +138,7 @@ describe('resolveCastingForSpell', () => {
   });
 
   it('C1: valid claude-code block returns provider: CLAUDE_CODE', () => {
-    const opusModel = modelId('claude-opus-4-5');
+    const opusModel = modelId('opus');
     const input = {
       parsed: {
         provider: CLAUDE_CODE,

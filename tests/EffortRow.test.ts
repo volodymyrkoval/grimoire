@@ -25,7 +25,7 @@ describe('EffortRow', () => {
 
     row.mount(parent, {
       models: SUPPORTED_MODELS,
-      modelId: modelId('claude-sonnet-4-5'),
+      modelId: modelId('sonnet'),
       effort: 'medium',
       onChange,
     });
@@ -57,7 +57,7 @@ describe('EffortRow', () => {
 
     row.mount(parent, {
       models: SUPPORTED_MODELS,
-      modelId: modelId('claude-haiku-4-5'),
+      modelId: modelId('haiku'),
       effort: null,
       onChange,
     });
@@ -74,7 +74,7 @@ describe('EffortRow', () => {
 
     row.mount(parent, {
       models: SUPPORTED_MODELS,
-      modelId: modelId('claude-sonnet-4-5'),
+      modelId: modelId('sonnet'),
       effort: null, // No effort provided
       onChange,
     });
@@ -117,7 +117,7 @@ describe('EffortRow', () => {
     // Mount with Sonnet
     row.mount(parent, {
       models: SUPPORTED_MODELS,
-      modelId: modelId('claude-sonnet-4-5'),
+      modelId: modelId('sonnet'),
       effort: 'medium',
       onChange,
     });
@@ -129,7 +129,7 @@ describe('EffortRow', () => {
     expect(buttons).toHaveLength(4); // Sonnet has 4 options
 
     // Update to Opus
-    row.update(modelId('claude-opus-4-5'), 'medium');
+    row.update(modelId('opus'), 'medium');
 
     // Wrapper should still be there (not removed)
     wrapper = parent.querySelector('div.grimoire-effort-row');
@@ -150,7 +150,7 @@ describe('EffortRow', () => {
     // Mount with Sonnet
     row.mount(parent, {
       models: SUPPORTED_MODELS,
-      modelId: modelId('claude-sonnet-4-5'),
+      modelId: modelId('sonnet'),
       effort: 'medium',
       onChange,
     });
@@ -158,7 +158,7 @@ describe('EffortRow', () => {
     expect(parent.children.length).toBe(1); // One wrapper div present
 
     // Update to Haiku (which has no effortOptions) — should unmount the wrapper
-    row.update(modelId('claude-haiku-4-5'), null);
+    row.update(modelId('haiku'), null);
 
     // No error should be thrown
     expect(consoleErrorSpy).not.toHaveBeenCalled();
@@ -179,14 +179,14 @@ describe('EffortRow', () => {
     // Mount with Haiku: effortOptions === null → no wrapper, but context stored
     row.mount(parent, {
       models: SUPPORTED_MODELS,
-      modelId: modelId('claude-haiku-4-5'),
+      modelId: modelId('haiku'),
       effort: null,
       onChange,
     });
     expect(parent.querySelector('.grimoire-effort-row')).toBeNull();
 
     // update to Sonnet: Case 3 fires → re-mounts effort row into original parent
-    row.update(modelId('claude-sonnet-4-5'), 'medium');
+    row.update(modelId('sonnet'), 'medium');
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     const wrapper = parent.querySelector('.grimoire-effort-row');
     expect(wrapper).not.toBeNull();
@@ -201,11 +201,11 @@ describe('EffortRow', () => {
 
     // Never mount — #models remains empty array
     // Call update with a model not in the empty #models
-    row.update(modelId('claude-sonnet-4-5'), 'medium');
+    row.update(modelId('sonnet'), 'medium');
 
     // console.error should have been called
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'EffortRow.update: model claude-sonnet-4-5 not found'
+      'EffortRow.update: model sonnet not found'
     );
 
     // Parent should still be empty

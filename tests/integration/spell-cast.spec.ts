@@ -37,7 +37,7 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
         path: '/spells/banishment.md',
       }),
       expect.objectContaining({
-        model: 'claude-sonnet-4-5',
+        model: 'sonnet',
         effort: 'medium',
         contextNotePaths: [],
         followUp: '',
@@ -59,7 +59,7 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
         path: '/spells/banishment.md',
       }),
       expect.objectContaining({
-        model: 'claude-sonnet-4-5',
+        model: 'sonnet',
         effort: 'medium',
         contextNotePaths: [],
         followUp: '',
@@ -81,7 +81,7 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
         path: '/spells/divination.md',
       }),
       expect.objectContaining({
-        model: 'claude-sonnet-4-5',
+        model: 'sonnet',
         effort: 'medium',
         contextNotePaths: [],
         followUp: '',
@@ -105,7 +105,7 @@ describe('spell-cast integration — popup spell-row → castAction', () => {
         path: '/spells/banishment.md',
       }),
       expect.objectContaining({
-        model: 'claude-sonnet-4-5',
+        model: 'sonnet',
         effort: 'medium',
         contextNotePaths: [],
         followUp: '',

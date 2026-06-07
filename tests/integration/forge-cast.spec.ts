@@ -24,7 +24,7 @@ import { modelId } from '../../src/domain/settings/ModelId';
 // directly so the test expresses the new 4-arg signature and fails loudly.
 
 const DEFAULT_DEFAULTS: FormDefaults = {
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: 'medium',
 };
 
@@ -112,7 +112,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
 
   it('form pre-selects model and effort from defaults', () => {
     const defaults: FormDefaults = {
-      defaultModel: modelId('claude-sonnet-4-5'),
+      defaultModel: modelId('sonnet'),
       defaultEffort: 'medium',
     };
     const h = createHarnessWithAction(imprintAction, defaults);
@@ -146,7 +146,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     h.submitForm({
       name: 'My Spell',
       description: 'Do things',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'high',
     });
 
@@ -154,7 +154,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     expect(imprintAction).toHaveBeenCalledWith({
       name: 'My Spell',
       description: 'Do things',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'high',
       executeOnNote: true,
     });
@@ -168,7 +168,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     h.submitForm({
       name: 'Silent Spell',
       description: 'No effort',
-      model: modelId('claude-haiku-4-5'),
+      model: modelId('haiku'),
     });
 
     expect(imprintAction).toHaveBeenCalledOnce();
@@ -180,7 +180,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
     const h = createHarnessWithAction(imprintAction);
     h.navigateToForge();
 
-    h.submitForm({ name: 'AnySpell', description: 'desc', model: 'claude-haiku-4-5' });
+    h.submitForm({ name: 'AnySpell', description: 'desc', model: 'haiku' });
 
     // Forge form is gone — popup exited detail phase
     expect(h.isInForgeDetail()).toBe(false);
@@ -199,7 +199,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
       spellTag: 'grimoire/spell',
       binaryPath: '/usr/bin/claude',
       forgeOutputFolder: 'Spells/',
-      defaultModel: modelId('claude-sonnet-4-5'),
+      defaultModel: modelId('sonnet'),
       defaultEffort: null,
       executionMode: 'local',
       portalHost: '',
@@ -223,7 +223,7 @@ describe('forge-cast integration — popup → form → imprintAction', () => {
 
     const h = createHarnessWithAction(realImprintAction);
     h.navigateToForge();
-    h.submitForm({ name: 'Flow Spell', description: 'test flow', model: 'claude-sonnet-4-5', effort: 'medium' });
+    h.submitForm({ name: 'Flow Spell', description: 'test flow', model: 'sonnet', effort: 'medium' });
 
     expect(runSpy).toHaveBeenCalledOnce();
     const [runInput] = runSpy.mock.calls[0];

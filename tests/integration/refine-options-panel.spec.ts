@@ -138,7 +138,7 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
 
     // Change model to something other than the default so the checkbox becomes visible
     const select = form.querySelector<HTMLSelectElement>('select')!;
-    select.value = 'claude-opus-4-5';
+    select.value = 'opus';
     select.dispatchEvent(new Event('change'));
 
     // Tick the "Set as default" checkbox
@@ -149,7 +149,7 @@ describe('refine-options-panel integration — Refine sentinel → OptionsPanel 
 
     // setVaultDefault must be called with the current form model
     expect(setVaultDefault).toHaveBeenCalledOnce();
-    expect(setVaultDefault).toHaveBeenCalledWith('claude-opus-4-5', expect.anything());
+    expect(setVaultDefault).toHaveBeenCalledWith('opus', expect.anything());
 
     // Uncheck — setVaultDefault is NOT called again (unchecking is a no-op for the vault default)
     setVaultDefault.mockClear();

@@ -74,8 +74,8 @@ describe('persistence.hydrate', () => {
 
   it('(g) carries through spellOverrides unmodified', () => {
     const overrides = {
-      'spell-1': { model: 'claude-opus-4-5', effort: 'xhigh' as const },
-      'spell-2': { model: 'claude-haiku-4-5', effort: 'low' as const },
+      'spell-1': { model: 'opus', effort: 'xhigh' as const },
+      'spell-2': { model: 'haiku', effort: 'low' as const },
     };
     const saved = { spellOverrides: overrides };
     const result = hydrate(saved, app);

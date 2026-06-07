@@ -36,7 +36,7 @@ function makeSettings(overrides: Partial<GrimoireSettings> = {}): GrimoireSettin
     spellTag: 'grimoire/spell',
     binaryPath: '/usr/bin/claude',
     forgeOutputFolder: 'Spells/',
-    defaultModel: modelId('claude-sonnet-4-5'),
+    defaultModel: modelId('sonnet'),
     defaultEffort: null,
     executionMode: 'local',
     portalHost: '',
@@ -98,7 +98,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
 
     dispatcher.dispatch({
       spell: testSpell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -122,7 +122,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
     expect(body).toMatchObject({
       castId: 'cast-abc',
       spellPath: 'Spells/Test.md',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
     });
     expect(reqArg.throw).toBe(false);
 
@@ -165,7 +165,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
 
     dispatcher.dispatch({
       spell: testSpell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',
@@ -211,7 +211,7 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
 
     dispatcher.dispatch({
       spell: testSpell,
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',

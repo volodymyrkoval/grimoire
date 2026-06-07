@@ -191,8 +191,8 @@ this is not json
       });
 
       // Write initial data with two casts
-      files[LOCAL_LOG] = `{"stage":"casted","castId":"cast-a","spellPath":"Spells/A.md","model":"claude-opus-4-7","effort":null,"contextNotes":[],"ts":"2026-01-01T00:00:00Z"}
-{"stage":"casted","castId":"cast-b","spellPath":"Spells/B.md","model":"claude-sonnet-4-6","effort":"low","contextNotes":[],"ts":"2026-01-01T00:00:01Z"}
+      files[LOCAL_LOG] = `{"stage":"casted","castId":"cast-a","spellPath":"Spells/A.md","model":"opus","effort":null,"contextNotes":[],"ts":"2026-01-01T00:00:00Z"}
+{"stage":"casted","castId":"cast-b","spellPath":"Spells/B.md","model":"sonnet","effort":"low","contextNotes":[],"ts":"2026-01-01T00:00:01Z"}
 `;
       files[AGENT_LOG] = `{"stage":"done","castId":"cast-a","ts":"2026-01-01T00:00:02Z"}
 {"stage":"done","castId":"cast-b","ts":"2026-01-01T00:00:03Z"}
@@ -236,8 +236,8 @@ this is not json
       });
 
       // Write initial data with two casts
-      files[LOCAL_LOG] = `{"stage":"casted","castId":"cast-a","spellPath":"Spells/A.md","model":"claude-opus-4-7","effort":null,"contextNotes":[],"ts":"2026-01-01T00:00:00Z"}
-{"stage":"casted","castId":"cast-b","spellPath":"Spells/B.md","model":"claude-sonnet-4-6","effort":"low","contextNotes":[],"ts":"2026-01-01T00:00:01Z"}
+      files[LOCAL_LOG] = `{"stage":"casted","castId":"cast-a","spellPath":"Spells/A.md","model":"opus","effort":null,"contextNotes":[],"ts":"2026-01-01T00:00:00Z"}
+{"stage":"casted","castId":"cast-b","spellPath":"Spells/B.md","model":"sonnet","effort":"low","contextNotes":[],"ts":"2026-01-01T00:00:01Z"}
 `;
       files[AGENT_LOG] = `{"stage":"done","castId":"cast-a","ts":"2026-01-01T00:00:02Z"}
 {"stage":"done","castId":"cast-b","ts":"2026-01-01T00:00:03Z"}

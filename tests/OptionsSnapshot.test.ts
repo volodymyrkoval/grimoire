@@ -6,11 +6,11 @@ import { modelId } from '../src/domain/settings/ModelId';
 describe('snapshotEqualsCurrent', () => {
   it('equal model and effort returns true', () => {
     const snap: OptionsSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     };
     const current: OptionsFormSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -23,11 +23,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('mismatched model returns false', () => {
     const snap: OptionsSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     };
     const current: OptionsFormSnapshot = {
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -40,11 +40,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('mismatched effort returns false', () => {
     const snap: OptionsSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
     };
     const current: OptionsFormSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'high',
       contextNotePaths: [],
       followUp: '',
@@ -57,11 +57,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('effort null vs medium returns false', () => {
     const snap: OptionsSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
     };
     const current: OptionsFormSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -74,11 +74,11 @@ describe('snapshotEqualsCurrent', () => {
 
   it('both efforts null returns true', () => {
     const snap: OptionsSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
     };
     const current: OptionsFormSnapshot = {
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotePaths: [],
       followUp: '',

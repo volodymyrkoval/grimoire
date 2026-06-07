@@ -22,7 +22,7 @@ function mountDetail(callbacks: {
       onCreateSubmit: callbacks.onCreateSubmit ?? vi.fn(),
       onUpdateSubmit: vi.fn(),
     },
-    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+    defaults: { defaultModel: modelId('sonnet'), defaultEffort: 'medium' },
     hotkey: {
       directory: buildHotkeyDirectory([]),
       eraser: vi.fn().mockResolvedValue(undefined),
@@ -56,7 +56,7 @@ describe('ForgeSentinelDetail component', () => {
     nameInput.value = 'X';
     descTextarea.value = 'Y';
     // Keep model as Sonnet (default) and click the 'high' effort button
-    expect(modelSelect.value).toBe('claude-sonnet-4-5');
+    expect(modelSelect.value).toBe('sonnet');
     const highBtn = form.querySelector('.grimoire-effort-row .grimoire-segmented__btn[textContent="high"], .grimoire-effort-row .grimoire-segmented__btn') as HTMLButtonElement | null;
     // Find the 'high' button by text content
     const effortBtns = Array.from(form.querySelectorAll('.grimoire-effort-row .grimoire-segmented__btn'));
@@ -66,7 +66,7 @@ describe('ForgeSentinelDetail component', () => {
 
     form.dispatchEvent(new Event('submit'));
 
-    expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', description: 'Y', model: modelId('claude-sonnet-4-5'), effort: 'high' }));
+    expect(onCreateSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', description: 'Y', model: modelId('sonnet'), effort: 'high' }));
   });
 
   it('D1b-haiku: switching model to Haiku removes effort row from DOM', () => {
@@ -77,7 +77,7 @@ describe('ForgeSentinelDetail component', () => {
     expect(form.querySelector('.grimoire-effort-row')).toBeTruthy();
 
     const modelSelect = form.querySelector('select') as HTMLSelectElement;
-    modelSelect.value = 'claude-haiku-4-5';
+    modelSelect.value = 'haiku';
     modelSelect.dispatchEvent(new Event('change'));
 
     // Effort row should be removed for Haiku (no effortOptions)
@@ -106,7 +106,7 @@ describe('ForgeSentinelDetail component', () => {
       contentEl,
       mode: { kind: 'create' },
       callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
-      defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
+      defaults: { defaultModel: modelId('haiku'), defaultEffort: null },
       hotkey: {
         directory: buildHotkeyDirectory([]),
         eraser: vi.fn().mockResolvedValue(undefined),
@@ -119,7 +119,7 @@ describe('ForgeSentinelDetail component', () => {
     expect(form.querySelector('.grimoire-effort-row')).toBeNull();
 
     const modelSelect = form.querySelector('select') as HTMLSelectElement;
-    modelSelect.value = 'claude-sonnet-4-5';
+    modelSelect.value = 'sonnet';
     modelSelect.dispatchEvent(new Event('change'));
 
     // Effort row should now be present
@@ -148,7 +148,7 @@ describe('ForgeSentinelDetail component', () => {
 
     (scope as unknown as { dispatch(k: string, m: string[]): boolean }).dispatch('ArrowDown', []);
 
-    expect(updateSpy).toHaveBeenCalledWith('claude-opus-4-5', null);
+    expect(updateSpy).toHaveBeenCalledWith('opus', null);
     updateSpy.mockRestore();
   });
 
@@ -194,7 +194,7 @@ describe('ForgeSentinelDetail component', () => {
       contentEl,
       mode: { kind: 'create' },
       callbacks: { onBack: vi.fn(), onCreateSubmit: vi.fn(), onUpdateSubmit: vi.fn() },
-      defaults: { defaultModel: modelId('claude-haiku-4-5'), defaultEffort: null },
+      defaults: { defaultModel: modelId('haiku'), defaultEffort: null },
       hotkey: {
         directory: buildHotkeyDirectory([]),
         eraser: vi.fn().mockResolvedValue(undefined),
@@ -203,7 +203,7 @@ describe('ForgeSentinelDetail component', () => {
 
     const form = contentEl.querySelector('form.forge-sentinel-form') as HTMLFormElement;
     const modelSelect = form.querySelector('select') as HTMLSelectElement;
-    modelSelect.value = 'claude-sonnet-4-5';
+    modelSelect.value = 'sonnet';
     modelSelect.dispatchEvent(new Event('change'));
 
     const effortEl = form.querySelector('.grimoire-effort-row');

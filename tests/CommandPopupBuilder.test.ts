@@ -40,7 +40,7 @@ describe('CommandPopupBuilder', () => {
       data: {
         settings: {
           spellTag: 'test-tag',
-          defaultModel: modelId('claude-sonnet-4-5'),
+          defaultModel: modelId('sonnet'),
           defaultEffort: 'medium' as const,
           executionMode: 'local' as const,
         },
@@ -96,7 +96,7 @@ describe('CommandPopupBuilder', () => {
     expect(typeof params.castAction).toBe('function');
     expect(params).toHaveProperty('defaults');
     expect(params.defaults).toEqual({
-      defaultModel: modelId('claude-sonnet-4-5'),
+      defaultModel: modelId('sonnet'),
       defaultEffort: 'medium',
     });
     expect(params).toHaveProperty('overrides', pluginData.overrides);
@@ -134,7 +134,7 @@ describe('CommandPopupBuilder', () => {
       data: {
         settings: {
           spellTag: 'test-tag',
-          defaultModel: modelId('claude-sonnet-4-5'),
+          defaultModel: modelId('sonnet'),
           defaultEffort: 'medium' as const,
           executionMode: 'local' as const,
         },
@@ -201,7 +201,7 @@ describe('CommandPopupBuilder', () => {
       data: {
         settings: {
           spellTag: 'test-tag',
-          defaultModel: modelId('claude-sonnet-4-5'),
+          defaultModel: modelId('sonnet'),
           defaultEffort: 'medium' as const,
           executionMode: 'local' as const,
         },

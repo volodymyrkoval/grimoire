@@ -104,7 +104,7 @@ describe('GrimoirePlugin', () => {
     expect(typeof params.imprintAction).toBe('function');
     expect(typeof params.castAction).toBe('function');
     expect(params.defaults).toStrictEqual({
-      defaultModel: modelId('claude-sonnet-4-5'),
+      defaultModel: modelId('sonnet'),
       defaultEffort: 'medium',
       defaultProvider: 'claude-code',
     });
@@ -131,13 +131,13 @@ describe('GrimoirePlugin', () => {
 
     callback();
     const firstDefaults = popupSpy.mock.calls[0][0].defaults;
-    expect(firstDefaults.defaultModel).toBe('claude-sonnet-4-5');
+    expect(firstDefaults.defaultModel).toBe('sonnet');
 
-    plugin.data.settings.defaultModel = modelId('claude-opus-4-5');
+    plugin.data.settings.defaultModel = modelId('opus');
 
     callback();
     const secondDefaults = popupSpy.mock.calls[1][0].defaults;
-    expect(secondDefaults.defaultModel).toBe('claude-opus-4-5');
+    expect(secondDefaults.defaultModel).toBe('opus');
 
     popupSpy.mockRestore();
   });
@@ -162,7 +162,7 @@ describe('GrimoirePlugin', () => {
     commandCall![0].callback();
 
     expect(capturedAction).toBeDefined();
-    const stubSnapshot = { name: 'test', description: 'desc', model: modelId('claude-sonnet-4-5'), effort: 'medium' as const };
+    const stubSnapshot = { name: 'test', description: 'desc', model: modelId('sonnet'), effort: 'medium' as const };
     capturedAction!(stubSnapshot);
 
     expect(imprintSpy).toHaveBeenCalledOnce();
@@ -287,7 +287,7 @@ describe('GrimoirePlugin', () => {
     (app as any).workspace.getActiveFile.mockReturnValue({ path: 'notes/active.md', basename: 'active' });
     const stubSpell = { name: 'Test Spell', path: 'spells/test.md' };
     const stubSnapshot = {
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'high' as const,
       contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
       followUp: 'This is a follow-up.',
@@ -299,7 +299,7 @@ describe('GrimoirePlugin', () => {
     expect(dispatchSpy).toHaveBeenCalledOnce();
     expect(dispatchSpy).toHaveBeenCalledWith({
       spell: stubSpell,
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'high',
       contextNotePaths: ['notes/context1.md', 'notes/context2.md'],
       followUp: 'This is a follow-up.',

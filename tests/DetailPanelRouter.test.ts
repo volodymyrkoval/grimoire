@@ -8,7 +8,7 @@ import { modelId } from '../src/domain/settings/ModelId';
 
 function buildDetailPanelRouterDeps(overrides?: Partial<DetailPanelRouterDeps>): DetailPanelRouterDeps {
   return {
-    formDefaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+    formDefaults: { defaultModel: modelId('sonnet'), defaultEffort: 'medium' },
     overrides: { has: vi.fn() } as any,
     sessionMap: {} as any,
     app: {} as any,

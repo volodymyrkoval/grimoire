@@ -88,7 +88,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
 
     // Second arg: the form snapshot with defaults
     expect(snapshotArg).toMatchObject({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',
@@ -100,7 +100,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
     // reader returns a block for banishment only (index 0), null for everything else
     const blockForBanishment: SpellCastingSettings = {
       provider: 'claude-code',
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'medium',
     };
     const reader: CastingFrontmatterReader = vi.fn().mockImplementation((path: string) =>
@@ -124,7 +124,7 @@ describe('options-panel-popup integration — ArrowRight → OptionsPanel seam',
     // reader returns a block only for banishment, simulating a pre-written frontmatter block
     const reader: CastingFrontmatterReader = vi.fn().mockImplementation((path: string) =>
       path === '/spells/banishment.md'
-        ? { provider: 'claude-code', model: modelId('claude-sonnet-4-5'), effort: 'medium' as const }
+        ? { provider: 'claude-code', model: modelId('sonnet'), effort: 'medium' as const }
         : null,
     );
 

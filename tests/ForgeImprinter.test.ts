@@ -41,7 +41,7 @@ const localBaseSettings: GrimoireSettings = {
   spellTag: 'grimoire/spell',
   binaryPath: '/usr/bin/claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: null,
   executionMode: 'local',
   portalHost: '',
@@ -78,7 +78,7 @@ describe('ForgeImprinter', () => {
       {
         name: '<>',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -108,7 +108,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test description',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -136,7 +136,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'Test Spell',
         description: 'A test spell',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -149,7 +149,7 @@ describe('ForgeImprinter', () => {
     const expectedPrompt = buildForgeUserPrompt({
       description: 'A test spell',
       name: 'Test Spell',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       executeOnNote: true,
       provider: CLAUDE_CODE,
@@ -173,7 +173,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: false,
         provider: CLAUDE_CODE,
@@ -199,7 +199,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: false,
         provider: CLAUDE_CODE,
@@ -226,7 +226,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: false,
         provider: CLAUDE_CODE,
@@ -255,7 +255,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
       } as ForgeFormSnapshot,
@@ -282,7 +282,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'Test Spell',
         description: 'A test spell',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: false,
       } as ForgeFormSnapshot,
@@ -309,7 +309,7 @@ describe('ForgeImprinter', () => {
       {
         name: '<>',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -337,7 +337,7 @@ describe('ForgeImprinter', () => {
     const snapshot = {
       name: 'My Spell',
       description: 'test',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       executeOnNote: true,
       provider: CLAUDE_CODE,
@@ -373,7 +373,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -402,7 +402,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -437,7 +437,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -467,7 +467,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -499,7 +499,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         executeOnNote: false,
         provider: CLAUDE_CODE,
@@ -533,7 +533,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         executeOnNote: false,
         provider: CLAUDE_CODE,
@@ -566,7 +566,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         executeOnNote: false,
         provider: CLAUDE_CODE,
@@ -597,7 +597,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'Does things',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'medium',
         executeOnNote: false,
         provider: CLAUDE_CODE,
@@ -632,7 +632,7 @@ describe('ForgeImprinter', () => {
       {
         name: 'My Spell',
         description: 'test',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: null,
         executeOnNote: true,
         provider: CLAUDE_CODE,
@@ -660,7 +660,7 @@ describe('ForgeImprinter', () => {
     });
 
     imprinter.imprint(
-      { name: 'My Spell', description: 'desc', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false, provider: CLAUDE_CODE },
+      { name: 'My Spell', description: 'desc', model: modelId('sonnet'), effort: null, executeOnNote: false, provider: CLAUDE_CODE },
       { ...remoteBaseSettings },
       vi.fn()
     );
@@ -684,7 +684,7 @@ describe('ForgeImprinter', () => {
       forgeSpellPaths,
     });
     imprinter2.imprint(
-      { name: 'X', description: 'd', model: modelId('claude-sonnet-4-5'), effort: null, executeOnNote: false, provider: CLAUDE_CODE },
+      { name: 'X', description: 'd', model: modelId('sonnet'), effort: null, executeOnNote: false, provider: CLAUDE_CODE },
       { ...remoteBaseSettings },
       vi.fn()
     );
@@ -708,7 +708,7 @@ describe('ForgeImprinter', () => {
     const snapshot: ForgeFormSnapshot = {
       name: 'My Spell',
       description: 'test',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       executeOnNote: false,
       provider: CLAUDE_CODE,

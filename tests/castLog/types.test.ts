@@ -24,7 +24,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/test/spell',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotes: [],
     };
@@ -74,7 +74,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/test/spell',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotes: [],
     };
@@ -87,7 +87,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/spell.md',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotes: [],
       portalCastId: 'srv-1',
@@ -97,7 +97,7 @@ describe('CastLogEvent', () => {
       ts: '2025-01-01T00:00:00Z',
       stage: 'casted',
       spellPath: '/spell.md',
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: null,
       contextNotes: [],
     };

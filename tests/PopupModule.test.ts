@@ -11,7 +11,7 @@ describe('PopupModule', () => {
 
   const makeSettings = () => ({
     spellTag: 'spell',
-    defaultModel: modelId('claude-sonnet-4-5'),
+    defaultModel: modelId('sonnet'),
     defaultEffort: 'medium' as const,
     executionMode: 'local' as const,
     binaryPath: '',

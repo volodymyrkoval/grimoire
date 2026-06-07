@@ -20,23 +20,23 @@ describe('CastingSettings', () => {
 
   describe('parseCastingSettings', () => {
     it('parses well-formed object with provider, model, and effort', () => {
-      const raw = { provider: 'claude-code', model: 'claude-sonnet-4-5', effort: 'high' };
+      const raw = { provider: 'claude-code', model: 'sonnet', effort: 'high' };
       const result = parseCastingSettings(raw);
 
       expect(result).toEqual({
         provider: 'claude-code',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: 'high',
       });
     });
 
     it('parses object with effort omitted', () => {
-      const raw = { provider: 'claude-code', model: 'claude-sonnet-4-5' };
+      const raw = { provider: 'claude-code', model: 'sonnet' };
       const result = parseCastingSettings(raw);
 
       expect(result).toEqual({
         provider: 'claude-code',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: undefined,
       });
     });
@@ -49,21 +49,21 @@ describe('CastingSettings', () => {
     });
 
     it('returns null when provider is missing', () => {
-      const raw = { model: 'claude-sonnet-4-5' };
+      const raw = { model: 'sonnet' };
       const result = parseCastingSettings(raw);
 
       expect(result).toBeNull();
     });
 
     it('returns null when provider is empty string', () => {
-      const raw = { provider: '', model: 'claude-sonnet-4-5' };
+      const raw = { provider: '', model: 'sonnet' };
       const result = parseCastingSettings(raw);
 
       expect(result).toBeNull();
     });
 
     it('returns null when provider is whitespace only', () => {
-      const raw = { provider: '   ', model: 'claude-sonnet-4-5' };
+      const raw = { provider: '   ', model: 'sonnet' };
       const result = parseCastingSettings(raw);
 
       expect(result).toBeNull();
@@ -95,47 +95,47 @@ describe('CastingSettings', () => {
     });
 
     it('returns null when raw is an array', () => {
-      const result = parseCastingSettings(['claude-code', 'claude-sonnet-4-5']);
+      const result = parseCastingSettings(['claude-code', 'sonnet']);
 
       expect(result).toBeNull();
     });
 
     it('parses object with unknown effort string as undefined', () => {
-      const raw = { provider: 'claude-code', model: 'claude-sonnet-4-5', effort: 'unknown' };
+      const raw = { provider: 'claude-code', model: 'sonnet', effort: 'unknown' };
       const result = parseCastingSettings(raw);
 
       expect(result).toEqual({
         provider: 'claude-code',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: undefined,
       });
     });
 
     it('trims whitespace from provider', () => {
-      const raw = { provider: '  claude-code  ', model: 'claude-sonnet-4-5' };
+      const raw = { provider: '  claude-code  ', model: 'sonnet' };
       const result = parseCastingSettings(raw);
 
       expect(result).toEqual({
         provider: 'claude-code',
-        model: modelId('claude-sonnet-4-5'),
+        model: modelId('sonnet'),
         effort: undefined,
       });
     });
 
     it('returns null when provider is unknown (codex)', () => {
-      const raw = { provider: 'codex', model: 'claude-sonnet-4-5' };
+      const raw = { provider: 'codex', model: 'sonnet' };
       const result = parseCastingSettings(raw);
 
       expect(result).toBeNull();
     });
 
     it('returns SpellCastingSettings with Provider brand when provider is valid', () => {
-      const raw = { provider: 'claude-code', model: 'claude-sonnet-4-5' };
+      const raw = { provider: 'claude-code', model: 'sonnet' };
       const result = parseCastingSettings(raw);
 
       expect(result).not.toBeNull();
       expect(result?.provider).toBe('claude-code');
-      expect(result?.model).toBe(modelId('claude-sonnet-4-5'));
+      expect(result?.model).toBe(modelId('sonnet'));
     });
   });
 });

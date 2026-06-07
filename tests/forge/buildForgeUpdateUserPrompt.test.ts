@@ -9,7 +9,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -23,7 +23,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -37,11 +37,11 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
-    expect(output).toContain('claude-sonnet-4-5');
+    expect(output).toContain('sonnet');
   });
 
   it('includes description in the output as quoted block', () => {
@@ -51,7 +51,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell to be better',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -65,7 +65,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -79,7 +79,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: null,
       provider: 'claude-code',
     });
@@ -93,7 +93,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -107,7 +107,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: false,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -121,7 +121,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 3,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -135,7 +135,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -149,7 +149,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -164,7 +164,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -178,7 +178,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -192,7 +192,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: true,
       directiveCount: 2,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });
@@ -206,7 +206,7 @@ describe('buildForgeUpdateUserPrompt', () => {
       description: 'Update this spell',
       applyCastDirectives: false,
       directiveCount: 0,
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });

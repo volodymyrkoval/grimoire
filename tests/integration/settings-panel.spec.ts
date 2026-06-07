@@ -58,23 +58,23 @@ describe('GrimoireSettingTab seam', () => {
 
   // (iii) Dropdown → Haiku — model field updated, save called
   // Provider dropdown is now at index 0, model dropdown is at index 1
-  it('selecting claude-haiku-4-5 writes defaultModel to plugin.data.settings and calls save', () => {
+  it('selecting haiku writes defaultModel to plugin.data.settings and calls save', () => {
     plugin.save.mockClear();
     const selects = tab.containerEl.querySelectorAll('select');
-    (selects[1] as any).__triggerChange('claude-haiku-4-5');
+    (selects[1] as any).__triggerChange('haiku');
 
-    expect(plugin.data.settings.defaultModel).toBe('claude-haiku-4-5');
+    expect(plugin.data.settings.defaultModel).toBe('haiku');
     expect(plugin.save).toHaveBeenCalled();
   });
 
   // (iv) Dropdown → Opus — effort row lazy-mounts with 5 buttons
   // Provider dropdown is now at index 0, model dropdown is at index 1
-  it('selecting claude-opus-4-5 after haiku renders 5 effort buttons', () => {
+  it('selecting opus after haiku renders 5 effort buttons', () => {
     const selects = tab.containerEl.querySelectorAll('select');
     // First go to Haiku (Case 2: segmented stays from Sonnet default)
-    (selects[1] as any).__triggerChange('claude-haiku-4-5');
+    (selects[1] as any).__triggerChange('haiku');
     // Then pick Opus — Case 1: setOptions → 5 Opus buttons
-    (selects[1] as any).__triggerChange('claude-opus-4-5');
+    (selects[1] as any).__triggerChange('opus');
 
     const btns = tab.containerEl.querySelectorAll('.grimoire-segmented__btn');
     expect(btns.length).toBe(5);
@@ -83,7 +83,7 @@ describe('GrimoireSettingTab seam', () => {
   // (v) Effort button click — write-through + save
   it('clicking an effort button writes defaultEffort and calls save', () => {
     const selects = tab.containerEl.querySelectorAll('select');
-    (selects[0] as any).__triggerChange('claude-opus-4-5');
+    (selects[0] as any).__triggerChange('opus');
     plugin.save.mockClear();
 
     const btn = tab.containerEl.querySelector<HTMLButtonElement>('.grimoire-segmented__btn');

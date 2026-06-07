@@ -36,7 +36,7 @@ function makeForgeSpellPaths(vaultMountPath: string) {
 const snapshot: ForgeFormSnapshot = {
   name: 'My Spell',
   description: 'Does things',
-  model: modelId('claude-sonnet-4-5'),
+  model: modelId('sonnet'),
   effort: 'medium',
   executeOnNote: false,
 };
@@ -46,7 +46,7 @@ const localSettings: GrimoireSettings = {
   spellTag: 'grimoire/spell',
   binaryPath: '/usr/bin/claude',
   forgeOutputFolder: 'Spells/',
-  defaultModel: modelId('claude-sonnet-4-5'),
+  defaultModel: modelId('sonnet'),
   defaultEffort: null,
   executionMode: 'local',
   portalHost: '',

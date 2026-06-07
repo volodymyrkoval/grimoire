@@ -6,7 +6,7 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test description here',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: true,
       provider: 'claude-code',
@@ -18,7 +18,7 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: true,
       provider: 'claude-code',
@@ -30,19 +30,19 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: true,
       provider: 'claude-code',
     });
-    expect(output).toContain('claude-sonnet-4-5');
+    expect(output).toContain('sonnet');
   });
 
   it('displays effort when set to medium', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: true,
       provider: 'claude-code',
@@ -54,7 +54,7 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: null,
       executeOnNote: true,
       provider: 'claude-code',
@@ -66,7 +66,7 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: true,
       provider: 'claude-code',
@@ -78,7 +78,7 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: false,
       provider: 'claude-code',
@@ -90,7 +90,7 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: true,
       provider: 'claude-code',
@@ -102,7 +102,7 @@ describe('buildForgeUserPrompt', () => {
     const output = buildForgeUserPrompt({
       description: 'test',
       name: 'test-spell',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       executeOnNote: true,
       provider: 'claude-code',

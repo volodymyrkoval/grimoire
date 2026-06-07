@@ -12,11 +12,11 @@
  * (Sonnet/medium), so cases (a) and (c) fail red.
  *
  * Three cases pinned here:
- *   (a) Present matching block  — reader returns { provider:'claude-code', model:'claude-opus-4-5', effort:'high' }
+ *   (a) Present matching block  — reader returns { provider:'claude-code', model:'opus', effort:'high' }
  *       → model select seeded to opus, effort row seeded to high
  *   (b) Absent block            — reader returns null
  *       → model select seeded to global default (sonnet/medium)
- *   (c) Stale-provider block    — reader returns { provider:'openai', model:'claude-opus-4-5', effort:'high' }
+ *   (c) Stale-provider block    — reader returns { provider:'openai', model:'opus', effort:'high' }
  *       → wholesale fallback to global default (sonnet/medium)
  */
 
@@ -34,7 +34,7 @@ import type { SpellCastingSettings } from '../../src/domain/settings/CastingSett
 import { CLAUDE_CODE } from '../../src/domain/settings/Provider';
 
 /** Global default seeded into every test: Sonnet + medium */
-const GLOBAL_DEFAULT_MODEL = modelId('claude-sonnet-4-5');
+const GLOBAL_DEFAULT_MODEL = modelId('sonnet');
 const GLOBAL_DEFAULT_EFFORT = 'medium' as const;
 
 const TEST_SPELL_PATH = spellPath('/spells/fireball.md');
@@ -127,7 +127,7 @@ describe('OptionsDetail seam — CastingFrontmatterReader', () => {
   it('(a) present matching block seeds model select to opus and effort to high', () => {
     const block: SpellCastingSettings = {
       provider: 'claude-code',
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'high',
     };
     const reader: CastingFrontmatterReader = vi.fn().mockReturnValue(block);
@@ -136,7 +136,7 @@ describe('OptionsDetail seam — CastingFrontmatterReader', () => {
 
     // RED: until E1 wires the reader, OptionsDetail ignores it and seeds Sonnet.
     // This assertion drives the correct expected value (opus); test fails red.
-    expect(readModelSelectValue(contentEl)).toBe('claude-opus-4-5');
+    expect(readModelSelectValue(contentEl)).toBe('opus');
     expect(readSelectedEffortText(contentEl)).toBe('high');
 
     detail.destroy();
@@ -151,7 +151,7 @@ describe('OptionsDetail seam — CastingFrontmatterReader', () => {
 
     // GREEN even before E1: global default (sonnet/medium) is what OptionsDetail
     // returns when no override exists. This case serves as the baseline anchor.
-    expect(readModelSelectValue(contentEl)).toBe('claude-sonnet-4-5');
+    expect(readModelSelectValue(contentEl)).toBe('sonnet');
     expect(readSelectedEffortText(contentEl)).toBe('medium');
 
     detail.destroy();
@@ -163,7 +163,7 @@ describe('OptionsDetail seam — CastingFrontmatterReader', () => {
     // The frontmatter block names a provider that is not claude-code → stale → wholesale fallback.
     const staleBlock: SpellCastingSettings = {
       provider: 'openai',
-      model: modelId('claude-opus-4-5'),
+      model: modelId('opus'),
       effort: 'high',
     };
     const reader: CastingFrontmatterReader = vi.fn().mockReturnValue(staleBlock);
@@ -174,7 +174,7 @@ describe('OptionsDetail seam — CastingFrontmatterReader', () => {
     // After E1 lands the resolver runs, stale provider triggers wholesale fallback — same outcome.
     // This test stays green through both phases (it is not a red test for the stale-block logic;
     // it is an anchor that proves the stale path never bleeds opus through).
-    expect(readModelSelectValue(contentEl)).toBe('claude-sonnet-4-5');
+    expect(readModelSelectValue(contentEl)).toBe('sonnet');
     expect(readSelectedEffortText(contentEl)).toBe('medium');
 
     detail.destroy();

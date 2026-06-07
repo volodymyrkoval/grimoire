@@ -9,7 +9,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'cast-123',
       spellPath: '/path/to/spell',
       userPrompt: 'Hello, world!',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: 'medium' as Effort,
     };
 
@@ -20,7 +20,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'cast-123',
       spellPath: '/path/to/spell',
       userPrompt: 'Hello, world!',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
     });
   });
@@ -30,7 +30,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'cast-123',
       spellPath: '/path/to/spell',
       userPrompt: 'Hello, world!',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
     };
 
@@ -46,7 +46,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'cast-123',
       spellPath: '/path/to/spell',
       userPrompt: '',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
     };
 
@@ -61,7 +61,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'cast-123',
       spellPath: '/path/to/spell',
       userPrompt: 'Hello',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: null,
     };
 
@@ -76,7 +76,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'abc-def',
       spellPath: '/grimoire/spells/test',
       userPrompt: 'Test prompt',
-      modelId: 'claude-opus-4-5',
+      modelId: 'opus',
       effort: 'high' as Effort,
     };
 
@@ -87,7 +87,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'abc-def',
       spellPath: '/grimoire/spells/test',
       userPrompt: 'Test prompt',
-      model: 'claude-opus-4-5',
+      model: 'opus',
       effort: 'high',
     });
   });
@@ -97,7 +97,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'cast-123',
       spellPath: '/path/to/spell',
       userPrompt: 'Hello, world!',
-      modelId: 'claude-sonnet-4-5',
+      modelId: 'sonnet',
       effort: 'medium' as Effort,
       provider: CLAUDE_CODE,
     };
@@ -110,7 +110,7 @@ describe('buildPortalRequestBody', () => {
       castId: 'cast-123',
       spellPath: '/path/to/spell',
       userPrompt: 'Hello, world!',
-      model: 'claude-sonnet-4-5',
+      model: 'sonnet',
       effort: 'medium',
       provider: 'claude-code',
     });

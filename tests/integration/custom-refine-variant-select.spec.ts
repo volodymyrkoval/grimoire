@@ -98,7 +98,7 @@ function createHarnessWithSentinelFromStart(sessionMap: OptionsSessionMap, optio
     imprintAction: vi.fn(),
     castAction: vi.fn(),
     refineCastAction: vi.fn(),
-    defaults: { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' },
+    defaults: { defaultModel: modelId('sonnet'), defaultEffort: 'medium' },
     overrides,
     sessionMap,
     castLogPanelDeps: makeFakeCastLogPanelDeps(),

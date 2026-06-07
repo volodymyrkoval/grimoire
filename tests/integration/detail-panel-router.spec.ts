@@ -52,7 +52,7 @@ describe('detail-panel-router — Route 1: spell row → spell-options panel', (
     const [spellArg, snapshotArg] = (castAction as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(spellArg).toMatchObject({ name: 'Banishment Hex', path: '/spells/banishment.md' });
     expect(snapshotArg).toMatchObject({
-      model: modelId('claude-sonnet-4-5'),
+      model: modelId('sonnet'),
       effort: 'medium',
       contextNotePaths: [],
       followUp: '',

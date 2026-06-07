@@ -78,7 +78,7 @@ export function createPopupHarness(options?: {
   const imprintAction = options?.imprintAction ?? vi.fn();
   const castAction: CastAction = options?.castAction ?? vi.fn();
   const refineCastAction: RefineCastAction = options?.refineCastAction ?? vi.fn();
-  const defaults: FormDefaults = options?.defaults ?? { defaultModel: modelId('claude-sonnet-4-5'), defaultEffort: 'medium' };
+  const defaults: FormDefaults = options?.defaults ?? { defaultModel: modelId('sonnet'), defaultEffort: 'medium' };
   const overrides = options?.overrides ?? new SpellOverrideStore({
     data: { settings: {} as any, spellOverrides: {} },
     saver: { schedule: vi.fn() } as any,
