@@ -17,6 +17,11 @@ export interface HotkeyCaptureDeps {
   registry: HotkeyRegistry;
   /** Called with the global row index when an exact hotkey match fires. */
   focusRow: (rowIndex: number) => void;
+  /**
+   * Returns the currently focused element. Defaults to `document.activeElement`.
+   * Injectable for unit-test environments that lack a real DOM.
+   */
+  getActiveElement?: () => Element | null;
 }
 
 /**
@@ -40,6 +45,7 @@ export class HotkeyCapture {
   readonly #buffer: HotkeyBuffer;
   readonly #registry: HotkeyRegistry;
   readonly #focusRow: (rowIndex: number) => void;
+  readonly #getActiveElement: () => Element | null;
   #releases: BindingRelease[] = [];
 
   constructor(deps: HotkeyCaptureDeps) {
@@ -47,11 +53,16 @@ export class HotkeyCapture {
     this.#buffer = deps.buffer;
     this.#registry = deps.registry;
     this.#focusRow = deps.focusRow;
+    this.#getActiveElement =
+      deps.getActiveElement ?? (() => (typeof activeDocument !== 'undefined' ? activeDocument.activeElement : null));
   }
 
   /**
    * Registers Shift+a through Shift+z bindings on the scope.
-   * Each binding feeds the pressed letter to #feed and returns true (consumed).
+   * Each binding checks the focused element first: if an INPUT, TEXTAREA, or
+   * SELECT is active the key is passed through (not consumed) so normal typing
+   * works inside Forge fields. Otherwise the letter is fed to #feed and the
+   * event is consumed.
    * Release tokens are retained so uninstall() can remove ONLY these 26
    * bindings, leaving any other bindings (e.g. the popup's navigation keys)
    * on the shared controller intact.
@@ -61,6 +72,11 @@ export class HotkeyCapture {
     for (const letter of letters) {
       const captured = letter;
       const release = this.#kb.bind(['Shift'], captured, () => {
+        const el = this.#getActiveElement();
+        const tag = el?.tagName ?? '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+          return false;
+        }
         this.#feed(captured);
         return true;
       });
