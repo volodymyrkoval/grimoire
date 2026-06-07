@@ -3,6 +3,7 @@ import {
   renderSessionStartScript,
   renderPostToolUseScript,
   renderStopScript,
+  MCP_PATH_VALUE_MAX_LEN,
 } from '../../src/castLog/hookScripts';
 
 describe('hookScripts', () => {
@@ -55,9 +56,35 @@ describe('hookScripts', () => {
       expect(result).toContain('tool_input');
     });
 
-    it('contains file_path reference', () => {
+    it('contains isinstance(ti, dict)', () => {
       const result = renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' });
-      expect(result).toContain('file_path');
+      expect(result).toContain('isinstance(ti, dict)');
+    });
+
+    it('contains endswith(".md")', () => {
+      const result = renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' });
+      expect(result).toContain('endswith(".md")');
+    });
+
+    it('contains MCP_PATH_VALUE_MAX_LEN cap value', () => {
+      const result = renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' });
+      expect(result).toContain(String(MCP_PATH_VALUE_MAX_LEN));
+    });
+
+    it('contains sorted set-comprehension dedup token', () => {
+      const result = renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' });
+      expect(result).toContain('sorted({');
+    });
+
+    it('does not contain old .get("tool_input",{}).get("file_path" substring', () => {
+      const result = renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' });
+      expect(result).not.toContain('.get("tool_input",{}).get("file_path"');
+    });
+
+    it('python body uses double-quoted strings (shell single-quote embedding safety)', () => {
+      const result = renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' });
+      expect(result).not.toContain("endswith('.md')");
+      expect(result).toContain('endswith(".md")');
     });
 
     it('ends with exit 0', () => {

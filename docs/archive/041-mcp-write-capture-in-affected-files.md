@@ -233,15 +233,15 @@ Shell-quoting note: the Python is embedded via `python3 -c '<body>'` — the bod
 **Section-level Red criterion:** `tests/castLog/hookScripts.test.ts` proves the rendered string contains: (1) `python3 -c` invocation; (2) `tool_input` token; (3) `isinstance(ti, dict)`; (4) the literal `512` (or whatever value `MCP_PATH_VALUE_MAX_LEN` resolves to — assert against the exported const, not the literal); (5) `endswith(".md")`; (6) `sorted({` (the set-comprehension dedup); (7) the script still contains `mkdir -p "$SCRATCH_DIR"`, `SCRATCH="$SCRATCH_DIR/$CAST_ID.paths"`, and ends with `exit 0\n` (regression on the un-changed envelope).
 
 **junior-dev**
-- [ ] A1: Add failing test in `tests/castLog/hookScripts.test.ts` (under the existing `renderPostToolUseScript` `describe`): assert `renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' })` contains the substring `'isinstance(ti, dict)'`. — S, junior-dev
-- [ ] A2: Add failing test: rendered script contains `'endswith(".md")'`. — S, junior-dev
-- [ ] A3: Add failing test: rendered script contains the substring `String(MCP_PATH_VALUE_MAX_LEN)` (import `MCP_PATH_VALUE_MAX_LEN` from `src/castLog/hookScripts`). Asserting via the exported const rather than the literal `'512'` keeps the test in sync if the cap changes. — S, junior-dev
-- [ ] A4: Add failing test: rendered script contains `'sorted({'` (the set-comprehension dedup token). — S, junior-dev
-- [ ] A5: Add failing test: rendered script no longer references the old `file_path` extraction shape — assert `result` does **not** contain the substring `'.get("tool_input",{}).get("file_path"'` (this is the exact substring from the current renderer; the rewrite removes it). Pin to the legacy shape so the test doesn't false-positive on a rewrite that still uses `file_path` as one of several keys. — S, junior-dev
-- [ ] A6: Regression: keep the existing `'mkdir -p "$SCRATCH_DIR"'`, `'tool_input'`, and trailing-`'exit 0\n'` assertions in the file green (no change required — just don't delete them). — S, junior-dev
-- [ ] A7: Implement: in `src/castLog/hookScripts.ts`, add `export const MCP_PATH_VALUE_MAX_LEN = 512;`. Add module-private `const extractMdPathsPython = \`<python body>\`;` using the verbatim body from Section briefing. The cap value inside the Python body must reference `${MCP_PATH_VALUE_MAX_LEN}` interpolated at TS template-literal time so the two stay in sync (i.e. interpolate the const into the const string). — S, junior-dev
-- [ ] A8: Implement: rewrite the body of `renderPostToolUseScript` so the rendered shell script invokes `python3 -c '${extractMdPathsPython}' 2>/dev/null >> "$SCRATCH" || true` in place of the existing `FILE_PATH=$(...)` / `if [ -n "$FILE_PATH" ]` block. Remove the now-dead `FILE_PATH` variable. Keep the surrounding `mkdir -p`, `SCRATCH=` assignment, and `exit 0` lines unchanged. Make A1–A5 green. — M, junior-dev
-- [ ] A9: Verify the existing `tests/castLog/hookScripts.test.ts` test `'contains file_path reference'` (line 58–61) still passes — the Python source body still contains the string `"file_path"` only if a key happens to be named that. **Remove this test** instead: the new extractor does not depend on the `file_path` key by name. Replace it with the A5 assertion (already added). — S, junior-dev
+- [x] A1: Add failing test in `tests/castLog/hookScripts.test.ts` (under the existing `renderPostToolUseScript` `describe`): assert `renderPostToolUseScript({ scratchDirAbs: '/abs/scratch' })` contains the substring `'isinstance(ti, dict)'`. — S, junior-dev
+- [x] A2: Add failing test: rendered script contains `'endswith(".md")'`. — S, junior-dev
+- [x] A3: Add failing test: rendered script contains the substring `String(MCP_PATH_VALUE_MAX_LEN)` (import `MCP_PATH_VALUE_MAX_LEN` from `src/castLog/hookScripts`). Asserting via the exported const rather than the literal `'512'` keeps the test in sync if the cap changes. — S, junior-dev
+- [x] A4: Add failing test: rendered script contains `'sorted({'` (the set-comprehension dedup token). — S, junior-dev
+- [x] A5: Add failing test: rendered script no longer references the old `file_path` extraction shape — assert `result` does **not** contain the substring `'.get("tool_input",{}).get("file_path"'` (this is the exact substring from the current renderer; the rewrite removes it). Pin to the legacy shape so the test doesn't false-positive on a rewrite that still uses `file_path` as one of several keys. — S, junior-dev
+- [x] A6: Regression: keep the existing `'mkdir -p "$SCRATCH_DIR"'`, `'tool_input'`, and trailing-`'exit 0\n'` assertions in the file green (no change required — just don't delete them). — S, junior-dev
+- [x] A7: Implement: in `src/castLog/hookScripts.ts`, add `export const MCP_PATH_VALUE_MAX_LEN = 512;`. Add module-private `const extractMdPathsPython = \`<python body>\`;` using the verbatim body from Section briefing. The cap value inside the Python body must reference `${MCP_PATH_VALUE_MAX_LEN}` interpolated at TS template-literal time so the two stay in sync (i.e. interpolate the const into the const string). — S, junior-dev
+- [x] A8: Implement: rewrite the body of `renderPostToolUseScript` so the rendered shell script invokes `python3 -c '${extractMdPathsPython}' 2>/dev/null >> "$SCRATCH" || true` in place of the existing `FILE_PATH=$(...)` / `if [ -n "$FILE_PATH" ]` block. Remove the now-dead `FILE_PATH` variable. Keep the surrounding `mkdir -p`, `SCRATCH=` assignment, and `exit 0` lines unchanged. Make A1–A5 green. — M, junior-dev
+- [x] A9: Verify the existing `tests/castLog/hookScripts.test.ts` test `'contains file_path reference'` (line 58–61) still passes — the Python source body still contains the string `"file_path"` only if a key happens to be named that. **Remove this test** instead: the new extractor does not depend on the `file_path` key by name. Replace it with the A5 assertion (already added). — S, junior-dev
 
 ### B. Integration tests for the new extractor (`tests/castLog/hookScripts.integration.test.ts`)
 
@@ -270,14 +270,14 @@ Six new `it(...)` blocks inside the existing `describe('post-tool-use.sh', ...)`
 6. Native `Write` regression — stdin from the existing D4 test (`{"tool_name":"Write","tool_input":{"file_path":"foo/bar.md"},"tool_response":{}}`) → scratch contains `foo/bar.md\n` (the existing test from `tests/castLog/hookScripts.integration.test.ts:127` should continue to pass with the new extractor; if the new extractor breaks it, A is wrong).
 
 **senior-dev**
-- [ ] B1: Add integration test for scenario 1 (MCP `filepath` extracted, sibling `content` suppressed). Materialise `post-tool-use.sh` via real `renderPostToolUseScript`. Assert scratch file at `<scratchDir>/abc.paths` equals exactly `'notes/foo.md\n'` (no extra lines from the `content` field). — S, senior-dev
-- [ ] B2: Add integration test for scenario 2 (MCP `path` key). Assert scratch file equals `'notes/bar.md\n'`. — S, senior-dev
-- [ ] B3: Add integration test for scenario 3 (multiple `.md` values, sorted dedup). Build stdin with `{source:"b.md", target:"a.md"}` (intentionally out of insertion order). Assert scratch file equals `'a.md\nb.md\n'` (sorted ascending; sorted dedup inside Python). — S, senior-dev
-- [ ] B4: Add integration test for scenario 4 (length cap). Build stdin with `content` = `'x'.repeat(600) + '.md'` (606 chars, ends in `.md`) and `filepath` = `'notes/foo.md'`. Assert scratch file equals `'notes/foo.md\n'` — the 606-char string is dropped because it exceeds 512. — S, senior-dev
-- [ ] B5: Add integration test for scenario 5 (non-`.md` strings dropped). Build stdin for a `Bash` tool with no `.md`-suffixed values. Assert scratch file is absent or empty. — S, senior-dev
-- [ ] B6: Verify the existing D4 test for native `Write` (line 127–141 of the same file) continues to pass without modification. If it breaks, A is wrong — escalate; do not patch the test. — S, senior-dev
-- [ ] B7: Edge regression: existing D7 unicode/apostrophe test (`docs/it's a test/日本.md`) — confirm it still passes. The new extractor's `endswith(".md")` is byte-suffix safe in Python 3 (operates on the str object); JSON-decoded values are `str`, not `bytes`. — S, senior-dev
-- [ ] B8: Edge regression: existing D8 empty-`tool_input` test — confirm scratch is empty/absent. The new extractor short-circuits on `isinstance(ti, dict)` plus empty `.values()`. — S, senior-dev
+- [x] B1: Add integration test for scenario 1 (MCP `filepath` extracted, sibling `content` suppressed). Materialise `post-tool-use.sh` via real `renderPostToolUseScript`. Assert scratch file at `<scratchDir>/abc.paths` equals exactly `'notes/foo.md\n'` (no extra lines from the `content` field). — S, senior-dev (77ffe6f)
+- [x] B2: Add integration test for scenario 2 (MCP `path` key). Assert scratch file equals `'notes/bar.md\n'`. — S, senior-dev (77ffe6f)
+- [x] B3: Add integration test for scenario 3 (multiple `.md` values, sorted dedup). Build stdin with `{source:"b.md", target:"a.md"}` (intentionally out of insertion order). Assert scratch file equals `'a.md\nb.md\n'` (sorted ascending; sorted dedup inside Python). — S, senior-dev (77ffe6f)
+- [x] B4: Add integration test for scenario 4 (length cap). Build stdin with `content` = `'x'.repeat(600) + '.md'` (603 chars, ends in `.md`) and `filepath` = `'notes/foo.md'`. Assert scratch file equals `'notes/foo.md\n'` — the 603-char string is dropped because it exceeds 512. — S, senior-dev (77ffe6f)
+- [x] B5: Add integration test for scenario 5 (non-`.md` strings dropped). Build stdin for a `Bash` tool with no `.md`-suffixed values. Assert scratch file is absent or empty. — S, senior-dev (77ffe6f)
+- [x] B6: Verify the existing D4 test for native `Write` (line 127–141 of the same file) continues to pass without modification. If it breaks, A is wrong — escalate; do not patch the test. — S, senior-dev (77ffe6f)
+- [x] B7: Edge regression: existing D7 unicode/apostrophe test (`docs/it's a test/日本.md`) — confirm it still passes. The new extractor's `endswith(".md")` is byte-suffix safe in Python 3 (operates on the str object); JSON-decoded values are `str`, not `bytes`. — S, senior-dev (77ffe6f)
+- [x] B8: Edge regression: existing D8 empty-`tool_input` test — confirm scratch is empty/absent. The new extractor short-circuits on `isinstance(ti, dict)` plus empty `.values()`. — S, senior-dev (77ffe6f)
 
 ### C. Update unit-test expectations affected by the rewrite
 
@@ -296,7 +296,7 @@ Six new `it(...)` blocks inside the existing `describe('post-tool-use.sh', ...)`
 **Section-level Red criterion:** `tests/castLog/hookScripts.test.ts` has no `it('contains file_path reference', …)` assertion. `npm test` still passes (no other test depended on it).
 
 **junior-dev**
-- [ ] C1: Delete the test block `it('contains file_path reference', …)` at lines 58–61 of `tests/castLog/hookScripts.test.ts`. Confirm `npm test` still passes (A1–A5 cover the new invariants; A5 covers the absence of the old shape). — S, junior-dev
+- [x] C1: Delete the test block `it('contains file_path reference', …)` at lines 58–61 of `tests/castLog/hookScripts.test.ts`. Confirm `npm test` still passes (A1–A5 cover the new invariants; A5 covers the absence of the old shape). — S, junior-dev
 
 ### D. README matcher migration
 
@@ -337,9 +337,9 @@ Migration callout (insert immediately above the JSON code fence at line 38, afte
 **Section-level Red criterion:** `README.md` shows the broadened matcher exactly once, and the migration callout sits immediately above the JSON block. `git diff README.md` shows two changes: one substring replacement in the code block, one paragraph insertion above it.
 
 **junior-dev**
-- [ ] D1: Edit `README.md` line 58: replace `"matcher": "Write|Edit|MultiEdit|NotebookEdit"` with `"matcher": "Write|Edit|MultiEdit|NotebookEdit|mcp__.*"`. — S, junior-dev
-- [ ] D2: Insert the migration callout paragraph (one blockquote, exactly the wording in Section briefing) immediately above the opening `\`\`\`json` fence currently at line 38. — S, junior-dev
-- [ ] D3: Confirm no other README block references the old matcher. Grep `README.md` for `'Write|Edit|MultiEdit|NotebookEdit'` — should yield exactly one match (the line just edited, now with `|mcp__.*` appended). — S, junior-dev
+- [x] D1: Edit `README.md` line 58: replace `"matcher": "Write|Edit|MultiEdit|NotebookEdit"` with `"matcher": "Write|Edit|MultiEdit|NotebookEdit|mcp__.*"`. — S, junior-dev (9414298)
+- [x] D2: Insert the migration callout paragraph (one blockquote, exactly the wording in Section briefing) immediately above the opening `\`\`\`json` fence currently at line 38. — S, junior-dev (9414298)
+- [x] D3: Confirm no other README block references the old matcher. Grep `README.md` for `'Write|Edit|MultiEdit|NotebookEdit'` — should yield exactly one match (the line just edited, now with `|mcp__.*` appended). — S, junior-dev (9414298)
 
 ### E. Cleanup + lint + suites
 
@@ -356,9 +356,9 @@ Migration callout (insert immediately above the JSON code fence at line 38, afte
 **Section-level Red criterion:** `npm run lint`, `npm test`, `npm run test:integration` all exit 0. `git diff --stat` lists changes only in `src/castLog/hookScripts.ts`, `tests/castLog/hookScripts.test.ts`, `tests/castLog/hookScripts.integration.test.ts`, `README.md`.
 
 **junior-dev**
-- [ ] E1: Run `npm run lint`; fix any new violations. — S, junior-dev
-- [ ] E2: Run `npm test`; confirm 0 failures, 0 unintentionally-skipped tests. — S, junior-dev
-- [ ] E3: Run `npm run test:integration`; confirm 0 failures. — S, junior-dev
+- [x] E1: Run `npm run lint`; fix any new violations. — S, junior-dev
+- [x] E2: Run `npm test`; confirm 0 failures, 0 unintentionally-skipped tests. — S, junior-dev
+- [x] E3: Run `npm run test:integration`; confirm 0 failures. — S, junior-dev
 
 ## Overall effort summary
 
@@ -378,3 +378,5 @@ Migration callout (insert immediately above the JSON code fence at line 38, afte
 - **Mutation testing** (`/mutate`) should target `hookScripts.ts` after this lands — particularly the Python const string and the `MCP_PATH_VALUE_MAX_LEN` boundary.
 - **Live-spec update** after `/done`: patch `docs/features/cast-progress-events.md` to remove the "Paths captured through Obsidian MCP tools are not in this list yet" sentence and add a note about the matcher migration.
 - **`python3` availability** remains an unresolved precondition; document in the same live-spec pass.
+
+reviewed @ 6b94c22

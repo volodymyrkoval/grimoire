@@ -1,5 +1,16 @@
 const shellEscape = (p: string) => p.replace(/"/g, '\\"');
 
+export const MCP_PATH_VALUE_MAX_LEN = 512;
+
+// Scans all tool_input string values for .md paths; 512-char cap prevents patch content blobs from poisoning affectedFiles.
+const extractMdPathsPython = `import sys, json
+d = json.load(sys.stdin)
+ti = d.get("tool_input", {})
+if isinstance(ti, dict):
+    paths = sorted({v for v in ti.values() if isinstance(v, str) and len(v) <= ${MCP_PATH_VALUE_MAX_LEN} and v.endswith(".md")})
+    for p in paths:
+        print(p)`;
+
 /**
  * Generates session-start.sh: logs cast initiation with in-progress event.
  * Invoked at the beginning of a Grimoire session (CAST_ID set by orchestrator).
@@ -29,10 +40,7 @@ set -e
 SCRATCH_DIR="${shellEscape(scratchDirAbs)}"
 mkdir -p "$SCRATCH_DIR"
 SCRATCH="$SCRATCH_DIR/$CAST_ID.paths"
-FILE_PATH=$(python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("tool_input",{}).get("file_path",""))' 2>/dev/null || true)
-if [ -n "$FILE_PATH" ]; then
-  printf '%s\\n' "$FILE_PATH" >> "$SCRATCH"
-fi
+python3 -c '${extractMdPathsPython}' 2>/dev/null >> "$SCRATCH" || true
 exit 0
 `;
 }

@@ -35,6 +35,8 @@ For best-case Refine search results, use a semantic-capable MCP server (e.g., [O
 
 **2. Let casts run unattended.** Create `.claude/settings.local.json` in your **vault root** so Claude Code doesn't pause for permission on every tool call — a background cast has no terminal to answer them. The same file wires up cast-log progress tracking:
 
+> **Already have a `settings.local.json` from a prior Grimoire version?** Replace the `PostToolUse` `matcher` value with `"Write|Edit|MultiEdit|NotebookEdit|mcp__.*"`. Without `mcp__.*` in the matcher, MCP-based vault writes (the default for Refine) never reach the Cast Log's `affectedFiles`.
+
 ```json
 {
   "permissions": {
@@ -55,7 +57,7 @@ For best-case Refine search results, use a semantic-capable MCP server (e.g., [O
       { "hooks": [{ "type": "command", "command": "sh .obsidian/plugins/grimoire/agent-hooks/session-start.sh" }] }
     ],
     "PostToolUse": [
-      { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": "sh .obsidian/plugins/grimoire/agent-hooks/post-tool-use.sh" }] }
+      { "matcher": "Write|Edit|MultiEdit|NotebookEdit|mcp__.*", "hooks": [{ "type": "command", "command": "sh .obsidian/plugins/grimoire/agent-hooks/post-tool-use.sh" }] }
     ],
     "Stop": [
       { "hooks": [{ "type": "command", "command": "sh .obsidian/plugins/grimoire/agent-hooks/stop.sh" }] }

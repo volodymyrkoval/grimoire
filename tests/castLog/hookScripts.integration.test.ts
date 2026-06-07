@@ -179,6 +179,129 @@ describe('post-tool-use.sh', () => {
       : '';
     expect(scratchContent.trim()).toBe('');
   });
+
+  // ── B1: MCP filepath key extracted; sibling content (no .md suffix) suppressed
+
+  it('extracts MCP filepath key and suppresses content field without .md suffix', async () => {
+    const scratchDir = path.join(tempDir, 'scratch');
+    const content = renderPostToolUseScript({ scratchDirAbs: scratchDir });
+    const scriptPath = await materializeScript(tempDir, 'post-tool-use.sh', content);
+    const stdin = JSON.stringify({
+      tool_name: 'mcp__obsidian-mcp-tools__create_vault_file',
+      tool_input: { filepath: 'notes/foo.md', content: '# hello\nbody' },
+      tool_response: {},
+    });
+
+    const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    expect(fs.existsSync(scratchFile)).toBe(true);
+    expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('notes/foo.md\n');
+  });
+
+  // ── B2: MCP path key extracted ────────────────────────────────────────────────
+
+  it('extracts MCP path key from tool_input', async () => {
+    const scratchDir = path.join(tempDir, 'scratch');
+    const content = renderPostToolUseScript({ scratchDirAbs: scratchDir });
+    const scriptPath = await materializeScript(tempDir, 'post-tool-use.sh', content);
+    const stdin = JSON.stringify({
+      tool_name: 'mcp__my-vault__update_active_file',
+      tool_input: { path: 'notes/bar.md' },
+      tool_response: {},
+    });
+
+    const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    expect(fs.existsSync(scratchFile)).toBe(true);
+    expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('notes/bar.md\n');
+  });
+
+  // ── B3: multiple .md values in one call, sorted ascending ────────────────────
+
+  it('extracts multiple .md values from tool_input and writes them sorted', async () => {
+    const scratchDir = path.join(tempDir, 'scratch');
+    const content = renderPostToolUseScript({ scratchDirAbs: scratchDir });
+    const scriptPath = await materializeScript(tempDir, 'post-tool-use.sh', content);
+    const stdin = JSON.stringify({
+      tool_name: 'mcp__x__move_note',
+      tool_input: { source: 'b.md', target: 'a.md' },
+      tool_response: {},
+    });
+
+    const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    expect(fs.existsSync(scratchFile)).toBe(true);
+    expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('a.md\nb.md\n');
+  });
+
+  // ── B4: length cap (> 512 chars) suppresses long content body ────────────────
+
+  it('drops values exceeding 512 characters even when they end in .md', async () => {
+    const scratchDir = path.join(tempDir, 'scratch');
+    const content = renderPostToolUseScript({ scratchDirAbs: scratchDir });
+    const scriptPath = await materializeScript(tempDir, 'post-tool-use.sh', content);
+    const longValue = 'x'.repeat(600) + '.md'; // 603 chars, ends in .md — exceeds 512 cap
+    const stdin = JSON.stringify({
+      tool_name: 'mcp__obsidian-mcp-tools__create_vault_file',
+      tool_input: { filepath: 'notes/foo.md', content: longValue },
+      tool_response: {},
+    });
+
+    const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    expect(fs.existsSync(scratchFile)).toBe(true);
+    expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('notes/foo.md\n');
+  });
+
+  // ── B5: non-.md strings filtered — scratch file absent or empty ───────────────
+
+  it('produces no scratch output when no tool_input values end in .md', async () => {
+    const scratchDir = path.join(tempDir, 'scratch');
+    const content = renderPostToolUseScript({ scratchDirAbs: scratchDir });
+    const scriptPath = await materializeScript(tempDir, 'post-tool-use.sh', content);
+    const stdin = JSON.stringify({
+      tool_name: 'Bash',
+      tool_input: { command: 'echo hi', description: 'say hi' },
+      tool_response: {},
+    });
+
+    const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    const scratchContent = fs.existsSync(scratchFile)
+      ? fs.readFileSync(scratchFile, 'utf-8')
+      : '';
+    expect(scratchContent.trim()).toBe('');
+  });
+
+  // ── S1: intra-call dedup — same path in multiple keys ───────────────────────
+
+  it('deduplicates identical paths appearing in multiple tool_input keys', async () => {
+    const scratchDir = path.join(tempDir, 'scratch');
+    const content = renderPostToolUseScript({ scratchDirAbs: scratchDir });
+    const scriptPath = await materializeScript(tempDir, 'post-tool-use.sh', content);
+    const stdin = JSON.stringify({
+      tool_name: 'mcp__x__tool',
+      tool_input: { source: 'notes/same.md', target: 'notes/same.md' },
+      tool_response: {},
+    });
+
+    const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    expect(fs.existsSync(scratchFile)).toBe(true);
+    expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('notes/same.md\n');
+  });
 });
 
 // ── D5: Stop drains scratch with dedup ───────────────────────────────────────
