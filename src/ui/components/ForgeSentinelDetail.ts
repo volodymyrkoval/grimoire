@@ -98,7 +98,7 @@ export class ForgeSentinelDetail {
     attachAutogrow(this.#descInput, this.#domAbort.signal);
     attachListContinuation(this.#descInput, this.#domAbort.signal);
     this.#handleDescriptionInput();
-    this.#kb.bind(['Shift'], 'Enter', () => {
+    this.#kb.bind(['Mod'], 'Enter', () => {
       if (!this.#submitBtn.disabled) this.#submitBtn.click();
       return true;
     });
@@ -166,7 +166,7 @@ export class ForgeSentinelDetail {
     const back = nav.createEl('button', { text: '← back' });
     back.type = 'button';
     back.addEventListener('click', this.#callbacks.onBack, { signal: this.#domAbort!.signal });
-    nav.createSpan({ cls: 'hotkey-hint', text: `Tab navigate · Esc back · ⇧↵ ${submitLabel}` });
+    nav.createSpan({ cls: 'hotkey-hint', text: `Tab navigate · Esc back · ⌘↵ ${submitLabel}` });
   }
 
   #buildHotkeyCaptureField(

@@ -10,7 +10,7 @@ export function attachAutogrow(ta: HTMLTextAreaElement, signal: AbortSignal): vo
 /** Continues a Markdown list item when the user presses Enter inside one. */
 export function attachListContinuation(ta: HTMLTextAreaElement, signal: AbortSignal): void {
   ta.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' || e.shiftKey) return;
+    if (e.key !== 'Enter' || e.shiftKey || e.metaKey || e.ctrlKey) return;
     const { value, selectionStart } = ta;
     const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1;
     const line = value.slice(lineStart, selectionStart);

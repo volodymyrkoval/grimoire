@@ -218,11 +218,11 @@ describe('OptionsPanel — per-control wiring', () => {
     );
   });
 
-  it('Shift+Enter keyboard shortcut calls onCast', () => {
+  it('Mod+Enter keyboard shortcut calls onCast', () => {
     const { scope, onCast } = mountPanel();
 
-    // Dispatch Shift+Enter via the scope keyboard controller
-    (scope as any).dispatch('Enter', ['Shift']);
+    // Dispatch Mod+Enter via the scope keyboard controller
+    (scope as any).dispatch('Enter', ['Mod']);
 
     expect(onCast).toHaveBeenCalledOnce();
   });
