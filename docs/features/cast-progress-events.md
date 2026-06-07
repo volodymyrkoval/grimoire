@@ -6,7 +6,7 @@
 
 Every cast now produces lifecycle events from both sides of the subprocess boundary. The plugin still writes `casted` before spawning and `error` on failure; Claude Code itself writes `in-progress` the moment the model starts working and `done` when the turn ends. Events are split across two files by writer: Obsidian writes `casted` and `error` to `cast-log-plugin.json`; Claude Code hook scripts write `in-progress` and `done` to `cast-log-agent.json`. (Both files were `.jsonl` at the time of this iteration; renamed to `.json` by `cast-log-mobile-sync` for Obsidian Sync compatibility — contents are still newline-delimited JSON.) A successful cast therefore lands `casted` in the local log and `in-progress` → `done` in the remote log. This split prevents sync conflicts when the vault is synchronised across machines.
 
-The `done` line carries an `affectedFiles` array — the deduplicated list of vault paths the cast wrote via `Write`, `Edit`, `MultiEdit`, or `NotebookEdit`. Paths captured through Obsidian MCP tools are not in this list yet (known gap, see Scope).
+The `done` line carries an `affectedFiles` array — the deduplicated list of vault `.md` paths the cast wrote, via the native file-writing tools (`Write`, `Edit`, `MultiEdit`, `NotebookEdit`) and via any Obsidian MCP server (extended by `mcp-write-capture-in-affected-files`).
 
 The mechanism is platform hooks, not model-honoured instructions. On every plugin load, Grimoire writes three POSIX shell scripts (`session-start.sh`, `post-tool-use.sh`, `stop.sh`) into `<vault>/.obsidian/plugins/grimoire/agent-hooks/`. Users wire these into Claude Code once by adding `sh .obsidian/plugins/grimoire/agent-hooks/<script>.sh` entries to their vault's `.claude/settings.local.json`; scripts are invoked via `sh` rather than directly, so no execute permission is required. For portal casts the same directory is used: `CLAUDE_HOOKS_DIR` points the portal's Claude Code instance at it. The scripts read `$CAST_ID` from the subprocess env (already exported by `cast-log-foundation`) and append directly to `cast-log-agent.json` (`.jsonl` at the time of this iteration; renamed by `cast-log-mobile-sync`), independent of the plugin process.
 
@@ -27,7 +27,7 @@ The mechanism is platform hooks, not model-honoured instructions. On every plugi
 - `HookMaterializer` writes three `.sh` scripts into `<plugin-dir>/agent-hooks/` on every `onload`.
 - Three pure renderer functions (`renderSessionStartScript`, `renderPostToolUseScript`, `renderStopScript`) with absolute paths substituted literally.
 - `ScratchSweeper` runs fire-and-forget on `onload`, deleting `<plugin-dir>/cast-log-scratch/*.paths` files older than 24 h.
-- `PostToolUse` matches the built-in file-writing tools (`Write|Edit|MultiEdit|NotebookEdit`).
+- `PostToolUse` matches the built-in file-writing tools (`Write|Edit|MultiEdit|NotebookEdit`). *(Later broadened to also match `mcp__.*` by `mcp-write-capture-in-affected-files`.)*
 - `done` line carries deduplicated `affectedFiles` (empty array when no matching tool calls occurred).
 - The meta-spell no longer instructs forged spells to include a `## Progress Tracking` section; the directive is now redundant.
 - POSIX shell integration tests that run the scripts under real `/bin/sh` against a temp directory.
@@ -35,7 +35,6 @@ The mechanism is platform hooks, not model-honoured instructions. On every plugi
 **Out:**
 
 - **Settings-file hook injection** — explored and rejected after `--settings` was found to replace rather than merge user settings (see Design decisions). `CLAUDE_HOOKS_DIR` injected at spawn time is the durable alternative.
-- **MCP-tool capture in `affectedFiles`** — the `Write|Edit|MultiEdit|NotebookEdit` matcher does not catch `mcp__obsidian-*` writes, and the forge wrapper prefers Obsidian MCP. Forge `done` lines often surface empty arrays today. Deferred pending empirical verification of how Claude Code names MCP tools in hook payloads.
 - **PowerShell variant** — desktop-Windows users will not get hooks until a parallel script set ships. Deferred to the first Windows user.
 - **Streaming progress events between `in-progress` and `done`** — premature; no consumer.
 - **`summary` field on `done`** — explicitly dropped from the schema.
