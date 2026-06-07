@@ -71,7 +71,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -99,7 +99,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -128,7 +128,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -153,7 +153,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/opt/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -161,26 +161,6 @@ describe('CastRunner', () => {
     );
 
     expect(getCommand()).toBe('/opt/bin/claude');
-  });
-
-  it('uses cliCommand when binaryPath is empty', () => {
-    const { runner, getCommand } = makeRunnerWithFakeSpawn();
-
-    runner.run(
-      {
-        metaSpell: 'my spell',
-        modelId: 'claude-sonnet-4-5',
-        effort: null,
-        vaultMountPath: '/vault',
-        binaryPath: '',
-        cliCommand: 'claude',
-        mcpConfigPath: '',
-        castId: 'test-cast-id',
-      },
-      { onSuccess: () => {}, onFailure: () => {} }
-    );
-
-    expect(getCommand()).toBe('claude');
   });
 
   it('passes VAULT_MOUNT_PATH in env to spawner', () => {
@@ -193,7 +173,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -213,7 +193,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'abc123',
       },
@@ -233,7 +213,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
         claudeHooksDir: '/my/vault/.obsidian/plugins/grimoire/agent-hooks',
@@ -254,7 +234,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -274,7 +254,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/my/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -294,7 +274,7 @@ describe('CastRunner', () => {
         effort: 'high',
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
       },
@@ -320,7 +300,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '/abs/path/mcp.json',
         castId: 'test-cast-id',
       },
@@ -345,7 +325,7 @@ describe('CastRunner', () => {
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
         echoOutput: true,
@@ -380,7 +360,7 @@ describe('CastRunner — D2: echoOutput threading', () => {
         effort: null,
         vaultMountPath: '/vault',
         binaryPath: '/usr/bin/claude',
-        cliCommand: 'claude',
+
         mcpConfigPath: '',
         castId: 'test-cast-id',
         echoOutput: true,

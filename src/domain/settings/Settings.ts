@@ -10,7 +10,6 @@ export type ExecutionMode = 'local' | 'remote';
 /** Plugin settings persisted to the Obsidian data store. */
 export interface GrimoireSettings {
   spellTag: string;
-  cliCommand: string;
   binaryPath: string;
   /** Absolute or relative path to a dedicated MCP config file. When non-empty (after trim),
    *  local casts append `--mcp-config <path> --strict-mcp-config` to `claude -p`, making
@@ -50,7 +49,6 @@ export interface GrimoireData {
 /** Default plugin settings when no data has been saved. */
 export const DEFAULT_SETTINGS: GrimoireSettings = {
   spellTag: 'grimoire/spell',
-  cliCommand: 'claude',
   binaryPath: '',
   mcpConfigPath: '',
   forgeOutputFolder: 'Spells/',

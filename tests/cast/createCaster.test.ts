@@ -9,7 +9,6 @@ import type { CastInput, CastCallbacks } from '../../src/cast/Caster';
 
 const localSettings: GrimoireSettings = {
   spellTag: 'grimoire/spell',
-  cliCommand: 'claude',
   binaryPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '/vault',

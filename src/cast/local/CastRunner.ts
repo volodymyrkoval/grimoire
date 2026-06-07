@@ -11,7 +11,6 @@ interface BaseCastRunInput {
   effort: Effort | null;
   vaultMountPath: string;
   binaryPath: string;
-  cliCommand: string;
   mcpConfigPath: string;
   castId: string;
   claudeHooksDir?: string;
@@ -113,14 +112,11 @@ export class CastRunner {
 
   #getCastArgs(input: CastRunInput) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { binaryPath, cliCommand, castId: _castId, ...castArgsInput } = input;
+    const { binaryPath, castId: _castId, ...castArgsInput } = input;
     return buildCastArgs(castArgsInput);
   }
 
   #getPathToBinary(input: CastRunInput) {
-    return resolveCliBinary({
-      binaryPath: input.binaryPath,
-      cliCommand: input.cliCommand,
-    });
+    return resolveCliBinary({ binaryPath: input.binaryPath });
   }
 }

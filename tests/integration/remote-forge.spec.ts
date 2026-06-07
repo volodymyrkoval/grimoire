@@ -45,7 +45,6 @@ const localSettings: GrimoireSettings = {
   vaultMountPath: '/vault',
   spellTag: 'grimoire/spell',
   binaryPath: '/usr/bin/claude',
-  cliCommand: 'claude',
   forgeOutputFolder: 'Spells/',
   defaultModel: modelId('claude-sonnet-4-5'),
   defaultEffort: null,

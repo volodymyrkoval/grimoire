@@ -22,7 +22,6 @@ describe('persistence.hydrate', () => {
     const result = hydrate(undefined, app);
 
     expect(result.settings.spellTag).toBe(DEFAULT_SETTINGS.spellTag);
-    expect(result.settings.cliCommand).toBe(DEFAULT_SETTINGS.cliCommand);
     expect(result.settings.binaryPath).toBe(DEFAULT_SETTINGS.binaryPath);
     expect(result.settings.forgeOutputFolder).toBe(DEFAULT_SETTINGS.forgeOutputFolder);
     expect(result.settings.vaultMountPath).toBe('/mocked/vault');
@@ -33,12 +32,11 @@ describe('persistence.hydrate', () => {
   });
 
   it('(b) merges partial settings over defaults', () => {
-    const saved = { settings: { cliCommand: 'foo' } };
+    const saved = { settings: { binaryPath: '/opt/bin/claude' } };
     const result = hydrate(saved, app);
 
-    expect(result.settings.cliCommand).toBe('foo');
+    expect(result.settings.binaryPath).toBe('/opt/bin/claude');
     expect(result.settings.spellTag).toBe(DEFAULT_SETTINGS.spellTag);
-    expect(result.settings.binaryPath).toBe(DEFAULT_SETTINGS.binaryPath);
     expect(result.settings.forgeOutputFolder).toBe(DEFAULT_SETTINGS.forgeOutputFolder);
     expect(result.settings.defaultModel).toBe(DEFAULT_SETTINGS.defaultModel);
     expect(result.settings.defaultEffort).toBe(DEFAULT_SETTINGS.defaultEffort);

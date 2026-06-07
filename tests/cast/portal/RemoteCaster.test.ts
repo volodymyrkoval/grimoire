@@ -15,7 +15,6 @@ const makeTransportStub = (behavior: (input: RemoteCastInput, cbs: RemoteCastCal
 
 const baseSettings: GrimoireSettings = {
   spellTag: 'grimoire/spell',
-  cliCommand: 'claude',
   binaryPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '/vault',

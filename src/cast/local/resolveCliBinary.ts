@@ -1,10 +1,7 @@
 /**
  * Resolve the path to the cast CLI binary.
- * Prefers an explicit binary path; falls back to the CLI command name for PATH resolution.
+ * Returns the provided binaryPath as-is — callers must supply the full absolute path.
  */
-export function resolveCliBinary(input: {
-  binaryPath: string;
-  cliCommand: string;
-}): string {
-  return input.binaryPath || input.cliCommand;
+export function resolveCliBinary(input: { binaryPath: string }): string {
+  return input.binaryPath;
 }

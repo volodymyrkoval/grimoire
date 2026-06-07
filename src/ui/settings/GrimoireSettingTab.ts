@@ -51,10 +51,8 @@ export class GrimoireSettingTab extends PluginSettingTab {
     const s = this.#plugin.data.settings;
     this.#addTextField('Spell tag',          () => s.spellTag,          v => { s.spellTag = v; },
       'Frontmatter key used to mark notes as spells (e.g. spell).');
-    this.#addTextField('CLI command',        () => s.cliCommand,        v => { s.cliCommand = v; },
-      'Command used to invoke the agentic coding tool (e.g. claude).');
     this.#addTextField('Binary path',        () => s.binaryPath,        v => { s.binaryPath = v; },
-      'Absolute path to the agentic tool binary. Leave blank to use the system PATH.');
+      'Full absolute path to the agentic tool binary (e.g. /usr/local/bin/claude).');
     this.#addTextField('MCP config path',    () => s.mcpConfigPath,     v => { s.mcpConfigPath = v; },
       'Optional. Path to a dedicated MCP config file. When set, casts run with this file as the only MCP source (--strict-mcp-config), ignoring all other configured scopes. Leave blank to inherit ambient MCP state.');
     this.#addTextField('Forge output folder',() => s.forgeOutputFolder, v => { s.forgeOutputFolder = v; },

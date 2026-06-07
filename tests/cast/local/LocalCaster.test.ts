@@ -24,7 +24,6 @@ const baseInput: CastInput = {
 const settings = {
   ...DEFAULT_SETTINGS,
   binaryPath: '/usr/local/bin/claude',
-  cliCommand: 'claude',
   vaultMountPath: '/vault',
 };
 

@@ -14,7 +14,6 @@ describe('PopupModule', () => {
     defaultModel: modelId('claude-sonnet-4-5'),
     defaultEffort: 'medium' as const,
     executionMode: 'local' as const,
-    cliCommand: '',
     binaryPath: '',
     forgeOutputFolder: '',
     vaultMountPath: '',

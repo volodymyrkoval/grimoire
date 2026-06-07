@@ -24,7 +24,6 @@ import type { GrimoireSettings } from '../../src/domain/settings/Settings';
 
 const TEST_SETTINGS: GrimoireSettings = {
   spellTag: 'grimoire/spell',
-  cliCommand: 'claude',
   binaryPath: '',
   forgeOutputFolder: 'Spells/',
   vaultMountPath: '/vault',
