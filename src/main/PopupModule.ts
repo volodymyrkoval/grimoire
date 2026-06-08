@@ -19,6 +19,7 @@ import {
 import type { CastLogModule } from './CastLogModule';
 import type { PluginPaths } from '../infra/PluginPaths';
 import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../infra/castingFrontmatter';
+import type { PortalSecret } from '../infra/PortalSecret';
 
 /**
  * Owns the spell browser popup and its lifecycle: opens the popup command,
@@ -39,6 +40,7 @@ export class PopupModule {
   readonly #castingReader: CastingFrontmatterReader;
   readonly #castingWriter: CastingFrontmatterWriter;
   readonly #setVaultDefault: (model: ModelId, effort: Effort | null) => void;
+  readonly #secret: PortalSecret;
 
   constructor(deps: {
     app: App;
@@ -54,6 +56,7 @@ export class PopupModule {
     castingWriter: CastingFrontmatterWriter;
     /** Writes vault-wide default model/effort to plugin settings. */
     setVaultDefault: (model: ModelId, effort: Effort | null) => void;
+    secret: PortalSecret;
   }) {
     this.#app = deps.app;
     this.#getData = deps.getData;
@@ -65,18 +68,19 @@ export class PopupModule {
     this.#castingReader = deps.castingReader;
     this.#castingWriter = deps.castingWriter;
     this.#setVaultDefault = deps.setVaultDefault;
+    this.#secret = deps.secret;
 
     this.#registry = PopupModule.#buildRegistry();
     this.#sessionMap = new OptionsSessionMap();
     this.#imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
-      caster: () => createCaster(this.#getData().settings, this.#getAgentHooksDirAbs()),
+      caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs()),
       logWriter: () => this.#castLog.activeLogStore(),
       forgeSpellPaths: deps.forgeSpellPaths,
     });
     this.#updateImprinter = new ForgeUpdateImprinter({
       notify: (msg) => { new Notice(msg); },
-      caster: () => createCaster(this.#getData().settings, this.#getAgentHooksDirAbs()),
+      caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs()),
       logWriter: () => this.#castLog.activeLogStore(),
       forgeUpdateSpellPaths: deps.forgeUpdateSpellPaths,
     });
@@ -113,7 +117,7 @@ export class PopupModule {
       createDispatcher: (close) => new CastDispatcher({
         notify: (msg) => { new Notice(msg); },
         close,
-        caster: () => createCaster(this.#getData().settings, this.#getAgentHooksDirAbs()),
+        caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs()),
         logWriter: () => this.#castLog.activeLogStore(),
       }),
       paths: this.#paths,

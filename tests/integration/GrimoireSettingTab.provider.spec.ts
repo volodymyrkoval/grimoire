@@ -3,6 +3,7 @@ import { App } from 'obsidian';
 import { hydrate } from '../../src/infra/settingsPersistence';
 import { GrimoireSettingTab } from '../../src/ui/settings/GrimoireSettingTab';
 import { KNOWN_PROVIDERS, CLAUDE_CODE } from '../../src/domain/settings/Provider';
+import { PortalSecret } from '../../src/infra/PortalSecret';
 
 vi.mock('../../src/infra/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
@@ -10,8 +11,10 @@ vi.mock('../../src/infra/computeVaultMountDefault', () => ({
 
 function makePlugin() {
   const app = new App();
+  const secret = new PortalSecret({ secretStorage: app.secretStorage });
   return {
     app,
+    secret,
     data: hydrate(undefined, app),
     save: vi.fn(),
   } as any;
@@ -24,7 +27,7 @@ describe('GrimoireSettingTab — Default provider dropdown seam', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     plugin = makePlugin();
-    tab = new GrimoireSettingTab(plugin.app, plugin);
+    tab = new GrimoireSettingTab(plugin.app, plugin, plugin.secret);
     tab.display();
   });
 

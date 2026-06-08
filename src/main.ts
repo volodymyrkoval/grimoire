@@ -1,4 +1,4 @@
-import { Plugin, TFile } from 'obsidian';
+import { Notice, Plugin, TFile } from 'obsidian';
 import { GrimoireData } from './domain/settings/Settings';
 import { hydrate } from './infra/settingsPersistence';
 import { DebouncedSaver } from './infra/DebouncedSaver';
@@ -12,6 +12,8 @@ import { CustomRefineSeeder } from './refine/CustomRefineSeeder';
 import { renderRefineSystemPrompt } from './refine/refineTemplate';
 import { readCastingFrontmatter } from './infra/castingFrontmatter';
 import { CASTING_FRONTMATTER_KEY } from './domain/settings/CastingSettings';
+import { PortalSecret } from './infra/PortalSecret';
+import { SecretMigrator } from './infra/SecretMigrator';
 
 /**
  * Obsidian plugin entry point for Grimoire (spell management and casting).
@@ -21,6 +23,7 @@ export default class GrimoirePlugin extends Plugin {
   data!: GrimoireData;
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
+  #secret!: PortalSecret;
 
   /** Initializes plugin data, cast log, UI panels, and settings tab. */
   async onload(): Promise<void> {
@@ -37,6 +40,22 @@ export default class GrimoirePlugin extends Plugin {
     });
     this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
     this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
+    // app.secretStorage guaranteed by minAppVersion 1.11.4
+    this.#secret = new PortalSecret({ secretStorage: this.app.secretStorage });
+    const migrator = new SecretMigrator({
+      secret: this.#secret,
+      legacy: {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        readLegacy: () => this.data.settings.portalAuthPassword,
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
+        clearLegacy: () => { this.data.settings.portalAuthPassword = ''; },
+        persist: () => this.saveData(this.data),
+      },
+    });
+    await migrator.run().catch((err: unknown) => {
+      console.error('SecretMigrator failed', err);
+      new Notice('Portal password migration failed — legacy plaintext may still be in data.json.');
+    });
   }
 
   #buildPaths(): PluginPaths {
@@ -95,6 +114,7 @@ export default class GrimoirePlugin extends Plugin {
         this.data.settings.defaultEffort = effort;
         this.saver.schedule();
       },
+      secret: this.#secret,
     });
   }
 
@@ -105,7 +125,7 @@ export default class GrimoirePlugin extends Plugin {
       renderBody: renderRefineSystemPrompt,
     });
     const openVaultPath = (p: string): void => void this.app.workspace.openLinkText(p, '', false);
-    this.addSettingTab(new GrimoireSettingTab(this.app, this, () => {
+    this.addSettingTab(new GrimoireSettingTab(this.app, this, this.#secret, () => {
       castLog.materializeForge().catch(console.error);
       castLog.materializeForgeUpdate().catch(console.error);
     }, seeder, openVaultPath));

@@ -7,11 +7,18 @@ import type { RemoteCastTransport } from '../../../src/cast/portal/RemoteCastTra
 import { mapPortalError } from '../../../src/cast/portal/mapPortalError';
 import type { GrimoireSettings } from '../../../src/domain/settings/Settings';
 import type { CastInput, CastCallbacks } from '../../../src/cast/Caster';
+import type { PortalSecret } from '../../../src/infra/PortalSecret';
 
 const makeTransportStub = (behavior: (input: RemoteCastInput, cbs: RemoteCastCallbacks) => void) =>
   ({
     run: vi.fn((input, cbs) => behavior(input, cbs)),
   }) as unknown as RemoteCastTransport;
+
+const makeSecretStub = (password: string = 'pass'): PortalSecret =>
+  ({
+    get: () => password,
+    set: vi.fn(),
+  }) as unknown as PortalSecret;
 
 const baseSettings: GrimoireSettings = {
   spellTag: 'grimoire/spell',
@@ -48,6 +55,7 @@ describe('RemoteCaster', () => {
     const caster = new RemoteCaster({
       transport,
       settings: baseSettings,
+      secret: makeSecretStub(),
     });
 
     caster.cast(baseInput, { onAccepted: vi.fn(), onFailure: vi.fn() });
@@ -59,7 +67,7 @@ describe('RemoteCaster', () => {
     const transport = makeTransportStub((_input, cbs) => {
       cbs.onAccepted({ portalCastId: 'srv-x' });
     });
-    const caster = new RemoteCaster({ transport, settings: baseSettings });
+    const caster = new RemoteCaster({ transport, settings: baseSettings, secret: makeSecretStub() });
 
     const onAccepted = vi.fn();
     const onFailure = vi.fn();
@@ -75,7 +83,7 @@ describe('RemoteCaster', () => {
   it('does not call onAccepted when transport silently skips (202 without castId)', () => {
     const transport = makeTransportStub((_input, _cbs) => {
     });
-    const caster = new RemoteCaster({ transport, settings: baseSettings });
+    const caster = new RemoteCaster({ transport, settings: baseSettings, secret: makeSecretStub() });
 
     const onAccepted = vi.fn();
     const onFailure = vi.fn();
@@ -91,7 +99,7 @@ describe('RemoteCaster', () => {
     const transport = makeTransportStub((_input, cbs) => {
       cbs.onFailure(expectedNotice);
     });
-    const caster = new RemoteCaster({ transport, settings: baseSettings });
+    const caster = new RemoteCaster({ transport, settings: baseSettings, secret: makeSecretStub() });
 
     const onFailure = vi.fn();
 
@@ -106,7 +114,7 @@ describe('RemoteCaster', () => {
     const transport = makeTransportStub((_input, cbs) => {
       cbs.onFailure(expectedNotice);
     });
-    const caster = new RemoteCaster({ transport, settings: baseSettings });
+    const caster = new RemoteCaster({ transport, settings: baseSettings, secret: makeSecretStub() });
 
     const onFailure = vi.fn();
 
@@ -121,7 +129,7 @@ describe('RemoteCaster', () => {
     const transport = makeTransportStub((_input, cbs) => {
       cbs.onFailure(expectedNotice);
     });
-    const caster = new RemoteCaster({ transport, settings: baseSettings });
+    const caster = new RemoteCaster({ transport, settings: baseSettings, secret: makeSecretStub() });
 
     const onFailure = vi.fn();
 
@@ -136,7 +144,7 @@ describe('RemoteCaster', () => {
     const transport = makeTransportStub((_input, cbs) => {
       cbs.onFailure(expectedNotice);
     });
-    const caster = new RemoteCaster({ transport, settings: baseSettings });
+    const caster = new RemoteCaster({ transport, settings: baseSettings, secret: makeSecretStub() });
 
     const onFailure = vi.fn();
 
@@ -144,5 +152,39 @@ describe('RemoteCaster', () => {
 
     expect(onFailure).toHaveBeenCalledOnce();
     expect(onFailure).toHaveBeenCalledWith(expectedNotice);
+  });
+
+  it('uses password from secret.get() instead of settings', () => {
+    let capturedInput: RemoteCastInput | undefined;
+    const transport = makeTransportStub((input, _cbs) => {
+      capturedInput = input;
+    });
+    const secret = makeSecretStub('pw-from-store');
+    const caster = new RemoteCaster({
+      transport,
+      settings: baseSettings,
+      secret,
+    });
+
+    caster.cast(baseInput, { onAccepted: vi.fn(), onFailure: vi.fn() });
+
+    expect(capturedInput?.portalAuthPassword).toBe('pw-from-store');
+  });
+
+  it('passes empty string when secret.get() returns empty', () => {
+    let capturedInput: RemoteCastInput | undefined;
+    const transport = makeTransportStub((input, _cbs) => {
+      capturedInput = input;
+    });
+    const secret = makeSecretStub('');
+    const caster = new RemoteCaster({
+      transport,
+      settings: baseSettings,
+      secret,
+    });
+
+    caster.cast(baseInput, { onAccepted: vi.fn(), onFailure: vi.fn() });
+
+    expect(capturedInput?.portalAuthPassword).toBe('');
   });
 });

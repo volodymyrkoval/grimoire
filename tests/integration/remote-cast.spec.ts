@@ -19,6 +19,7 @@ import { CastDispatcher } from '../../src/cast/CastDispatcher';
 import { CastRunner } from '../../src/cast/local/CastRunner';
 import { CastLogStore } from '../../src/castLog/store';
 import { createCaster } from '../../src/cast/createCaster';
+import { PortalSecret } from '../../src/infra/PortalSecret';
 import { requestUrl } from 'obsidian';
 import type { GrimoireSettings } from '../../src/domain/settings/Settings';
 import type { Spell } from '../../src/domain/spells/Spell';
@@ -88,10 +89,18 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
     const notify = vi.fn();
     const close = vi.fn();
 
+    const secret = new PortalSecret({
+      secretStorage: {
+        getSecret: () => 'secret',
+        setSecret: () => {},
+        listSecrets: () => [],
+      },
+    });
+
     const dispatcher = new CastDispatcher({
       notify,
       close,
-      caster: () => createCaster(remoteSettings),
+      caster: () => createCaster(remoteSettings, secret),
       logWriter: () => localLogStore,
       generateId: () => 'cast-abc',
     });
@@ -155,10 +164,18 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
       now: () => new Date('2026-01-01T00:00:00Z'),
     });
 
+    const secret = new PortalSecret({
+      secretStorage: {
+        getSecret: () => '',
+        setSecret: () => {},
+        listSecrets: () => [],
+      },
+    });
+
     const dispatcher = new CastDispatcher({
       notify: vi.fn(),
       close: vi.fn(),
-      caster: () => createCaster(localSettings),
+      caster: () => createCaster(localSettings, secret),
       logWriter: () => localLogStore,
       generateId: () => 'cast-local',
     });
@@ -201,10 +218,18 @@ describe('remote-cast integration — CastDispatcher → createCaster → CastLo
 
     const guardSettings = makeSettings({ executionMode: 'remote', portalHost: '' });
 
+    const secret = new PortalSecret({
+      secretStorage: {
+        getSecret: () => '',
+        setSecret: () => {},
+        listSecrets: () => [],
+      },
+    });
+
     const dispatcher = new CastDispatcher({
       notify,
       close,
-      caster: () => createCaster(guardSettings),
+      caster: () => createCaster(guardSettings, secret),
       logWriter: () => remoteLogStore,
       generateId: () => 'cast-guard',
     });

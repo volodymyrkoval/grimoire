@@ -21,6 +21,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App, Notice } from 'obsidian';
 import { hydrate } from '../../src/infra/settingsPersistence';
 import { GrimoireSettingTab } from '../../src/ui/settings/GrimoireSettingTab';
+import { PortalSecret } from '../../src/infra/PortalSecret';
 
 vi.mock('../../src/infra/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
@@ -44,8 +45,11 @@ function makePlugin(activeRefinePath: string | null = null) {
   const data = hydrate(undefined, app);
   data.settings.activeRefinePath = activeRefinePath;
 
+  const secret = new PortalSecret({ secretStorage: app.secretStorage });
+
   return {
     app,
+    secret,
     data,
     save: vi.fn(),
   } as any;
@@ -86,6 +90,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
     const tab = new GrimoireSettingTab(
       plugin.app,
       plugin,
+      plugin.secret,
       undefined,    // onSettingsSaved
       seeder as any,
       openVaultPath,
@@ -140,6 +145,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
     const tab = new GrimoireSettingTab(
       plugin.app,
       plugin,
+      plugin.secret,
       undefined,
       seeder as any,
       openVaultPath,
@@ -199,6 +205,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
     const tab = new GrimoireSettingTab(
       plugin.app,
       plugin,
+      plugin.secret,
       undefined,
       seeder as any,
       openVaultPath,
@@ -231,6 +238,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
     const tabNull = new GrimoireSettingTab(
       pluginNull.app,
       pluginNull,
+      pluginNull.secret,
       undefined,
       seederNull as any,
       openVaultPathNull,
@@ -248,6 +256,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
     const tabActive = new GrimoireSettingTab(
       pluginActive.app,
       pluginActive,
+      pluginActive.secret,
       undefined,
       seederActive as any,
       openVaultPathActive,
@@ -274,6 +283,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
     const tab = new GrimoireSettingTab(
       plugin.app,
       plugin,
+      plugin.secret,
       undefined,
       seeder as any,
       openVaultPath,
@@ -337,6 +347,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
     const tab = new GrimoireSettingTab(
       plugin.app,
       plugin,
+      plugin.secret,
       undefined,
       seeder as any,
       openVaultPath,
@@ -366,7 +377,7 @@ describe('custom-refine-settings integration — GrimoireSettingTab → CustomRe
       seed: vi.fn().mockResolvedValue(newFilePath),
     };
 
-    const tab = new GrimoireSettingTab(plugin.app, plugin, undefined, seeder as any, vi.fn());
+    const tab = new GrimoireSettingTab(plugin.app, plugin, plugin.secret, undefined, seeder as any, vi.fn());
     tab.display();
 
     findButtonByText(tab.containerEl, 'Create from default')!.click();

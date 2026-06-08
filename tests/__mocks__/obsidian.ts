@@ -70,6 +70,21 @@ function makeDataAdapterMock() {
 }
 
 /**
+ * Creates a mock SecretStorage with sensible defaults for secret persistence.
+ * Stores secrets in a backing Map; each new instance gets a fresh store for test isolation.
+ */
+function makeSecretStorageMock() {
+  const store = new Map<string, string>();
+  return {
+    getSecret: (id: string): string | null => store.get(id) ?? null,
+    setSecret: (id: string, secret: string): void => {
+      store.set(id, secret);
+    },
+    listSecrets: (): string[] => Array.from(store.keys()),
+  };
+}
+
+/**
  * Mock of Obsidian's FileManager class.
  * Provides processFrontMatter for mutating file metadata in place.
  */
@@ -90,6 +105,7 @@ export class App {
   private __filesByPath = new Map<string, TFile>();
 
   fileManager = new FileManager();
+  secretStorage = makeSecretStorageMock();
 
   vault = {
     getMarkdownFiles: vi.fn<() => any[]>(() => []),

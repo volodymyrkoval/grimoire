@@ -14,6 +14,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ForgeImprinter } from '../../src/forge/ForgeImprinter';
 import { createCaster } from '../../src/cast/createCaster';
+import { PortalSecret } from '../../src/infra/PortalSecret';
 import { CastRunner } from '../../src/cast/local/CastRunner';
 import { modelId } from '../../src/domain/settings/ModelId';
 import { requestUrl } from 'obsidian';
@@ -73,6 +74,16 @@ function makeLogWriterStub(): CastLogWriter {
   };
 }
 
+function makeSecretStub(): PortalSecret {
+  return new PortalSecret({
+    secretStorage: {
+      getSecret: () => 'secret',
+      setSecret: () => {},
+      listSecrets: () => [],
+    },
+  });
+}
+
 // ─── Test cases ───────────────────────────────────────────────────────────────
 
 describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
@@ -94,7 +105,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(localSettings),
+      caster: () => createCaster(localSettings, makeSecretStub()),
       logWriter: () => logWriter,
       generateId: () => 'local-id',
       forgeSpellPaths: makeForgeSpellPaths(localSettings.vaultMountPath),
@@ -114,7 +125,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(emptyHostSettings),
+      caster: () => createCaster(emptyHostSettings, makeSecretStub()),
       logWriter: () => logWriter,
       forgeSpellPaths: makeForgeSpellPaths(emptyHostSettings.vaultMountPath),
     });
@@ -137,7 +148,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(remoteSettings),
+      caster: () => createCaster(remoteSettings, makeSecretStub()),
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
       forgeSpellPaths: makeForgeSpellPaths(remoteSettings.vaultMountPath),
@@ -171,7 +182,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(remoteSettings),
+      caster: () => createCaster(remoteSettings, makeSecretStub()),
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
       forgeSpellPaths: makeForgeSpellPaths(remoteSettings.vaultMountPath),
@@ -205,7 +216,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(remoteSettings),
+      caster: () => createCaster(remoteSettings, makeSecretStub()),
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
       forgeSpellPaths,
@@ -248,7 +259,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(localSettings),
+      caster: () => createCaster(localSettings, makeSecretStub()),
       logWriter: () => logWriter,
       generateId: () => 'local-forge-id',
       forgeSpellPaths,
@@ -282,7 +293,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(remoteSettings),
+      caster: () => createCaster(remoteSettings, makeSecretStub()),
       logWriter: () => logWriter,
       generateId: () => 'forge-id',
       forgeSpellPaths: makeForgeSpellPaths(remoteSettings.vaultMountPath),
@@ -321,7 +332,7 @@ describe('remote-forge invariant — ForgeImprinter.imprint()', () => {
 
     const imprinter = new ForgeImprinter({
       notify,
-      caster: () => createCaster(emptyVaultSettings),
+      caster: () => createCaster(emptyVaultSettings, makeSecretStub()),
       logWriter: () => logWriter,
       generateId: () => 'case8-id',
       forgeSpellPaths,

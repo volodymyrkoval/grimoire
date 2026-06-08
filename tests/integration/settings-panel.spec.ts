@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App } from 'obsidian';
 import { hydrate } from '../../src/infra/settingsPersistence';
 import { GrimoireSettingTab } from '../../src/ui/settings/GrimoireSettingTab';
+import { PortalSecret } from '../../src/infra/PortalSecret';
 
 vi.mock('../../src/infra/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
@@ -9,8 +10,10 @@ vi.mock('../../src/infra/computeVaultMountDefault', () => ({
 
 function makePlugin() {
   const app = new App();
+  const secret = new PortalSecret({ secretStorage: app.secretStorage });
   return {
     app,
+    secret,
     data: hydrate(undefined, app),
     save: vi.fn(),
   } as any;
@@ -23,7 +26,7 @@ describe('GrimoireSettingTab seam', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     plugin = makePlugin();
-    tab = new GrimoireSettingTab(plugin.app, plugin);
+    tab = new GrimoireSettingTab(plugin.app, plugin, plugin.secret);
     tab.display();
   });
 
@@ -152,13 +155,14 @@ describe('GrimoireSettingTab seam', () => {
     expect(passwordInputs.length).toBe(1);
   });
 
-  it('typing in the password input writes portalAuthPassword and calls save', () => {
+  it('typing in the password input writes portalAuthPassword and does not call save', () => {
     plugin.save.mockClear();
     const passwordInput = tab.containerEl.querySelector('input[type="password"]');
     expect(passwordInput).not.toBeNull();
     (passwordInput as any).__triggerChange('secret123');
-    expect(plugin.data.settings.portalAuthPassword).toBe('secret123');
-    expect(plugin.save).toHaveBeenCalledTimes(1);
+    expect(plugin.secret.get()).toBe('secret123');
+    expect(plugin.data.settings.portalAuthPassword).toBe('');
+    expect(plugin.save).not.toHaveBeenCalled();
   });
 
   // (viii) Advanced field write-through
@@ -233,7 +237,7 @@ describe('GrimoireSettingTab seam', () => {
 
   it('editing a text field triggers the onSettingsSaved callback after each save', () => {
     const onSettingsSaved = vi.fn();
-    const tabWithCallback = new GrimoireSettingTab(plugin.app, plugin, onSettingsSaved);
+    const tabWithCallback = new GrimoireSettingTab(plugin.app, plugin, plugin.secret, onSettingsSaved);
     tabWithCallback.display();
 
     onSettingsSaved.mockClear();
@@ -241,5 +245,31 @@ describe('GrimoireSettingTab seam', () => {
     (textInputs[0] as any).__triggerChange('#newTag');
 
     expect(onSettingsSaved).toHaveBeenCalledTimes(1);
+  });
+
+  // G4(a): typing writes to secret, not settings
+  it('typing into password input sets PortalSecret and leaves portalAuthPassword as empty string', () => {
+    const passwordInput = tab.containerEl.querySelector('input[type="password"]');
+    (passwordInput as any).__triggerChange('typed-pw');
+    expect(plugin.secret.get()).toBe('typed-pw');
+    expect(plugin.data.settings.portalAuthPassword).toBe('');
+  });
+
+  // G4(b): pre-set secret shows in rendered password input
+  it('password input initial value reflects secret.get() on render', () => {
+    plugin.secret.set('preset');
+    tab.display();
+    const passwordInput = tab.containerEl.querySelector('input[type="password"]');
+    expect((passwordInput as HTMLInputElement).value).toBe('preset');
+  });
+
+  // G5: edge case — empty string write
+  it('typing empty string into password input sets PortalSecret to empty string', () => {
+    // first set something
+    plugin.secret.set('initial');
+    tab.display();
+    const passwordInput = tab.containerEl.querySelector('input[type="password"]');
+    (passwordInput as any).__triggerChange('');
+    expect(plugin.secret.get()).toBe('');
   });
 });

@@ -27,6 +27,7 @@ export interface GrimoireSettings {
   portalPort: string;
   portalPath: string;
   portalAuthUser: string;
+  /** @deprecated — legacy field; source of truth is PortalSecret. Always '' after migration. */
   portalAuthPassword: string;
   /** Vault-relative path of the user's active Refine spell template; null = bundled default. */
   activeRefinePath: string | null;

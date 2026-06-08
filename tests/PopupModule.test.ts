@@ -129,18 +129,20 @@ describe('PopupModule', () => {
     const overrides = { getOverride: vi.fn() } as any;
     const castLog = makeCastLogModule() as any;
 
-    new PopupModule(makeModuleDeps(settings, overrides, castLog));
+    const deps = makeModuleDeps(settings, overrides, castLog);
+
+    new PopupModule(deps);
 
     expect(imprinterSpy).toHaveBeenCalledOnce();
-    const deps = imprinterSpy.mock.calls[0][0] as any;
-    expect(typeof deps.caster).toBe('function');
-    expect(typeof deps.logWriter).toBe('function');
+    const imprinterDeps = imprinterSpy.mock.calls[0][0] as any;
+    expect(typeof imprinterDeps.caster).toBe('function');
+    expect(typeof imprinterDeps.logWriter).toBe('function');
 
     // Invoke thunks to verify they delegate correctly
-    deps.caster();
-    expect(createCasterSpy).toHaveBeenCalledWith(settings, HOOKS_DIR);
+    imprinterDeps.caster();
+    expect(createCasterSpy).toHaveBeenCalledWith(settings, deps.secret, HOOKS_DIR);
 
-    deps.logWriter();
+    imprinterDeps.logWriter();
     expect(castLog.activeLogStore).toHaveBeenCalled();
 
     imprinterSpy.mockRestore();

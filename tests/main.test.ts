@@ -460,7 +460,7 @@ describe('GrimoirePlugin', () => {
     popupSpy.mockRestore();
   });
 
-  it('caster thunks pass settings to createCaster', async () => {
+  it('caster thunks pass settings and secret to createCaster', async () => {
     const createCasterModule = await import('../src/cast/createCaster');
     const createCasterSpy = vi.spyOn(createCasterModule, 'createCaster').mockReturnValue({ cast: vi.fn() } as any);
 
@@ -483,7 +483,7 @@ describe('GrimoirePlugin', () => {
     casterThunk();
 
     expect(createCasterSpy).toHaveBeenCalledOnce();
-    expect(createCasterSpy.mock.calls[0].length).toBe(2);
+    expect(createCasterSpy.mock.calls[0].length).toBe(3);
 
     createCasterSpy.mockRestore();
     dispatcherSpy.mockRestore();

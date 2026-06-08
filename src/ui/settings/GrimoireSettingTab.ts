@@ -5,6 +5,7 @@ import { modelId } from '../../domain/settings/ModelId';
 import { KNOWN_PROVIDERS, CLAUDE_CODE, parseProvider } from '../../domain/settings/Provider';
 import { RefineSeeder } from '../../refine/CustomRefineSeeder';
 import { CustomRefineSection } from './CustomRefineSection';
+import { PortalSecret } from '../../infra/PortalSecret';
 
 /**
  * Plugin settings UI rendered in Obsidian's Settings modal.
@@ -14,6 +15,7 @@ import { CustomRefineSection } from './CustomRefineSection';
  */
 export class GrimoireSettingTab extends PluginSettingTab {
   readonly #plugin: { app: App; data: GrimoireData; save(): void };
+  readonly #secret: PortalSecret;
   readonly #onSettingsSaved: () => void;
   readonly #seeder: RefineSeeder;
   readonly #openVaultPath: (path: string) => void;
@@ -21,6 +23,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
   constructor(
     app: App,
     plugin: { app: App; data: GrimoireData; save(): void },
+    secret: PortalSecret,
     onSettingsSaved?: () => void,
     seeder?: RefineSeeder,
     openVaultPath?: (path: string) => void,
@@ -28,6 +31,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
     // plugin satisfies PluginSettingTab structurally; 'as any' bridges the nominal Obsidian Plugin type
     super(app, plugin as unknown as import('obsidian').Plugin);
     this.#plugin = plugin;
+    this.#secret = secret;
     this.#onSettingsSaved = onSettingsSaved ?? (() => {});
     this.#seeder = seeder ?? this.#makeNoopSeeder();
     this.#openVaultPath = openVaultPath ?? (() => {});
@@ -110,7 +114,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
       'URL path prefix for the portal API (e.g. /api).');
     this.#addTextField('Auth user',        () => s.portalAuthUser,     v => { s.portalAuthUser = v; },
       'Username for portal HTTP basic authentication.');
-    this.#addPasswordField('Auth password',() => s.portalAuthPassword, v => { s.portalAuthPassword = v; },
+    this.#addPasswordField('Auth password', () => this.#secret.get(), v => { this.#secret.set(v); },
       'Password for portal HTTP basic authentication.');
   }
 
@@ -188,7 +192,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
     const s = new Setting(this.containerEl).setName(label);
     if (desc) s.setDesc(desc);
     s.addText(t => {
-        t.setValue(getValue()).onChange(v => { setValue(v); this.#save(); });
+        t.setValue(getValue()).onChange(v => { setValue(v); });
         t.inputEl.type = 'password';
       });
   }

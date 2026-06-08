@@ -6,6 +6,13 @@ import { CastRunner } from '../../src/cast/local/CastRunner';
 import { requestUrl } from 'obsidian';
 import type { GrimoireSettings } from '../../src/domain/settings/Settings';
 import type { CastInput, CastCallbacks } from '../../src/cast/Caster';
+import type { PortalSecret } from '../../src/infra/PortalSecret';
+
+const makeSecretStub = (): PortalSecret =>
+  ({
+    get: () => 'pass',
+    set: vi.fn(),
+  }) as unknown as PortalSecret;
 
 const localSettings: GrimoireSettings = {
   spellTag: 'grimoire/spell',
@@ -51,7 +58,7 @@ describe('createCaster', () => {
   it('local mode: returns a Caster that invokes CastRunner.run', () => {
     const runSpy = vi.spyOn(CastRunner.prototype, 'run').mockImplementation(() => {});
 
-    const caster = createCaster(localSettings);
+    const caster = createCaster(localSettings, makeSecretStub());
     caster.cast(baseCastInput, { onAccepted: vi.fn(), onFailure: vi.fn() });
 
     expect(runSpy).toHaveBeenCalledOnce();
@@ -61,7 +68,7 @@ describe('createCaster', () => {
   it('remote mode: returns a Caster that calls requestUrl', async () => {
     vi.mocked(requestUrl).mockResolvedValue({ status: 202, json: {}, text: '' });
 
-    const caster = createCaster(remoteSettings);
+    const caster = createCaster(remoteSettings, makeSecretStub());
     caster.cast(baseCastInput, { onAccepted: vi.fn(), onFailure: vi.fn() });
     await flushPromises();
 
@@ -74,7 +81,7 @@ describe('createCaster', () => {
       return { cast: vi.fn() };
     } as any);
 
-    createCaster(remoteSettings);
+    createCaster(remoteSettings, makeSecretStub());
 
     expect(remoteCasterSpy).toHaveBeenCalledOnce();
     const constructedWith = remoteCasterSpy.mock.calls[0][0] as any;
@@ -85,7 +92,7 @@ describe('createCaster', () => {
 
   it('returns an object with a cast method', () => {
     const runSpy = vi.spyOn(CastRunner.prototype, 'run').mockImplementation(() => {});
-    const caster = createCaster(localSettings);
+    const caster = createCaster(localSettings, makeSecretStub());
     expect(typeof caster.cast).toBe('function');
     runSpy.mockRestore();
   });
