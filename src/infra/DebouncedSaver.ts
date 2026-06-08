@@ -1,3 +1,5 @@
+import type { Logger } from './Logger';
+
 /**
  * Defers save operations by a fixed delay, cancelling earlier pending saves if a new one is scheduled.
  * Supports immediate flush on demand (e.g., at plugin unload).
@@ -6,10 +8,12 @@ export class DebouncedSaver {
   #save: () => void | Promise<void>;
   #delayMs: number;
   #timer: ReturnType<typeof activeWindow.setTimeout> | null = null;
+  readonly #logger: Logger | undefined;
 
-  constructor(save: () => void | Promise<void>, delayMs: number) {
+  constructor(save: () => void | Promise<void>, delayMs: number, logger?: Logger) {
     this.#save = save;
     this.#delayMs = delayMs;
+    this.#logger = logger;
   }
 
   /** Schedules a save, cancelling any pending save from an earlier call. */
@@ -33,7 +37,7 @@ export class DebouncedSaver {
     try {
       await this.#save();
     } catch (e) {
-      console.error(e);
+      this.#logger?.error(e);
     }
   }
 }

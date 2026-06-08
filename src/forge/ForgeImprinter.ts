@@ -7,6 +7,7 @@ import type { Caster } from '../execution/Caster';
 import type { CastEventSink } from './CastEventSink';
 import type { SpellImprinter } from './SpellImprinter';
 import { resolveProviderAdapter } from '../cast/provider/resolveProviderAdapter';
+import type { Logger } from '../infra/Logger';
 
 /** Dependencies injected into ForgeImprinter, allowing optional ID generation override for testing. */
 export interface ForgeImprinterDeps {
@@ -16,6 +17,8 @@ export interface ForgeImprinterDeps {
   /** Returns the materialized forge spell paths: absolute for the local caster, vault-relative for the portal. */
   forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   generateId?: () => string;
+  /** Logger for diagnostic output. Optional — no-op when omitted. */
+  logger?: Logger;
 }
 
 /** All values needed to call caster.cast and handle its callbacks, assembled once in imprint. */
@@ -38,6 +41,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
   readonly #logWriter: () => CastEventSink;
   readonly #forgeSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   readonly #generateId: () => string;
+  readonly #logger: Logger | undefined;
 
   constructor(deps: ForgeImprinterDeps) {
     this.#notify = deps.notify;
@@ -45,6 +49,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
     this.#logWriter = deps.logWriter;
     this.#forgeSpellPaths = deps.forgeSpellPaths;
     this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
+    this.#logger = deps.logger;
   }
 
   /**
@@ -85,7 +90,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
   #recordCast(castId: string, snapshot: ForgeFormSnapshot): void {
     this.#logWriter()
       .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [], provider: snapshot.provider })
-      .catch(console.error);
+      .catch((e) => this.#logger?.error('recordCasted failed', e));
   }
 
   #notifyLaunch(sanitised: string, isRemote: boolean): void {
@@ -105,7 +110,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
     });
     const paths = this.#forgeSpellPaths();
     const caster = this.#caster();
-    resolveProviderAdapter(snapshot.provider);
+    resolveProviderAdapter(snapshot.provider, this.#logger);
     caster.cast(
       {
         castId,
@@ -130,7 +135,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
     if (jobId !== undefined) {
       this.#logWriter()
         .recordCasted({ castId, spellPath: FORGE_SPELL_PATH, model: snapshot.model, effort: snapshot.effort, contextNotes: [], portalCastId: jobId, provider: snapshot.provider })
-        .catch(console.error);
+        .catch((e) => this.#logger?.error('recordCasted failed', e));
     }
     if (!isRemote) this.#notify(`Spell "${sanitised}" forged`);
   }
@@ -138,7 +143,7 @@ export class ForgeImprinter implements SpellImprinter<ForgeFormSnapshot> {
   /** Logs the cast error and notifies the user with an appropriate message. */
   #onCastFailed(ctx: DispatchContext, msg: string): void {
     const { castId, isRemote } = ctx;
-    this.#logWriter().recordError({ castId, message: msg }).catch(console.error);
+    this.#logWriter().recordError({ castId, message: msg }).catch((e) => this.#logger?.error('recordError failed', e));
     this.#notify(isRemote ? msg : `Forge failed: ${msg}`);
   }
 }

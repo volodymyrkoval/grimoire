@@ -3,6 +3,7 @@ import type { GrimoireSettings } from '../../domain/settings/Settings';
 import type { Caster, CastInput, CastCallbacks } from '../../execution/Caster';
 import { RemoteCastTransport } from './RemoteCastTransport';
 import type { PortalSecret } from '../../infra/PortalSecret';
+import type { Logger } from '../../infra/Logger';
 
 /**
  * Caster implementation that executes spells remotely via a portal HTTP endpoint.
@@ -12,19 +13,24 @@ export class RemoteCaster implements Caster {
   readonly #transport: RemoteCastTransport;
   readonly #settings: GrimoireSettings;
   readonly #secret: PortalSecret;
+  // eslint-disable-next-line no-unused-private-class-members
+  readonly #logger: Logger | undefined;
 
   constructor({
     settings,
     secret,
     transport,
+    logger,
   }: {
     settings: GrimoireSettings;
     secret: PortalSecret;
     transport?: RemoteCastTransport;
+    logger?: Logger;
   }) {
-    this.#transport = transport ?? new RemoteCastTransport({ requestUrlFn: requestUrl });
+    this.#transport = transport ?? new RemoteCastTransport({ requestUrlFn: requestUrl, logger });
     this.#settings = settings;
     this.#secret = secret;
+    this.#logger = logger;
   }
 
   /**

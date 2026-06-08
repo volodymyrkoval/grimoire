@@ -20,6 +20,7 @@ import type { CastLogModule } from './CastLogModule';
 import type { PluginPaths } from '../infra/PluginPaths';
 import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../infra/castingFrontmatter';
 import type { PortalSecret } from '../infra/PortalSecret';
+import type { Logger } from '../infra/Logger';
 
 /**
  * Owns the spell browser popup and its lifecycle: opens the popup command,
@@ -41,6 +42,7 @@ export class PopupModule {
   readonly #castingWriter: CastingFrontmatterWriter;
   readonly #setVaultDefault: (model: ModelId, effort: Effort | null) => void;
   readonly #secret: PortalSecret;
+  readonly #logger: Logger | undefined;
 
   constructor(deps: {
     app: App;
@@ -57,6 +59,8 @@ export class PopupModule {
     /** Writes vault-wide default model/effort to plugin settings. */
     setVaultDefault: (model: ModelId, effort: Effort | null) => void;
     secret: PortalSecret;
+    /** Logger for diagnostic output. Optional — no-op when omitted. */
+    logger?: Logger;
   }) {
     this.#app = deps.app;
     this.#getData = deps.getData;
@@ -69,20 +73,23 @@ export class PopupModule {
     this.#castingWriter = deps.castingWriter;
     this.#setVaultDefault = deps.setVaultDefault;
     this.#secret = deps.secret;
+    this.#logger = deps.logger;
 
     this.#registry = PopupModule.#buildRegistry();
     this.#sessionMap = new OptionsSessionMap();
     this.#imprinter = new ForgeImprinter({
       notify: (msg) => { new Notice(msg); },
-      caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs()),
+      caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs(), this.#logger),
       logWriter: () => this.#castLog.activeLogStore(),
       forgeSpellPaths: deps.forgeSpellPaths,
+      logger: this.#logger,
     });
     this.#updateImprinter = new ForgeUpdateImprinter({
       notify: (msg) => { new Notice(msg); },
-      caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs()),
+      caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs(), this.#logger),
       logWriter: () => this.#castLog.activeLogStore(),
       forgeUpdateSpellPaths: deps.forgeUpdateSpellPaths,
+      logger: this.#logger,
     });
   }
 
@@ -117,13 +124,15 @@ export class PopupModule {
       createDispatcher: (close) => new CastDispatcher({
         notify: (msg) => { new Notice(msg); },
         close,
-        caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs()),
+        caster: () => createCaster(this.#getData().settings, this.#secret, this.#getAgentHooksDirAbs(), this.#logger),
         logWriter: () => this.#castLog.activeLogStore(),
+        logger: this.#logger,
       }),
       paths: this.#paths,
       castingReader: this.#castingReader,
       castingWriter: this.#castingWriter,
       setVaultDefault: this.#setVaultDefault,
+      logger: this.#logger,
     }).build().open();
   }
 }

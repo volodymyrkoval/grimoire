@@ -140,7 +140,7 @@ describe('PopupModule', () => {
 
     // Invoke thunks to verify they delegate correctly
     imprinterDeps.caster();
-    expect(createCasterSpy).toHaveBeenCalledWith(settings, deps.secret, HOOKS_DIR);
+    expect(createCasterSpy).toHaveBeenCalledWith(settings, deps.secret, HOOKS_DIR, deps.logger);
 
     imprinterDeps.logWriter();
     expect(castLog.activeLogStore).toHaveBeenCalled();

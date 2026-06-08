@@ -97,12 +97,16 @@ describe('CastSpawner', () => {
   });
 
   describe('#attachStderrListener — echo branch + double-duty', () => {
-    it('accumulates stderr but does not live-echo when echoOutput is false (on-failure console.error still fires)', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('accumulates stderr but does not live-echo when echoOutput is false (on-failure logger.error still fires)', async () => {
+      const mockLogger = {
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+      };
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
-      const spawner = new CastSpawner({ spawner: fakeSpawn });
+      const spawner = new CastSpawner({ spawner: fakeSpawn, logger: mockLogger as any });
       const resultPromise = spawner.run({
         binary: 'claude',
         args: [],
@@ -116,10 +120,8 @@ describe('CastSpawner', () => {
 
       // stderr accumulated correctly into the tail
       expect(result.stderrTail).toBe('error text');
-      // no live-echo call (no prefixed message)
-      expect(consoleSpy).not.toHaveBeenCalledWith('[abc] error text');
-      // on-failure call still fired
-      expect(consoleSpy).toHaveBeenCalledWith('Forge spawn stderr:\nerror text');
+      // on-failure logger.error still fired
+      expect(mockLogger.error).toHaveBeenCalledWith('Forge spawn stderr:\nerror text');
     });
 
     it('accumulates stderr AND live-echoes to console.error when echoOutput is true', async () => {
@@ -145,12 +147,17 @@ describe('CastSpawner', () => {
       expect(consoleSpy).toHaveBeenCalledWith('[abc] oops');
     });
 
-    it('fires both live-echo console.error and on-failure console.error on non-zero exit with echoOutput true', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('fires both live-echo console.error and on-failure logger.error on non-zero exit with echoOutput true', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const mockLogger = {
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+      };
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
-      const spawner = new CastSpawner({ spawner: fakeSpawn });
+      const spawner = new CastSpawner({ spawner: fakeSpawn, logger: mockLogger as any });
       const resultPromise = spawner.run({
         binary: 'claude',
         args: [],
@@ -162,11 +169,10 @@ describe('CastSpawner', () => {
       fakeProcess.emit('exit', 1);
       await resultPromise;
 
-      // live-echo fired
-      expect(consoleSpy).toHaveBeenCalledWith('[abc] oops');
-      // on-failure dump also fired
-      expect(consoleSpy).toHaveBeenCalledWith('Forge spawn stderr:\noops');
-      expect(consoleSpy).toHaveBeenCalledTimes(2);
+      // live-echo fired via console.error
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[abc] oops');
+      // on-failure dump fired via logger
+      expect(mockLogger.error).toHaveBeenCalledWith('Forge spawn stderr:\noops');
     });
   });
 
@@ -431,12 +437,16 @@ describe('CastSpawner', () => {
       expect(result.stderrTail).toBe('error text');
     });
 
-    it('(c) echoOutput false + stderr chunk + exit code 1 → on-failure console.error called exactly once with string starting with "Forge spawn stderr:\\n"', async () => {
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('(c) echoOutput false + stderr chunk + exit code 1 → on-failure logger.error called exactly once with string starting with "Forge spawn stderr:\\n"', async () => {
+      const mockLogger = {
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+      };
       const fakeProcess = makeFakeProcess();
       const fakeSpawn: SpawnFn = vi.fn(() => fakeProcess);
 
-      const spawner = new CastSpawner({ spawner: fakeSpawn });
+      const spawner = new CastSpawner({ spawner: fakeSpawn, logger: mockLogger as any });
       const resultPromise = spawner.run({
         binary: 'claude',
         args: [],
@@ -448,8 +458,8 @@ describe('CastSpawner', () => {
       fakeProcess.emit('exit', 1);
       await resultPromise;
 
-      expect(errorSpy).toHaveBeenCalledTimes(1);
-      expect(errorSpy).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledTimes(1);
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringMatching(/^Forge spawn stderr:\n/)
       );
     });

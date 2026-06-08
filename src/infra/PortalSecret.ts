@@ -1,4 +1,5 @@
 import { Notice } from 'obsidian';
+import type { Logger } from './Logger';
 
 export const PORTAL_AUTH_PASSWORD_SECRET_ID = 'grimoire-portal-auth-password';
 
@@ -14,9 +15,11 @@ export interface SecretStorageLike {
  */
 export class PortalSecret {
   readonly #storage: SecretStorageLike;
+  readonly #logger: Logger | undefined;
 
-  constructor(deps: { secretStorage: SecretStorageLike }) {
+  constructor(deps: { secretStorage: SecretStorageLike; logger?: Logger }) {
     this.#storage = deps.secretStorage;
+    this.#logger = deps.logger;
   }
 
   /** Returns the current secret value, or '' if unset. Never throws. */
@@ -33,9 +36,8 @@ export class PortalSecret {
     try {
       this.#storage.setSecret(PORTAL_AUTH_PASSWORD_SECRET_ID, value);
     } catch (err) {
-      console.warn(
-        `PortalSecret.set() failed to persist password: ${err instanceof Error ? err.message : String(err)}`
-      );
+      const message = `PortalSecret.set() failed to persist password: ${err instanceof Error ? err.message : String(err)}`;
+      this.#logger?.warn(message);
       new Notice('Portal: failed to save password — check the developer console.');
     }
   }

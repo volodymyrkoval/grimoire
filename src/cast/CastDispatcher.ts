@@ -5,6 +5,7 @@ import type { CastResultRecorder } from './CastResultRecorder';
 import type { ModelId } from '../domain/settings/ModelId';
 import type { Provider } from '../domain/settings/Provider';
 import { resolveProviderAdapter } from './provider/resolveProviderAdapter';
+import type { Logger } from '../infra/Logger';
 
 /**
  * Input payload for a spell cast request.
@@ -40,6 +41,8 @@ export interface CastDispatcherDeps {
   caster: () => Caster;
   logWriter: () => CastResultRecorder;
   generateId?: () => string;
+  /** Logger for diagnostic output. Optional — no-op when omitted. */
+  logger?: Logger;
 }
 
 /**
@@ -52,6 +55,7 @@ export class CastDispatcher {
   readonly #caster: () => Caster;
   readonly #logWriter: () => CastResultRecorder;
   readonly #generateId: () => string;
+  readonly #logger: Logger | undefined;
 
   constructor(deps: CastDispatcherDeps) {
     this.#notify = deps.notify;
@@ -59,6 +63,7 @@ export class CastDispatcher {
     this.#caster = deps.caster;
     this.#logWriter = deps.logWriter;
     this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
+    this.#logger = deps.logger;
   }
 
   /**
@@ -83,11 +88,11 @@ export class CastDispatcher {
 
     const castId = this.#generateId();
     const userPrompt = this.#buildUserPrompt(input.executeOnNote, settings.vaultMountPath, activeFilePath, contextNotePaths, followUp);
-    const providerAdapter = resolveProviderAdapter(provider);
+    const providerAdapter = resolveProviderAdapter(provider, this.#logger);
 
     logWriter
       .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote, provider })
-      .catch(console.error);
+      .catch((e) => this.#logger?.error('recordCasted failed', e));
 
     const noticeText = isRemote ? `Casting '${spell.name}' on portal…` : `Casting '${spell.name}'…`;
     this.#notify(noticeText);
@@ -110,12 +115,12 @@ export class CastDispatcher {
           if (jobId !== undefined) {
             logWriter
               .recordCasted({ castId, spellPath: spell.path, model, effort, contextNotes: [...contextNotePaths], followUp, executeOnNote: input.executeOnNote, portalCastId: jobId, provider })
-              .catch(console.error);
+              .catch((e) => this.#logger?.error('recordCasted failed', e));
           }
           if (!isRemote) this.#notify('Spell cast');
         },
         onFailure: (msg) => {
-          logWriter.recordError({ castId, message: msg }).catch(console.error);
+          logWriter.recordError({ castId, message: msg }).catch((e) => this.#logger?.error('recordError failed', e));
           this.#notify(isRemote ? msg : `Cast failed: ${msg}`);
         },
       },

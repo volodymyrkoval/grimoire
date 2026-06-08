@@ -14,6 +14,7 @@ import { readCastingFrontmatter } from './infra/castingFrontmatter';
 import { CASTING_FRONTMATTER_KEY } from './domain/settings/CastingSettings';
 import { PortalSecret } from './infra/PortalSecret';
 import { SecretMigrator } from './infra/SecretMigrator';
+import { Logger } from './infra/Logger';
 
 /**
  * Obsidian plugin entry point for Grimoire (spell management and casting).
@@ -24,6 +25,7 @@ export default class GrimoirePlugin extends Plugin {
   saver!: DebouncedSaver;
   overrides!: SpellOverrideStore;
   #secret!: PortalSecret;
+  #logger!: Logger;
 
   /** Initializes plugin data, cast log, UI panels, and settings tab. */
   async onload(): Promise<void> {
@@ -34,14 +36,19 @@ export default class GrimoirePlugin extends Plugin {
     this.#registerUI(castLog, popupModule);
   }
 
+  #buildLogger(): Logger {
+    return new Logger({ isDebugEnabled: () => this.data.settings.debugLogging });
+  }
+
   async #loadPluginData(): Promise<void> {
     await this.loadData().then((saved) => {
       this.data = hydrate(saved, this.app);
     });
-    this.saver = new DebouncedSaver(() => this.saveData(this.data), 500);
-    this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver });
+    this.#logger = this.#buildLogger();
+    this.saver = new DebouncedSaver(() => this.saveData(this.data), 500, this.#logger);
+    this.overrides = new SpellOverrideStore({ data: this.data, saver: this.saver, logger: this.#logger });
     // app.secretStorage guaranteed by minAppVersion 1.11.4
-    this.#secret = new PortalSecret({ secretStorage: this.app.secretStorage });
+    this.#secret = new PortalSecret({ secretStorage: this.app.secretStorage, logger: this.#logger });
     const migrator = new SecretMigrator({
       secret: this.#secret,
       legacy: {
@@ -53,7 +60,7 @@ export default class GrimoirePlugin extends Plugin {
       },
     });
     await migrator.run().catch((err: unknown) => {
-      console.error('SecretMigrator failed', err);
+      this.#logger.error('SecretMigrator failed', err);
       new Notice('Portal password migration failed — legacy plaintext may still be in data.json.');
     });
   }
@@ -73,6 +80,7 @@ export default class GrimoirePlugin extends Plugin {
         vaultMountPath: this.data.settings.vaultMountPath,
       }),
       getForgeUpdateSettings: () => ({ vaultMountPath: this.data.settings.vaultMountPath }),
+      logger: this.#logger,
     });
     await castLog.initStartupMaintenance();
     return castLog;
@@ -115,6 +123,7 @@ export default class GrimoirePlugin extends Plugin {
         this.saver.schedule();
       },
       secret: this.#secret,
+      logger: this.#logger,
     });
   }
 
@@ -126,14 +135,14 @@ export default class GrimoirePlugin extends Plugin {
     });
     const openVaultPath = (p: string): void => void this.app.workspace.openLinkText(p, '', false);
     this.addSettingTab(new GrimoireSettingTab(this.app, this, this.#secret, () => {
-      castLog.materializeForge().catch(console.error);
-      castLog.materializeForgeUpdate().catch(console.error);
-    }, seeder, openVaultPath));
+      castLog.materializeForge().catch((e) => this.#logger.error('materializeForge failed', e));
+      castLog.materializeForgeUpdate().catch((e) => this.#logger.error('materializeForgeUpdate failed', e));
+    }, seeder, openVaultPath, this.#logger));
     popupModule.register(this);
     try {
-      this.registerEditorExtension(refineMarkerExtension());
+      this.registerEditorExtension(refineMarkerExtension(this.#logger));
     } catch (err) {
-      console.error('refine-marker-styling: extension registration failed', err);
+      this.#logger.error('refine-marker-styling: extension registration failed', err);
     }
   }
 

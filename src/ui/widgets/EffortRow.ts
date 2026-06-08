@@ -1,6 +1,7 @@
 import { SegmentedControl } from './SegmentedControl';
 import { Effort, SupportedModel } from '../../domain/settings/Settings';
 import type { ModelId } from '../../domain/settings/ModelId';
+import type { Logger } from '../../infra/Logger';
 
 export interface EffortRowOpts {
   models: readonly SupportedModel[];
@@ -9,17 +10,27 @@ export interface EffortRowOpts {
   onChange: (effort: Effort) => void;
 }
 
+/** Constructor deps for {@link EffortRow}. */
+export interface EffortRowDeps {
+  logger?: Logger;
+}
+
 /**
  * Conditionally mounts a segmented control for model effort selection.
  * Effort row only mounts if the model has effortOptions; intelligently mounts/unmounts
  * as the model changes. Stores state to handle model changes that gain or lose effort options.
  */
 export class EffortRow {
+  readonly #logger: Logger | undefined;
   #segmented: SegmentedControl<Effort> | null = null;
   #wrapper: HTMLElement | null = null;
   #parent: HTMLElement | null = null;
   #models: readonly SupportedModel[] = [];
   #onChange: ((effort: Effort) => void) | null = null;
+
+  constructor(deps?: EffortRowDeps) {
+    this.#logger = deps?.logger;
+  }
 
   mount(parent: HTMLElement, opts: EffortRowOpts): void {
     // Store for later use in update (must happen before any early return)
@@ -30,7 +41,7 @@ export class EffortRow {
     // Look up the model
     const model = opts.models.find((m) => m.id === opts.modelId);
     if (!model) {
-      console.error(`EffortRow.mount: model ${opts.modelId} not found`);
+      this.#logger?.error(`EffortRow.mount: model ${opts.modelId} not found`);
       return;
     }
 
@@ -46,7 +57,7 @@ export class EffortRow {
     // Determine the initial effort value
     const initialEffort = opts.effort ?? model.defaultEffort;
     if (initialEffort === null) {
-      console.error(
+      this.#logger?.error(
         `EffortRow.mount: model ${opts.modelId} has no default effort and none provided`
       );
       return;
@@ -64,7 +75,7 @@ export class EffortRow {
     // Look up the model
     const model = this.#models.find((m) => m.id === modelId);
     if (!model) {
-      console.error(`EffortRow.update: model ${modelId} not found`);
+      this.#logger?.error(`EffortRow.update: model ${modelId} not found`);
       return;
     }
 

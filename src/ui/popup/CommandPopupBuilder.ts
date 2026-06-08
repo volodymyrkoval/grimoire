@@ -22,6 +22,7 @@ import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../../i
 import { CASTING_FRONTMATTER_KEY } from '../../domain/settings/CastingSettings';
 import type { ModelId } from '../../domain/settings/ModelId';
 import { CLAUDE_CODE } from '../../domain/settings/Provider';
+import type { Logger } from '../../infra/Logger';
 
 export interface CommandPopupBuilderDeps {
   app: App;
@@ -39,6 +40,8 @@ export interface CommandPopupBuilderDeps {
   castingWriter: CastingFrontmatterWriter;
   /** Writes vault-wide default model/effort to plugin settings and schedules a save. */
   setVaultDefault: (model: ModelId, effort: Effort | null) => void;
+  /** Optional logger injected from the host. */
+  logger?: Logger;
 }
 
 export class CommandPopupBuilder {
@@ -85,6 +88,7 @@ export class CommandPopupBuilder {
       reader: (spellPath) => readCastingFrontmatter(this.#deps.app, spellPath),
       castingWriter: this.#buildCastingWriter(),
       setVaultDefault: this.#deps.setVaultDefault,
+      logger: this.#deps.logger,
     });
   }
 

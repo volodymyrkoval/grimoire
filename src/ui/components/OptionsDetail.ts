@@ -16,6 +16,7 @@ import { getRefineSentinels } from '../../refine/refineSentinelScanner';
 import type { RefineVariantSelectDeps } from '../options/RefineVariantSelect';
 import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../../infra/castingFrontmatter';
 import type { ModelId } from '../../domain/settings/ModelId';
+import type { Logger } from '../../infra/Logger';
 
 /**
  * Discriminant that parameterizes OptionsDetail.
@@ -65,6 +66,8 @@ export interface OptionsDetailParams {
   settingsActiveRefinePath?: string | null;
   /** Called when the user clicks the Forge button to update the spell. Only passed for spell panels. */
   onForgeUpdate?: (spell: Spell) => void;
+  /** Optional logger injected from the host. */
+  logger?: Logger;
 }
 
 /**
@@ -80,6 +83,11 @@ export interface OptionsDetailParams {
  */
 export class OptionsDetail {
   #panel!: OptionsPanel;
+  readonly #logger: Logger | undefined;
+
+  constructor(logger?: Logger) {
+    this.#logger = logger;
+  }
 
   render(params: OptionsDetailParams): void {
     const spellPath = params.kind.kind === 'spell' ? params.kind.spell.path : REFINE_SENTINEL_PATH;
@@ -156,7 +164,7 @@ export class OptionsDetail {
       contextNotePaths: sessionEntry?.contextNotePaths ?? [],
       followUp: sessionEntry?.followUp ?? '',
       executeOnNote,
-    });
+    }, this.#logger);
   }
 
   #createPanel(spellPath: SpellPath, resolved: ReturnType<typeof resolveSpellOptions> & { provider: Provider }, formState: OptionsFormState, params: OptionsDetailParams) {
@@ -172,7 +180,7 @@ export class OptionsDetail {
       onForgeUpdate = () => handler(spell);
     }
 
-    const panel = new OptionsPanel(params.scope);
+    const panel = new OptionsPanel(params.scope, this.#logger);
     panel.render(params.contentEl, formState, snapshot, {
       app: params.app,
       sessionMap: params.sessionMap,

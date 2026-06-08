@@ -1,4 +1,5 @@
 import type { DataAdapter } from 'obsidian';
+import type { Logger } from '../infra/Logger';
 
 /**
  * File system operations for ScratchSweeper.
@@ -12,6 +13,7 @@ export interface ScratchSweeperPorts {
   now?: () => number;
   ttlMs?: number;
   adapter?: DataAdapter;
+  logger?: Logger;
 }
 
 /**
@@ -25,9 +27,11 @@ export class ScratchSweeper {
   #unlink: (filePath: string) => Promise<void>;
   #now: () => number;
   #ttlMs: number;
+  readonly #logger: Logger | undefined;
 
   constructor(ports: ScratchSweeperPorts) {
     this.#getScratchDirAbs = ports.getScratchDirAbs;
+    this.#logger = ports.logger;
     const adapter = ports.adapter;
     this.#readdir = ports.readdir ?? (async (dir) => {
       if (adapter && !(await adapter.exists(dir))) {
@@ -83,7 +87,7 @@ export class ScratchSweeper {
         await this.#unlink(filePath);
       }
     } catch (error) {
-      console.error(`Failed to process ${filePath}:`, error);
+      this.#logger?.error(`Failed to process ${filePath}:`, error);
     }
   }
 }

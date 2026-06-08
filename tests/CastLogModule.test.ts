@@ -4,6 +4,7 @@ import { App } from 'obsidian';
 import { CastLogModule } from '../src/main/CastLogModule';
 import { PluginPaths } from '../src/infra/PluginPaths';
 import type { ForgeSystemPromptInput } from '../src/forge/forgeTemplate';
+import { Logger } from '../src/infra/Logger';
 
 vi.mock('../src/domain/settings/computeVaultMountDefault', () => ({
   computeVaultMountDefault: vi.fn(() => '/vault'),
@@ -159,7 +160,11 @@ describe('CastLogModule', () => {
 
   it('rejection in the forge materializer is caught and logged, plugin still loads', async () => {
     const forgeRunMock = vi.fn().mockRejectedValue(new Error('forge disk full'));
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loggerErrorSpy = vi.fn();
+    const logger = new Logger({
+      isDebugEnabled: () => false,
+      sink: { error: loggerErrorSpy, warn: () => {}, debug: () => {} },
+    });
 
     const module = new CastLogModule({
       app,
@@ -168,12 +173,11 @@ describe('CastLogModule', () => {
       sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
       forgeMaterializerFactory: () => ({ run: forgeRunMock }),
       getSettings: () => ({ spellTag: '#spell', forgeOutputFolder: 'Spells', vaultMountPath: '/vault' }),
+      logger,
     });
 
     await expect(module.initStartupMaintenance()).resolves.toBeUndefined();
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('ForgeMaterializer'), expect.any(Error));
-
-    consoleSpy.mockRestore();
+    expect(loggerErrorSpy).toHaveBeenCalledWith(expect.stringContaining('ForgeMaterializer'), expect.any(Error));
   });
 
   it('initStartupMaintenance invokes refineMaterializerFactory once and awaits its run()', async () => {
@@ -198,7 +202,11 @@ describe('CastLogModule', () => {
 
   it('rejection in the refine materializer is caught and logged, plugin still loads', async () => {
     const refineRunMock = vi.fn().mockRejectedValue(new Error('refine disk full'));
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loggerErrorSpy = vi.fn();
+    const logger = new Logger({
+      isDebugEnabled: () => false,
+      sink: { error: loggerErrorSpy, warn: () => {}, debug: () => {} },
+    });
 
     const module = new CastLogModule({
       app,
@@ -208,12 +216,11 @@ describe('CastLogModule', () => {
       forgeMaterializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
       refineMaterializerFactory: () => ({ run: refineRunMock }),
       getSettings: () => ({ spellTag: '#spell', forgeOutputFolder: 'Spells', vaultMountPath: '/vault' }),
+      logger,
     });
 
     await expect(module.initStartupMaintenance()).resolves.toBeUndefined();
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('RefineMaterializer'), expect.any(Error));
-
-    consoleSpy.mockRestore();
+    expect(loggerErrorSpy).toHaveBeenCalledWith(expect.stringContaining('RefineMaterializer'), expect.any(Error));
   });
 
   it('initStartupMaintenance calls materializerFactory with ports whose getVaultRootAbs returns vaultMountPath', async () => {
@@ -242,5 +249,50 @@ describe('CastLogModule', () => {
     const capturedPorts = factorySpy.mock.calls[0][0];
     expect(capturedPorts.getVaultRootAbs()).toBe('/my/vault');
   });
+
+  it('initStartupMaintenance routes task errors through injected logger.error', async () => {
+    const taskError = new Error('task failed');
+    const runMock = vi.fn().mockRejectedValue(taskError);
+    const loggerErrorSpy = vi.fn();
+    const logger = new Logger({
+      isDebugEnabled: () => false,
+      sink: { error: loggerErrorSpy, warn: () => {}, debug: () => {} },
+    });
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: () => ({ run: runMock }),
+      sweeperFactory: () => ({ sweep: vi.fn().mockResolvedValue(undefined) }),
+      logger,
+    });
+
+    await module.initStartupMaintenance();
+
+    expect(loggerErrorSpy).toHaveBeenCalledWith(expect.stringContaining('HookMaterializer'), taskError);
+  });
+
+  it('initStartupMaintenance routes sweeper errors through injected logger.error', async () => {
+    const sweepError = new Error('sweep failed');
+    const sweepMock = vi.fn().mockRejectedValue(sweepError);
+    const loggerErrorSpy = vi.fn();
+    const logger = new Logger({
+      isDebugEnabled: () => false,
+      sink: { error: loggerErrorSpy, warn: () => {}, debug: () => {} },
+    });
+
+    const module = new CastLogModule({
+      app,
+      paths,
+      materializerFactory: () => ({ run: vi.fn().mockResolvedValue(undefined) }),
+      sweeperFactory: () => ({ sweep: sweepMock }),
+      logger,
+    });
+
+    await module.initStartupMaintenance();
+    // sweeper is fire-and-forget; wait for microtask queue to drain
+    await vi.waitFor(() => expect(loggerErrorSpy).toHaveBeenCalledWith(sweepError));
+  });
+
 
 });

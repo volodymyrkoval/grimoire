@@ -2,6 +2,7 @@ import { Effort } from '../../domain/settings/Settings';
 import { buildCastArgs } from './buildCastArgs';
 import { resolveCliBinary } from './resolveCliBinary';
 import { CastExitInfo, CastSpawner, SpawnFn } from './spawnCast';
+import type { Logger } from '../../infra/Logger';
 
 /**
  * Base fields common to both inline and file-based cast runs.
@@ -54,9 +55,11 @@ export interface CastRunCallbacks {
  */
 export class CastRunner {
   readonly #castSpawner: CastSpawner;
+  readonly #logger: Logger | undefined;
 
-  constructor(spawner?: SpawnFn) {
-    this.#castSpawner = new CastSpawner({ spawner });
+  constructor(spawner?: SpawnFn, logger?: Logger) {
+    this.#castSpawner = new CastSpawner({ spawner, logger });
+    this.#logger = logger;
   }
 
   /**
@@ -105,7 +108,7 @@ export class CastRunner {
 
   #onCastError(callbacks: CastRunCallbacks) {
     return (err: Error) => {
-      console.error(err);
+      this.#logger?.error(err);
       callbacks.onFailure(err.message);
     };
   }

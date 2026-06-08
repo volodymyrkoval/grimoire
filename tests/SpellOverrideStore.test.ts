@@ -44,32 +44,30 @@ describe('SpellOverrideStore', () => {
     expect(saver.schedule).toHaveBeenCalledTimes(1);
   });
 
-  it('(d) set with unknown model id (gpt-4) → NOT stored, console.error called, saver.schedule() NOT called', () => {
+  it('(d) set with unknown model id → injected logger.error() called, not console.error', () => {
     const path = spellPath('my/spell');
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mockLogger = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+    const storeWithLogger = new SpellOverrideStore({ data, saver, logger: mockLogger as any });
 
-    store.set(path, { model: modelId('gpt-4'), effort: 'medium' });
+    storeWithLogger.set(path, { model: modelId('gpt-4'), effort: 'medium' });
 
+    expect(mockLogger.error).toHaveBeenCalledWith('Unknown model: gpt-4');
     expect(data.spellOverrides[path]).toBeUndefined();
-    expect(consoleError).toHaveBeenCalledWith('Unknown model: gpt-4');
     expect(saver.schedule).not.toHaveBeenCalled();
-
-    consoleError.mockRestore();
   });
 
-  it('(e) set for haiku (no effort support) → NOT stored, console.error called', () => {
+  it('(e) set for haiku (no effort support) → injected logger.error() called', () => {
     const path = spellPath('my/spell');
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mockLogger = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+    const storeWithLogger = new SpellOverrideStore({ data, saver, logger: mockLogger as any });
 
-    store.set(path, { model: modelId('haiku'), effort: 'medium' });
+    storeWithLogger.set(path, { model: modelId('haiku'), effort: 'medium' });
 
-    expect(data.spellOverrides[path]).toBeUndefined();
-    expect(consoleError).toHaveBeenCalledWith(
+    expect(mockLogger.error).toHaveBeenCalledWith(
       'Cannot set override for model with no effort support: haiku'
     );
+    expect(data.spellOverrides[path]).toBeUndefined();
     expect(saver.schedule).not.toHaveBeenCalled();
-
-    consoleError.mockRestore();
   });
 
   it('(f) set with effort outside model effortOptions (xhigh for sonnet) → stored with effort clamped to defaultEffort (medium)', () => {

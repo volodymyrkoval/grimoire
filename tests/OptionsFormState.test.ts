@@ -80,10 +80,9 @@ describe('OptionsFormState', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  it('setModel with unknown id falls back to models[0] and warns', () => {
+  it('setModel with unknown id falls back to models[0]', () => {
     const state = new OptionsFormState(initialSnapshot);
     const listener = vi.fn();
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     state.onChange(listener);
     const result = state.setModel(modelId('unknown-model-id'), SUPPORTED_MODELS);
@@ -91,11 +90,27 @@ describe('OptionsFormState', () => {
     expect(state.snapshot().model).toBe('haiku');
     expect(state.snapshot().effort).toBeNull();
     expect(result).toBeNull();
-    expect(warnSpy).toHaveBeenCalled();
-    expect(warnSpy.mock.calls[0][0]).toContain('unknown-model-id');
     expect(listener).toHaveBeenCalledTimes(1);
+  });
 
-    warnSpy.mockRestore();
+  it('setModel with unknown id logs warning via injected logger', () => {
+    const mockLogger = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+    };
+    const state = new OptionsFormState(initialSnapshot, mockLogger);
+    const listener = vi.fn();
+
+    state.onChange(listener);
+    const result = state.setModel(modelId('unknown-model-id'), SUPPORTED_MODELS);
+
+    expect(state.snapshot().model).toBe('haiku');
+    expect(state.snapshot().effort).toBeNull();
+    expect(result).toBeNull();
+    expect(mockLogger.warn).toHaveBeenCalled();
+    expect(mockLogger.warn.mock.calls[0][0]).toContain('unknown-model-id');
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 
   it('setContextNotePaths updates contextNotePaths and fires onChange', () => {

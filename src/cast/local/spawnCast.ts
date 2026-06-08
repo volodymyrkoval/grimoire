@@ -4,6 +4,7 @@
 // with `{ code: null, error, stderrTail }` so callers can branch on the resolved shape.
 
 import { Platform } from "obsidian";
+import type { Logger } from "../../infra/Logger";
 
 /**
  * Configuration for spawning a cast process.
@@ -21,6 +22,7 @@ export interface CastSpawnConfig {
  */
 export interface CastSpawnPorts {
   spawner?: SpawnFn;
+  logger?: Logger;
 }
 
 /**
@@ -73,9 +75,11 @@ interface StderrBuffer {
  */
 export class CastSpawner {
   readonly #ports: CastSpawnPorts | undefined;
+  readonly #logger: Logger | undefined;
 
   constructor(ports?: CastSpawnPorts) {
     this.#ports = ports;
+    this.#logger = ports?.logger;
   }
 
   /**
@@ -202,7 +206,7 @@ export class CastSpawner {
   ) {
     return (err: Error) => {
       const stderrTail = stderrFull.message.slice(-STDERR_TAIL_LIMIT);
-      console.error(
+      this.#logger?.error(
         `Forge spawn error: ${err.message}\nstderr:\n${stderrFull.message}`
       );
       safeResolve({ code: null, stderrTail, error: err });
@@ -216,7 +220,7 @@ export class CastSpawner {
     return (code: number | null) => {
       const stderrTail = stderrFull.message.slice(-STDERR_TAIL_LIMIT);
       if (code !== 0) {
-        console.error(`Forge spawn stderr:\n${stderrFull.message}`);
+        this.#logger?.error(`Forge spawn stderr:\n${stderrFull.message}`);
       }
       safeResolve({ code, stderrTail });
     };

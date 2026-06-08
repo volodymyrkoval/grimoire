@@ -7,6 +7,7 @@ import { REFINE_SENTINEL_PATH } from "../../domain/spells/Spell";
 import { resolveSpellOptions } from "../../domain/settings/spellOptionsResolver";
 import type { SpellOverrideStore } from "../../domain/settings/SpellOverrideStore";
 import type { OptionsSessionMap } from "./OptionsSessionMap";
+import type { Logger } from "../../infra/Logger";
 
 /**
  * Snapshot of all casting options captured at the moment the user submits a cast.
@@ -85,6 +86,7 @@ export function optionsFormSnapshotFromRefineDefaults(
  * setModel applies effort survival rule: current effort persists if valid for new model.
  */
 export class OptionsFormState {
+  readonly #logger: Logger | undefined;
   #model: ModelId;
   #effort: Effort | null;
   #provider: Provider;
@@ -93,7 +95,8 @@ export class OptionsFormState {
   #executeOnNote: boolean;
   #listeners: Set<() => void>;
 
-  constructor(initial: OptionsFormSnapshot) {
+  constructor(initial: OptionsFormSnapshot, logger?: Logger) {
+    this.#logger = logger;
     this.#model = initial.model;
     this.#effort = initial.effort;
     this.#provider = initial.provider;
@@ -107,7 +110,7 @@ export class OptionsFormState {
     // Find the model; fall back to models[0] if not found
     let resolvedModel = models.find((m) => m.id === modelId);
     if (!resolvedModel) {
-      console.warn(`Model ${modelId} not found in SUPPORTED_MODELS, falling back to ${models[0].id}`);
+      this.#logger?.warn(`Model ${modelId} not found in SUPPORTED_MODELS, falling back to ${models[0].id}`);
       resolvedModel = models[0];
     }
 

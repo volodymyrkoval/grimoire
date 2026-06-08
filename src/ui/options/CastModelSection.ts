@@ -11,6 +11,7 @@ import type { CastingFrontmatterWriter, CastingFrontmatterReader } from '../../i
 import type { SpellCastingSettings } from '../../domain/settings/CastingSettings';
 import { CLAUDE_CODE_PROVIDER } from '../../domain/settings/CastingSettings';
 import type { ModelId } from '../../domain/settings/ModelId';
+import type { Logger } from '../../infra/Logger';
 
 export interface CastModelSectionDeps {
   spellPath: SpellPath;
@@ -29,8 +30,9 @@ export interface CastModelSectionDeps {
  * and the model supports effort options. Handles dynamic mounting/unmounting of EffortRow.
  */
 export class CastModelSection {
+  readonly #logger: Logger | undefined;
   #kb: KeyboardController;
-  #effortRow = new EffortRow();
+  #effortRow!: EffortRow;
   #effortContainer!: HTMLDivElement;
   #effortRowMounted = false;
   #checkboxLabel!: HTMLLabelElement;
@@ -38,8 +40,10 @@ export class CastModelSection {
   #select!: HTMLSelectElement;
   #unsubscribe!: () => void;
 
-  constructor(kb: KeyboardController) {
+  constructor(kb: KeyboardController, logger?: Logger) {
     this.#kb = kb;
+    this.#logger = logger;
+    this.#effortRow = new EffortRow({ logger: this.#logger });
   }
 
   mount(

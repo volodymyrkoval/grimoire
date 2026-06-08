@@ -13,6 +13,7 @@ import { attachAutogrow, attachListContinuation } from '../widgets/textareaHelpe
 import type { CastingFrontmatterWriter, CastingFrontmatterReader } from '../../infra/castingFrontmatter';
 import type { ModelId } from '../../domain/settings/ModelId';
 import type { Effort } from '../../domain/settings/Settings';
+import type { Logger } from '../../infra/Logger';
 
 interface ExecuteOnNoteState {
   checkbox: HTMLInputElement | null;
@@ -52,10 +53,10 @@ export class OptionsPanel {
   #refineVariantSelect: RefineVariantSelect | null = null;
   #formAbort: AbortController | null = null;
 
-  constructor(scope: Scope) {
+  constructor(scope: Scope, logger?: Logger) {
     this.#kb = new KeyboardController(scope);
     this.#contextNotesInput = new ContextNotesInput();
-    this.#castModelSection = new CastModelSection(this.#kb);
+    this.#castModelSection = new CastModelSection(this.#kb, logger);
   }
 
   render(

@@ -1,5 +1,6 @@
 import type { DataAdapter } from 'obsidian';
 import type { App } from 'obsidian';
+import type { Logger } from '../infra/Logger';
 import type { CastLogWriter } from '../castLog/CastLogWriter';
 import { CastLogStore } from '../castLog/store';
 import { HookMaterializer } from '../castLog/HookMaterializer';
@@ -63,6 +64,7 @@ export class CastLogModule {
   readonly #forgeUpdateMaterializerFactory: (ports: ForgeUpdateMaterializerPorts) => { run(): Promise<void> };
   readonly #getSettings: () => ForgeSystemPromptInput;
   readonly #getForgeUpdateSettings: () => ForgeUpdateSystemPromptInput;
+  readonly #logger: Logger | undefined;
 
   constructor(deps: {
     app: App;
@@ -74,6 +76,8 @@ export class CastLogModule {
     forgeUpdateMaterializerFactory?: (ports: ForgeUpdateMaterializerPorts) => { run(): Promise<void> };
     getSettings?: () => ForgeSystemPromptInput;
     getForgeUpdateSettings?: () => ForgeUpdateSystemPromptInput;
+    /** Logger for diagnostic output. Optional — no-op when omitted. */
+    logger?: Logger;
   }) {
     this.#app = deps.app;
     this.#paths = deps.paths;
@@ -84,6 +88,7 @@ export class CastLogModule {
     this.#forgeUpdateMaterializerFactory = deps.forgeUpdateMaterializerFactory ?? ((ports) => new ForgeUpdateMaterializer(ports));
     this.#getSettings = deps.getSettings ?? (() => ({ spellTag: '', forgeOutputFolder: '', vaultMountPath: '' }));
     this.#getForgeUpdateSettings = deps.getForgeUpdateSettings ?? (() => ({ vaultMountPath: '' }));
+    this.#logger = deps.logger;
 
     const adapter = this.#app.vault.adapter;
 
@@ -91,6 +96,7 @@ export class CastLogModule {
       adapter,
       getLogPathAbs: () => this.#paths.pluginLogPath(),
       getAgentLogPathAbs: () => this.#paths.agentLogPath(),
+      logger: this.#logger,
     });
   }
 
@@ -122,6 +128,7 @@ export class CastLogModule {
         pollIntervalMs: 1500,
         debounceMs: 50,
         settlingWindowMs: 3000,
+        logger: this.#logger,
       }),
       tick: new IntervalTickCoordinator({ intervalMs: 1000 }),
       now: () => new Date(),
@@ -145,7 +152,7 @@ export class CastLogModule {
     try {
       await task();
     } catch (e) {
-      console.error(`${label} failed`, e);
+      this.#logger?.error(`${label} failed`, e);
     }
   }
 
@@ -210,8 +217,9 @@ export class CastLogModule {
     const sweeper = this.#sweeperFactory({
       adapter,
       getScratchDirAbs: () => this.#paths.scratchDir(),
+      logger: this.#logger,
     });
-    sweeper.sweep().catch(console.error);
+    sweeper.sweep().catch((e) => this.#logger?.error(e));
   }
 
   /** Re-materializes the forge spell file with current settings. Fire-and-forget safe. */

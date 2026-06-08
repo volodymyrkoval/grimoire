@@ -865,6 +865,124 @@ describe('CastDispatcher', () => {
     expect(casterStub.getInput().spellPath).toBe('spells/test.md');
   });
 
+  describe('D2: logger error handling', () => {
+    it('routes recordCasted rejection to logger.error instead of console.error', async () => {
+      const logWriter = {
+        recordCasted: vi.fn().mockRejectedValueOnce(new Error('recordCasted failed')),
+        recordError: vi.fn().mockResolvedValue(undefined),
+      };
+      const logger = {
+        error: vi.fn(),
+      };
+      const casterStub = makeStubCaster();
+
+      const dispatcher = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: casterStub.thunk,
+        logWriter: () => logWriter,
+        logger,
+      });
+
+      dispatcher.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('sonnet'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        provider: CLAUDE_CODE,
+        settings: baseSettings,
+        activeFilePath: null,
+        executeOnNote: false,
+      });
+
+      // Allow promise rejection to settle
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(logger.error).toHaveBeenCalledWith('recordCasted failed', expect.any(Error));
+    });
+
+    it('routes recordError rejection to logger.error', async () => {
+      const logWriter = {
+        recordCasted: vi.fn().mockResolvedValue(undefined),
+        recordError: vi.fn().mockRejectedValueOnce(new Error('recordError failed')),
+      };
+      const logger = {
+        error: vi.fn(),
+      };
+      const casterStub = makeStubCaster();
+
+      const dispatcher = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: casterStub.thunk,
+        logWriter: () => logWriter,
+        logger,
+      });
+
+      dispatcher.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('sonnet'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        provider: CLAUDE_CODE,
+        settings: baseSettings,
+        activeFilePath: 'notes/active.md',
+        executeOnNote: true,
+      });
+
+      // Trigger onFailure callback which calls recordError
+      casterStub.getCallbacks().onFailure('test error');
+
+      // Allow promise rejection to settle
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(logger.error).toHaveBeenCalledWith('recordError failed', expect.any(Error));
+    });
+
+    it('routes onAccepted recordCasted rejection to logger.error', async () => {
+      const logWriter = {
+        recordCasted: vi.fn()
+          .mockResolvedValueOnce(undefined) // first call succeeds
+          .mockRejectedValueOnce(new Error('onAccepted recordCasted failed')), // second call rejects
+        recordError: vi.fn().mockResolvedValue(undefined),
+      };
+      const logger = {
+        error: vi.fn(),
+      };
+      const casterStub = makeStubCaster();
+
+      const dispatcher = new CastDispatcher({
+        notify: vi.fn(),
+        close: vi.fn(),
+        caster: casterStub.thunk,
+        logWriter: () => logWriter,
+        logger,
+      });
+
+      dispatcher.dispatch({
+        spell: { path: 'spells/test.md', name: 'Test' } as Spell,
+        model: modelId('sonnet'),
+        effort: null,
+        contextNotePaths: [],
+        followUp: '',
+        provider: CLAUDE_CODE,
+        settings: { ...baseSettings, executionMode: 'remote', portalHost: 'portal.example.com' },
+        activeFilePath: null,
+        executeOnNote: false,
+      });
+
+      // Trigger onAccepted with jobId, which calls recordCasted again
+      casterStub.getCallbacks().onAccepted({ jobId: 'srv-1' });
+
+      // Allow promise rejection to settle
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(logger.error).toHaveBeenCalledWith('recordCasted failed', expect.any(Error));
+    });
+  });
+
   describe('D6: provider threading', () => {
     it('recordCasted receives the provider from the dispatch input', () => {
       const logWriter = makeLogWriter();
@@ -944,7 +1062,7 @@ describe('CastDispatcher', () => {
       });
 
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith(CLAUDE_CODE);
+      expect(spy).toHaveBeenCalledWith(CLAUDE_CODE, undefined);
       spy.mockRestore();
     });
 

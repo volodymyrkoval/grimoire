@@ -2,6 +2,7 @@ import type { DataAdapter } from 'obsidian';
 import type { CastLogEvent } from './types';
 import type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
 import type { CastLogMutator } from './CastLogMutator';
+import type { Logger } from '../infra/Logger';
 export type { RecordCastedInput, RecordErrorInput } from './CastLogWriter';
 
 /**
@@ -15,6 +16,7 @@ export interface CastLogStorePorts {
   readFile?: (path: string, encoding: 'utf-8') => Promise<string>;
   now?: () => Date;
   adapter?: DataAdapter;
+  logger?: Logger;
 }
 
 /**
@@ -28,11 +30,13 @@ export class CastLogStore implements CastLogMutator {
   readonly #appendLine: (filePath: string, line: string) => Promise<void>;
   readonly #readFile: (path: string, encoding: 'utf-8') => Promise<string>;
   readonly #adapter: DataAdapter | undefined;
+  readonly #logger: Logger | undefined;
 
   constructor(ports: CastLogStorePorts) {
     this.#ports = ports;
     this.#now = ports.now ?? (() => new Date());
     this.#adapter = ports.adapter;
+    this.#logger = ports.logger;
     const adapter = ports.adapter;
     this.#appendLine =
       ports.appendLine ??
@@ -234,7 +238,7 @@ export class CastLogStore implements CastLogMutator {
         return [];
       }
 
-      console.error(`Failed to read cast log from ${filePath}:`, error);
+      this.#logger?.error(`Failed to read cast log from ${filePath}:`, error);
       return [];
     }
   }

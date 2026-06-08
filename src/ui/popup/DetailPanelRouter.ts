@@ -16,6 +16,7 @@ import type { ForgeMode } from '../../forge/ForgeMode';
 import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
 import type { CastingFrontmatterReader, CastingFrontmatterWriter } from '../../infra/castingFrontmatter';
 import type { ModelId } from '../../domain/settings/ModelId';
+import type { Logger } from '../../infra/Logger';
 
 /** Callback for submitting a Forge sentinel form. */
 export type ImprintAction = (snapshot: ForgeFormSnapshot) => void;
@@ -66,6 +67,8 @@ export interface DetailPanelRouterDeps {
   hotkeyEraser: HotkeyEraser;
   /** Callback to write a hotkey binding to a spell's frontmatter (update mode only). */
   hotkeyWriter: HotkeyWriter;
+  /** Optional logger injected from the host. */
+  logger?: Logger;
 }
 
 /**
@@ -96,7 +99,7 @@ export class DetailPanelRouter {
     this.#scope = scope;
     this.#deps.reattachTabBar();
     const directory = this.#deps.hotkeyDirectoryFactory();
-    const detail = new ForgeSentinelDetail(scope);
+    const detail = new ForgeSentinelDetail(scope, this.#deps.logger);
     detail.render({
       contentEl,
       mode: { kind: 'create' },
@@ -117,7 +120,7 @@ export class DetailPanelRouter {
     this.#scope = scope;
     this.#spell = spell;
     this.#deps.reattachTabBar();
-    const detail = new OptionsDetail();
+    const detail = new OptionsDetail(this.#deps.logger);
     detail.render({
       contentEl,
       scope,
@@ -162,7 +165,7 @@ export class DetailPanelRouter {
     const mode: ForgeMode = { kind: 'update', spell, directiveCount };
     const directory = this.#deps.hotkeyDirectoryFactory();
 
-    const detail = new ForgeSentinelDetail(scope);
+    const detail = new ForgeSentinelDetail(scope, this.#deps.logger);
     detail.render({
       contentEl,
       mode,
@@ -182,7 +185,7 @@ export class DetailPanelRouter {
     this.#contentEl = contentEl;
     this.#scope = scope;
     this.#deps.reattachTabBar();
-    const detail = new OptionsDetail();
+    const detail = new OptionsDetail(this.#deps.logger);
     detail.render({
       contentEl,
       scope,

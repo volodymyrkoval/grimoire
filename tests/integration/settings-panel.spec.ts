@@ -33,10 +33,10 @@ describe('GrimoireSettingTab seam', () => {
   // (i) 8 general Settings [5 text (spellTag, binaryPath, mcpConfigPath, forgeOutputFolder, vaultMountPath) + 1 provider dropdown + 1 model dropdown + 1 effort row]
   //   + 5 Advanced text/password + 2 toggles [executionMode, showCastOutput]
   //   + 2 Custom Refine rows (heading×3 + dropdown×2 = 5 elements)
-  //   + Advanced heading (3 elements) + Debug heading (3 elements)
-  //   = 16 general + 5 customRefine + 3 advancedHeading + 12 advancedRows + 3 debugHeading + 2 debugToggle = 41 children
-  it('renders setting rows + section headings (41 child elements in containerEl)', () => {
-    expect(tab.containerEl.childElementCount).toBe(41);
+  //   + Advanced heading (3 elements) + Debug heading (3 elements) + Debug toggles (2 × 2 = 4 elements for showCastOutput + debugLogging)
+  //   = 16 general + 5 customRefine + 3 advancedHeading + 12 advancedRows + 3 debugHeading + 4 debugToggles = 43 children
+  it('renders setting rows + section headings (43 child elements in containerEl)', () => {
+    expect(tab.containerEl.childElementCount).toBe(43);
   });
 
   // (ii) Text input write-through — spell-tag (index 0)
@@ -128,9 +128,9 @@ describe('GrimoireSettingTab seam', () => {
     );
   });
 
-  it('there are 2 checkboxes (executionMode + showCastOutput) after B1 is implemented', () => {
+  it('there are 3 checkboxes (executionMode + showCastOutput + debugLogging) after B1 is implemented', () => {
     const checkboxes = tab.containerEl.querySelectorAll('input[type="checkbox"]');
-    expect(checkboxes.length).toBe(2);
+    expect(checkboxes.length).toBe(3);
   });
 
   it('toggling showCastOutput to true writes showCastOutput=true and calls save exactly once', () => {

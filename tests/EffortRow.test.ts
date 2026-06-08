@@ -3,6 +3,18 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EffortRow } from '../src/ui/widgets/EffortRow';
 import { SUPPORTED_MODELS } from '../src/domain/settings/Settings';
 import { modelId } from '../src/domain/settings/ModelId';
+import { Logger } from '../src/infra/Logger';
+
+describe('EffortRow — logger DI', () => {
+  it('accepts an optional logger in constructor and stores it without throwing', () => {
+    const logger = new Logger({ isDebugEnabled: () => false, sink: { error: vi.fn(), warn: vi.fn(), debug: vi.fn() } });
+    expect(() => new EffortRow({ logger })).not.toThrow();
+  });
+
+  it('accepts no args in constructor (logger optional)', () => {
+    expect(() => new EffortRow()).not.toThrow();
+  });
+});
 
 describe('EffortRow', () => {
   let parent: HTMLElement;
@@ -90,7 +102,12 @@ describe('EffortRow', () => {
 
   it('(d) mount with model id not in SUPPORTED_MODELS → console.error called, no DOM appended', () => {
     const onChange = vi.fn();
-    const row = new EffortRow();
+    const fakeSink = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+    const fakeLogger = new Logger({
+      isDebugEnabled: () => false,
+      sink: fakeSink,
+    });
+    const row = new EffortRow({ logger: fakeLogger });
 
     row.mount(parent, {
       models: SUPPORTED_MODELS,
@@ -99,8 +116,8 @@ describe('EffortRow', () => {
       onChange,
     });
 
-    // console.error should have been called
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    // fakeLogger.error should have been called
+    expect(fakeSink.error).toHaveBeenCalledWith(
       'EffortRow.mount: model invalid-model-id not found'
     );
 
@@ -218,14 +235,19 @@ describe('EffortRow', () => {
 
   it('(h) update Case 4 — create EffortRow without mounting; call update with invalid model: console.error, no DOM', () => {
     const onChange = vi.fn();
-    const row = new EffortRow();
+    const fakeSink = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+    const fakeLogger = new Logger({
+      isDebugEnabled: () => false,
+      sink: fakeSink,
+    });
+    const row = new EffortRow({ logger: fakeLogger });
 
     // Never mount — #models remains empty array
     // Call update with a model not in the empty #models
     row.update(modelId('sonnet'), 'medium');
 
-    // console.error should have been called
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    // fakeLogger.error should have been called
+    expect(fakeSink.error).toHaveBeenCalledWith(
       'EffortRow.update: model sonnet not found'
     );
 

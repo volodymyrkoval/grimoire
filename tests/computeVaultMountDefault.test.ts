@@ -37,19 +37,35 @@ describe('computeVaultMountDefault', () => {
     expect(adapter.getBasePath).not.toHaveBeenCalled();
   });
 
-  it('returns empty string and logs error when getBasePath throws', () => {
+  it('returns empty string when getBasePath throws (without logger)', () => {
     const adapter = new FileSystemAdapter();
     (app.vault as any).adapter = adapter;
     const error = new Error('boom');
     vi.mocked(adapter.getBasePath).mockImplementation(() => {
       throw error;
     });
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const result = computeVaultMountDefault(app);
 
     expect(result).toBe('');
-    expect(consoleErrorSpy).toHaveBeenCalledWith(error);
-    consoleErrorSpy.mockRestore();
+  });
+
+  it('logs error via injected logger when getBasePath throws', () => {
+    const adapter = new FileSystemAdapter();
+    (app.vault as any).adapter = adapter;
+    const error = new Error('boom');
+    vi.mocked(adapter.getBasePath).mockImplementation(() => {
+      throw error;
+    });
+    const mockLogger = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+    };
+
+    const result = computeVaultMountDefault(app, mockLogger);
+
+    expect(result).toBe('');
+    expect(mockLogger.error).toHaveBeenCalledWith(error);
   });
 });

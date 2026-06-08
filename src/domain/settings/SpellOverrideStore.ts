@@ -1,11 +1,14 @@
 import { SpellPath } from "../spells/SpellPath";
 import { GrimoireData, SpellOverride, SUPPORTED_MODELS, Effort } from "./Settings";
 import type { SaveScheduler } from "./SaveScheduler";
+import type { Logger } from "../../infra/Logger";
 
 /** Dependencies for initializing the spell override store. */
 export interface SpellOverrideStoreDeps {
   data: GrimoireData;
   saver: SaveScheduler;
+  /** Logger for diagnostic output. Optional — no-op when omitted. */
+  logger?: Logger;
 }
 
 /**
@@ -15,10 +18,12 @@ export interface SpellOverrideStoreDeps {
 export class SpellOverrideStore {
   #data: GrimoireData;
   #saver: SaveScheduler;
+  readonly #logger: Logger | undefined;
 
   constructor(deps: SpellOverrideStoreDeps) {
     this.#data = deps.data;
     this.#saver = deps.saver;
+    this.#logger = deps.logger;
   }
 
   get(path: SpellPath): SpellOverride | undefined {
@@ -34,12 +39,12 @@ export class SpellOverrideStore {
 
     // UI pre-validates; these guards are defence-in-depth, not the primary check.
     if (!model) {
-      console.error(`Unknown model: ${override.model}`);
+      this.#logger?.error(`Unknown model: ${override.model}`);
       return;
     }
 
     if (model.defaultEffort === null) {
-      console.error(`Cannot set override for model with no effort support: ${override.model}`);
+      this.#logger?.error(`Cannot set override for model with no effort support: ${override.model}`);
       return;
     }
 

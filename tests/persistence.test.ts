@@ -160,4 +160,14 @@ describe('persistence.hydrate', () => {
     const result = hydrate({ settings: { showCastOutput: true } }, app);
     expect(result.settings.showCastOutput).toBe(true);
   });
+
+  it('(q) hydrate(undefined, app).settings.debugLogging === false (missing key → default false)', () => {
+    const result = hydrate(undefined, app);
+    expect(result.settings.debugLogging).toBe(false);
+  });
+
+  it('(r) hydrate({ settings: { debugLogging: true } }, app).settings.debugLogging === true (saved true survives merge)', () => {
+    const result = hydrate({ settings: { debugLogging: true } }, app);
+    expect(result.settings.debugLogging).toBe(true);
+  });
 });

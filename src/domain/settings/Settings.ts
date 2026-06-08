@@ -33,6 +33,8 @@ export interface GrimoireSettings {
   activeRefinePath: string | null;
   /** Whether to display cast output in the console. */
   showCastOutput: boolean;
+  /** When true, logger.debug output is printed to the console; errors/warnings always print. */
+  debugLogging: boolean;
 }
 
 /** Per-spell model and effort overrides that take precedence over global settings. */
@@ -65,6 +67,7 @@ export const DEFAULT_SETTINGS: GrimoireSettings = {
   portalAuthPassword: '',
   activeRefinePath: null,
   showCastOutput: false,
+  debugLogging: false,
 };
 
 /** Metadata for a model supported by the Claude API, including its effort parameter support. */

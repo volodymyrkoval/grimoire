@@ -6,6 +6,7 @@ import type { Caster } from '../execution/Caster';
 import type { CastEventSink } from './CastEventSink';
 import type { SpellImprinter } from './SpellImprinter';
 import { resolveProviderAdapter } from '../cast/provider/resolveProviderAdapter';
+import type { Logger } from '../infra/Logger';
 
 /** Dependencies injected into ForgeUpdateImprinter, allowing optional ID generation override for testing. */
 export interface ForgeUpdateImprinterDeps {
@@ -15,6 +16,8 @@ export interface ForgeUpdateImprinterDeps {
   /** Returns the materialized forge-update spell paths: absolute for the local caster, vault-relative for the portal. */
   forgeUpdateSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   generateId?: () => string;
+  /** Logger for diagnostic output. Optional — no-op when omitted. */
+  logger?: Logger;
 }
 
 /** All values needed to call caster.cast and handle its callbacks, assembled once in imprint. */
@@ -37,6 +40,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
   readonly #logWriter: () => CastEventSink;
   readonly #forgeUpdateSpellPaths: () => { absForCaster: string; vaultRelForPortal: string };
   readonly #generateId: () => string;
+  readonly #logger: Logger | undefined;
 
   constructor(deps: ForgeUpdateImprinterDeps) {
     this.#notify = deps.notify;
@@ -44,6 +48,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
     this.#logWriter = deps.logWriter;
     this.#forgeUpdateSpellPaths = deps.forgeUpdateSpellPaths;
     this.#generateId = deps.generateId ?? (() => crypto.randomUUID());
+    this.#logger = deps.logger;
   }
 
   imprint(snapshot: ForgeUpdateFormSnapshot, settings: GrimoireSettings, close: () => void): void {
@@ -80,7 +85,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
         provider: snapshot.provider,
         ...(portalCastId !== undefined && { portalCastId }),
       })
-      .catch(console.error);
+      .catch((e) => this.#logger?.error('recordCasted failed', e));
   }
 
   #notifyLaunch(spellName: string, isRemote: boolean): void {
@@ -101,7 +106,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
       provider: snapshot.provider,
     });
     const paths = this.#forgeUpdateSpellPaths();
-    resolveProviderAdapter(snapshot.provider);
+    resolveProviderAdapter(snapshot.provider, this.#logger);
     this.#caster().cast(
       {
         castId,
@@ -134,7 +139,7 @@ export class ForgeUpdateImprinter implements SpellImprinter<ForgeUpdateFormSnaps
   /** Logs the cast error and notifies the user with an appropriate message. */
   #onCastFailed(ctx: DispatchContext, msg: string): void {
     const { castId, isRemote } = ctx;
-    this.#logWriter().recordError({ castId, message: msg }).catch(console.error);
+    this.#logWriter().recordError({ castId, message: msg }).catch((e) => this.#logger?.error(e));
     this.#notify(isRemote ? msg : `Forge update failed: ${msg}`);
   }
 }

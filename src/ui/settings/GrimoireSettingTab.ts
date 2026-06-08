@@ -6,6 +6,7 @@ import { KNOWN_PROVIDERS, CLAUDE_CODE, parseProvider } from '../../domain/settin
 import { RefineSeeder } from '../../refine/CustomRefineSeeder';
 import { CustomRefineSection } from './CustomRefineSection';
 import { PortalSecret } from '../../infra/PortalSecret';
+import type { Logger } from '../../infra/Logger';
 
 /**
  * Plugin settings UI rendered in Obsidian's Settings modal.
@@ -19,6 +20,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
   readonly #onSettingsSaved: () => void;
   readonly #seeder: RefineSeeder;
   readonly #openVaultPath: (path: string) => void;
+  readonly #logger: Logger | undefined;
 
   constructor(
     app: App,
@@ -27,6 +29,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
     onSettingsSaved?: () => void,
     seeder?: RefineSeeder,
     openVaultPath?: (path: string) => void,
+    logger?: Logger,
   ) {
     // plugin satisfies PluginSettingTab structurally; 'as any' bridges the nominal Obsidian Plugin type
     super(app, plugin as unknown as import('obsidian').Plugin);
@@ -35,6 +38,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
     this.#onSettingsSaved = onSettingsSaved ?? (() => {});
     this.#seeder = seeder ?? this.#makeNoopSeeder();
     this.#openVaultPath = openVaultPath ?? (() => {});
+    this.#logger = logger;
   }
 
   /** Saves plugin data and fires the onSettingsSaved callback (fire-and-forget). */
@@ -65,7 +69,7 @@ export class GrimoireSettingTab extends PluginSettingTab {
       'Absolute path where the vault is mounted on disk. Used to resolve file paths during casting.');
 
     this.#addProviderField();
-    const effortRow = new EffortRow();
+    const effortRow = new EffortRow({ logger: this.#logger });
     this.#addModelField(effortRow);
     this.#addEffortField(effortRow);
   }
@@ -126,6 +130,12 @@ export class GrimoireSettingTab extends PluginSettingTab {
       () => s.showCastOutput,
       v => { s.showCastOutput = v; },
       'Stream local cast stdout/stderr to the developer console as it arrives, prefixed with the cast id. Desktop only; ignored for remote casts.',
+    );
+    this.#addToggleField(
+      'Debug logging',
+      () => s.debugLogging,
+      v => { s.debugLogging = v; },
+      'Print verbose debug output to the developer console. Errors and warnings always print regardless of this setting.',
     );
   }
 

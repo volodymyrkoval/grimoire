@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VaultRefreshCoordinator } from '../../src/castLog/VaultRefreshCoordinator';
+import { Logger } from '../../src/infra/Logger';
 
 // Minimal vault fake — same contract as the obsidian mock but self-contained for unit tests.
 function makeVault() {
@@ -315,7 +316,11 @@ describe('VaultRefreshCoordinator', () => {
   it('(10a) stat error during initial sample → logs error via console.error with path', async () => {
     const vault = makeVault();
     const onRefresh = vi.fn();
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fakeSink = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+    const fakeLogger = new Logger({
+      isDebugEnabled: () => false,
+      sink: fakeSink,
+    });
 
     const stat = vi.fn((_path: string) =>
       Promise.reject(new Error('EACCES: permission denied'))
@@ -329,6 +334,7 @@ describe('VaultRefreshCoordinator', () => {
       debounceMs: DEBOUNCE_MS,
       settlingWindowMs: SETTLING_MS,
       stat,
+      logger: fakeLogger,
     });
 
     coord.start(onRefresh);
@@ -336,11 +342,10 @@ describe('VaultRefreshCoordinator', () => {
     // Let the async sampleBaseline promise resolve
     await vi.advanceTimersByTimeAsync(0);
 
-    expect(consoleError).toHaveBeenCalledOnce();
-    const [msg] = consoleError.mock.calls[0];
+    expect(fakeSink.error).toHaveBeenCalledOnce();
+    const [msg] = fakeSink.error.mock.calls[0];
     expect(msg).toContain(ABS_PATH);
 
-    consoleError.mockRestore();
     coord.stop();
   });
 

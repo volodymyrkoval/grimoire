@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { resolveProviderAdapter } from '../../../src/cast/provider/resolveProviderAdapter';
 import { CLAUDE_CODE, provider } from '../../../src/domain/settings/Provider';
 
@@ -12,5 +12,20 @@ describe('resolveProviderAdapter', () => {
     const unknown = provider('unknown-provider');
     const adapter = resolveProviderAdapter(unknown);
     expect(adapter.provider).toBe(CLAUDE_CODE);
+  });
+
+  it('logs warning via injected logger when provider is unregistered', () => {
+    const unknown = provider('unknown-provider');
+    const mockLogger = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+    };
+
+    const adapter = resolveProviderAdapter(unknown, mockLogger);
+
+    expect(adapter.provider).toBe(CLAUDE_CODE);
+    expect(mockLogger.warn).toHaveBeenCalled();
+    expect(mockLogger.warn.mock.calls[0][0]).toContain('unknown-provider');
   });
 });

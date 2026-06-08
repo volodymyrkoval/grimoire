@@ -9,6 +9,7 @@ import { ClearAllConfirmModal } from '../components/ClearAllConfirmModal';
 import { SystemSpellRegistry } from '../../castLog/SystemSpellRegistry';
 import type { TabPanel } from './TabPanel';
 import type { CastLogMutator } from '../../castLog/CastLogMutator';
+import type { Logger } from '../../infra/Logger';
 
 /**
  * Dependencies for CastLogPanel.
@@ -29,6 +30,8 @@ export interface CastLogPanelDeps {
   mutator: CastLogMutator;
   /** Obsidian App instance — required to open the clear-all confirmation modal. */
   app: App;
+  /** Optional logger for diagnostic output. */
+  logger?: Logger;
 }
 
 /**
@@ -135,7 +138,7 @@ export class CastLogPanel implements TabPanel {
       await this.#deps.mutator.deleteCast(castId);
     } catch (e) {
       new Notice('Could not delete cast — see console');
-      console.error('deleteCast failed', e);
+      this.#deps.logger?.error('deleteCast failed', e);
     } finally {
       this.#pendingConfirmIds.delete(castId);
     }
@@ -154,7 +157,7 @@ export class CastLogPanel implements TabPanel {
           await this.#deps.mutator.clearAll();
         } catch (e) {
           new Notice('Could not clear cast log — see console');
-          console.error('clearAll failed', e);
+          this.#deps.logger?.error('clearAll failed', e);
           return;
         }
         this.#records = [];

@@ -1,6 +1,7 @@
 import type { GrimoireSettings } from '../../domain/settings/Settings';
 import type { Caster, CastInput, CastCallbacks } from '../../execution/Caster';
 import { CastRunner } from './CastRunner';
+import type { Logger } from '../../infra/Logger';
 
 /**
  * Caster implementation that executes spells locally via the forging CLI.
@@ -10,11 +11,14 @@ export class LocalCaster implements Caster {
   readonly #runner: CastRunner;
   readonly #settings: GrimoireSettings;
   readonly #claudeHooksDirAbs: string | undefined;
+  // eslint-disable-next-line no-unused-private-class-members
+  readonly #logger: Logger | undefined;
 
-  constructor({ runner, settings, claudeHooksDirAbs }: { runner?: CastRunner; settings: GrimoireSettings; claudeHooksDirAbs?: string }) {
-    this.#runner = runner ?? new CastRunner();
+  constructor({ runner, settings, claudeHooksDirAbs, logger }: { runner?: CastRunner; settings: GrimoireSettings; claudeHooksDirAbs?: string; logger?: Logger }) {
+    this.#runner = runner ?? new CastRunner(undefined, logger);
     this.#settings = settings;
     this.#claudeHooksDirAbs = claudeHooksDirAbs;
+    this.#logger = logger;
   }
 
   /**

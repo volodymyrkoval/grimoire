@@ -32,6 +32,7 @@ import type { ModelId } from "../domain/settings/ModelId";
 import type { Effort } from "../domain/settings/Settings";
 import { resolveCastingForSpell } from "../domain/settings/resolveCastingForSpell";
 import { CLAUDE_CODE_PROVIDER } from "../domain/settings/CastingSettings";
+import type { Logger } from "../infra/Logger";
 export type { ImprintAction, CastAction, RefineCastAction, ForgeUpdateAction } from "./popup/DetailPanelRouter";
 
 export type { FormDefaults } from "../domain/settings/FormDefaults";
@@ -80,6 +81,8 @@ export interface CommandPopupParams {
   castingWriter: CastingFrontmatterWriter;
   /** Writes vault-wide default model/effort to plugin settings. */
   setVaultDefault: (model: ModelId, effort: Effort | null) => void;
+  /** Optional logger injected from the host. */
+  logger?: Logger;
 }
 
 /**
@@ -118,6 +121,7 @@ export class CommandPopup extends Modal {
   readonly #reader: CastingFrontmatterReader;
   readonly #castingWriter: CastingFrontmatterWriter;
   readonly #setVaultDefault: (model: ModelId, effort: Effort | null) => void;
+  readonly #logger: Logger | undefined;
   #hotkeyBuffer: HotkeyBuffer = new HotkeyBuffer();
   #hotkeyCapture: HotkeyCapture | null = null;
   #hintSlot: HotkeyHintSlot | null = null;
@@ -160,6 +164,7 @@ export class CommandPopup extends Modal {
     this.#reader = params.reader;
     this.#castingWriter = params.castingWriter;
     this.#setVaultDefault = params.setVaultDefault;
+    this.#logger = params.logger;
     const castLogPanel = new CastLogPanel({
       ...params.castLogPanelDeps,
       openLink: this.#handleOpenLink,
@@ -285,6 +290,7 @@ export class CommandPopup extends Modal {
       hotkeyDirectoryFactory: this.#buildCurrentHotkeyDirectory,
       hotkeyEraser: this.#eraseHotkeyAndMarkChanged,
       hotkeyWriter: this.#writeHotkeyAndMarkChanged,
+      logger: this.#logger,
     });
   }
 

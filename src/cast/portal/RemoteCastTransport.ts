@@ -5,6 +5,7 @@ import { buildPortalUrl } from './buildPortalUrl';
 import { buildBasicAuthHeader } from './buildBasicAuthHeader';
 import { buildPortalRequestBody } from './buildPortalRequestBody';
 import { mapPortalError } from './mapPortalError';
+import type { Logger } from '../../infra/Logger';
 
 const TIMEOUT_MS = 30_000;
 
@@ -70,11 +71,13 @@ export type RequestUrlFn = (req: RequestUrlParam) => Promise<RequestUrlResponse>
  */
 export class RemoteCastTransport {
   readonly #requestUrlFn: RequestUrlFn;
+  readonly #logger: Logger | undefined;
 
-  constructor(deps?: { requestUrlFn?: RequestUrlFn }) {
+  constructor(deps?: { requestUrlFn?: RequestUrlFn; logger?: Logger }) {
     this.#requestUrlFn = deps?.requestUrlFn ?? (() =>
       Promise.reject(new Error('requestUrl not injected'))
     );
+    this.#logger = deps?.logger;
   }
 
   /**
@@ -145,7 +148,7 @@ export class RemoteCastTransport {
       ) {
         callbacks.onAccepted({ portalCastId: (json as Record<string, unknown>).castId as string });
       } else {
-        console.warn('RemoteCastTransport: 202 response missing castId field');
+        this.#logger?.warn('RemoteCastTransport: 202 response missing castId field');
       }
       return;
     }

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CastLogStore } from '../../src/castLog/store';
 import type { CastLogEvent } from '../../src/castLog/types';
+import { Logger } from '../../src/infra/Logger';
 
 describe('CastLogStore.readAll', () => {
   describe('reading local file', () => {
@@ -63,19 +64,22 @@ describe('CastLogStore.readAll', () => {
     it('should console.error on non-ENOENT error and return []', async () => {
       const error = new Error('Permission denied');
       const readFile = vi.fn().mockRejectedValue(error);
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const fakeSink = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+      const fakeLogger = new Logger({
+        isDebugEnabled: () => false,
+        sink: fakeSink,
+      });
 
       const store = new CastLogStore({
         getLogPathAbs: () => '/vault/.obsidian/plugins/grimoire/cast-log-plugin.json',
         readFile,
+        logger: fakeLogger,
       });
 
       const events = await store.readAll();
 
-      expect(consoleError).toHaveBeenCalledWith(expect.any(String), error);
+      expect(fakeSink.error).toHaveBeenCalledWith(expect.any(String), error);
       expect(events).toEqual([]);
-
-      consoleError.mockRestore();
     });
   });
 

@@ -1,5 +1,6 @@
 import type { Vault, EventRef, DataAdapter } from 'obsidian';
 import type { RefreshCoordinator } from './RefreshCoordinator';
+import type { Logger } from '../infra/Logger';
 
 /**
  * Obsidian vault operations and timer functions for VaultRefreshCoordinator.
@@ -18,6 +19,7 @@ export interface VaultRefreshCoordinatorPorts {
   setTimeout?: typeof activeWindow.setTimeout;
   clearTimeout?: typeof activeWindow.clearTimeout;
   adapter?: DataAdapter;
+  logger?: Logger;
 }
 
 /**
@@ -38,6 +40,7 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
   readonly #clearInterval: typeof activeWindow.clearInterval;
   readonly #setTimeout: typeof activeWindow.setTimeout;
   readonly #clearTimeout: typeof activeWindow.clearTimeout;
+  readonly #logger: Logger | undefined;
 
   #started = false;
   #disposed = false;
@@ -66,6 +69,7 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
     this.#clearInterval = (ports.clearInterval ?? activeWindow.clearInterval.bind(activeWindow)) as typeof activeWindow.clearInterval;
     this.#setTimeout = (ports.setTimeout ?? activeWindow.setTimeout.bind(activeWindow)) as typeof activeWindow.setTimeout;
     this.#clearTimeout = (ports.clearTimeout ?? activeWindow.clearTimeout.bind(activeWindow)) as typeof activeWindow.clearTimeout;
+    this.#logger = ports.logger;
   }
 
   /**
@@ -150,7 +154,7 @@ export class VaultRefreshCoordinator implements RefreshCoordinator {
         this.#lastStat.set(absPath, mtimeMs);
       } catch (err) {
         if ((err as { code?: string }).code !== 'ENOENT') {
-          console.error(`VaultRefreshCoordinator: failed to stat "${absPath}" during baseline:`, err);
+          this.#logger?.error(`VaultRefreshCoordinator: failed to stat "${absPath}" during baseline:`, err);
         }
         this.#lastStat.set(absPath, 0);
       }

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import type { Logger } from '../../src/infra/Logger';
 import { PortalSecret, SecretStorageLike } from '../../src/infra/PortalSecret';
 import { Notice } from 'obsidian';
 
@@ -77,5 +78,29 @@ describe('PortalSecret', () => {
 
     expect(Notice.instances).toHaveLength(1);
     expect(Notice.instances[0].message).toContain('failed to save password');
+  });
+
+  it('(f) calls logger.warn when setSecret throws and logger is provided', () => {
+    const throwingStore: SecretStorageLike = {
+      getSecret: () => null,
+      setSecret: () => {
+        throw new Error('storage failure');
+      },
+      listSecrets: () => [],
+    };
+    const mockWarn = vi.fn();
+    const logger: Logger = {
+      warn: mockWarn,
+      error: vi.fn(),
+      debug: vi.fn(),
+    };
+
+    const secret = new PortalSecret({ secretStorage: throwingStore, logger });
+
+    secret.set('test-password');
+
+    expect(mockWarn).toHaveBeenCalledWith(
+      'PortalSecret.set() failed to persist password: storage failure'
+    );
   });
 });

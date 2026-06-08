@@ -5,6 +5,7 @@ import {
   type RemoteCastCallbacks,
 } from '../../src/cast/portal/RemoteCastTransport';
 import { buildBasicAuthHeader } from '../../src/cast/portal/buildBasicAuthHeader';
+import { Logger } from '../../src/infra/Logger';
 
 const baseInput: RemoteCastInput = {
   castId: 'cast-abc',
@@ -205,18 +206,20 @@ describe('RemoteCastTransport', () => {
   describe('202 with malformed body', () => {
     it('calls neither callback and warns to console when castId field is missing', async () => {
       const requestUrlFn = vi.fn().mockResolvedValue({ status: 202, json: {}, text: '' });
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const fakeSink = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+      const fakeLogger = new Logger({
+        isDebugEnabled: () => false,
+        sink: fakeSink,
+      });
 
-      const transport = new RemoteCastTransport({ requestUrlFn });
+      const transport = new RemoteCastTransport({ requestUrlFn, logger: fakeLogger });
       const callbacks = makeCallbacks();
       transport.run(baseInput, callbacks);
       await flushPromises();
 
       expect(callbacks.onAccepted).not.toHaveBeenCalled();
       expect(callbacks.onFailure).not.toHaveBeenCalled();
-      expect(warnSpy).toHaveBeenCalledOnce();
-
-      warnSpy.mockRestore();
+      expect(fakeSink.warn).toHaveBeenCalledOnce();
     });
   });
 });

@@ -483,7 +483,7 @@ describe('GrimoirePlugin', () => {
     casterThunk();
 
     expect(createCasterSpy).toHaveBeenCalledOnce();
-    expect(createCasterSpy.mock.calls[0].length).toBe(3);
+    expect(createCasterSpy.mock.calls[0].length).toBe(4);
 
     createCasterSpy.mockRestore();
     dispatcherSpy.mockRestore();

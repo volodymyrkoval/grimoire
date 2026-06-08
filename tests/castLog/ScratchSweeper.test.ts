@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ScratchSweeper } from '../../src/castLog/ScratchSweeper';
+import { Logger } from '../../src/infra/Logger';
 
 describe('ScratchSweeper', () => {
   it('should delete old files and keep young files', async () => {
@@ -51,7 +52,6 @@ describe('ScratchSweeper', () => {
   });
 
   it('should continue to next file when unlink fails on one file', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const ttlMs = 24 * 60 * 60 * 1000;
     const now = 1_000_000;
 
@@ -67,6 +67,12 @@ describe('ScratchSweeper', () => {
 
     const readdirFn = vi.fn().mockResolvedValue(['/scratch/file1.paths', '/scratch/file2.paths']);
 
+    const fakeSink = { error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+    const fakeLogger = new Logger({
+      isDebugEnabled: () => false,
+      sink: fakeSink,
+    });
+
     const sweeper = new ScratchSweeper({
       getScratchDirAbs: () => '/scratch',
       readdir: readdirFn,
@@ -74,6 +80,7 @@ describe('ScratchSweeper', () => {
       unlink: unlinkFn,
       now: () => now,
       ttlMs: ttlMs,
+      logger: fakeLogger,
     });
 
     await sweeper.sweep();
@@ -84,9 +91,7 @@ describe('ScratchSweeper', () => {
     expect(unlinkFn).toHaveBeenNthCalledWith(2, '/scratch/file2.paths');
 
     // Error should have been logged
-    expect(consoleErrorSpy).toHaveBeenCalled();
-
-    consoleErrorSpy.mockRestore();
+    expect(fakeSink.error).toHaveBeenCalled();
   });
 
   it('should not call stat or unlink when directory is empty', async () => {

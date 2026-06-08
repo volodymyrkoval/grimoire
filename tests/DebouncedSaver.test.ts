@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { Logger } from '../src/infra/Logger';
 import { DebouncedSaver } from '../src/infra/DebouncedSaver';
 
 describe('DebouncedSaver', () => {
@@ -55,12 +56,31 @@ describe('DebouncedSaver', () => {
     expect(save).not.toHaveBeenCalled();
   });
 
-  it('(e) save function throws → error caught, console.error called, NOT rethrown', async () => {
+  it('(e) save function throws → error caught silently (no rethrow) when no logger provided', async () => {
     const error = new Error('save failed');
     const save = vi.fn().mockRejectedValue(error);
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const saver = new DebouncedSaver(save, 500);
+    saver.schedule();
+
+    vi.advanceTimersByTime(500);
+    await vi.runAllTimersAsync();
+
+    expect(save).toHaveBeenCalledTimes(1);
+    // Error is swallowed — no logger, no rethrow
+  });
+
+  it('(f) calls logger.error when save function throws and logger is provided', async () => {
+    const error = new Error('save failed');
+    const save = vi.fn().mockRejectedValue(error);
+    const mockError = vi.fn();
+    const logger: Logger = {
+      error: mockError,
+      warn: vi.fn(),
+      debug: vi.fn(),
+    };
+
+    const saver = new DebouncedSaver(save, 500, logger);
     saver.schedule();
 
     vi.advanceTimersByTime(500);
@@ -68,8 +88,6 @@ describe('DebouncedSaver', () => {
     await vi.runAllTimersAsync();
 
     expect(save).toHaveBeenCalledTimes(1);
-    expect(consoleError).toHaveBeenCalledWith(error);
-
-    consoleError.mockRestore();
+    expect(mockError).toHaveBeenCalledWith(error);
   });
 });

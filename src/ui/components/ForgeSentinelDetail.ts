@@ -14,6 +14,7 @@ import type { HotkeyDirectory } from '../../forge/HotkeyDirectory';
 import { HotkeyCaptureField } from './HotkeyCaptureField';
 import type { HotkeyEraser, HotkeyWriter } from './HotkeyTypes';
 import { attachAutogrow, attachListContinuation } from '../widgets/textareaHelpers';
+import type { Logger } from '../../infra/Logger';
 
 export interface ForgeSentinelDetailParams {
   contentEl: HTMLElement;
@@ -45,6 +46,7 @@ export class ForgeSentinelDetail {
   #submitBtn!: HTMLButtonElement;
   #mode!: ForgeMode;
   #kb: KeyboardController;
+  readonly #logger: Logger | undefined;
   #callbacks!: ForgeSentinelDetailParams['callbacks'];
   #hotkey!: ForgeSentinelDetailParams['hotkey'];
   #defaultProvider!: Provider;
@@ -52,8 +54,9 @@ export class ForgeSentinelDetail {
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
-  constructor(scope: Scope) {
+  constructor(scope: Scope, logger?: Logger) {
     this.#kb = new KeyboardController(scope);
+    this.#logger = logger;
   }
 
   render({ contentEl, mode, callbacks, defaults, hotkey }: ForgeSentinelDetailParams): void {
@@ -266,7 +269,7 @@ export class ForgeSentinelDetail {
 
   #initEffortRow(form: HTMLElement, defaults: FormDefaults): EffortRow {
     const effortContainer = form.createDiv();
-    const row = new EffortRow();
+    const row = new EffortRow({ logger: this.#logger });
     row.mount(effortContainer, {
       models: SUPPORTED_MODELS,
       modelId: defaults.defaultModel,
