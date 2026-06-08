@@ -22,17 +22,17 @@ export class EffortRow {
   #onChange: ((effort: Effort) => void) | null = null;
 
   mount(parent: HTMLElement, opts: EffortRowOpts): void {
+    // Store for later use in update (must happen before any early return)
+    this.#models = opts.models;
+    this.#onChange = opts.onChange;
+    this.#parent = parent;
+
     // Look up the model
     const model = opts.models.find((m) => m.id === opts.modelId);
     if (!model) {
       console.error(`EffortRow.mount: model ${opts.modelId} not found`);
       return;
     }
-
-    // Store for later use in update (must happen before any early return)
-    this.#models = opts.models;
-    this.#onChange = opts.onChange;
-    this.#parent = parent;
 
     // If model has no effort options, don't mount anything
     if (model.effortOptions === null) {

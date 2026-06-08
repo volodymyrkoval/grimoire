@@ -110,6 +110,27 @@ describe('EffortRow', () => {
     expect(parent.children.length).toBe(0);
   });
 
+  it('(d2) mount with unknown model id, then update to valid model → mounts effort row correctly', () => {
+    const onChange = vi.fn();
+    const row = new EffortRow();
+
+    row.mount(parent, {
+      models: SUPPORTED_MODELS,
+      modelId: modelId('claude-sonnet-4-5'),
+      effort: 'medium',
+      onChange,
+    });
+
+    // Mount fails silently for unknown model
+    expect(parent.children.length).toBe(0);
+
+    // Subsequent update with a valid model should mount the effort row
+    row.update(modelId('sonnet'), 'medium');
+
+    const wrapper = parent.querySelector('div.grimoire-effort-row');
+    expect(wrapper).not.toBeNull();
+  });
+
   it('(e) update Case 1 — mount Sonnet (effort="medium"), then update to Opus: wrapper still there, segmented now has 5 buttons (Opus options)', () => {
     const onChange = vi.fn();
     const row = new EffortRow();
