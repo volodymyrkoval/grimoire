@@ -1,6 +1,6 @@
 import { Notice } from 'obsidian';
 
-export const PORTAL_AUTH_PASSWORD_SECRET_ID = 'grimoire.portalAuthPassword';
+export const PORTAL_AUTH_PASSWORD_SECRET_ID = 'grimoire-portal-auth-password';
 
 export interface SecretStorageLike {
   getSecret(id: string): string | null;

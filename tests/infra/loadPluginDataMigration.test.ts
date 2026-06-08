@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { PortalSecret, SecretStorageLike } from '../../src/infra/PortalSecret';
+import { PortalSecret, SecretStorageLike, PORTAL_AUTH_PASSWORD_SECRET_ID } from '../../src/infra/PortalSecret';
 import { SecretMigrator } from '../../src/infra/SecretMigrator';
 
 describe('loadPluginData migration wiring', () => {
@@ -67,7 +67,7 @@ describe('loadPluginData migration wiring', () => {
 
     // Create store with the secret already set (from first run)
     const store = makeStore();
-    store.setSecret('grimoire.portalAuthPassword', 'legacy-secret-value');
+    store.setSecret(PORTAL_AUTH_PASSWORD_SECRET_ID, 'legacy-secret-value');
     const secret = new PortalSecret({ secretStorage: store });
 
     const migrator = new SecretMigrator({ secret, legacy });
