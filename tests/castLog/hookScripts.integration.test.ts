@@ -261,6 +261,30 @@ describe('post-tool-use.sh', () => {
     expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('notes/foo.md\n');
   });
 
+  // ── B4b: short content value ending in .md is NOT captured ─────────────────────
+  // Regression: a log line like "- 2026-06-13 ... | target: Stoner vocabulary.md"
+  // is short (≤512 chars) and ends in .md but must not appear in affectedFiles.
+
+  it('ignores content value that is short and ends in .md (non-path field)', async () => {
+    const scratchDir = path.join(tempDir, 'scratch');
+    const content = renderPostToolUseScript({ scratchDirAbs: scratchDir });
+    const scriptPath = await materializeScript(tempDir, 'post-tool-use.sh', content);
+    const logLine = '- 2026-06-13 14:49 | running | @agent Generate ANKI | target: Stoner vocabulary.md';
+    const stdin = JSON.stringify({
+      tool_name: 'mcp__obsidian-mcp-tools__append_to_vault_file',
+      tool_input: { path: 'Agent Progress Log.md', content: logLine },
+      tool_response: {},
+    });
+
+    const { status } = runShell(scriptPath, { stdin, env: { CAST_ID: 'abc' } });
+    expect(status).toBe(0);
+
+    const scratchFile = path.join(scratchDir, 'abc.paths');
+    expect(fs.existsSync(scratchFile)).toBe(true);
+    // Only the path key value, never the content value
+    expect(fs.readFileSync(scratchFile, 'utf-8')).toBe('Agent Progress Log.md\n');
+  });
+
   // ── B5: non-.md strings filtered — scratch file absent or empty ───────────────
 
   it('produces no scratch output when no tool_input values end in .md', async () => {

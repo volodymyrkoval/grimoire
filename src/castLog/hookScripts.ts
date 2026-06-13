@@ -2,12 +2,15 @@ const shellEscape = (p: string) => p.replace(/"/g, '\\"');
 
 export const MCP_PATH_VALUE_MAX_LEN = 512;
 
-// Scans all tool_input string values for .md paths; 512-char cap prevents patch content blobs from poisoning affectedFiles.
+// Scans known path-indicating keys in tool_input for .md paths; ignores all other keys (e.g. content)
+// to prevent prose values that happen to end in ".md" from poisoning affectedFiles.
+const PATH_KEYS_PYTHON = `{"path","file_path","filepath","filename","target","source","destination","to","from"}`;
 const extractMdPathsPython = `import sys, json
 d = json.load(sys.stdin)
 ti = d.get("tool_input", {})
 if isinstance(ti, dict):
-    paths = sorted({v for v in ti.values() if isinstance(v, str) and len(v) <= ${MCP_PATH_VALUE_MAX_LEN} and v.endswith(".md")})
+    KEYS=${PATH_KEYS_PYTHON}
+    paths = sorted({v for k,v in ti.items() if k in KEYS and isinstance(v, str) and len(v) <= ${MCP_PATH_VALUE_MAX_LEN} and v.endswith(".md")})
     for p in paths:
         print(p)`;
 
